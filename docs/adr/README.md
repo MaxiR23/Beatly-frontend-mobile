@@ -46,6 +46,10 @@ record described.
   `013-short-path-for-docs-only-changes.md`, a docs-only change can
   reach a pull request without `review-changes` running; on that path
   `ship-issue` runs the same grep before it prepares the draft.
+- `012-squash-only-merges-on-main.md` says that lowering the commitlint
+  header length limit to leave room for the " (#N)" GitHub appends is a
+  follow-up. It is done: `header-max-length` in commitlint.config.js is
+  64, so a title at the limit plus the suffix fits in 72 on main.
 
 ## Files
 
