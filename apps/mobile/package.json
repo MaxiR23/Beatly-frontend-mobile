@@ -1,0 +1,13 @@
+{
+  "name": "@beatly/mobile",
+  "version": "0.6.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@beatly/core": "workspace:*",
+    "@beatly/ui": "workspace:*"
+  }
+}
