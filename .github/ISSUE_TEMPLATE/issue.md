@@ -1,0 +1,30 @@
+---
+name: Issue
+about: A feature, fix or change with a verifiable result
+title: "type(scope): short description"
+labels: ""
+---
+
+<!--
+Title: `type(scope): short description`, lowercase, one line.
+Label: exactly one of feat, fix, docs, chore, test, refactor, ci,
+matching the type in the title. ship-issue reads it.
+-->
+
+## Scope
+
+<!-- What changes, in one paragraph. Which screen, which API routes it
+uses (from ../beatly-backend/docs/api/), which reasons it branches on. -->
+
+## Out of scope
+
+<!-- What deliberately stays untouched, so nobody widens the change. -->
+
+## Acceptance criteria
+
+<!-- Observable, one per line: a person or a test can say pass or fail.
+The expected empty state and each reason the screen shows are criteria
+of their own. -->
+
+- [ ]
+- [ ]
