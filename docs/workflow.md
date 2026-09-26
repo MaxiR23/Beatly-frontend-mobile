@@ -47,6 +47,7 @@ Flow for every feature, fix or non-trivial change in this repo.
      commits, writes the pull request draft and stops.
    - Conventional commits: `type(scope): short description`, lowercase,
      one line. No body: the reasoning goes in the pull request.
+   - These branch commits never reach main; only the squash does.
 
 8. **Push and open the PR**
    - Through ship-issue again, after approving its draft. The draft is
@@ -57,3 +58,9 @@ Flow for every feature, fix or non-trivial change in this repo.
      previous pull requests.
 
 9. **Merge and later could delete the branch**
+   - The merge is a squash, the only method the branch ruleset allows.
+   - The pull request lands on `main` as one commit: by default its
+     message is the pull request title plus the number GitHub appends.
+   - Both required checks, `checks` and `GitGuardian Security Checks`,
+     have to be green before the merge is allowed.
+   - See `docs/repository-setup.md` for the ruleset configuration.

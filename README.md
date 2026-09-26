@@ -54,6 +54,11 @@ Run automatically:
 | commit-msg  | commitlint                                       | yes       |
 | pre-push    | typecheck, test                                  | yes       |
 | CI (GitHub) | install --frozen-lockfile, typecheck, lint, test | no        |
+| GitGuardian | secret scan, `GitGuardian Security Checks`       | no        |
+
+The `main` branch ruleset requires two of these as status checks:
+`checks` (the CI job) and `GitGuardian Security Checks`; see
+[`docs/repository-setup.md`](docs/repository-setup.md).
 
 ## Layout
 

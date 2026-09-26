@@ -78,3 +78,6 @@ None yet.
 - `011-no-secrets-in-code-and-provider-never-named.md` — why the only
   env values are three public ones, and why the external provider is
   never named in code, docs, tests, commits or issues.
+- `012-squash-only-merges-on-main.md` — why main only takes squash
+  merges with linear history, and why each pull request lands as one
+  commit named by its title.
