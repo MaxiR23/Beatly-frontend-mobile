@@ -26,6 +26,9 @@ Flow for every feature, fix or non-trivial change in this repo.
 4. **Implement**
    - Through the agent loop: refine-issue, plan-issue, approve the plan,
      implement-issue. See the Workflow section of CLAUDE.md.
+   - A change that meets all three conditions under "Short path",
+     below, can take that path: implement-issue here, then steps 5,
+     7, 8 and 9, skipping step 6.
    - Answer any blocking questions the refinement raises before planning.
      The plan will refuse to start otherwise.
    - Tests and implementation ship in the same branch.
@@ -40,6 +43,9 @@ Flow for every feature, fix or non-trivial change in this repo.
    - Run review-changes, then verify-findings if it reports blocking or
      important findings.
    - Fix what verify-findings confirms, then run the gate again.
+   - Minor review findings get at most one fix cycle; any minor still
+     open after that is listed in the pull request for the owner to
+     decide.
 
 7. **Commit**
    - Through ship-issue, once blocking and important findings are fixed
@@ -64,3 +70,26 @@ Flow for every feature, fix or non-trivial change in this repo.
    - Both required checks, `checks` and `GitGuardian Security Checks`,
      have to be green before the merge is allowed.
    - See `docs/repository-setup.md` for the ruleset configuration.
+
+## Short path
+
+Docs-only changes can take a short path instead of the full loop. It
+applies only when all three conditions hold:
+
+1. The change touches only `.md` files or configuration that does not
+   affect the build.
+2. It does not touch `CLAUDE.md` or `.claude/agents/`.
+3. It does not touch code, dependencies, CI or tokens.
+
+The short path is:
+
+    implement-issue -> gate -> ship-issue
+
+The gate is `pnpm typecheck && pnpm lint && pnpm test`. The short path
+skips `refine-issue`, `plan-issue`, `review-changes` and
+`verify-findings`. `implement-issue` works from the issue itself: its
+scope and acceptance criteria stand in for the plan. `ship-issue` still
+prepares the draft and publishes only after the owner approves it.
+
+A change that fails any of the three conditions goes through the full
+loop; there is no partial path. When in doubt, the full loop runs.

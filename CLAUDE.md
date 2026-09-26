@@ -184,6 +184,27 @@ Work goes through the agent loop in `.claude/agents/`:
     -> review-changes -> verify-findings -> implement-issue (fix mode)
     -> ship-issue (prepare) -> (human approval) -> ship-issue (publish)
 
+Docs-only changes can take a short path instead of the full loop. It
+applies only when all three conditions hold:
+
+1. The change touches only `.md` files or configuration that does not
+   affect the build.
+2. It does not touch `CLAUDE.md` or `.claude/agents/`.
+3. It does not touch code, dependencies, CI or tokens.
+
+The short path is:
+
+    implement-issue -> gate -> ship-issue
+
+The gate is `pnpm typecheck && pnpm lint && pnpm test`. The short path
+skips `refine-issue`, `plan-issue`, `review-changes` and
+`verify-findings`. `implement-issue` works from the issue itself: its
+scope and acceptance criteria stand in for the plan. `ship-issue` still
+prepares the draft and publishes only after the owner approves it.
+
+A change that fails any of the three conditions goes through the full
+loop; there is no partial path. When in doubt, the full loop runs.
+
 Issues live in GitHub, read with `gh issue view`. Only `implement-issue`
 writes application code; the other five never touch it and write only to
 `.claude/loop/`, which is not versioned.
@@ -193,7 +214,9 @@ pull requests, and only when the repo owner invokes it. It prepares the
 branch, the commit and the pull request draft, then stops: publishing
 requires the owner's approval of the draft. Blocking and important
 findings are fixed before a pull request is opened; minor ones are the
-owner's call. No other agent touches git history or GitHub.
+owner's call. Minor review findings get at most one fix cycle; any
+minor still open after that is listed in the pull request for the owner
+to decide. No other agent touches git history or GitHub.
 
 Branches: `w_<YYMMDD>_<type>_<desc>`. Run `date` before naming one.
 Commits: conventional commits, single line, no body. The reasoning,
@@ -204,9 +227,10 @@ Decisions and merge: the repo owner.
 
 ## Review
 
-These are the repo's hard failures. `review-changes` applies them; they
-are listed here because they are project rules, not agent
-configuration.
+These are the repo's hard failures. `review-changes` applies them in the
+full loop, and `ship-issue` greps for the secret and provider ones on
+the short path; they are listed here because they are project rules,
+not agent configuration.
 
 Blocking:
 
