@@ -52,9 +52,9 @@ followed by ` (#N)` and a blank body; the person merging can still edit
 it in the merge dialog. No hook checks that final message: commitlint
 runs only in the local `commit-msg` hook, on the branch's own commits,
 and never sees what GitHub writes to main. So the pull request title is
-what carries the conventional commit format, and it has to leave room
-for the ` (#N)` suffix within the 72 characters of `header-max-length`
-in commitlint.config.js.
+what carries the conventional commit format. `header-max-length` in
+commitlint.config.js is 64, not the conventional 72, so that a title at
+the limit plus the ` (#N)` suffix still fits in 72 on main.
 
 ## After cloning
 
