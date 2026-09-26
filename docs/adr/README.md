@@ -40,7 +40,12 @@ itself. That covers both sources of obsolescence: a later record
 that replaced the decision, and the code moving on from what the
 record described.
 
-None yet.
+- `011-no-secrets-in-code-and-provider-never-named.md` says that
+  `review-changes` greps every diff for `https://` literals and for the
+  provider's name and hostnames. Since
+  `013-short-path-for-docs-only-changes.md`, a docs-only change can
+  reach a pull request without `review-changes` running; on that path
+  `ship-issue` runs the same grep before it prepares the draft.
 
 ## Files
 
@@ -81,3 +86,7 @@ None yet.
 - `012-squash-only-merges-on-main.md` — why main only takes squash
   merges with linear history, and why each pull request lands as one
   commit named by its title.
+- `013-short-path-for-docs-only-changes.md` — why a change that only
+  touches documentation can skip refinement, planning, review and
+  verification, which three conditions admit it, and why minor review
+  findings get one fix cycle.
