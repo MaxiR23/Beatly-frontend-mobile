@@ -42,6 +42,7 @@ Open it in Expo Go by scanning the printed QR code.
 
 Run manually:
 
+    pnpm gate                  typecheck, lint and test, in that order
     pnpm typecheck
     pnpm lint                  eslint + prettier --check
     pnpm test
@@ -69,6 +70,7 @@ The `main` branch ruleset requires two of these as status checks:
     docs/               workflow, testing, repository setup
     docs/adr/           architecture decision records
     docs/features/      one file per screen: routes it uses, states it draws
+    scripts/            ship.sh: branch, gate, commit, push and pull request
     .github/            CI and issue / pull request templates
 
 ## Rules

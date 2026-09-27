@@ -82,15 +82,18 @@ not belong here.
 
 ## Agent loop files
 
-`.claude/agents/` and `.claude/loop/` are kept out of version control
-per clone, through `.git/info/exclude`, not `.gitignore`:
+`.claude/agents/`, `.claude/loop/` and `.claude/skills/` are kept out
+of version control per clone, through `.git/info/exclude`, not
+`.gitignore`:
 
     .claude/agents/
     .claude/loop/
+    .claude/skills/
 
-Add those two lines after cloning. The agents are the repo owner's
-tooling and the loop directory is scratch output; neither belongs in
-the history or in a pull request.
+Add those three lines after cloning. The agents and the `ship` skill
+are the repo owner's tooling and the loop directory is scratch output;
+none of them belongs in the history or in a pull request.
+`scripts/ship.sh`, which the skill drives, is versioned.
 
 ## CI
 

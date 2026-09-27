@@ -2,20 +2,38 @@ Closes #
 
 ## What it does
 
-<!--
-Open with the problem: what happened before and why it was a bother,
-in two or three sentences. Then what the change does. Several files:
-a list, one item per file. Close with the scope on a line of its own
-and the test count, for example: "No application code. The same 128
-tests pass."
+<!-- Two or three sentences: the problem before this change, then
+what the change does. -->
 
-Then zero to five more sections, named by their content, only if they
-tell something the diff does not say on its own: a decision between
-alternatives, a scope correction, what was verified on a device or
-remains to check by hand, what stays out of scope. Names that repeat:
-Scope, Scope corrections, Verified on device, Still to check by hand,
-Worth knowing about, Out of scope.
+<!-- One item per file touched: `path`: what changed. -->
 
-No checklists, no attribution lines, no agent names, and never the
-external provider's name.
--->
+<!-- Scope on its own line, then the test count. Example:
+"No application code. The same 128 tests pass." -->
+
+## Decisions
+
+<!-- A choice between alternatives: what was chosen, why, and what
+was rejected. Delete this section if there was none. -->
+
+## Scope corrections
+
+<!-- Where the change differs from the issue, and why. Delete this
+section if there was none. -->
+
+## Verified on device
+
+<!-- What was checked on a physical device, and on which platform.
+Delete this section if nothing was. -->
+
+## Still to check by hand
+
+<!-- What the gate cannot verify: device checks, visual checks.
+Delete this section if there is nothing. -->
+
+## Out of scope
+
+<!-- What stays out and where it goes next. Delete this section if
+there is nothing. -->
+
+<!-- No checklists, no attribution, no agent names, never the
+external provider's name. -->

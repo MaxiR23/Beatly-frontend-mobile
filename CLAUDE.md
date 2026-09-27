@@ -44,13 +44,15 @@ legacy audit that drives the port lives in the old repo under
     pnpm install                 also installs the git hooks (lefthook)
 
     pnpm dev                     Expo dev server for apps/mobile
+    pnpm gate                    typecheck, lint and test; what scripts/ship.sh runs
     pnpm typecheck               tsc across all workspaces
     pnpm lint                    eslint (with import boundaries) + prettier --check
     pnpm test                    vitest in core, jest-expo in mobile
     pnpm --filter @beatly/core test -- <pattern>
     pnpm format                  to fix formatting
 
-The local gate is `pnpm typecheck`, `pnpm lint`, `pnpm test`. Hooks:
+The local gate is `pnpm gate`: `pnpm typecheck`, `pnpm lint`,
+`pnpm test`. Hooks:
 pre-commit runs eslint and prettier on the staged files, commit-msg
 runs commitlint, pre-push runs typecheck and test. CI runs all three
 and is not skippable.
@@ -159,6 +161,7 @@ that needs it opens a backend issue instead of computing it here.
     docs/                   workflow, testing, repository setup
     docs/adr/               architecture decision records
     docs/features/          one file per screen: endpoints it uses, states it draws
+    scripts/                ship.sh: the mechanical half of shipping an issue
 
 ## Definition of done
 
@@ -178,11 +181,12 @@ Tests and implementation ship in the same branch and the same PR.
 
 ## Workflow
 
-Work goes through the agent loop in `.claude/agents/`:
+Work goes through the agent loop in `.claude/agents/` and ends with
+the `ship` skill in `.claude/skills/`, which drives `scripts/ship.sh`:
 
     refine-issue -> plan-issue -> (human approval) -> implement-issue
     -> review-changes -> verify-findings -> implement-issue (fix mode)
-    -> ship-issue (prepare) -> (human approval) -> ship-issue (publish)
+    -> ship (prepare) -> (human approval) -> ship (publish)
 
 Docs-only changes can take a short path instead of the full loop. It
 applies only when all three conditions hold:
@@ -194,29 +198,38 @@ applies only when all three conditions hold:
 
 The short path is:
 
-    implement-issue -> gate -> ship-issue
+    implement-issue -> gate -> ship
 
-The gate is `pnpm typecheck && pnpm lint && pnpm test`. The short path
-skips `refine-issue`, `plan-issue`, `review-changes` and
-`verify-findings`. `implement-issue` works from the issue itself: its
-scope and acceptance criteria stand in for the plan. `ship-issue` still
-prepares the draft and publishes only after the owner approves it.
+The gate is `pnpm gate`, which runs
+`pnpm typecheck && pnpm lint && pnpm test`. The short path skips
+`refine-issue`, `plan-issue`, `review-changes` and `verify-findings`.
+`implement-issue` works from the issue itself: its scope and
+acceptance criteria stand in for the plan. The `ship` skill still
+prepares the body and publishes only after the owner approves it.
 
 A change that fails any of the three conditions goes through the full
 loop; there is no partial path. When in doubt, the full loop runs.
 
 Issues live in GitHub, read with `gh issue view`. Only `implement-issue`
-writes application code; the other five never touch it and write only to
-`.claude/loop/`, which is not versioned.
+writes application code; the other four agents never touch it and write
+only to `.claude/loop/`, which is not versioned.
 
-Only `ship-issue` creates branches, commits, pushes and opens or updates
-pull requests, and only when the repo owner invokes it. It prepares the
-branch, the commit and the pull request draft, then stops: publishing
-requires the owner's approval of the draft. Blocking and important
-findings are fixed before a pull request is opened; minor ones are the
-owner's call. Minor review findings get at most one fix cycle; any
-minor still open after that is listed in the pull request for the owner
-to decide. No other agent touches git history or GitHub.
+Only `scripts/ship.sh`, driven by the `ship` skill, creates branches,
+commits, pushes and opens or updates pull requests, and only when the
+repo owner invokes the skill. The skill names the files of the change;
+`scripts/ship.sh prepare` creates the branch if needed, runs the gate,
+commits those paths with the issue title and writes
+`.claude/loop/pr-N.meta`. The skill then writes the pull request body
+to `.claude/loop/pr-N.body.md` from `.github/pull_request_template.md`
+and stops: publishing requires the owner's approval of the body.
+`scripts/ship.sh publish` checks that nothing moved since prepare, runs
+the gate again, pushes and opens or updates the pull request. Nothing
+reads previous pull requests, commits or branches to learn their shape.
+Blocking and important findings are fixed before a pull request is
+opened; minor ones are the owner's call. Minor review findings get at
+most one fix cycle; any minor still open after that is listed in the
+pull request for the owner to decide. No agent touches git history or
+GitHub.
 
 Branches: `w_<YYMMDD>_<type>_<desc>`. Run `date` before naming one.
 Commits: conventional commits, single line, no body. The reasoning,
@@ -228,9 +241,11 @@ Decisions and merge: the repo owner.
 ## Review
 
 These are the repo's hard failures. `review-changes` applies them in the
-full loop, and `ship-issue` greps for the secret and provider ones on
-the short path; they are listed here because they are project rules,
-not agent configuration.
+full loop; they are listed here because they are project rules, not
+agent configuration. On the short path, where `review-changes` does not
+run, whoever invokes the `ship` skill greps the diff for the secret and
+provider ones before `scripts/ship.sh prepare`: the script does not read
+the diff.
 
 Blocking:
 

@@ -44,8 +44,17 @@ record described.
   `review-changes` greps every diff for `https://` literals and for the
   provider's name and hostnames. Since
   `013-short-path-for-docs-only-changes.md`, a docs-only change can
-  reach a pull request without `review-changes` running; on that path
-  `ship-issue` runs the same grep before it prepares the draft.
+  reach a pull request without `review-changes` running. On that path
+  the grep is run by hand before `scripts/ship.sh prepare`: the script
+  does not read the diff, and `014-ship-through-a-script-and-a-skill.md`
+  says why.
+- `013-short-path-for-docs-only-changes.md` names a shipping agent as
+  the last step of the loop, checking the three conditions against the
+  diff and running the provider grep on the short path. Since
+  `014-ship-through-a-script-and-a-skill.md` the loop ends with the
+  `ship` skill over `scripts/ship.sh`, neither of which reads the diff:
+  the conditions are checked by whoever picks the path, and the grep is
+  run by hand before prepare.
 - `012-squash-only-merges-on-main.md` says that lowering the commitlint
   header length limit to leave room for the " (#N)" GitHub appends is a
   follow-up. It is done: `header-max-length` in commitlint.config.js is
@@ -100,3 +109,7 @@ record described.
   touches documentation can skip refinement, planning, review and
   verification, which three conditions admit it, and why minor review
   findings get one fix cycle.
+- `014-ship-through-a-script-and-a-skill.md` — why the last step of the
+  loop is a shell script plus a skill instead of an agent, what each
+  half owns, and why nothing reads previous pull requests to learn
+  their shape.
