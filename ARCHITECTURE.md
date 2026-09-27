@@ -36,6 +36,13 @@ Arrows mean "depends on". `core` depends on nothing in the repo. `ui`
 depends on `core` for types only. `apps/mobile` depends on both. A
 workspace is imported by its package name (`@beatly/core`,
 `@beatly/ui`), never by a relative path into another workspace's `src`.
+Inside a workspace, a relative import carries the file's real
+extension (`./tokens/color.ts`, `./TrackRow.tsx`): `app.config.ts` is
+evaluated by Node's type-stripping loader, which resolves nothing
+else, and `allowImportingTsExtensions` in `tsconfig.base.json` lets
+tsc accept it. ESLint rejects the extensionless and `.js` forms, except
+inside a dynamic `import()` / `require()` or a dotted extensionless name
+like `./Foo.test`, which it does not catch.
 
 ## Ports
 

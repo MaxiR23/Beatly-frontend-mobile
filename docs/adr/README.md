@@ -50,6 +50,12 @@ record described.
   header length limit to leave room for the " (#N)" GitHub appends is a
   follow-up. It is done: `header-max-length` in commitlint.config.js is
   64, so a title at the limit plus the suffix fits in 72 on main.
+- `008-design-tokens-and-single-dark-theme.md` says the first `ui` PR
+  is `tokens.ts` and the text component, before any screen. The first
+  `ui` change (issue #9) added a single token, `color.surface.base`, in
+  `packages/ui/src/tokens/color.ts`, so the Expo bootstrap could draw
+  its dark root without a literal; the rest of the token set and the
+  text component still come before the first real screen.
 
 ## Files
 

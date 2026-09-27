@@ -9,6 +9,7 @@
   },
   "scripts": {
     "prepare": "lefthook install",
+    "dev": "pnpm --filter @beatly/mobile start",
     "typecheck": "pnpm -r run typecheck",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",

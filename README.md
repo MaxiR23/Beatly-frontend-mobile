@@ -6,9 +6,9 @@ what the Beatly API returns; the API lives in the sibling
 
 ## Status
 
-Rewrite of a previous, unmaintained app. Phase 0: the workspace,
-tooling, CI and decisions exist; no screen does yet. Screens are ported
-one at a time against the backend's response contract.
+Rewrite of a previous, unmaintained app. The Expo app boots to an
+empty dark route; no screen is ported yet. Screens are ported one at a
+time against the backend's response contract.
 
 ## Stack
 
@@ -34,8 +34,9 @@ Requires Node 24 (`.nvmrc`) and pnpm (`packageManager` in
     pnpm install               also installs the git hooks
     cp .env.example .env       three public values, no secrets
 
-The Expo dev server arrives with `apps/mobile` in Phase 1. Until then
-the repo runs its checks only.
+    pnpm dev                    Expo dev server for apps/mobile
+
+Open it in Expo Go by scanning the printed QR code.
 
 ## Checks
 
