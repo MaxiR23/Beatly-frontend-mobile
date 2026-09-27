@@ -48,10 +48,30 @@ const crossWorkspacePaths = [
   "**/apps/**",
 ];
 
+// A relative import without its real extension (./tokens/color, ./, ..) or
+// ending in a JavaScript extension (./tokens/color.js): Node's type-stripping
+// loader, which evaluates app.config.ts, resolves neither. It does not match
+// ./tokens/color.ts, ../X.tsx, ./data.json, ../assets/icon.png or a bare
+// package.
+// Known limits: a dynamic import("./x") or require("./x") is not checked
+// (no-restricted-imports only sees ImportDeclaration / ExportDeclaration), and
+// an extensionless specifier whose last segment has a dot (./Foo.test) slips
+// through.
+const relativeImportWithoutExtension = String.raw`^\.{1,2}(?:/(?:[^/]*/)*[^./]*)?$|^\.{1,2}/.*\.(?:js|jsx|mjs|cjs)$`;
+
 const restricted = (patterns, message) => ({
   "no-restricted-imports": [
     "error",
-    { patterns: patterns.map((group) => ({ group: [group], message })) },
+    {
+      patterns: [
+        ...patterns.map((group) => ({ group: [group], message })),
+        {
+          regex: relativeImportWithoutExtension,
+          message:
+            "A relative import carries the file's real extension (./x.ts, ./X.tsx). Node's type-stripping loader, which evaluates app.config.ts, resolves nothing else.",
+        },
+      ],
+    },
   ],
 });
 
@@ -81,6 +101,7 @@ export default tseslint.config(
       "**/ios/",
       "**/android/",
       "pnpm-lock.yaml",
+      "**/expo-env.d.ts",
     ],
   },
 

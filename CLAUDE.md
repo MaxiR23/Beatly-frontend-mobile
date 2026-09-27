@@ -43,7 +43,7 @@ legacy audit that drives the port lives in the old repo under
 
     pnpm install                 also installs the git hooks (lefthook)
 
-    pnpm dev                     Expo dev server for apps/mobile (arrives with Phase 1)
+    pnpm dev                     Expo dev server for apps/mobile
     pnpm typecheck               tsc across all workspaces
     pnpm lint                    eslint (with import boundaries) + prettier --check
     pnpm test                    vitest in core, jest-expo in mobile

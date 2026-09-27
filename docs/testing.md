@@ -21,17 +21,24 @@ Two runners, chosen by what the code imports, not by preference:
   needs jest-expo, the code under test is in the wrong package.
 - **jest-expo** in `packages/ui` and `apps/mobile`, only for code that
   renders or touches a native module. A pure helper that happens to
-  live in `apps/mobile` still gets a plain unit test.
+  live in `apps/mobile` still gets a plain unit test. `describe` / `it`
+  / `expect` come from explicit `@jest/globals` imports in each test
+  file, not from ambient types, so `tsconfig.base.json` keeps
+  `"types": []`. `@testing-library/react-native` stays on the 13.x
+  line: 14.x requires the separate `test-renderer` package in place of
+  `react-test-renderer`, which is not adopted yet.
 
 ## File location
 
 Tests live in a `test/` directory at the root of each workspace,
-mirroring its `src/`:
+mirroring its `src/`. In `apps/mobile`, `test/` also mirrors `app/`:
+expo-router routes get their test under `test/app/`, not `test/src/`.
 
     packages/core/src/services/playlists.ts   -> packages/core/test/services/playlists.test.ts
     packages/core/src/http/client.ts          -> packages/core/test/http/client.test.ts
     packages/ui/src/components/TrackRow.tsx   -> packages/ui/test/components/TrackRow.test.tsx
     apps/mobile/src/queries/usePlaylists.ts   -> apps/mobile/test/queries/usePlaylists.test.tsx
+    apps/mobile/app/index.tsx                 -> apps/mobile/test/app/index.test.tsx
 
 Fakes for the ports live in `packages/core/test/fakes/`, one file per
 port, and are imported by the other workspaces' tests through the
