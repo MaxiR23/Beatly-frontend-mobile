@@ -76,6 +76,14 @@ open_pr_number() {
 check_path_allowed() {
   # Under .claude/ only the project settings ship; the agents, the skills
   # and the loop directory stay per clone.
+  local path="$1"
+  while [ "${path#./}" != "$path" ]; do
+    path="${path#./}"
+  done
+  set -- "$path"
+  case "$1" in
+    .. | ../* | */.. | */../*) die "refusing to stage $1" ;;
+  esac
   case "$1" in
     .env.example | .claude/settings.json) ;;
     .claude/* | .env | .env.* | */node_modules/* | node_modules/* | \
@@ -113,6 +121,7 @@ prepare() {
 
   TYPE=$(issue_type "$issue")
   TITLE=$(gh issue view "$issue" --json title -q '.title')
+  [ "${TITLE%%[(:]*}" = "$TYPE" ] || die "title type and label differ"
   git fetch --quiet origin
 
   local branch
@@ -138,10 +147,12 @@ prepare() {
     die "branch is behind origin/main; rebasing is the owner's decision"
   fi
 
-  run_gate
-
   local path
   for path in "$@"; do check_path_allowed "$path"; done
+
+  printf '%s\n' "$TITLE" | pnpm exec commitlint || die "the issue title does not pass commitlint"
+
+  run_gate
 
   if [ "$#" -eq 0 ]; then
     if [ -n "$pr" ]; then
@@ -202,6 +213,11 @@ publish() {
   branch=$(meta_field Branch)
   commit=$(meta_field Commit)
   mode=$(meta_field Mode)
+
+  case "$branch" in
+    w_*) ;;
+    *) die "not a w_ branch: $branch" ;;
+  esac
 
   [ "$(git branch --show-current)" = "$branch" ] || die "not on $branch: prepare again"
   [ "$(git rev-parse HEAD)" = "$commit" ] || die "HEAD moved since prepare: prepare again"

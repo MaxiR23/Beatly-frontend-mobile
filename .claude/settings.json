@@ -5,9 +5,22 @@
       "Bash(pnpm typecheck)",
       "Bash(pnpm lint)",
       "Bash(pnpm test)",
+      "Bash(pnpm format)",
+      "Bash(pnpm --filter:*)",
+      "Bash(pnpm exec commitlint:*)",
       "Bash(scripts/ship.sh:*)",
       "Bash(scripts/loop-path.sh:*)",
-      "Bash(gh issue view:*)"
+      "Bash(git fetch:*)",
+      "Bash(git diff:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git ls-files:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh issue create:*)",
+      "Bash(gh issue edit:*)",
+      "Bash(gh label list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)"
     ],
     "deny": [
       "Bash(git push:*)",
