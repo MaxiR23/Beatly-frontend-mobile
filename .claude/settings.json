@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm gate)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm test)",
+      "Bash(scripts/ship.sh:*)",
+      "Bash(scripts/loop-path.sh:*)",
+      "Bash(gh issue view:*)"
+    ],
+    "deny": [
+      "Bash(git push:*)",
+      "Bash(gh pr merge:*)",
+      "Read(./.env)",
+      "Read(./.env*.local)"
+    ]
+  }
+}

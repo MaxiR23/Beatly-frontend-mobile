@@ -55,6 +55,21 @@ record described.
   `ship` skill over `scripts/ship.sh`, neither of which reads the diff:
   the conditions are checked by whoever picks the path, and the grep is
   run by hand before prepare.
+- `013-short-path-for-docs-only-changes.md` admits the short path on
+  three conditions, one of them "configuration that does not affect the
+  build", and routes it as `implement-issue -> gate -> ship-issue`.
+  Since `015-one-pass-loop-with-a-scripted-path-check.md` the path is
+  one mechanical rule, printed by `scripts/loop-path.sh` from the
+  changed files: short only when every file is a `.md` and none is
+  `CLAUDE.md` or under `.claude/` or `.github/`. The gate runs inside
+  `implement-issue` and inside `scripts/ship.sh`.
+- `014-ship-through-a-script-and-a-skill.md` says that
+  `scripts/ship.sh` refuses every path under `.claude/` and that
+  `.claude/agents/` holds five agents. Since
+  `015-one-pass-loop-with-a-scripted-path-check.md`,
+  `.claude/settings.json` is versioned and the script stages it;
+  `.claude/agents/` holds four agents, `refine-issue` having become a
+  skill next to `create-issue` and `ship`.
 - `012-squash-only-merges-on-main.md` says that lowering the commitlint
   header length limit to leave room for the " (#N)" GitHub appends is a
   follow-up. It is done: `header-max-length` in commitlint.config.js is
@@ -113,3 +128,7 @@ record described.
   loop is a shell script plus a skill instead of an agent, what each
   half owns, and why nothing reads previous pull requests to learn
   their shape.
+- `015-one-pass-loop-with-a-scripted-path-check.md` — why the loop
+  picks its path with a script instead of three conditions, runs the
+  gate and the review once, plans and refines only when the issue needs
+  it, and freezes the scope at the start.

@@ -160,12 +160,15 @@ that needs it opens a backend issue instead of computing it here.
       test/                 mirrors src/
     docs/                   workflow, testing, repository setup
     docs/adr/               architecture decision records
-    docs/features/          one file per screen: endpoints it uses, states it draws
     scripts/                ship.sh: the mechanical half of shipping an issue
+                            loop-path.sh: prints short or full from the changed files
+    .claude/settings.json   project permissions: the gate, the two scripts and
+                            gh issue view allowed; any direct git push, gh pr
+                            merge and reading .env denied
 
 ## Definition of done
 
-A screen is done when it has all five:
+A screen is done when it has all four:
 
 1. Data through `core`: a service with its schema, a query hook whose
    cache time comes from `Cache-Control`.
@@ -175,44 +178,63 @@ A screen is done when it has all five:
 4. Tests for the service's four cases: with data, expected empty,
    `ok: false` with the reason the screen needs, and transport failure.
    Component tests only for components with their own logic.
-5. Its entry in `docs/features/`.
 
 Tests and implementation ship in the same branch and the same PR.
 
 ## Workflow
 
-Work goes through the agent loop in `.claude/agents/` and ends with
-the `ship` skill in `.claude/skills/`, which drives `scripts/ship.sh`:
+Work goes through the agent loop: the agents in `.claude/agents/`, the
+skills in `.claude/skills/` and two scripts under `scripts/`. The
+orchestrator runs in an Opus 5.5 session. It dispatches each stage by name
+with a one-line prompt (issue number, plan path, mode), does not read
+the agent definitions and does not implement.
 
-    refine-issue -> plan-issue -> (human approval) -> implement-issue
-    -> review-changes -> verify-findings -> implement-issue (fix mode)
-    -> ship (prepare) -> (human approval) -> ship (publish)
+    create-issue (skill)    only to open a new issue
+    refine-issue (skill)    only when the issue lacks scope, out of scope
+                            or acceptance criteria
+    plan-issue              only when the issue touches packages/core or
+                            a screen; then the owner approves the plan
+    implement-issue
+    scripts/loop-path.sh    prints short or full
+      short -> ship
+      full  -> review-changes -> verify-findings (only on Blocking or
+               Important findings) -> implement-issue (fix mode) -> ship
+    ship (prepare) -> the owner approves the body -> ship (publish)
 
-Docs-only changes can take a short path instead of the full loop. It
-applies only when all three conditions hold:
+Scope freeze: the scope is the issue body when the loop starts. What
+comes up mid-loop is a new issue, not an addition to the running one.
 
-1. The change touches only `.md` files or configuration that does not
-   affect the build.
-2. It does not touch `CLAUDE.md` or `.claude/agents/`.
-3. It does not touch code, dependencies, CI or tokens.
+Path: `scripts/loop-path.sh` prints `short` or `full` from the changed
+files. Short only when every changed file is a `.md` and none is
+`CLAUDE.md` or under `.claude/` or `.github/`. Short skips review and
+verification and goes to `ship`; full goes to `review-changes`. There is
+no partial path: the script decides, not judgment.
 
-The short path is:
+Gate: `pnpm gate` runs `pnpm typecheck && pnpm lint && pnpm test`.
+`implement-issue` runs it once, when the plan is implemented. If it
+fails, it fixes and reruns, at most three attempts, then stops and
+reports. `scripts/ship.sh` runs it again before every commit and every
+push. CI runs it too and is not skippable.
 
-    implement-issue -> gate -> ship
-
-The gate is `pnpm gate`, which runs
-`pnpm typecheck && pnpm lint && pnpm test`. The short path skips
-`refine-issue`, `plan-issue`, `review-changes` and `verify-findings`.
-`implement-issue` works from the issue itself: its scope and
-acceptance criteria stand in for the plan. The `ship` skill still
-prepares the body and publishes only after the owner approves it.
-
-A change that fails any of the three conditions goes through the full
-loop; there is no partial path. When in doubt, the full loop runs.
+Review: one pass of `review-changes` over the diff against
+`origin/main` (`git diff origin/main...HEAD` plus what is still
+uncommitted), not over whole files. A finding needs a concrete failure scenario or a written rule it
+breaks. What the gate catches is not reported, code that follows a
+documented convention is never a finding, and zero findings is valid.
+`verify-findings` checks the Blocking and Important findings and writes
+the fix list; minors go straight to the owner. Blocking and Important
+findings are fixed before a pull request is opened. Minors are the
+owner's call: one fix cycle, no re-review, and any minor still open is
+listed in the pull request.
 
 Issues live in GitHub, read with `gh issue view`. Only `implement-issue`
-writes application code; the other four agents never touch it and write
-only to `.claude/loop/`, which is not versioned.
+writes application code; `plan-issue`, `review-changes` and
+`verify-findings` never touch it and write only to `.claude/loop/`,
+which is not versioned. The `refine-issue` skill drafts the missing
+sections of an issue and the `create-issue` skill drafts a new one, from
+`.github/ISSUE_TEMPLATE/issue.md`, with one type label and a title that
+passes commitlint; each writes to GitHub only after the owner approves
+the text.
 
 Only `scripts/ship.sh`, driven by the `ship` skill, creates branches,
 commits, pushes and opens or updates pull requests, and only when the
@@ -225,11 +247,7 @@ and stops: publishing requires the owner's approval of the body.
 `scripts/ship.sh publish` checks that nothing moved since prepare, runs
 the gate again, pushes and opens or updates the pull request. Nothing
 reads previous pull requests, commits or branches to learn their shape.
-Blocking and important findings are fixed before a pull request is
-opened; minor ones are the owner's call. Minor review findings get at
-most one fix cycle; any minor still open after that is listed in the
-pull request for the owner to decide. No agent touches git history or
-GitHub.
+No agent touches git history or GitHub.
 
 Branches: `w_<YYMMDD>_<type>_<desc>`. Run `date` before naming one.
 Commits: conventional commits, single line, no body. The reasoning,
@@ -242,10 +260,10 @@ Decisions and merge: the repo owner.
 
 These are the repo's hard failures. `review-changes` applies them in the
 full loop; they are listed here because they are project rules, not
-agent configuration. On the short path, where `review-changes` does not
-run, whoever invokes the `ship` skill greps the diff for the secret and
-provider ones before `scripts/ship.sh prepare`: the script does not read
-the diff.
+agent configuration. When `scripts/loop-path.sh` prints `short`,
+`review-changes` does not run, and whoever invokes the `ship` skill
+greps the diff for the secret and provider ones before
+`scripts/ship.sh prepare`: the script does not read the diff.
 
 Blocking:
 
@@ -273,7 +291,6 @@ Important:
 - A screen shipped without one of its four states, or a service without
   its expected-empty or transport-failure test.
 - A growable list not using the shared paginated helper and hook.
-- A screen touched without its `docs/features/` entry updated.
 
 Formatting and lint are not flagged. The gate covers those.
 
@@ -282,7 +299,6 @@ Formatting and lint are not flagged. The gate covers those.
     ARCHITECTURE.md                             packages, ports, boundaries and why
     ../beatly-backend/docs/api/conventions.md   response contract, status codes, reasons
     ../beatly-backend/docs/api/                 per-domain API documentation
-    docs/features/                              per-screen documentation
     docs/testing.md                             test conventions and file headers
     docs/workflow.md                            issue to pull request, step by step
     docs/repository-setup.md                    GitHub and local configuration

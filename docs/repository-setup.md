@@ -90,10 +90,14 @@ of version control per clone, through `.git/info/exclude`, not
     .claude/loop/
     .claude/skills/
 
-Add those three lines after cloning. The agents and the `ship` skill
-are the repo owner's tooling and the loop directory is scratch output;
-none of them belongs in the history or in a pull request.
-`scripts/ship.sh`, which the skill drives, is versioned.
+Add those three lines after cloning. The four agents (`plan-issue`,
+`implement-issue`, `review-changes`, `verify-findings`) and the three
+skills (`create-issue`, `refine-issue`, `ship`) are the repo owner's
+tooling and the loop directory is scratch output; none of them belongs
+in the history or in a pull request. `.claude/settings.json`, the
+project's permission set for the loop, is versioned, and so are
+`scripts/ship.sh` and `scripts/loop-path.sh`, which the loop drives.
+`scripts/ship.sh` refuses to stage anything else under `.claude/`.
 
 ## CI
 
