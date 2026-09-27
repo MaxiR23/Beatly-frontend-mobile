@@ -80,6 +80,13 @@ record described.
   `packages/ui/src/tokens/color.ts`, so the Expo bootstrap could draw
   its dark root without a literal; the rest of the token set and the
   text component still come before the first real screen.
+- `015-one-pass-loop-with-a-scripted-path-check.md` says
+  `.claude/settings.json` allows only "the gate commands, the two
+  scripts and `gh issue view`" without a prompt. Since issue #15, the
+  allow list also has `pnpm format`, `pnpm --filter`, `pnpm exec
+commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
+  `ls-files`), `gh issue create`, `gh issue edit`, `gh label list`,
+  `gh pr view` and `gh pr list`; the deny list is unchanged.
 
 ## Files
 

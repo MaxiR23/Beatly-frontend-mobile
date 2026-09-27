@@ -162,8 +162,12 @@ that needs it opens a backend issue instead of computing it here.
     docs/adr/               architecture decision records
     scripts/                ship.sh: the mechanical half of shipping an issue
                             loop-path.sh: prints short or full from the changed files
-    .claude/settings.json   project permissions: the gate, the two scripts and
-                            gh issue view allowed; any direct git push, gh pr
+    .claude/settings.json   project permissions: the gate commands, pnpm
+                            format, pnpm --filter, pnpm exec commitlint,
+                            the two scripts, read-only git (fetch, diff,
+                            status, log, ls-files), gh issue
+                            view/create/edit, gh label list and gh pr
+                            view/list allowed; any direct git push, gh pr
                             merge and reading .env denied
 
 ## Definition of done
@@ -261,9 +265,9 @@ Decisions and merge: the repo owner.
 These are the repo's hard failures. `review-changes` applies them in the
 full loop; they are listed here because they are project rules, not
 agent configuration. When `scripts/loop-path.sh` prints `short`,
-`review-changes` does not run, and whoever invokes the `ship` skill
-greps the diff for the secret and provider ones before
-`scripts/ship.sh prepare`: the script does not read the diff.
+`review-changes` does not run, and the `ship` skill greps the diff for
+the secret and provider ones (and for `https://`) before
+`scripts/ship.sh prepare`: the script itself does not read the diff.
 
 Blocking:
 

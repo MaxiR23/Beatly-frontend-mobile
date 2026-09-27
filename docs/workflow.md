@@ -56,8 +56,9 @@ Flow for every feature, fix or non-trivial change in this repo.
 5. **Pick the path and review**
    - `scripts/loop-path.sh` prints `short` or `full` from the changed
      files, per the rule under "Short path" below. Short goes to step 6.
-     Since nothing reviews that diff, grep it by hand for secrets and
-     the provider's name before step 6; `scripts/ship.sh` does not read
+     Since nothing reviews that diff, the `ship` skill greps it for
+     secrets and the provider's name (and for `https://`) before
+     `scripts/ship.sh prepare`; `scripts/ship.sh` itself does not read
      it.
    - Full: run `review-changes` once, over the diff against
      `origin/main` (`git diff origin/main...HEAD` plus what is still
@@ -99,6 +100,30 @@ Flow for every feature, fix or non-trivial change in this repo.
      have to be green before the merge is allowed.
    - See `docs/repository-setup.md` for the ruleset configuration.
 
+## Recovery
+
+Four cases, covering steps 4 to 7:
+
+- Three gate failures inside `implement-issue` (step 4): the owner
+  decides between a `plan-issue` addendum or `implement-issue` in fix
+  mode, with the failing output as its list.
+- A gate failure inside `scripts/ship.sh prepare` (step 6), or inside
+  `scripts/ship.sh publish` (step 7, which also runs the gate before
+  the push): run `implement-issue` in fix mode with the gate output,
+  then `prepare` again. Fixing a publish gate failure changes tracked
+  files, so `publish` would die with "uncommitted changes in tracked
+  files: prepare again" anyway.
+- Every other `scripts/ship.sh publish` failure before `git push` (not
+  on the branch, HEAD moved since prepare, uncommitted changes in
+  tracked files, a PR already exists, the open PR changed): follow the
+  script's own message and run `prepare` again. Only a failure after
+  the push and before the PR exists — where `prepare` would die with
+  "branch is pushed but has no open PR" — is retried with `publish`
+  again, never `prepare`.
+- An open decision `implement-issue` raises in issue mode or fix mode
+  (step 3 or the fix cycle of step 5): the answer goes in the
+  invocation text, verbatim.
+
 ## Short path
 
 Path: `scripts/loop-path.sh` prints `short` or `full` from the changed
@@ -119,10 +144,16 @@ skill still prepares the body and publishes only after the owner
 approves it.
 
 `.claude/settings.json` is the project's permission set for the loop:
-the gate commands, `scripts/ship.sh`, `scripts/loop-path.sh` and
-`gh issue view` run without a prompt; any direct `git push` (the script
-is the only pusher, so a force push or a push to `main` has no allowed
-form), `gh pr merge` and reading `.env` are denied. The rules match
-command prefixes, so they are a layer over the branch ruleset in
-`docs/repository-setup.md`, which is what protects `main` on the
-server; they are not the guard.
+the gate commands (`pnpm gate`, `pnpm typecheck`, `pnpm lint`,
+`pnpm test`), `pnpm format`, `pnpm --filter`, `pnpm exec commitlint`,
+`scripts/ship.sh`, `scripts/loop-path.sh`, read-only git (`fetch`,
+`diff`, `status`, `log`, `ls-files`), `gh issue view`, `gh label list`,
+`gh pr view` and `gh pr list` run without a prompt. `gh issue create`
+and `gh issue edit` are in the same allow list: each already requires
+the owner's approval of the drafted text before the `create-issue` or
+`refine-issue` skill runs it, so the prompt would only double that
+approval. Any direct `git push` (the script is the only pusher, so a
+force push or a push to `main` has no allowed form), `gh pr merge` and
+reading `.env` are denied. The rules match command prefixes, so they
+are a layer over the branch ruleset in `docs/repository-setup.md`,
+which is what protects `main` on the server; they are not the guard.
