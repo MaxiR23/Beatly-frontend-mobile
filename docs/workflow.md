@@ -6,7 +6,9 @@ Flow for every feature, fix or non-trivial change in this repo.
    - Title: `type(scope): short description`
    - Body: scope, out of scope, acceptance criteria
    - Label matching the commit type: feat, fix, docs, chore, test,
-     refactor, ci
+     refactor, ci. `scripts/ship.sh` takes the branch type from the
+     label and the commit message from the title, so the title needs
+     its scope: commitlint rejects one without it.
    - If the screen needs data the API does not offer, that is a
      backend issue first. The front does not work around a missing
      endpoint.
@@ -15,8 +17,9 @@ Flow for every feature, fix or non-trivial change in this repo.
    - From updated main: `git checkout main && git pull`
    - Naming: `w_YYMMDD_type_short_description`, underscores only
    - Check the date with `date` before naming it
-   - Or skip this step and work on main without committing: ship-issue
-     creates the branch at step 7 with the same naming.
+   - Or skip this step and work on main without committing:
+     `scripts/ship.sh prepare` creates the branch at step 7 with the
+     same naming.
 
 3. **Write a task spec, only when the issue is not enough**
    - File: `docs/tasks/NNN_short_description.md`
@@ -28,16 +31,17 @@ Flow for every feature, fix or non-trivial change in this repo.
      implement-issue. See the Workflow section of CLAUDE.md.
    - A change that meets all three conditions under "Short path",
      below, can take that path: implement-issue here, then steps 5,
-     7, 8 and 9, skipping step 6.
+     7, 8 and 9, skipping step 6. Since nothing reviews that diff,
+     grep it by hand for secrets and the provider's name before step
+     7; `scripts/ship.sh` does not read it.
    - Answer any blocking questions the refinement raises before planning.
      The plan will refuse to start otherwise.
    - Tests and implementation ship in the same branch.
    - See the definition of done in CLAUDE.md.
 
 5. **Verify locally**
-   - `pnpm typecheck`
-   - `pnpm lint`
-   - `pnpm test`
+   - `pnpm gate`: `pnpm typecheck`, `pnpm lint` and `pnpm test`, in
+     that order. `scripts/ship.sh` runs it again at steps 7 and 8.
 
 6. **Review before committing**
    - Run review-changes, then verify-findings if it reports blocking or
@@ -48,20 +52,27 @@ Flow for every feature, fix or non-trivial change in this repo.
      decide.
 
 7. **Commit**
-   - Through ship-issue, once blocking and important findings are fixed
-     and the minor ones are decided. It creates the branch if needed,
-     commits, writes the pull request draft and stops.
+   - Through the `ship` skill, once blocking and important findings
+     are fixed and the minor ones are decided. The skill names the
+     files of the change; `scripts/ship.sh prepare` creates the branch
+     if needed, runs the gate, commits those paths and writes
+     `.claude/loop/pr-N.meta`. The skill then writes the pull request
+     body and stops. The gate runs on the working tree, so a file left
+     out of the paths still has to pass it.
    - Conventional commits: `type(scope): short description`, lowercase,
      one line. No body: the reasoning goes in the pull request.
    - These branch commits never reach main; only the squash does.
 
 8. **Push and open the PR**
-   - Through ship-issue again, after approving its draft. The draft is
-     `.claude/loop/pr-N.md` and can be edited before approving: what is
-     in the file is what gets published.
-   - Body: `Closes #N` first, then what it does, scope, decisions taken
-     and what is left to check by hand on a device, shaped like the
-     previous pull requests.
+   - Through the `ship` skill again, after approving the body. The body
+     is `.claude/loop/pr-N.body.md` and can be edited before approving:
+     what is in the file is what gets published. Then
+     `scripts/ship.sh publish` checks that nothing moved since prepare,
+     runs the gate, pushes and opens or updates the pull request.
+   - Body: `Closes #N` first, then the sections of
+     `.github/pull_request_template.md` that apply, in its order. The
+     template and the skill's writing rules are the shape: nothing
+     reads previous pull requests or commits to learn it.
 
 9. **Merge and later could delete the branch**
    - The merge is a squash, the only method the branch ruleset allows.
@@ -83,13 +94,14 @@ applies only when all three conditions hold:
 
 The short path is:
 
-    implement-issue -> gate -> ship-issue
+    implement-issue -> gate -> ship
 
-The gate is `pnpm typecheck && pnpm lint && pnpm test`. The short path
-skips `refine-issue`, `plan-issue`, `review-changes` and
-`verify-findings`. `implement-issue` works from the issue itself: its
-scope and acceptance criteria stand in for the plan. `ship-issue` still
-prepares the draft and publishes only after the owner approves it.
+The gate is `pnpm gate`, which runs
+`pnpm typecheck && pnpm lint && pnpm test`. The short path skips
+`refine-issue`, `plan-issue`, `review-changes` and `verify-findings`.
+`implement-issue` works from the issue itself: its scope and
+acceptance criteria stand in for the plan. The `ship` skill still
+prepares the body and publishes only after the owner approves it.
 
 A change that fails any of the three conditions goes through the full
 loop; there is no partial path. When in doubt, the full loop runs.

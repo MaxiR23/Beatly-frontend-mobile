@@ -8,7 +8,8 @@ labels: ""
 <!--
 Title: `type(scope): short description`, lowercase, one line.
 Label: exactly one of feat, fix, docs, chore, test, refactor, ci,
-matching the type in the title. ship-issue reads it.
+matching the type in the title. scripts/ship.sh takes the branch type
+from the label and the commit message from the title.
 -->
 
 ## Scope
