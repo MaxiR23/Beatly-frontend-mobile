@@ -74,10 +74,13 @@ open_pr_number() {
 }
 
 check_path_allowed() {
+  # Under .claude/ only the project settings ship; the agents, the skills
+  # and the loop directory stay per clone.
   case "$1" in
+    .env.example | .claude/settings.json) ;;
     .claude/* | .env | .env.* | */node_modules/* | node_modules/* | \
       .expo/* | */.expo/* | ios/* | */ios/* | android/* | */android/*)
-      [ "$1" = ".env.example" ] || die "refusing to stage $1"
+      die "refusing to stage $1"
       ;;
   esac
   if [ "$1" = "pnpm-lock.yaml" ] && [ -z "$(git status --porcelain -- '*package.json')" ]; then

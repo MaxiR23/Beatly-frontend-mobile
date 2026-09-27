@@ -130,7 +130,6 @@ string comes from i18n in both languages. A parity test keeps `es` and
 | add a reusable piece of UI               | `packages/ui/src/components/`                  |
 | add text                                 | `apps/mobile/src/i18n/es/` and `en/`, same PR  |
 | decide something non-obvious             | `docs/adr/`                                    |
-| document what a screen uses and draws    | `docs/features/`                               |
 | compute across pages, rank, aggregate    | a backend issue                                |
 
 ## See also
