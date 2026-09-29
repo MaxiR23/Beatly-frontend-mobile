@@ -19,9 +19,9 @@ was dark only; no screen had a light branch.
 - `packages/ui/src/tokens/` is the single source of every visual
   value: color (surface levels, text levels, the white accent, semantic
   error and success, borders and overlays), spacing (multiples of
-  four), radius (a short scale plus `pill`), typography (roles, not
-  sizes: title, section, row, meta, badge), motion (a handful of
-  durations and one spring), icon sizes and thumbnail sizes.
+  four), radius (a short scale plus `full`), typography (roles, not
+  sizes: title, section, rowTitle, meta, label), motion (a handful of
+  durations and one spring) and icon sizes.
 - A component in `packages/ui` consumes tokens by name. A screen in
   `apps/mobile` consumes components. Neither writes a literal color,
   size, spacing, radius or font value. The rule is reviewed as
