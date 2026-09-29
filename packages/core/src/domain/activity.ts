@@ -1,4 +1,4 @@
-// INFO: the item of GET /recents. metadata is free-form on the backend; only the three keys the screen draws are read, all optional, and each is read leniently: a value that is not a string is treated as absent instead of failing the page.
+// INFO: the item of GET /recents. metadata has a fixed shape on write but is not validated on read (older rows may lack title); only the three keys the screen draws are read, all optional, and each is read leniently: a value that is not a string is treated as absent instead of failing the page.
 import { z } from "zod";
 
 export const recentEntityTypeSchema = z.enum(["album", "artist", "playlist"]);

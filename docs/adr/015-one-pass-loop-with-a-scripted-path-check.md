@@ -108,3 +108,16 @@ Why the alternatives were rejected:
 - Planning every issue: a plan earns its cost when there are routes,
   schemas and service cases to verify against the contract. A docs or
   tooling issue has none.
+
+## Amendment: gate recovery in plan mode
+
+Issue #35 amends the gate rule above; the rest of the decision stands.
+When the gate fails three times inside `implement-issue` in plan mode,
+`plan-issue` writes one addendum over the existing plan from the failing
+output, and `implement-issue` implements it without a new owner
+approval. There is at most one such addendum per issue; if that run also
+fails three times, the owner decides. In issue mode and fix mode there
+is no plan to amend, so a third failure goes to the owner as before.
+`implement-issue` cannot invoke `plan-issue` itself, so it hands back
+with the failing output and names the next stage, and the orchestrator
+dispatches it per the Recovery list of `docs/workflow.md`.

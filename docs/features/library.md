@@ -23,7 +23,9 @@ not pressable yet and there are no detail screens.
 - Covers per `source`: `user` (own playlist) uses `thumbnail_urls` as is;
   saved albums and playlists use `thumbnail_url` as a single image, or the
   placeholder when it is null.
-- Meta: `Playlist · You` for `liked` and `user`; otherwise `<Kind> · <subtitle>`
+- Meta: `Playlist` alone for `liked`, never a name or "You"; `Playlist · <name>` for `user`, where the
+  name is the profile's username or display name, and `Playlist` alone when
+  there is none; otherwise `<Kind> · <subtitle>`
   when the API sends a `subtitle`, and `<Kind>` alone when it is null. The
   contract never ties a `source` to an owner name, so "Beatly" appears only if
   the API sends it as the subtitle.
@@ -39,12 +41,12 @@ lifts above the keyboard with padding on iOS; on Android the window resizes.
 
 ## States
 
-| State            | What is drawn                                                         | i18n keys                                                        |
-| ---------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Loading          | `LoadingState`                                                        | `common:loading`                                                 |
-| With data        | the rows in the API's order                                           | `library:liked`, `library:you`, `library:kind.*`, `library:meta` |
-| Expected empty   | the liked row plus an `EmptyState` (the library is never `items: []`) | `library:empty`                                                  |
-| Error with retry | `ErrorState`, retry refetches                                         | `common:error.generic`, `common:retry`                           |
+| State            | What is drawn                                                         | i18n keys                                         |
+| ---------------- | --------------------------------------------------------------------- | ------------------------------------------------- |
+| Loading          | `LoadingState`                                                        | `common:loading`                                  |
+| With data        | the rows in the API's order                                           | `library:liked`, `library:kind.*`, `library:meta` |
+| Expected empty   | the liked row plus an `EmptyState` (the library is never `items: []`) | `library:empty`                                   |
+| Error with retry | `ErrorState`, retry refetches                                         | `common:error.generic`, `common:retry`            |
 
 The sheet also draws: idle, name too long (inline error, Create disabled),
 submitting (Create loading) and failed (inline `common:error.generic`, the sheet
@@ -55,6 +57,7 @@ stays open with the typed values).
 | Route             | Paginated                              | Cache-Control       | Reasons listed                                                                            | Branches on                                                                                             |
 | ----------------- | -------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `GET /library`    | yes, cursor, through `useInfiniteList` | `private, no-cache` | `invalid_request`, `invalid_cursor`, `unauthorized`, `upstream_error`, `upstream_timeout` | none; all draw the generic error; `invalid_cursor` is handled by the paginated helper                   |
+| `GET /profile/me` | no                                     | `private, no-cache` | `profile_not_found`                                                                       | none; feeds the own playlists' name                                                                     |
 | `POST /playlists` | no                                     | `private, no-cache` | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                   | none; all draw the generic error inline; `invalid_request` is prevented by the 1 to 200 character check |
 
 The first page starts with the fixed entry (`id: "liked"`, `title: "liked"`, a

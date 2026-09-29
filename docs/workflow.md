@@ -50,8 +50,10 @@ Flow for every feature, fix or non-trivial change in this repo.
    - `implement-issue` runs `pnpm gate` (`pnpm typecheck`, `pnpm lint`
      and `pnpm test`, in that order) once, when the plan is
      implemented. If it fails, it fixes and reruns, at most three
-     attempts, then stops and reports. `scripts/ship.sh` runs the gate
-     again at steps 6 and 7.
+     attempts, then stops and reports. In plan mode the report names a
+     `plan-issue` addendum as the next stage; that one addendum per
+     issue is implemented without a new owner approval (see Recovery).
+     `scripts/ship.sh` runs the gate again at steps 6 and 7.
 
 5. **Pick the path and review**
    - `scripts/loop-path.sh` prints `short` or `full` from the changed
@@ -104,9 +106,12 @@ Flow for every feature, fix or non-trivial change in this repo.
 
 Four cases, covering steps 4 to 7:
 
-- Three gate failures inside `implement-issue` (step 4): the owner
-  decides between a `plan-issue` addendum or `implement-issue` in fix
-  mode, with the failing output as its list.
+- Three gate failures inside `implement-issue` (step 4) in plan mode:
+  `plan-issue` writes an addendum from the failing output and
+  `implement-issue` implements it without a new approval. If that run
+  also fails three times, or the first failure was in issue mode or fix
+  mode, the owner decides between a `plan-issue` addendum or
+  `implement-issue` in fix mode, with the failing output as its list.
 - A gate failure inside `scripts/ship.sh prepare` (step 6), or inside
   `scripts/ship.sh publish` (step 7, which also runs the gate before
   the push): run `implement-issue` in fix mode with the gate output,

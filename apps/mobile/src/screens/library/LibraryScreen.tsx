@@ -1,5 +1,5 @@
 // INFO: the library tab: the fixed liked entry, then own playlists and saved albums and playlists newest first, and the create-playlist sheet.
-import type { LibraryEntry } from "@beatly/core";
+import { profileName, type LibraryEntry } from "@beatly/core";
 import { color, layout, spacing } from "@beatly/ui";
 import {
   EmptyState,
@@ -16,6 +16,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { useT } from "../../adapters/i18n.ts";
 import { useLibrary } from "../../queries/useLibrary.ts";
+import { useProfile } from "../../queries/useProfile.ts";
 import { AccountButton } from "../account/AccountButton.tsx";
 import { CreatePlaylistSheet } from "./CreatePlaylistSheet.tsx";
 
@@ -24,13 +25,15 @@ export function LibraryScreen() {
   const tc = useT("common");
   const insets = useSafeAreaInsets();
   const library = useLibrary();
+  const profile = useProfile();
+  const name = profile.data ? profileName(profile.data) : null;
   const [creating, setCreating] = useState(false);
 
   const clearance = { paddingBottom: floatingTabBarClearance(insets.bottom) };
 
   const toRow = (entry: LibraryEntry) => {
     const liked = entry.source === "liked";
-    const owner = liked || entry.source === "user" ? t("you") : entry.subtitle;
+    const owner = liked ? null : entry.source === "user" ? name : entry.subtitle;
     const kind = t(entry.kind === "album" ? "kind.album" : "kind.playlist");
     return {
       title: liked ? t("liked") : entry.title,

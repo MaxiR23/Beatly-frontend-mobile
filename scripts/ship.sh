@@ -96,11 +96,26 @@ check_path_allowed() {
   fi
 }
 
+stage_paths() {
+  # git add fails on a path whose deletion is already staged (it is in
+  # neither the worktree nor the index); skip those, add the rest.
+  local path
+  local -a to_add=()
+  for path in "$@"; do
+    if [ ! -e "$path" ] && [ -z "$(git ls-files -- "$path")" ] &&
+      [ -n "$(git diff --cached --name-only --diff-filter=D -- "$path")" ]; then
+      continue
+    fi
+    to_add+=("$path")
+  done
+  [ "${#to_add[@]}" -eq 0 ] || git add -- "${to_add[@]}"
+}
+
 commit_paths() {
   # $1: amend or new. Remaining args: paths.
   local mode="$1"
   shift
-  git add -- "$@"
+  stage_paths "$@"
   local attempt
   for attempt in 1 2; do
     if [ "$mode" = "amend" ]; then
@@ -109,7 +124,7 @@ commit_paths() {
       git commit -F - <<<"$TITLE" && return 0
     fi
     # A hook may have rewritten files: re-stage the same paths once.
-    [ "$attempt" = 1 ] && git add -- "$@"
+    [ "$attempt" = 1 ] && stage_paths "$@"
   done
   die "the commit failed twice; see the hook output above"
 }

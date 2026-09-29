@@ -152,6 +152,16 @@ Query hooks are tested with a fresh `QueryClient` per test and the
 when tested, render with the same providers and assert what is drawn
 for each state, not how the service was called.
 
+The `apps/mobile` tests set TanStack Query's notify scheduler globally:
+`apps/mobile/test/setup/queryNotify.ts`, loaded by the jest
+`setupFiles`, calls `notifyManager.setScheduler(queueMicrotask)`. By
+default query updates are delivered on `setTimeout(0)`, which fires
+after the `act()` scope of `render` or `findBy` has closed and prints
+act() warnings. On a microtask the update lands inside the scope of the
+render or event that caused it. This does not silence anything: an
+update that still escapes `act()` still warns. Do not set a scheduler
+per test.
+
 Fixture bodies are copied from the backend's `docs/api/` examples or
 captured from a dev run with any signed parameter removed. A fixture
 never contains a token, a real user id or the external provider's name.

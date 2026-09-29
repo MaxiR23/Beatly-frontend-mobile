@@ -30,8 +30,8 @@ issues.
   albums are a `Carousel`.
 - Bottom: the list clears the floating tab bar with `floatingTabBarClearance`.
 
-The top artist circle draws the `Cover` placeholder: the contract has no artist image (`data.artist`
-is `id` and `name`). An artist photo would be a backend issue.
+The top artist circle draws `data.artist.thumbnail_url`, or the `Cover` placeholder when it is null
+(including responses cached before the field existed, for up to an hour).
 
 ## Platform differences
 
@@ -86,5 +86,5 @@ Route `/search`, the third tab. Nothing in the screen navigates.
 
 Recents surviving an app kill and relaunch on iOS and Android, the debounce feel and the
 keyboard's "search" return key, tapping a recent row with the keyboard open, the on-screen heights
-of the bar and rows, the artist circle placeholder, album covers from the real API, the last row
+of the bar and rows, the artist image from the real API, album covers from the real API, the last row
 clearing the tab bar, and results in es and en on iOS 26+ and Android.

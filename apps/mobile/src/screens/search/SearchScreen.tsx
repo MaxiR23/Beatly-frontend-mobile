@@ -170,7 +170,7 @@ export function SearchScreen() {
             testID="search-artist"
             size="large"
             shape="round"
-            urls={[]}
+            urls={artist.thumbnail_url !== null ? [artist.thumbnail_url] : []}
             title={artist.name}
             subtitle={t("artist")}
           />

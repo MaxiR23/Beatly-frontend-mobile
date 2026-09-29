@@ -130,7 +130,7 @@ export const genrePlaylistFixture: GenrePlaylistListItem = {
 };
 
 export const searchResultFixture: SearchResult = {
-  artist: { id: "ar1", name: "Test Artist" },
+  artist: { id: "ar1", name: "Test Artist", thumbnail_url: "test://img/ar1" },
   songs: [
     {
       track_id: "t1",
