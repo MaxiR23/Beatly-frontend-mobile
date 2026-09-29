@@ -1,4 +1,4 @@
-// INFO: the app's single QueryClient factory. staleTime comes from the max-age of the response (a core success outcome), never from a literal.
+// INFO: the app's single QueryClient factory. staleTime comes from the max-age of the response (a core success outcome), never from a literal. A failed query is not retried: the error state has its own retry, and each attempt can cost the full client timeout.
 import { DEFAULT_MAX_AGE_SECONDS } from "@beatly/core";
 import { QueryClient } from "@tanstack/react-query";
 
@@ -19,7 +19,7 @@ export function staleTimeFor(data: unknown): number {
 export function createQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
-      queries: { staleTime: (query) => staleTimeFor(query.state.data) },
+      queries: { staleTime: (query) => staleTimeFor(query.state.data), retry: false },
     },
   });
 }

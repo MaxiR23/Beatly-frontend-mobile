@@ -1,0 +1,13 @@
+{
+  "title": "Log in",
+  "email": "Email",
+  "password": "Password",
+  "submit": "Log in",
+  "noAccount": "Don't have an account?",
+  "goToSignUp": "Create an account",
+  "errors": {
+    "invalidCredentials": "Wrong email or password",
+    "emailNotConfirmed": "Confirm your email before logging in. Check your inbox.",
+    "rateLimited": "Too many attempts. Try again in a few minutes."
+  }
+}

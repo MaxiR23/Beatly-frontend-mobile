@@ -16,6 +16,9 @@ interface InputProps {
   placeholder?: string;
   error?: string;
   secureTextEntry?: boolean;
+  keyboardType?: "default" | "email-address";
+  autoCapitalize?: "none" | "sentences" | "words";
+  autoComplete?: "email" | "password" | "new-password" | "name";
 }
 
 export function Input({
@@ -25,6 +28,9 @@ export function Input({
   placeholder,
   error,
   secureTextEntry,
+  keyboardType,
+  autoCapitalize,
+  autoComplete,
 }: InputProps) {
   return (
     <View style={styles.column}>
@@ -40,6 +46,9 @@ export function Input({
         onChangeText={onChangeText}
         placeholder={placeholder}
         secureTextEntry={secureTextEntry}
+        keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+        autoComplete={autoComplete}
         style={[styles.input, { borderColor: error ? color.status.error : color.surface.border }]}
       />
       {error ? (

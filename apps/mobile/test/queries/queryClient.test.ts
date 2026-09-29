@@ -5,6 +5,7 @@
 // Tested:
 // - createQueryClient staleTime from the max-age of a core outcome
 // - staleTimeFor
+// - a failed query is not retried
 //
 // What is covered:
 // - fresh within max-age, stale without Cache-Control, stale for data that is not an outcome
@@ -22,7 +23,12 @@ import { createQueryClient, staleTimeFor } from "../../src/queries/queryClient.t
 
 const auth: AuthPort = {
   getAccessToken: () => Promise.resolve(null),
+  getStatus: () => Promise.resolve("signed_out"),
   onAuthChange: () => () => undefined,
+  signIn: () => Promise.resolve({ kind: "success" }),
+  signUp: () => Promise.resolve({ kind: "confirmation_sent" }),
+  signOut: () => Promise.resolve({ kind: "success" }),
+  confirmEmail: () => Promise.resolve({ kind: "success" }),
 };
 const log: LogPort = {
   debug: () => undefined,
@@ -78,6 +84,16 @@ describe("createQueryClient", () => {
     await fetchThing();
     await fetchThing();
     expect(send).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("failed queries", () => {
+  it("does not retry a failed query", async () => {
+    const queryClient = createQueryClient();
+    current = queryClient;
+    const queryFn = jest.fn(() => Promise.reject(new Error("boom")));
+    await expect(queryClient.query({ queryKey: ["fail"], queryFn })).rejects.toThrow("boom");
+    expect(queryFn).toHaveBeenCalledTimes(1);
   });
 });
 

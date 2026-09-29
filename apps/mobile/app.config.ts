@@ -1,7 +1,7 @@
 // INFO: Expo app config; reads the dark surface token instead of a literal color.
-// INFO: expo-system-ui and expo-splash-screen have no import anywhere: they act
-// through Expo's own config plugins (applied because the packages are installed),
-// so they stay declared as dependencies even though nothing imports them.
+// INFO: expo-system-ui acts only through its config plugin (applied because the
+// package is installed). expo-splash-screen is configured by its plugin and
+// imported by the root layout to hold the splash until the session is known.
 // typedRoutes stays off: it generates .expo/types/, which CI never has.
 import { color } from "@beatly/ui";
 import type { ExpoConfig } from "expo/config";

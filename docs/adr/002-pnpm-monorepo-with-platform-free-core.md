@@ -32,8 +32,10 @@ imports the library, and one in-memory fake for tests.
 only, and never fetches.
 
 Wiring is a factory, not a container: `createCore({ http, auth,
-player, config, log, storage })` returns the services, and the app
-calls it once at start. Workspaces are imported by package name;
+player, log, storage })` returns the services, and the app calls it
+once at start. Until a `config` port has a consumer in `core`, the
+three public env values are read in `apps/mobile/src/env.ts` and
+passed to the adapters that need them. Workspaces are imported by package name;
 `exports` in each `package.json` points at `src/index.ts` so no build
 step is needed for typecheck or tests.
 

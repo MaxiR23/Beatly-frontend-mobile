@@ -69,6 +69,7 @@ The `main` branch ruleset requires two of these as status checks:
     packages/ui/        design tokens and components
     docs/               workflow, testing, repository setup
     docs/adr/           architecture decision records
+    docs/features/      one file per screen: routes it uses, states it draws
     scripts/            ship.sh: branch, gate, commit, push and pull request
                         loop-path.sh: short or full, from the changed files
     .github/            CI and issue / pull request templates

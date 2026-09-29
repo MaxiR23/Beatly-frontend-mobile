@@ -139,3 +139,7 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
   picks its path with a script instead of three conditions, runs the
   gate and the review once, plans and refines only when the issue needs
   it, and freezes the scope at the start.
+- `016-queries-do-not-retry-automatically.md` — why the query client sets
+  `retry: false`, so an error reaches the screen within the HTTP
+  client's 15 seconds instead of about 67, and the error state's retry
+  is the only one.

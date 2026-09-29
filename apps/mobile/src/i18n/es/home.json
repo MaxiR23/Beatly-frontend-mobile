@@ -1,0 +1,6 @@
+{
+  "greeting": "Hola, {{name}}",
+  "greetingNoName": "Hola",
+  "logout": "Cerrar sesión",
+  "profileNotFound": "No encontramos tu perfil. Cierra sesión e inténtalo más tarde."
+}

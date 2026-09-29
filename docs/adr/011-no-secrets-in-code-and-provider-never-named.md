@@ -34,8 +34,8 @@ own docs already refer to it only as "the external provider".
   is "the external provider". Identifiers, hostnames and id formats
   that reveal it do not appear either. Fixtures captured from a dev run
   are scrubbed before they are committed.
-- `review-changes` greps every diff for `https://` literals outside the
-  config adapter and for the provider's name and hostnames as the repo
+- `review-changes` greps every diff for `https://` literals outside
+  `apps/mobile/src/env.ts` and for the provider's name and hostnames as the repo
   owner lists them in the invocation.
 
 ## Consequences

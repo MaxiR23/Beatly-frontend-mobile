@@ -162,6 +162,7 @@ that needs it opens a backend issue instead of computing it here.
       test/                 mirrors src/
     docs/                   workflow, testing, repository setup
     docs/adr/               architecture decision records
+    docs/features/          one file per screen: endpoints it uses, states it draws
     scripts/                ship.sh: the mechanical half of shipping an issue
                             loop-path.sh: prints short or full from the changed files
     .claude/settings.json   project permissions: the gate commands, pnpm
@@ -174,7 +175,7 @@ that needs it opens a backend issue instead of computing it here.
 
 ## Definition of done
 
-A screen is done when it has all four:
+A screen is done when it has all five:
 
 1. Data through `core`: a service with its schema, a query hook whose
    cache time comes from `Cache-Control`.
@@ -184,6 +185,7 @@ A screen is done when it has all four:
 4. Tests for the service's four cases: with data, expected empty,
    `ok: false` with the reason the screen needs, and transport failure.
    Component tests only for components with their own logic.
+5. Its entry in `docs/features/`.
 
 Tests and implementation ship in the same branch and the same PR.
 
@@ -297,6 +299,7 @@ Important:
 - A screen shipped without one of its four states, or a service without
   its expected-empty or transport-failure test.
 - A growable list not using the shared paginated helper and hook.
+- A screen touched without its `docs/features/` entry updated.
 
 Formatting and lint are not flagged. The gate covers those.
 
@@ -306,6 +309,7 @@ Formatting and lint are not flagged. The gate covers those.
     DESIGN.md                                   which token serves which visual role
     ../beatly-backend/docs/api/conventions.md   response contract, status codes, reasons
     ../beatly-backend/docs/api/                 per-domain API documentation
+    docs/features/                              per-screen documentation
     docs/testing.md                             test conventions and file headers
     docs/workflow.md                            issue to pull request, step by step
     docs/repository-setup.md                    GitHub and local configuration
