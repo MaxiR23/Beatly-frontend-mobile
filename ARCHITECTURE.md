@@ -21,6 +21,16 @@ enforced by ESLint (`eslint.config.js`), not by habit.
   component receives data and callbacks as props and draws them with
   tokens. It never fetches, never reads a query, never imports the app,
   and never translates: text arrives already translated.
+
+  `apps/mobile/app.config.ts` imports `@beatly/ui`'s main entry
+  (`packages/ui/src/index.ts`) and is evaluated under Node by Expo's
+  config loader, which cannot parse `react-native`'s source. So nothing
+  reachable from that main entry may import `react-native`, directly or
+  transitively. A token or component that needs `react-native` (for
+  example `StyleSheet.hairlineWidth`) lives behind the separate
+  `@beatly/ui/native` entry (`packages/ui/src/native.ts`) instead, which
+  `app.config.ts` never imports.
+
 - **`@beatly/mobile`** is the only place that knows it is a phone. It
   holds the expo-router routes, the screens, the TanStack Query hooks
   over `core` services, the i18n namespaces, and one adapter per

@@ -4,3 +4,11 @@ packages:
 
 allowBuilds:
   lefthook: true
+
+# The conflict is inside Expo SDK 57: react-native-reanimated 4.7 requires
+# react-native-worklets 0.13, while expo-modules-core 57 declares it accepts
+# at most 0.10. Remove this rule when expo-modules-core accepts 0.13 or on
+# the next SDK upgrade.
+peerDependencyRules:
+  allowedVersions:
+    "expo-modules-core>react-native-worklets": "0.13"

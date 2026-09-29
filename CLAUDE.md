@@ -155,7 +155,8 @@ that needs it opens a backend issue instead of computing it here.
       src/services/         use cases, one file per API domain
       test/                 mirrors src/; fakes under test/fakes/
     packages/ui/
-      src/tokens/           color, spacing, radius, typography, motion
+      src/tokens/           color, spacing, radius, typography, motion,
+                            icon, border, shadow, palette
       src/components/
       test/                 mirrors src/
     docs/                   workflow, testing, repository setup
@@ -301,6 +302,7 @@ Formatting and lint are not flagged. The gate covers those.
 ## See also
 
     ARCHITECTURE.md                             packages, ports, boundaries and why
+    DESIGN.md                                   which token serves which visual role
     ../beatly-backend/docs/api/conventions.md   response contract, status codes, reasons
     ../beatly-backend/docs/api/                 per-domain API documentation
     docs/testing.md                             test conventions and file headers

@@ -169,6 +169,20 @@ export default tseslint.config(
     },
   },
 
+  // packages/ui's main entry and its tokens: apps/mobile/app.config.ts
+  // evaluates this entry under Node, which cannot parse react-native's
+  // source. react-native-dependent tokens go in packages/ui/src/native.ts,
+  // which this pattern does not match.
+  {
+    files: ["packages/ui/src/index.ts", "packages/ui/src/tokens/**/*.ts"],
+    rules: {
+      ...restricted(
+        ["react-native"],
+        "apps/mobile/app.config.ts evaluates @beatly/ui's main entry under Node, which cannot parse react-native's source. Move this into packages/ui/src/native.ts.",
+      ),
+    },
+  },
+
   // apps/mobile: adapter-only libraries stay in their adapter.
   {
     files: ["apps/mobile/**/*.{ts,tsx}"],
