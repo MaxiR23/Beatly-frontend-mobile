@@ -146,8 +146,8 @@ describe("request", () => {
 
   it("fails with an auth outcome when the access token cannot be read", async () => {
     const auth: AuthPort = {
+      ...createFakeAuth().port,
       getAccessToken: () => Promise.reject(new Error("no session")),
-      onAuthChange: () => () => undefined,
     };
     const { client, http } = setup(
       { "GET /thing": () => ({ body: { ok: true, data: null } }) },
@@ -163,8 +163,8 @@ describe("request", () => {
   it("fails with a timeout outcome when the access token read does not settle", async () => {
     vi.useFakeTimers();
     const auth: AuthPort = {
+      ...createFakeAuth().port,
       getAccessToken: () => new Promise<string | null>(() => undefined),
-      onAuthChange: () => () => undefined,
     };
     const { client, http, log } = setup(
       { "GET /thing": () => ({ body: { ok: true, data: null } }) },

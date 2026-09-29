@@ -22,7 +22,7 @@ void i18n.init({
   lng: resolveLanguage(getLocales().at(0)?.languageCode),
   fallbackLng: fallbackLanguage,
   supportedLngs: [...supportedLanguages],
-  ns: ["common", "showcase"],
+  ns: ["common", "login", "signUp", "authCallback", "home"],
   defaultNS: "common",
   interpolation: { escapeValue: false },
   initAsync: false,

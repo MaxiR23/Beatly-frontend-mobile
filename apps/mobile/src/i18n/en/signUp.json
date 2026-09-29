@@ -1,0 +1,21 @@
+{
+  "title": "Create an account",
+  "name": "Name",
+  "email": "Email",
+  "password": "Password",
+  "submit": "Sign up",
+  "haveAccount": "Already have an account?",
+  "goToLogin": "Log in",
+  "nameTooLong": "Use {{max}} characters or fewer",
+  "rules": { "minLength": "At least {{min}} characters" },
+  "errors": {
+    "weakPassword": "That password is too weak. Try a different one.",
+    "userAlreadyExists": "An account with that email already exists",
+    "invalidEmail": "Enter a valid email",
+    "rateLimited": "Too many attempts. Try again in a few minutes."
+  },
+  "sent": {
+    "message": "We sent a confirmation link to {{email}}. Open it on this device to finish.",
+    "backToLogin": "Back to log in"
+  }
+}

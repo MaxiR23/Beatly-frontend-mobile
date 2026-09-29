@@ -1,7 +1,6 @@
-// INFO: the index route; renders the Phase 1 showcase until the login
-// screen replaces it.
-import { ShowcaseScreen } from "../src/screens/showcase/ShowcaseScreen.tsx";
+// INFO: the index route; renders the signed-in placeholder until the tabs replace it.
+import { HomeScreen } from "../src/screens/home/HomeScreen.tsx";
 
 export default function Index() {
-  return <ShowcaseScreen />;
+  return <HomeScreen />;
 }

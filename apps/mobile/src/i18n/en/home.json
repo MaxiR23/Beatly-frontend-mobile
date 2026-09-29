@@ -1,0 +1,6 @@
+{
+  "greeting": "Hi, {{name}}",
+  "greetingNoName": "Hi",
+  "logout": "Log out",
+  "profileNotFound": "We couldn't find your profile. Log out and try again later."
+}

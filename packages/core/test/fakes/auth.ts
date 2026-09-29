@@ -10,6 +10,11 @@ export function createFakeAuth(token: string | null = "test-token"): FakeAuth {
   const listeners = new Set<(change: AuthChange) => void>();
   const port: AuthPort = {
     getAccessToken: () => Promise.resolve(token),
+    getStatus: () => Promise.resolve(token === null ? "signed_out" : "signed_in"),
+    signIn: () => Promise.resolve({ kind: "success" }),
+    signUp: () => Promise.resolve({ kind: "confirmation_sent" }),
+    signOut: () => Promise.resolve({ kind: "success" }),
+    confirmEmail: () => Promise.resolve({ kind: "success" }),
     onAuthChange(listener) {
       listeners.add(listener);
       return () => {

@@ -1,0 +1,13 @@
+{
+  "title": "Iniciar sesión",
+  "email": "Email",
+  "password": "Contraseña",
+  "submit": "Iniciar sesión",
+  "noAccount": "¿No tienes una cuenta?",
+  "goToSignUp": "Crear una cuenta",
+  "errors": {
+    "invalidCredentials": "Email o contraseña incorrectos",
+    "emailNotConfirmed": "Confirma tu email antes de iniciar sesión. Revisa tu bandeja de entrada.",
+    "rateLimited": "Demasiados intentos. Vuelve a intentarlo en unos minutos."
+  }
+}

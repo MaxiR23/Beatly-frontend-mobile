@@ -1,5 +1,16 @@
-// INFO: public entry of @beatly/core: ports, the envelope, the HTTP client and the paginated helper.
-export type { AuthChange, AuthPort } from "./ports/auth.ts";
+// INFO: public entry of @beatly/core: ports, the envelope, the HTTP client, the paginated helper and the services.
+export type {
+  AuthChange,
+  AuthFailure,
+  AuthFailureReason,
+  AuthPort,
+  AuthResult,
+  AuthStatus,
+  EmailLink,
+  SignInInput,
+  SignUpInput,
+  SignUpResult,
+} from "./ports/auth.ts";
 export type { HttpMethod, HttpPort, HttpRequest, HttpResponse } from "./ports/http.ts";
 export type { LogFields, LogPort } from "./ports/log.ts";
 export {
@@ -21,3 +32,7 @@ export { DEFAULT_TIMEOUT_MS, createHttpClient } from "./http/client.ts";
 export type { HttpClient, HttpClientDeps, QueryParams, RequestOptions } from "./http/client.ts";
 export { fetchPage } from "./http/paginated.ts";
 export type { FetchPageOptions, PageResult } from "./http/paginated.ts";
+export { profileName, profileSchema } from "./domain/profile.ts";
+export type { Profile } from "./domain/profile.ts";
+export { createProfileService, profileReasonSchema } from "./services/profile.ts";
+export type { ProfileReason, ProfileService } from "./services/profile.ts";

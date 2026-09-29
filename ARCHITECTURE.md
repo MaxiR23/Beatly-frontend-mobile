@@ -65,11 +65,15 @@ in-memory fake in `packages/core/test/fakes/`.
 | Port      | What core needs                                                        | Adapter               | Library behind it                             | Fake for tests                           |
 | --------- | ---------------------------------------------------------------------- | --------------------- | --------------------------------------------- | ---------------------------------------- |
 | `http`    | send a request, get status, headers and raw body back                  | `adapters/http.ts`    | the platform `fetch`                          | handlers per route; unknown route throws |
-| `auth`    | the current access token, sign in / up / out, session change events    | `adapters/auth.ts`    | `@supabase/supabase-js` + `expo-secure-store` | a fixed token                            |
+| `auth`    | the access token, sign in / up / out, confirmEmail, getStatus, events  | `adapters/auth.ts`    | `@supabase/supabase-js` + `expo-secure-store` | a fixed token                            |
 | `player`  | load a URL, play, pause, seek, queue the next one, playback events     | `adapters/player.ts`  | `expo-audio`                                  | in-memory player with a manual clock     |
-| `config`  | API base URL, Supabase URL and anon key, platform, app version         | `adapters/config.ts`  | Expo env and constants                        | an object literal                        |
 | `log`     | `debug`, `info`, `warn`, `error` with structured fields                | `adapters/log.ts`     | `console`, the only file allowed to           | an array                                 |
 | `storage` | get / set / delete small key-value data (recent searches, preferences) | `adapters/storage.ts` | async storage                                 | a `Map`                                  |
+
+There is no `config` port for now: the three public build-time values (API
+base URL, auth URL and anon key) are read in `apps/mobile/src/env.ts`, which
+`createCore()` passes to the adapters that need them. A `config` row is added
+if `core` ever needs a value that is not one of those.
 
 `adapters/i18n.ts` wraps `i18next` and `expo-localization`. It has no
 port because `core` never translates.
@@ -143,10 +147,12 @@ string comes from i18n in both languages. A parity test keeps `es` and
 | add a reusable piece of UI               | `packages/ui/src/components/`                  |
 | add text                                 | `apps/mobile/src/i18n/es/` and `en/`, same PR  |
 | decide something non-obvious             | `docs/adr/`                                    |
+| document what a screen uses and draws    | `docs/features/`                               |
 | compute across pages, rank, aggregate    | a backend issue                                |
 
 ## See also
 
     CLAUDE.md          hard rules, definition of done, review severities
     docs/adr/          the decisions behind this layout, one record each
+    docs/features/     one file per screen: routes it uses, states it draws
     docs/testing.md    runners, fakes, what each test asserts
