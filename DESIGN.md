@@ -46,6 +46,8 @@ value: the value lives once, in the token file.
 | Width of a floating tab bar item                                                                              | `layout.tabItemWidth`                            |
 | Height of a filter chip                                                                                       | `layout.chipHeight`                              |
 | Width / height of the genre accent bar in a genre row                                                         | `layout.genreBarWidth` / `layout.genreBarHeight` |
+| Side of the cover in a list row                                                                               | `layout.rowCover`                                |
+| Side of the cover in the large list row (search top artist)                                                   | `layout.rowCoverLarge`                           |
 
 ## Floating surfaces
 

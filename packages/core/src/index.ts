@@ -48,3 +48,30 @@ export { genreCategorySchema, genrePlaylistListItemSchema, genreSchema } from ".
 export type { Genre, GenrePlaylistListItem } from "./domain/genre.ts";
 export { createGenresService } from "./services/genres.ts";
 export type { GenresService } from "./services/genres.ts";
+export type { StoragePort } from "./ports/storage.ts";
+export {
+  searchAlbumSchema,
+  searchArtistRefSchema,
+  searchArtistSchema,
+  searchResultSchema,
+  searchSongSchema,
+} from "./domain/search.ts";
+export type {
+  SearchAlbum,
+  SearchArtist,
+  SearchArtistRef,
+  SearchResult,
+  SearchSong,
+} from "./domain/search.ts";
+export { createSearchService } from "./services/search.ts";
+export type { SearchService } from "./services/search.ts";
+export {
+  RECENT_SEARCHES_KEY,
+  RECENT_SEARCHES_LIMIT,
+  createRecentSearchesService,
+} from "./services/recentSearches.ts";
+export type {
+  RecentSearchesOutcome,
+  RecentSearchesService,
+  StorageFailure,
+} from "./services/recentSearches.ts";

@@ -1,0 +1,19 @@
+{
+  "title": "Search",
+  "placeholder": "Artists, songs or albums",
+  "clear": "Clear search",
+  "recent": {
+    "title": "Recent",
+    "clearAll": "Clear all",
+    "remove": "Remove {{query}}",
+    "empty": "Search for artists, songs and albums."
+  },
+  "artist": "Artist",
+  "songs": "Songs",
+  "albums": "Albums",
+  "song": {
+    "meta": "{{artists}} · {{duration}}",
+    "artistSeparator": ", "
+  },
+  "empty": "No results for “{{query}}”"
+}

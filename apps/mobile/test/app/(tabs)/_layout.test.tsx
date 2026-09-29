@@ -6,7 +6,7 @@
 // - the tabs layout on the floating bar branch
 //
 // What is covered:
-// - four icon-only tabs with accessible labels, home selected on "/", explore and each placeholder from its tab
+// - four icon-only tabs with accessible labels, home selected on "/", explore, search and the library placeholder from their tabs
 //
 // Run with: pnpm --filter @beatly/mobile test -- _layout
 //
@@ -57,16 +57,27 @@ describe("the tabs layout", () => {
     expect(isSelected(screen.getByRole("tab", { name: en.tabs.explore }))).toBe(true);
   });
 
-  it.each([
-    ["search", en.tabs.search],
-    ["library", en.tabs.library],
-  ])("opens the %s placeholder from its tab", async (testID, label) => {
+  it("opens search from its tab", async () => {
     mockCore.set("signed_in");
     await renderRouter("app", { initialUrl: "/" });
     await screen.findByTestId("home");
-    await fireEvent.press(screen.getByRole("tab", { name: label }));
-    expect(await screen.findByTestId(testID)).toBeTruthy();
-    expect(screen.getByText(en.tabs.placeholder)).toBeTruthy();
-    expect(isSelected(screen.getByRole("tab", { name: label }))).toBe(true);
+    await fireEvent.press(screen.getByRole("tab", { name: en.tabs.search }));
+    expect(await screen.findByTestId("search")).toBeTruthy();
+    expect(await screen.findByText(en.search.recent.empty)).toBeTruthy();
+    expect(screen.queryByText(en.tabs.placeholder)).toBeNull();
+    expect(isSelected(screen.getByRole("tab", { name: en.tabs.search }))).toBe(true);
   });
+
+  it.each([["library", en.tabs.library]])(
+    "opens the %s placeholder from its tab",
+    async (testID, label) => {
+      mockCore.set("signed_in");
+      await renderRouter("app", { initialUrl: "/" });
+      await screen.findByTestId("home");
+      await fireEvent.press(screen.getByRole("tab", { name: label }));
+      expect(await screen.findByTestId(testID)).toBeTruthy();
+      expect(screen.getByText(en.tabs.placeholder)).toBeTruthy();
+      expect(isSelected(screen.getByRole("tab", { name: label }))).toBe(true);
+    },
+  );
 });

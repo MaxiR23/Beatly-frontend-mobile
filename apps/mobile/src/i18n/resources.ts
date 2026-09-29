@@ -6,6 +6,7 @@ import enExplore from "./en/explore.json";
 import enGenre from "./en/genre.json";
 import enHome from "./en/home.json";
 import enLogin from "./en/login.json";
+import enSearch from "./en/search.json";
 import enSignUp from "./en/signUp.json";
 import enTabs from "./en/tabs.json";
 import esAuthCallback from "./es/authCallback.json";
@@ -14,6 +15,7 @@ import esExplore from "./es/explore.json";
 import esGenre from "./es/genre.json";
 import esHome from "./es/home.json";
 import esLogin from "./es/login.json";
+import esSearch from "./es/search.json";
 import esSignUp from "./es/signUp.json";
 import esTabs from "./es/tabs.json";
 
@@ -26,6 +28,7 @@ export const resources = {
     home: esHome,
     explore: esExplore,
     genre: esGenre,
+    search: esSearch,
     tabs: esTabs,
   },
   en: {
@@ -36,6 +39,7 @@ export const resources = {
     home: enHome,
     explore: enExplore,
     genre: enGenre,
+    search: enSearch,
     tabs: enTabs,
   },
 } as const;

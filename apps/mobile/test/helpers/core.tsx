@@ -7,7 +7,7 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the profile, recents, playlists and genres fixtures and fakes, and the page builder)
+// (the profile, recents, playlists, genres and search fixtures and fakes, the in-memory storage, and the page builder)
 //
 import type {
   ActivityService,
@@ -23,7 +23,11 @@ import type {
   Profile,
   ProfileService,
   RecentEntity,
+  SearchResult,
+  SearchService,
+  StoragePort,
 } from "@beatly/core";
+import { createRecentSearchesService } from "@beatly/core";
 import { jest } from "@jest/globals";
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
@@ -71,6 +75,46 @@ export const genrePlaylistFixture: GenrePlaylistListItem = {
   category: "Hits",
   thumbnail_urls: ["test://img/1", "test://img/2", "test://img/3", "test://img/4"],
 };
+
+export const searchResultFixture: SearchResult = {
+  artist: { id: "ar1", name: "Test Artist" },
+  songs: [
+    {
+      track_id: "t1",
+      title: "Test Song",
+      artists: [{ id: "ar1", name: "Test Artist" }],
+      album: "Test Album",
+      album_id: "al1",
+      duration_seconds: 225,
+      thumbnail_url: "test://img/t1",
+    },
+  ],
+  albums: [
+    {
+      id: "al1",
+      playlist_id: "pl1",
+      title: "Test Album",
+      artists: [{ id: "ar1", name: "Test Artist" }],
+      year: "2024",
+      thumbnail_url: null,
+    },
+  ],
+};
+
+export function memoryStorage(initial: Record<string, string> = {}): StoragePort {
+  const values = new Map<string, string>(Object.entries(initial));
+  return {
+    get: (key) => Promise.resolve(values.get(key) ?? null),
+    set: (key, value) => {
+      values.set(key, value);
+      return Promise.resolve();
+    },
+    delete: (key) => {
+      values.delete(key);
+      return Promise.resolve();
+    },
+  };
+}
 
 export function pageOf<T>(
   items: T[],
@@ -137,6 +181,8 @@ export function makeCore(
     listGenres?: GenresService["listGenres"];
     listGenrePlaylists?: GenresService["listGenrePlaylists"];
     listGenreCategories?: GenresService["listGenreCategories"];
+    search?: SearchService["search"];
+    storage?: StoragePort;
   } = {},
 ) {
   const auth = options.auth ?? makeAuth();
@@ -158,6 +204,11 @@ export function makeCore(
   const listGenreCategories = jest.fn<GenresService["listGenreCategories"]>(
     options.listGenreCategories ?? (() => Promise.resolve(pageOf<string>([]))),
   );
+  const search = jest.fn<SearchService["search"]>(
+    options.search ??
+      (() => Promise.resolve({ kind: "success", data: searchResultFixture, maxAgeSeconds: 0 })),
+  );
+  const storage = options.storage ?? memoryStorage();
   const log = makeLog();
   const core: Core = {
     activity: { listRecents },
@@ -166,6 +217,8 @@ export function makeCore(
     log,
     playlists: { listPlaylists },
     profile: { getMyProfile },
+    recentSearches: createRecentSearchesService({ storage, log }),
+    search: { search },
   };
   return {
     core,
@@ -177,6 +230,8 @@ export function makeCore(
     listGenres,
     listGenrePlaylists,
     listGenreCategories,
+    search,
+    storage,
   };
 }
 
