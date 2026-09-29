@@ -41,10 +41,15 @@ None.
 
 ## Navigation
 
-The `(tabs)` group of the root stack, signed in only. `index` is Home; `explore` is a nested stack
-(`explore/index`, `explore/genres/[slug]`); `search` is the search screen
-(`search.md`); `library` is the library screen
-(`library.md`).
+The `(tabs)` group of the root stack, signed in only. The four tabs are the
+groups `(home)`, `(explore)`, `(search)` and `(library)`; their route names are
+the group names, and the URLs do not change: `/`, `/explore`, `/search`,
+`/library`. One `_layout.tsx`, in the array group
+`(home,explore,search,library)`, declares a stack for each tab, so every tab
+keeps its own back stack and shares the detail routes declared in that folder:
+`/album/[id]` (`album.md`). The Explore tab's genre route
+(`explore/genres/[slug]`) lives in its own group. A new detail screen is one
+file in the array folder (ADR 020).
 
 ## i18n namespace
 

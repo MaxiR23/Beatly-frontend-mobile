@@ -35,28 +35,52 @@ value: the value lives once, in the token file.
 
 ## Spacing and layout (`spacing`, `layout`)
 
-| Role                                                                                                          | Token                                            |
-| ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| Spacing scale, multiples of four                                                                              | `spacing.xxs` … `spacing.xxl`                    |
-| Screen edge padding                                                                                           | `layout.gutter`                                  |
-| Gap between items in a list/row                                                                               | `layout.gap`                                     |
-| Minimum touch target padding (`hitSlop`)                                                                      | `layout.hitSlop`                                 |
-| Height of a form control (input, form button) or a floating tab bar item, and side of its square touch target | `layout.controlHeight`                           |
-| Width of a carousel card and side of its cover                                                                | `layout.carouselCard`                            |
-| Side of the header account avatar                                                                             | `layout.avatar`                                  |
-| Width of a floating tab bar item                                                                              | `layout.tabItemWidth`                            |
-| Height of a filter chip                                                                                       | `layout.chipHeight`                              |
-| Width / height of the genre accent bar in a genre row                                                         | `layout.genreBarWidth` / `layout.genreBarHeight` |
-| Side of the cover in a list row                                                                               | `layout.rowCover`                                |
-| Side of the cover in the medium list row (library)                                                            | `layout.rowCoverMedium`                          |
-| Side of the cover in the large list row (search top artist)                                                   | `layout.rowCoverLarge`                           |
+| Role                                                                                                          | Token                                                           |
+| ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Spacing scale, multiples of four                                                                              | `spacing.xxs` … `spacing.xxl`                                   |
+| Screen edge padding                                                                                           | `layout.gutter`                                                 |
+| Gap between items in a list/row                                                                               | `layout.gap`                                                    |
+| Minimum touch target padding (`hitSlop`)                                                                      | `layout.hitSlop`                                                |
+| Height of a form control (input, form button) or a floating tab bar item, and side of its square touch target | `layout.controlHeight`                                          |
+| Width of a carousel card and side of its cover                                                                | `layout.carouselCard`                                           |
+| Side of the header account avatar                                                                             | `layout.avatar`                                                 |
+| Width of a floating tab bar item                                                                              | `layout.tabItemWidth`                                           |
+| Height of a filter chip                                                                                       | `layout.chipHeight`                                             |
+| Width / height of the genre accent bar in a genre row                                                         | `layout.genreBarWidth` / `layout.genreBarHeight`                |
+| Side of the cover in a list row                                                                               | `layout.rowCover`                                               |
+| Side of the cover in the medium list row (library)                                                            | `layout.rowCoverMedium`                                         |
+| Side of the cover in the large list row (search top artist)                                                   | `layout.rowCoverLarge`                                          |
+| Side of the cover in a detail hero                                                                            | `layout.heroCover`                                              |
+| Width of the track-number column in a track row                                                               | `layout.trackNumber`                                            |
+| Width of a detail skeleton placeholder bar (title, meta, row title, row meta), as a share of its row          | `layout.skeletonBar.title` / `.meta` / `.rowTitle` / `.rowMeta` |
 
 ## Floating surfaces
 
 `GlassSurface` from `@beatly/ui/native`, the only importer of
 `expo-glass-effect`: native glass on iOS 26+, elsewhere
 `color.surface.raised` with a `border.width` border in
-`color.surface.border` and `shadow.floating`.
+`color.surface.border` and `shadow.floating`. Variants: `bar` (the tab bar pill),
+`sheet` and `circle` (a `layout.controlHeight` circle for the floating detail
+buttons).
+
+## Detail screen base
+
+`DetailScreen` from `@beatly/ui/native`. Used by the album screen; the playlist
+and artist screens will reuse it. It draws statically: nothing moves with the
+scroll.
+
+- Hero: a `layout.heroCover` cover in `radius.sm` with `shadow.cover`, centered
+  over a wash. The wash is `color.surface.base` until a dominant color is known,
+  then a vertical gradient from that color to `color.surface.base`, drawn at once.
+- Title: `typography.title` under the hero. The base reserves no space for an action
+  row; the screen owns the gap below its own title block.
+- Floating back and more buttons: `GlassSurface` `circle` fixed over the hero, in
+  every state. The more button is drawn only when the screen passes a `more` prop.
+- Skeleton: `DetailSkeleton`, a static cover block, a title bar, a meta bar and six
+  track rows in `color.surface.border`, bar widths from `layout.skeletonBar`.
+- Track row: `TrackRow`, a `meta` number in a `layout.trackNumber` column, the
+  title in `typography.rowTitle` and the artists in `typography.meta`;
+  unavailable uses `color.text.disabled`.
 
 ## Radius (`radius`)
 

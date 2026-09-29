@@ -7,10 +7,12 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the profile, recents, playlists, library, created playlist, genres and search fixtures and fakes, the in-memory storage, and the page builder)
+// (the profile, recents, playlists, library, created playlist, genres, search and album fixtures and fakes, the in-memory storage, and the page builder)
 //
 import type {
   ActivityService,
+  Album,
+  AlbumService,
   AuthPort,
   Genre,
   GenrePlaylistListItem,
@@ -154,6 +156,55 @@ export const searchResultFixture: SearchResult = {
   ],
 };
 
+export const albumFixture: Album = {
+  id: "MPREb_1",
+  title: "Test Album",
+  year: "2013",
+  artists: [{ id: "ar1", name: "Test Artist" }],
+  track_count: 13,
+  duration_seconds: 4440,
+  audio_playlist_id: "OLAK5uy_1",
+  thumbnail_url: "test://img/al1",
+  tracks: [
+    {
+      track_id: "t1",
+      title: "First Song",
+      artists: [{ id: "ar1", name: "Test Artist" }],
+      duration_seconds: 248,
+      is_available: true,
+      track_number: 1,
+    },
+    {
+      track_id: null,
+      title: "Hidden Song",
+      artists: [],
+      duration_seconds: null,
+      is_available: false,
+      track_number: 2,
+    },
+  ],
+  other_versions: [
+    {
+      id: "MPREb_2",
+      title: "Other Version",
+      artists: [{ id: "ar1", name: "Test Artist" }],
+      year: "2014",
+      audio_playlist_id: "OLAK5uy_2",
+      thumbnail_url: "test://img/al2",
+    },
+  ],
+  related_recommendations: [
+    {
+      id: "MPREb_3",
+      title: "Recommended Album",
+      artists: [{ id: "ar2", name: "Another Artist" }],
+      year: null,
+      audio_playlist_id: null,
+      thumbnail_url: null,
+    },
+  ],
+};
+
 export function memoryStorage(initial: Record<string, string> = {}): StoragePort {
   const values = new Map<string, string>(Object.entries(initial));
   return {
@@ -237,6 +288,7 @@ export function makeCore(
     listGenrePlaylists?: GenresService["listGenrePlaylists"];
     listGenreCategories?: GenresService["listGenreCategories"];
     search?: SearchService["search"];
+    getAlbum?: AlbumService["getAlbum"];
     storage?: StoragePort;
   } = {},
 ) {
@@ -270,10 +322,15 @@ export function makeCore(
     options.search ??
       (() => Promise.resolve({ kind: "success", data: searchResultFixture, maxAgeSeconds: 0 })),
   );
+  const getAlbum = jest.fn<AlbumService["getAlbum"]>(
+    options.getAlbum ??
+      (() => Promise.resolve({ kind: "success", data: albumFixture, maxAgeSeconds: 0 })),
+  );
   const storage = options.storage ?? memoryStorage();
   const log = makeLog();
   const core: Core = {
     activity: { listRecents },
+    album: { getAlbum },
     auth,
     genres: { listGenres, listGenrePlaylists, listGenreCategories },
     library: { listLibrary },
@@ -296,6 +353,7 @@ export function makeCore(
     listGenrePlaylists,
     listGenreCategories,
     search,
+    getAlbum,
     storage,
   };
 }

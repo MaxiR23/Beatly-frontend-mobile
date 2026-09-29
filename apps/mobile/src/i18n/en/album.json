@@ -1,0 +1,14 @@
+{
+  "back": "Back",
+  "kind": "Album",
+  "metaSeparator": " · ",
+  "artistSeparator": ", ",
+  "songs_one": "{{count}} song",
+  "songs_other": "{{count}} songs",
+  "durationMinutes": "{{minutes}} min",
+  "durationHours": "{{hours}} h {{minutes}} min",
+  "otherVersions": "Other versions",
+  "recommended": "Recommended",
+  "empty": "This album has no songs available.",
+  "notAvailable": "This album is not available."
+}

@@ -1,0 +1,14 @@
+{
+  "back": "Volver",
+  "kind": "Álbum",
+  "metaSeparator": " · ",
+  "artistSeparator": ", ",
+  "songs_one": "{{count}} canción",
+  "songs_other": "{{count}} canciones",
+  "durationMinutes": "{{minutes}} min",
+  "durationHours": "{{hours}} h {{minutes}} min",
+  "otherVersions": "Otras versiones",
+  "recommended": "Recomendados",
+  "empty": "Este álbum no tiene canciones disponibles.",
+  "notAvailable": "Este álbum no está disponible."
+}

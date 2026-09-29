@@ -10,13 +10,14 @@
 // - loading, the liked entry first then the rest in the API's order, the next page, the empty message, the generic error with retry
 // - own playlists named after the profile (username, display name, or the kind alone when it fails)
 // - creating a playlist, the disabled and too-long name states, the inline failure, an omitted description, cancel, es
+// - a saved album opens the album, a playlist entry does not
 //
 // Run with: pnpm --filter @beatly/mobile test -- LibraryScreen
 //
 // SEE: apps/mobile/src/screens/library/LibraryScreen.tsx
 
 import type { HttpOutcome, LibraryEntry, PageResult } from "@beatly/core";
-import { afterEach, describe, expect, it } from "@jest/globals";
+import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -37,7 +38,11 @@ import {
   Wrapper,
 } from "../../helpers/core.tsx";
 
+const mockPush = jest.fn();
+jest.mock("expo-router", () => ({ useRouter: () => ({ push: mockPush }) }));
+
 afterEach(async () => {
+  mockPush.mockClear();
   await i18n.changeLanguage("en");
 });
 
@@ -273,5 +278,19 @@ describe("LibraryScreen", () => {
     expect(await screen.findByText(resources.es.library.liked)).toBeTruthy();
     expect(screen.getByText(resources.es.library.title)).toBeTruthy();
     expect(screen.getByText(resources.es.library.empty)).toBeTruthy();
+  });
+
+  it("opens a saved album", async () => {
+    await setup({ listLibrary: full() });
+    await fireEvent.press(await screen.findByRole("button", { name: "Saved album" }));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: "/album/[id]", params: { id: "a1" } });
+  });
+
+  it("does not open a playlist entry", async () => {
+    await setup({ listLibrary: full() });
+    await screen.findByText("Saved playlist");
+    expect(screen.queryByRole("button", { name: "Saved playlist" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Road trip" })).toBeNull();
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });

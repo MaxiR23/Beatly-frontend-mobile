@@ -10,6 +10,7 @@ import {
   Text,
   floatingTabBarClearance,
 } from "@beatly/ui/native";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,6 +24,7 @@ import { CreatePlaylistSheet } from "./CreatePlaylistSheet.tsx";
 export function LibraryScreen() {
   const t = useT("library");
   const tc = useT("common");
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const library = useLibrary();
   const profile = useProfile();
@@ -45,6 +47,12 @@ export function LibraryScreen() {
           : entry.thumbnail_url !== null
             ? [entry.thumbnail_url]
             : [],
+      onPress:
+        entry.kind === "album"
+          ? () => {
+              router.push({ pathname: "/album/[id]", params: { id: entry.id } });
+            }
+          : undefined,
     };
   };
 

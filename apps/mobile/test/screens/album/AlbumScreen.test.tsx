@@ -1,0 +1,219 @@
+// apps/mobile/test/screens/album/AlbumScreen.test.tsx
+//
+// Tests for the album screen.
+//
+// Tested:
+// - AlbumScreen
+//
+// What is covered:
+// - the skeleton, the title, artists and meta line with plural forms, null year and count omitted
+// - one spacing token between the title block and the tracks
+// - the tracks with an unavailable one disabled, the empty tracks message, hidden empty carousels
+// - opening another album from a carousel, not available for invalid_request without retry
+// - the generic error with retry for upstream_error and a transport failure, back and its fallback, es
+//
+// Run with: pnpm --filter @beatly/mobile test -- AlbumScreen
+//
+// SEE: apps/mobile/src/screens/album/AlbumScreen.tsx
+
+import type { Album, HttpOutcome } from "@beatly/core";
+import { afterEach, describe, expect, it, jest } from "@jest/globals";
+import { fireEvent, render, screen } from "@testing-library/react-native";
+import { StyleSheet, type ViewStyle } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+
+import { spacing } from "@beatly/ui";
+import { i18n } from "../../../src/adapters/i18n.ts";
+import { resources } from "../../../src/i18n/resources.ts";
+import { AlbumScreen } from "../../../src/screens/album/AlbumScreen.tsx";
+import { albumFixture, makeCore, stateFlag, Wrapper } from "../../helpers/core.tsx";
+
+const mockPush = jest.fn();
+const mockBack = jest.fn();
+const mockReplace = jest.fn();
+let mockCanGoBack = true;
+jest.mock("expo-router", () => ({
+  useRouter: () => ({
+    push: mockPush,
+    back: mockBack,
+    replace: mockReplace,
+    canGoBack: () => mockCanGoBack,
+  }),
+  useLocalSearchParams: () => ({ id: "MPREb_1" }),
+}));
+jest.mock("../../../src/adapters/imageColors.ts", () => ({
+  getDominantColor: () => Promise.resolve({ kind: "unavailable" }),
+  peekDominantColor: () => undefined,
+}));
+
+afterEach(async () => {
+  mockPush.mockClear();
+  mockBack.mockClear();
+  mockReplace.mockClear();
+  mockCanGoBack = true;
+  await i18n.changeLanguage("en");
+});
+
+const en = resources.en;
+const es = resources.es;
+
+const metrics = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 0, left: 0, right: 0, bottom: 0 },
+};
+
+async function setup(options: Parameters<typeof makeCore>[0] = {}) {
+  const ctx = makeCore(options);
+  await render(
+    <Wrapper core={ctx.core}>
+      <SafeAreaProvider initialMetrics={metrics}>
+        <AlbumScreen />
+      </SafeAreaProvider>
+    </Wrapper>,
+  );
+  return ctx;
+}
+
+// The top bar draws its own back button first; the floating one is last.
+function backButton() {
+  const button = screen.getAllByRole("button", { name: en.album.back }).at(-1);
+  if (button === undefined) throw new Error("no back button");
+  return button;
+}
+
+function albumOf(album: Album) {
+  return () =>
+    Promise.resolve<HttpOutcome<Album>>({ kind: "success", data: album, maxAgeSeconds: 0 });
+}
+
+describe("AlbumScreen", () => {
+  it("draws the skeleton while the album loads", async () => {
+    await setup({ getAlbum: () => new Promise(() => undefined) });
+    expect(screen.getByTestId("detail-skeleton")).toBeTruthy();
+    expect(screen.getByLabelText(en.common.loading)).toBeTruthy();
+  });
+
+  it("asks for the album of the route", async () => {
+    const ctx = await setup();
+    await screen.findByTestId("album");
+    expect(ctx.getAlbum).toHaveBeenCalledWith("MPREb_1");
+  });
+
+  it("draws the title, the artists and the meta line with plural forms", async () => {
+    await setup();
+    expect((await screen.findAllByText("Test Album")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Test Artist").length).toBeGreaterThan(0);
+    expect(screen.getByText("Album · 2013 · 13 songs · 1 h 14 min")).toBeTruthy();
+  });
+
+  it("leaves exactly one spacing token between the title block and the tracks", async () => {
+    await setup();
+    const sectionsNode = await screen.findByTestId("album-sections");
+    const sections: ViewStyle = StyleSheet.flatten(sectionsNode.props.style as ViewStyle);
+    const info: ViewStyle = StyleSheet.flatten(
+      screen.getByTestId("album-info").props.style as ViewStyle,
+    );
+    expect(sections.gap).toBe(spacing.xl);
+    // The info block adds no padding or margin below itself: a second one would double the gap.
+    expect(info.paddingBottom).toBeUndefined();
+    expect(info.marginBottom).toBeUndefined();
+    expect(info.paddingVertical).toBeUndefined();
+    expect(info.padding).toBeUndefined();
+  });
+
+  it("draws a singular song count", async () => {
+    await setup({ getAlbum: albumOf({ ...albumFixture, track_count: 1, duration_seconds: 240 }) });
+    expect(await screen.findByText("Album · 2013 · 1 song · 4 min")).toBeTruthy();
+  });
+
+  it("omits the year and count segments when they are null", async () => {
+    await setup({ getAlbum: albumOf({ ...albumFixture, year: null, track_count: null }) });
+    expect(await screen.findByText("Album · 1 h 14 min")).toBeTruthy();
+  });
+
+  it("draws the tracks and marks an unavailable one as disabled", async () => {
+    await setup();
+    expect(await screen.findByText("First Song")).toBeTruthy();
+    const hidden = screen.getByText("Hidden Song");
+    expect(hidden).toBeTruthy();
+    expect(stateFlag(hidden.parent?.parent ?? hidden, "disabled")).toBe(true);
+    expect(stateFlag(screen.getByText("First Song").parent?.parent ?? hidden, "disabled")).toBe(
+      false,
+    );
+  });
+
+  it("draws the empty tracks message and still the album when it has no tracks", async () => {
+    await setup({ getAlbum: albumOf({ ...albumFixture, tracks: [] }) });
+    expect(await screen.findByText(en.album.empty)).toBeTruthy();
+    expect(screen.getAllByText("Test Album").length).toBeGreaterThan(0);
+    expect(screen.queryByText(en.common.retry)).toBeNull();
+  });
+
+  it("draws both carousels with data", async () => {
+    await setup();
+    expect(await screen.findByTestId("album-other-versions")).toBeTruthy();
+    expect(screen.getByText(en.album.otherVersions)).toBeTruthy();
+    expect(screen.getByTestId("album-recommended")).toBeTruthy();
+    expect(screen.getByText(en.album.recommended)).toBeTruthy();
+  });
+
+  it("hides other versions and recommended when they are empty", async () => {
+    await setup({
+      getAlbum: albumOf({ ...albumFixture, other_versions: [], related_recommendations: [] }),
+    });
+    await screen.findByText("First Song");
+    expect(screen.queryByTestId("album-other-versions")).toBeNull();
+    expect(screen.queryByTestId("album-recommended")).toBeNull();
+  });
+
+  it("opens another album from a carousel card", async () => {
+    await setup();
+    await fireEvent.press(await screen.findByRole("button", { name: "Other Version" }));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: "/album/[id]", params: { id: "MPREb_2" } });
+  });
+
+  it("draws not available for invalid_request, without retry", async () => {
+    await setup({
+      getAlbum: () => Promise.resolve({ kind: "api_failure", reason: "invalid_request" }),
+    });
+    expect(await screen.findByText(en.album.notAvailable)).toBeTruthy();
+    expect(screen.queryByText(en.common.retry)).toBeNull();
+  });
+
+  it("draws the generic error with retry for upstream_error and refetches", async () => {
+    const ctx = await setup({
+      getAlbum: () => Promise.resolve({ kind: "api_failure", reason: "upstream_error" }),
+    });
+    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(screen.queryByText(en.album.notAvailable)).toBeNull();
+    const before = ctx.getAlbum.mock.calls.length;
+    await fireEvent.press(screen.getByRole("button", { name: en.common.retry }));
+    await screen.findByText(en.common.error.generic);
+    expect(ctx.getAlbum.mock.calls.length).toBeGreaterThan(before);
+  });
+
+  it("draws the generic error for a transport failure", async () => {
+    await setup({
+      getAlbum: () => Promise.resolve({ kind: "transport_failure", cause: "network" }),
+    });
+    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(screen.getByRole("button", { name: en.common.retry })).toBeTruthy();
+  });
+
+  it("goes back, or replaces with / when there is nothing to go back to", async () => {
+    await setup();
+    await screen.findByText("First Song");
+    await fireEvent.press(backButton());
+    expect(mockBack).toHaveBeenCalledTimes(1);
+    mockCanGoBack = false;
+    await fireEvent.press(backButton());
+    expect(mockReplace).toHaveBeenCalledWith("/");
+  });
+
+  it("draws in es", async () => {
+    await i18n.changeLanguage("es");
+    await setup();
+    expect(await screen.findByText("Álbum · 2013 · 13 canciones · 1 h 14 min")).toBeTruthy();
+    expect(screen.getByText(es.album.otherVersions)).toBeTruthy();
+  });
+});

@@ -9,6 +9,7 @@
 // - loading, both sections, a hidden empty section, the empty state, the generic error with retry
 // - own playlists named after the profile, and the line of each recent by type (en and es)
 // - the next page of playlists at the end of the carousel
+// - an album recent opens the album, an artist or playlist recent does not
 // - the avatar initials, the account sheet and logout in every state, en and es
 //
 // Run with: pnpm --filter @beatly/mobile test -- HomeScreen
@@ -16,7 +17,7 @@
 // SEE: apps/mobile/src/screens/home/HomeScreen.tsx
 
 import type { HttpOutcome, PageResult, PlaylistListItem, RecentEntity } from "@beatly/core";
-import { afterEach, describe, expect, it } from "@jest/globals";
+import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -33,7 +34,11 @@ import {
   Wrapper,
 } from "../../helpers/core.tsx";
 
+const mockPush = jest.fn();
+jest.mock("expo-router", () => ({ useRouter: () => ({ push: mockPush }) }));
+
 afterEach(async () => {
+  mockPush.mockClear();
   await i18n.changeLanguage("en");
 });
 
@@ -256,5 +261,36 @@ describe("HomeScreen", () => {
     expect(await screen.findByText(resources.es.home.recents)).toBeTruthy();
     expect(screen.getByText(resources.es.home.playlists)).toBeTruthy();
     expect(screen.getByText("Álbum · Some artist")).toBeTruthy();
+  });
+
+  it("opens an album recent", async () => {
+    await setup({ listRecents: recents([recentFixture]) });
+    await fireEvent.press(await screen.findByRole("button", { name: "Recent album" }));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: "/album/[id]", params: { id: "a1" } });
+  });
+
+  it("does not open an artist or playlist recent", async () => {
+    const meta = { subtitle: null, thumbnail_url: null };
+    await setup({
+      listRecents: recents([
+        {
+          ...recentFixture,
+          entity_type: "artist",
+          entity_id: "ar1",
+          metadata: { title: "An artist", ...meta },
+        },
+        {
+          ...recentFixture,
+          entity_type: "playlist",
+          entity_id: "pl1",
+          metadata: { title: "A playlist", ...meta },
+        },
+      ]),
+    });
+    await screen.findByText("An artist");
+    expect(screen.getByText("A playlist")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "An artist" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "A playlist" })).toBeNull();
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });

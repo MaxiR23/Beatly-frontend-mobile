@@ -14,6 +14,7 @@ import {
   Text,
   floatingTabBarClearance,
 } from "@beatly/ui/native";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -35,6 +36,7 @@ export const SEARCH_DEBOUNCE_MS = 300;
 export function SearchScreen() {
   const t = useT("search");
   const tc = useT("common");
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const [text, setText] = useState("");
   const trimmed = text.trim();
@@ -64,6 +66,9 @@ export function SearchScreen() {
     subtitle: album.artists.length > 0 ? artistNames(album.artists) : undefined,
     urls: album.thumbnail_url !== null ? [album.thumbnail_url] : [],
     shape: "square",
+    onPress: () => {
+      router.push({ pathname: "/album/[id]", params: { id: album.id } });
+    },
   });
 
   let body;

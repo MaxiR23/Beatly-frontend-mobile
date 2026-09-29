@@ -19,6 +19,7 @@ import { Platform, Text } from "react-native";
 
 import { GlassSurface, isGlassAvailable } from "../../src/components/GlassSurface.tsx";
 import { color } from "../../src/tokens/color.ts";
+import { layout } from "../../src/tokens/spacing.ts";
 
 interface ReactNativeView {
   View: unknown;
@@ -63,6 +64,18 @@ describe("GlassSurface", () => {
     expect(screen.getByText("inside")).toBeTruthy();
     expect(screen.getByTestId("surface")).not.toHaveStyle({
       backgroundColor: color.surface.raised,
+    });
+  });
+
+  it("draws the circle variant as a control-height circle", async () => {
+    await render(
+      <GlassSurface variant="circle" testID="surface">
+        <Text>inside</Text>
+      </GlassSurface>,
+    );
+    expect(screen.getByTestId("surface")).toHaveStyle({
+      width: layout.controlHeight,
+      height: layout.controlHeight,
     });
   });
 

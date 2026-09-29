@@ -78,6 +78,9 @@ if `core` ever needs a value that is not one of those.
 `adapters/i18n.ts` wraps `i18next` and `expo-localization`. It has no
 port because `core` never translates.
 
+`adapters/imageColors.ts` wraps `react-native-image-colors`. It has no
+port because `core` never needs a color (ADR 019).
+
 The list grows by one row per adapter, in the same PR as the adapter,
 and the library's name is added to the adapter-only list in
 `eslint.config.js` in that same PR. The exception is a library that draws UI:

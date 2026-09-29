@@ -1,6 +1,7 @@
 // INFO: wires the adapters and the services once, at app start; takes no argument so route tests can replace this module.
 import {
   createActivityService,
+  createAlbumService,
   createGenresService,
   createHttpClient,
   createLibraryService,
@@ -11,6 +12,7 @@ import {
 } from "@beatly/core";
 import type {
   ActivityService,
+  AlbumService,
   AuthPort,
   GenresService,
   LibraryService,
@@ -29,6 +31,7 @@ import { readPublicEnv } from "./env.ts";
 
 export interface Core {
   readonly activity: ActivityService;
+  readonly album: AlbumService;
   readonly auth: AuthPort;
   readonly genres: GenresService;
   readonly library: LibraryService;
@@ -54,6 +57,7 @@ export function createCore(): Core {
   });
   return {
     activity: createActivityService(client),
+    album: createAlbumService(client),
     auth,
     genres: createGenresService(client),
     library: createLibraryService(client),

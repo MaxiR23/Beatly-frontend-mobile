@@ -6,8 +6,8 @@ The search tab: recent queries kept on the device, and the top artist, songs and
 
 Find music by text. While the field is empty the user sees their recent queries and can run,
 remove or clear them. With text, the screen shows the top artist, the songs and the albums the
-API returns. Nothing in the results is pressable yet: playback and detail screens are later
-issues.
+API returns. An album card opens the album; the rest of the results are not pressable yet:
+playback and the other detail screens are later issues.
 
 ## Layout
 
@@ -76,7 +76,8 @@ query over a corrupted value starts a fresh list, so the feature always recovers
 
 ## Navigation
 
-Route `/search`, the third tab. Nothing in the screen navigates.
+Route `/search`, the third tab. An album card pushes `/album/[id]` with the
+result's `id`, inside the Search tab's stack. Nothing else in the screen navigates.
 
 ## i18n namespace
 

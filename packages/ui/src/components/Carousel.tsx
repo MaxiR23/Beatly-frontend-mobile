@@ -12,6 +12,7 @@ export interface CarouselItem {
   subtitle?: string | undefined;
   urls: readonly string[];
   shape: "square" | "round";
+  onPress?: (() => void) | undefined;
 }
 
 interface CarouselProps {
@@ -41,6 +42,7 @@ export function Carousel({ title, items, onEndReached, testID }: CarouselProps) 
             subtitle={item.subtitle}
             urls={item.urls}
             shape={item.shape}
+            onPress={item.onPress}
           />
         )}
       />
