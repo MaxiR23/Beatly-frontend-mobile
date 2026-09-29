@@ -48,7 +48,8 @@ No genres is `ok: true` with `items: []`: an expected empty state, never a retry
 ## Navigation
 
 Route `/explore`, the second tab. A row pushes `/explore/genres/[slug]` with the
-`slug` and the `name` as params.
+`slug` and the `name` as params. The stack is the shared one of the four tabs
+(ADR 020), so the album route also resolves inside this tab.
 
 ## i18n namespace
 
@@ -56,7 +57,7 @@ Route `/explore`, the second tab. A row pushes `/explore/genres/[slug]` with the
 
 ## Checked by hand
 
-The palette gradients in the bar, the nested stack under the iOS 26 native tabs
+The palette gradients in the bar, the shared stack under the iOS 26 native tabs
 with the swipe-back gesture, the last row clearing the tab bar, and the `display`
 name fitting one line on a small screen. Screenshots with data, empty, in es and
 en, on iOS and Android, are in the pull request.

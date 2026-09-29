@@ -150,3 +150,10 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
   query's stale time is the smallest max-age among its pages, and why the
   shared infinite-query hook drops the pages before a restart from the
   first page.
+- `019-dominant-color-behind-an-adapter.md` — why the dominant color of a
+  cover comes from `react-native-image-colors` behind an adapter with no
+  port, loaded only where its native module exists, and why the surfaces
+  stay neutral where it does not.
+- `020-shared-detail-routes-per-tab.md` — why the four tabs are groups
+  sharing one layout, so a detail screen opens inside the current tab and
+  keeps that tab's back stack.

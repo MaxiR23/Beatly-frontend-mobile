@@ -9,6 +9,7 @@ import {
   floatingTabBarClearance,
   type CarouselItem,
 } from "@beatly/ui/native";
+import { useRouter } from "expo-router";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -21,11 +22,16 @@ import { AccountButton } from "../account/AccountButton.tsx";
 export function HomeScreen() {
   const t = useT("home");
   const tc = useT("common");
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const recents = useRecents();
   const playlists = usePlaylists();
   const profile = useProfile();
   const owner = profile.data ? profileName(profile.data) : null;
+
+  const openAlbum = (id: string) => {
+    router.push({ pathname: "/album/[id]", params: { id } });
+  };
 
   const recentLine = (recent: RecentEntity) => {
     if (recent.entity_type === "artist") return t("kind.artist");
@@ -40,6 +46,12 @@ export function HomeScreen() {
     subtitle: recentLine(recent),
     urls: recent.metadata.thumbnail_url ? [recent.metadata.thumbnail_url] : [],
     shape: recent.entity_type === "artist" ? "round" : "square",
+    onPress:
+      recent.entity_type === "album"
+        ? () => {
+            openAlbum(recent.entity_id);
+          }
+        : undefined,
   });
 
   const toPlaylistItem = (playlist: PlaylistListItem): CarouselItem => ({

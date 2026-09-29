@@ -80,7 +80,9 @@ on screen until retry. Accepted for this issue.
 
 ## Navigation
 
-Route `/`, the first tab of `(tabs)`, reached after sign in. The cards are not
+Route `/`, the first tab of `(tabs)`, reached after sign in. An album card in
+recently played pushes `/album/[id]` with the entry's `entity_id`, inside the
+Home tab's stack; artist and playlist cards and the playlist carousel are not
 pressable yet. Log out from the sheet lands on `/login` through the session gate.
 
 ## i18n namespace

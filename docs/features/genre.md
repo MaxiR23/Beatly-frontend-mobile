@@ -59,7 +59,8 @@ The back button is labeled `genre:back`.
 
 ## Navigation
 
-Route `/explore/genres/[slug]?name=`, pushed from the Explore rows. Back pops
+Route `/explore/genres/[slug]?name=`, pushed from the Explore rows onto the
+shared stack of the Explore tab (ADR 020). Back pops
 the stack, or replaces with `/explore` when there is nothing to go back to.
 
 ## i18n namespace

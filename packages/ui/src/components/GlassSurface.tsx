@@ -8,10 +8,10 @@ import { border } from "../tokens/border.ts";
 import { color } from "../tokens/color.ts";
 import { radius } from "../tokens/radius.ts";
 import { shadow } from "../tokens/shadow.ts";
-import { spacing } from "../tokens/spacing.ts";
+import { layout, spacing } from "../tokens/spacing.ts";
 
 interface GlassSurfaceProps {
-  variant: "bar" | "sheet";
+  variant: "bar" | "sheet" | "circle";
   children: ReactNode;
   testID?: string;
 }
@@ -51,6 +51,13 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.xl,
     gap: spacing.lg,
+  },
+  circle: {
+    width: layout.controlHeight,
+    height: layout.controlHeight,
+    borderRadius: radius.full,
+    alignItems: "center",
+    justifyContent: "center",
   },
   fallback: {
     backgroundColor: color.surface.raised,

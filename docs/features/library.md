@@ -5,8 +5,8 @@ The library tab: the fixed liked entry, the caller's own playlists and saved alb
 ## Purpose
 
 The user sees everything they keep in one list, newest first after the fixed
-"Liked songs" entry, and creates a playlist from the header button. Rows are
-not pressable yet and there are no detail screens.
+"Liked songs" entry, and creates a playlist from the header button. A saved
+album row opens the album; the other rows are not pressable yet.
 
 ## Layout
 
@@ -68,8 +68,9 @@ whole-body error, as on Home. Creating a playlist invalidates `library` and
 
 ## Navigation
 
-Route `/library`, the fourth tab. Rows are not pressable; there is no detail
-screen yet.
+Route `/library`, the fourth tab. A saved album row (`kind: "album"`) pushes
+`/album/[id]` with the entry's `id`, inside the Library tab's stack. Playlist
+rows are not pressable; there is no playlist screen yet.
 
 ## i18n namespace
 

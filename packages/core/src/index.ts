@@ -67,6 +67,10 @@ export type {
   SearchResult,
   SearchSong,
 } from "./domain/search.ts";
+export { albumRefSchema, albumSchema, albumTrackSchema } from "./domain/album.ts";
+export type { Album, AlbumRef, AlbumTrack } from "./domain/album.ts";
+export { createAlbumService } from "./services/album.ts";
+export type { AlbumService } from "./services/album.ts";
 export { createSearchService } from "./services/search.ts";
 export type { SearchService } from "./services/search.ts";
 export {

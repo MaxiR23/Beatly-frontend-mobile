@@ -9,20 +9,20 @@ import { useT } from "../../src/adapters/i18n.ts";
 
 const tabs = [
   {
-    name: "index",
+    name: "(home)",
     label: "home",
     icon: "house",
     sf: { default: "house", selected: "house.fill" },
   },
   {
-    name: "explore",
+    name: "(explore)",
     label: "explore",
     icon: "compass",
     sf: { default: "safari", selected: "safari.fill" },
   },
-  { name: "search", label: "search", icon: "search", sf: "magnifyingglass" },
+  { name: "(search)", label: "search", icon: "search", sf: "magnifyingglass" },
   {
-    name: "library",
+    name: "(library)",
     label: "library",
     icon: "library",
     sf: { default: "books.vertical", selected: "books.vertical.fill" },

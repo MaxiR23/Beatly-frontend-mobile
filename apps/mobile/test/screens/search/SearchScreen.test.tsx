@@ -9,6 +9,7 @@
 // - recent queries: newest first, recorded on submit and kept after a remount, removed one by one and all, run from a row
 // - results in order (artist, songs, albums), no results, the generic error with retry, loading, the debounce, clear
 // - the top artist image, and the placeholder when it has none
+// - an album result opens the album
 // - the account sheet, en and es
 //
 // Run with: pnpm --filter @beatly/mobile test -- SearchScreen
@@ -17,7 +18,7 @@
 
 import { RECENT_SEARCHES_KEY } from "@beatly/core";
 import type { HttpOutcome, SearchResult, StoragePort } from "@beatly/core";
-import { afterEach, describe, expect, it } from "@jest/globals";
+import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -26,7 +27,11 @@ import { resources } from "../../../src/i18n/resources.ts";
 import { SearchScreen } from "../../../src/screens/search/SearchScreen.tsx";
 import { makeCore, memoryStorage, searchResultFixture, Wrapper } from "../../helpers/core.tsx";
 
+const mockPush = jest.fn();
+jest.mock("expo-router", () => ({ useRouter: () => ({ push: mockPush }) }));
+
 afterEach(async () => {
+  mockPush.mockClear();
   await i18n.changeLanguage("en");
 });
 
@@ -247,5 +252,12 @@ describe("SearchScreen frame", () => {
     await setup();
     expect(await screen.findByText(resources.es.search.recent.empty)).toBeTruthy();
     expect(screen.getByText(resources.es.search.title)).toBeTruthy();
+  });
+
+  it("opens an album result", async () => {
+    await setup();
+    await fireEvent.changeText(input(), "test");
+    await fireEvent.press(await screen.findByRole("button", { name: "Test Album" }));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: "/album/[id]", params: { id: "al1" } });
   });
 });
