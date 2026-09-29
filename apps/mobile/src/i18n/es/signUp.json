@@ -1,13 +1,17 @@
 {
-  "title": "Crear una cuenta",
-  "name": "Nombre",
+  "title": "Crear Cuenta",
+  "description": "Completa los datos para registrarte",
+  "subtitle": "Únete a la mejor experiencia musical",
+  "name": "Nombre completo",
   "email": "Email",
   "password": "Contraseña",
-  "submit": "Registrarme",
+  "submit": "Crear Cuenta",
   "haveAccount": "¿Ya tienes una cuenta?",
-  "goToLogin": "Iniciar sesión",
+  "goToLogin": "Inicia sesión aquí",
   "nameTooLong": "Usa {{max}} caracteres o menos",
-  "rules": { "minLength": "Al menos {{min}} caracteres" },
+  "rules": {
+    "minLength": "Mínimo {{min}} caracteres"
+  },
   "errors": {
     "weakPassword": "Esa contraseña es demasiado débil. Prueba con otra.",
     "userAlreadyExists": "Ya existe una cuenta con ese email",

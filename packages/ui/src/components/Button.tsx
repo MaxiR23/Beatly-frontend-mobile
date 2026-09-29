@@ -1,11 +1,11 @@
-// INFO: pill button with primary, secondary and ghost variants, a loading
+// INFO: pill or field-shaped button with primary, secondary and ghost variants, a loading
 // state that swaps the label for a spinner, and a disabled state.
 import { ActivityIndicator, Pressable, StyleSheet } from "react-native";
 
 import { color } from "../tokens/color.ts";
 import { motion } from "../tokens/motion.ts";
 import { radius } from "../tokens/radius.ts";
-import { spacing } from "../tokens/spacing.ts";
+import { layout, spacing } from "../tokens/spacing.ts";
 import { Text } from "./Text.tsx";
 import { toneColor, type Tone } from "./tone.ts";
 
@@ -13,6 +13,7 @@ interface ButtonProps {
   label: string;
   onPress: () => void;
   variant?: "primary" | "secondary" | "ghost";
+  shape?: "pill" | "field";
   loading?: boolean;
   disabled?: boolean;
 }
@@ -21,6 +22,7 @@ export function Button({
   label,
   onPress,
   variant = "primary",
+  shape = "pill",
   loading = false,
   disabled = false,
 }: ButtonProps) {
@@ -36,6 +38,7 @@ export function Button({
       onPress={onPress}
       style={({ pressed }) => [
         styles.base,
+        shape === "field" && styles.field,
         styles[variant],
         disabled && styles.disabled,
         pressed && styles.pressed,
@@ -60,6 +63,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  field: { borderRadius: radius.md, minHeight: layout.controlHeight },
   primary: { backgroundColor: color.accent.primary },
   secondary: { backgroundColor: color.surface.control },
   ghost: { backgroundColor: color.overlay.subtle },

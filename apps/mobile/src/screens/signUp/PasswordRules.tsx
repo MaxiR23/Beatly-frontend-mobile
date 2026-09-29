@@ -11,10 +11,10 @@ export function PasswordRules({ password }: { readonly password: string }) {
   return (
     <View style={styles.column}>
       {passwordRules(password).map((rule) => {
-        const tone = rule.met ? "primary" : "tertiary";
+        const tone = rule.met ? "success" : "tertiary";
         return (
           <View key={rule.id} accessibilityState={{ checked: rule.met }} style={styles.row}>
-            <Icon name={rule.met ? "check" : "circle"} size="sm" tone={tone} />
+            <Icon name="check" size="sm" tone={tone} />
             <Text variant="meta" tone={tone}>
               {t("rules.minLength", { min: PASSWORD_MIN_LENGTH })}
             </Text>

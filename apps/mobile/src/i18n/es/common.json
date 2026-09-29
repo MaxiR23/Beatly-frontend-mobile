@@ -1,5 +1,13 @@
 {
   "loading": "Cargando…",
-  "error": { "generic": "Algo salió mal" },
-  "retry": "Reintentar"
+  "error": {
+    "generic": "Algo salió mal"
+  },
+  "retry": "Reintentar",
+  "brand": "Beatly",
+  "footer": "© 2026 Beatly. Todos los derechos reservados.",
+  "password": {
+    "show": "Mostrar contraseña",
+    "hide": "Ocultar contraseña"
+  }
 }

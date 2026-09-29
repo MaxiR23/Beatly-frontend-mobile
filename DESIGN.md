@@ -12,43 +12,44 @@ value: the value lives once, in the token file.
 
 ## Color (`color`)
 
-| Role                                                               | Token                    |
-| ------------------------------------------------------------------ | ------------------------ |
-| Base background of every screen                                    | `color.surface.base`     |
-| Sheet, modal and dialog background                                 | `color.surface.raised`   |
-| Card, input and image-placeholder background                       | `color.surface.card`     |
-| Secondary control background (secondary button, inactive chip/tab) | `color.surface.control`  |
-| Card/sheet/input border, divider, skeleton base                    | `color.surface.border`   |
-| Primary text                                                       | `color.text.primary`     |
-| Secondary text (subtitles, artist names, descriptions)             | `color.text.secondary`   |
-| Tertiary text (meta, captions)                                     | `color.text.tertiary`    |
-| Disabled text                                                      | `color.text.disabled`    |
-| Text drawn on a light/accent background                            | `color.text.inverse`     |
-| The app's single accent (primary buttons, active state)            | `color.accent.primary`   |
-| Destructive/error state                                            | `color.status.error`     |
-| Success/confirmation state                                         | `color.status.success`   |
-| Sheet/modal backdrop                                               | `color.overlay.backdrop` |
-| Scrim over an image (behind a control or text)                     | `color.overlay.onImage`  |
-| Subtle translucent fill (ghost button, translucent chip)           | `color.overlay.subtle`   |
-| Muted translucent fill (seek track, icon-button background)        | `color.overlay.muted`    |
+| Role                                                                                                                             | Token                    |
+| -------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| Base background of every screen                                                                                                  | `color.surface.base`     |
+| Sheet, modal, dialog and form `Card` background (the `ui` `Card` is only this raised card; a list card is a different component) | `color.surface.raised`   |
+| List card, input and image-placeholder background                                                                                | `color.surface.card`     |
+| Secondary control background (secondary button, inactive chip/tab)                                                               | `color.surface.control`  |
+| Card/sheet/input border, divider, skeleton base                                                                                  | `color.surface.border`   |
+| Primary text                                                                                                                     | `color.text.primary`     |
+| Secondary text (subtitles, artist names, descriptions)                                                                           | `color.text.secondary`   |
+| Tertiary text (meta, captions)                                                                                                   | `color.text.tertiary`    |
+| Disabled text                                                                                                                    | `color.text.disabled`    |
+| Text drawn on a light/accent background                                                                                          | `color.text.inverse`     |
+| The app's single accent (primary buttons, active state)                                                                          | `color.accent.primary`   |
+| Destructive/error state                                                                                                          | `color.status.error`     |
+| Success/confirmation state                                                                                                       | `color.status.success`   |
+| Sheet/modal backdrop                                                                                                             | `color.overlay.backdrop` |
+| Scrim over an image (behind a control or text)                                                                                   | `color.overlay.onImage`  |
+| Subtle translucent fill (ghost button, translucent chip)                                                                         | `color.overlay.subtle`   |
+| Muted translucent fill (seek track, icon-button background)                                                                      | `color.overlay.muted`    |
 
 ## Spacing and layout (`spacing`, `layout`)
 
-| Role                                     | Token                         |
-| ---------------------------------------- | ----------------------------- |
-| Spacing scale, multiples of four         | `spacing.xxs` … `spacing.xxl` |
-| Screen edge padding                      | `layout.gutter`               |
-| Gap between items in a list/row          | `layout.gap`                  |
-| Minimum touch target padding (`hitSlop`) | `layout.hitSlop`              |
+| Role                                                                              | Token                         |
+| --------------------------------------------------------------------------------- | ----------------------------- |
+| Spacing scale, multiples of four                                                  | `spacing.xxs` … `spacing.xxl` |
+| Screen edge padding                                                               | `layout.gutter`               |
+| Gap between items in a list/row                                                   | `layout.gap`                  |
+| Minimum touch target padding (`hitSlop`)                                          | `layout.hitSlop`              |
+| Height of a form control (input, form button) and side of its square touch target | `layout.controlHeight`        |
 
 ## Radius (`radius`)
 
-| Role                                          | Token         |
-| --------------------------------------------- | ------------- |
-| Small radius (chips, badges)                  | `radius.sm`   |
-| Medium radius (cards, inputs)                 | `radius.md`   |
-| Large radius (sheets, large cards)            | `radius.lg`   |
-| Fully round (pills, circular avatars/buttons) | `radius.full` |
+| Role                                                      | Token         |
+| --------------------------------------------------------- | ------------- |
+| Small radius (chips, badges)                              | `radius.sm`   |
+| Medium radius (cards, inputs, form buttons)               | `radius.md`   |
+| Large radius (sheets, large cards, form card, brand mark) | `radius.lg`   |
+| Fully round (pills, circular avatars/buttons)             | `radius.full` |
 
 ## Border (`border`)
 
@@ -62,18 +63,20 @@ value: the value lives once, in the token file.
 Roles, not raw sizes. Every role uses the platform's system font (no
 `fontFamily` override).
 
-| Role                    | Token                 | Used for                                                         |
-| ----------------------- | --------------------- | ---------------------------------------------------------------- |
-| Display                 | `typography.display`  | The largest number/title on a screen                             |
-| Title                   | `typography.title`    | Screen title                                                     |
-| Section                 | `typography.section`  | Section heading                                                  |
-| Subtitle                | `typography.subtitle` | Card/sheet subtitle                                              |
-| Row title               | `typography.rowTitle` | Track/list row title                                             |
-| Body                    | `typography.body`     | Default paragraph/body text                                      |
-| Meta                    | `typography.meta`     | Secondary/meta text (duration, counts)                           |
-| Label                   | `typography.label`    | Uppercase label (badge, form label)                              |
-| Button                  | `typography.button`   | Button text                                                      |
-| Accessibility scale cap | `maxFontScale`        | `maxFontSizeMultiplier` the `ui` Text and Input components apply |
+| Role                    | Token                 | Used for                                                               |
+| ----------------------- | --------------------- | ---------------------------------------------------------------------- |
+| Display                 | `typography.display`  | The largest number/title on a screen                                   |
+| Brand                   | `typography.brand`    | The Beatly wordmark on the auth screens                                |
+| Title                   | `typography.title`    | Screen title                                                           |
+| Section                 | `typography.section`  | Section heading                                                        |
+| Subtitle                | `typography.subtitle` | Card/sheet subtitle                                                    |
+| Row title               | `typography.rowTitle` | Track/list row title                                                   |
+| Body                    | `typography.body`     | Default paragraph/body text                                            |
+| Link                    | `typography.link`     | Inline link inside body text                                           |
+| Meta                    | `typography.meta`     | Secondary/meta text (duration, counts)                                 |
+| Label                   | `typography.label`    | Uppercase label (badge, form label)                                    |
+| Button                  | `typography.button`   | Button text                                                            |
+| Accessibility scale cap | `maxFontScale`        | `maxFontSizeMultiplier` the `ui` Text, Input and Link components apply |
 
 ## Motion (`motion`)
 
@@ -91,14 +94,14 @@ Roles, not raw sizes. Every role uses the platform's system font (no
 Sizes and stroke. The component is `Icon` in `@beatly/ui/native`, the
 only importer of `lucide-react-native`.
 
-| Role             | Token            |
-| ---------------- | ---------------- |
-| Small icon       | `icon.size.sm`   |
-| Medium icon      | `icon.size.md`   |
-| Large icon       | `icon.size.lg`   |
-| Extra-large icon | `icon.size.xl`   |
-| Hero icon        | `icon.size.hero` |
-| Stroke width     | `icon.stroke`    |
+| Role                                          | Token            |
+| --------------------------------------------- | ---------------- |
+| Small icon                                    | `icon.size.sm`   |
+| Medium icon                                   | `icon.size.md`   |
+| Large icon                                    | `icon.size.lg`   |
+| Extra-large icon                              | `icon.size.xl`   |
+| Hero icon (empty states, the auth brand mark) | `icon.size.hero` |
+| Stroke width                                  | `icon.stroke`    |
 
 ## Shadows (`shadow`)
 

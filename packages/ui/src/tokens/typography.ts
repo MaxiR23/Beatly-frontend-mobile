@@ -1,13 +1,17 @@
 // INFO: typography tokens, by role rather than by size. Every role uses
 // the platform's system font, so none of them sets fontFamily. maxFontScale
-// caps accessibility scaling app-wide.
+// caps accessibility scaling app-wide. brand is the Beatly wordmark.
+const display = { fontSize: 28, fontWeight: "800", lineHeight: 34 } as const;
+
 export const typography = {
-  display: { fontSize: 28, fontWeight: "800", lineHeight: 34 },
+  display,
+  brand: { ...display, letterSpacing: 0.4 },
   title: { fontSize: 20, fontWeight: "700", lineHeight: 26 },
   section: { fontSize: 18, fontWeight: "700", lineHeight: 24 },
   subtitle: { fontSize: 15, fontWeight: "700", lineHeight: 20 },
   rowTitle: { fontSize: 14, fontWeight: "600", lineHeight: 19 },
   body: { fontSize: 14, fontWeight: "400", lineHeight: 20 },
+  link: { fontSize: 14, fontWeight: "600", lineHeight: 20 },
   meta: { fontSize: 12, fontWeight: "400", lineHeight: 16 },
   label: {
     fontSize: 11,
