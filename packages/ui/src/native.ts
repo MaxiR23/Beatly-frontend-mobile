@@ -27,3 +27,7 @@ export { FloatingTabBar, floatingTabBarClearance } from "./components/FloatingTa
 export { Sheet } from "./components/Sheet.tsx";
 export { Avatar } from "./components/Avatar.tsx";
 export { Carousel, type CarouselItem } from "./components/Carousel.tsx";
+export { GenreRow } from "./components/GenreRow.tsx";
+export { Chip } from "./components/Chip.tsx";
+export { IconButton } from "./components/IconButton.tsx";
+export { MediaGrid, gridCardSize } from "./components/MediaGrid.tsx";

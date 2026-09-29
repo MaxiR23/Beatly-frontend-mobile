@@ -6,7 +6,7 @@
 // - Cover
 //
 // What is covered:
-// - the 2 x 2 mosaic with four urls, the first url with one to three, the placeholder with none, the round shape
+// - the 2 x 2 mosaic with four urls, the first url with one to three, the placeholder with none, the round shape, the size of the box and the mosaic cells
 //
 // Run with: pnpm --filter @beatly/ui test -- Cover
 //
@@ -17,6 +17,7 @@ import { render, screen } from "@testing-library/react-native";
 
 import { Cover } from "../../src/components/Cover.tsx";
 import { radius } from "../../src/tokens/radius.ts";
+import { layout } from "../../src/tokens/spacing.ts";
 
 const urls = ["test://img/1", "test://img/2", "test://img/3", "test://img/4"];
 
@@ -67,6 +68,26 @@ describe("Cover", () => {
     const box = screen.getByTestId("cover-placeholder").parent;
     expect(box?.props.style).toEqual(
       expect.arrayContaining([expect.objectContaining({ borderRadius: radius.full })]),
+    );
+  });
+
+  it("sizes the box and the mosaic cells from size", async () => {
+    await render(<Cover urls={urls} shape="square" size={100} />);
+    const box = screen.getByTestId("cover-mosaic").parent;
+    expect(box?.props.style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ width: 100, height: 100 })]),
+    );
+    const [cell] = nodesWithProp(screen.toJSON(), "source");
+    expect(cell?.props.style).toEqual({ width: 50, height: 50 });
+  });
+
+  it("defaults to the carousel card size", async () => {
+    await render(<Cover urls={[]} shape="square" />);
+    const box = screen.getByTestId("cover-placeholder").parent;
+    expect(box?.props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ width: layout.carouselCard, height: layout.carouselCard }),
+      ]),
     );
   });
 });

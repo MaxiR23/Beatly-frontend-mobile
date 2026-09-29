@@ -20,9 +20,9 @@ export function installCore() {
     get current(): Core {
       return holder.current;
     },
-    set(status: AuthStatus) {
+    set(status: AuthStatus, options: Parameters<typeof makeCore>[0] = {}) {
       const auth = makeAuth({ getStatus: jest.fn(() => Promise.resolve(status)) });
-      holder.current = makeCore({ auth }).core;
+      holder.current = makeCore({ ...options, auth }).core;
     },
   };
 }

@@ -1,9 +1,9 @@
 // INFO: ESLint flat config. Besides the usual TypeScript rules it encodes
 // the import boundaries of ARCHITECTURE.md: what core may not import,
 // what ui may not import, and which libraries may only be imported from
-// their adapter in apps/mobile. Two libraries have a single importer inside
-// packages/ui instead: lucide-react-native (Icon.tsx) and expo-glass-effect
-// (GlassSurface.tsx). A boundary is a rule here, not a habit.
+// their adapter in apps/mobile. Three libraries have a single importer inside
+// packages/ui instead: lucide-react-native (Icon.tsx), expo-glass-effect
+// (GlassSurface.tsx) and react-native-svg (GradientFill.tsx). A boundary is a rule here, not a habit.
 
 import js from "@eslint/js";
 import comments from "@eslint-community/eslint-plugin-eslint-comments/configs";
@@ -56,6 +56,14 @@ const glassLibraryOnlyInGlassSurface = {
   group: ["expo-glass-effect"],
   message:
     "Floating surfaces are drawn with GlassSurface of @beatly/ui/native; packages/ui/src/components/GlassSurface.tsx is the only importer of expo-glass-effect.",
+};
+
+// Gradients are drawn with GradientFill of packages/ui; its file is the only
+// importer of the svg library.
+const svgLibraryOnlyInGradientFill = {
+  group: ["react-native-svg", "react-native-svg/*"],
+  message:
+    "Gradients are drawn with GradientFill inside packages/ui; packages/ui/src/components/GradientFill.tsx is the only importer of react-native-svg.",
 };
 
 // A workspace is imported by its package name, never by a relative path
@@ -192,7 +200,7 @@ export default tseslint.config(
           ...crossWorkspacePaths,
         ],
         "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
-        [iconLibraryOnlyInIcon],
+        [iconLibraryOnlyInIcon, svgLibraryOnlyInGradientFill],
       ),
     },
   },
@@ -213,6 +221,7 @@ export default tseslint.config(
           ...crossWorkspacePaths,
         ],
         "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
+        [svgLibraryOnlyInGradientFill],
       ),
     },
   },
@@ -229,12 +238,33 @@ export default tseslint.config(
         "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
         [
           iconLibraryOnlyInIcon,
+          svgLibraryOnlyInGradientFill,
           {
             group: ["expo-*", "!expo-glass-effect"],
             message:
               "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
           },
         ],
+      ),
+    },
+  },
+
+  // The GradientFill component is the one file allowed to import the svg
+  // library. Same shape as the Icon block.
+  {
+    files: ["packages/ui/src/components/GradientFill.tsx"],
+    rules: {
+      ...memoization,
+      ...restricted(
+        [
+          "@beatly/mobile",
+          "expo-*",
+          "@tanstack/*",
+          ...adapterOnlyLibraries,
+          ...crossWorkspacePaths,
+        ],
+        "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
+        [iconLibraryOnlyInIcon],
       ),
     },
   },
@@ -262,7 +292,7 @@ export default tseslint.config(
       ...restricted(
         [...adapterOnlyLibraries, ...crossWorkspacePaths],
         "This library is imported only by its adapter under apps/mobile/src/adapters/. Everything else goes through the port.",
-        [iconLibraryOnlyInIcon, glassLibraryOnlyInGlassSurface],
+        [iconLibraryOnlyInIcon, glassLibraryOnlyInGlassSurface, svgLibraryOnlyInGradientFill],
       ),
     },
   },

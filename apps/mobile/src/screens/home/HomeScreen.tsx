@@ -1,28 +1,21 @@
 // INFO: the home tab: the account avatar and sheet, and the recently played and own playlists shelves.
 import type { PlaylistListItem, RecentEntity } from "@beatly/core";
-import { profileName } from "@beatly/core";
 import { color, layout, spacing } from "@beatly/ui";
 import {
-  Avatar,
-  Button,
   Carousel,
   EmptyState,
   ErrorState,
   LoadingState,
-  Sheet,
-  Text,
   floatingTabBarClearance,
   type CarouselItem,
 } from "@beatly/ui/native";
-import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
-import { useSignOut } from "../../queries/useAuth.ts";
 import { usePlaylists } from "../../queries/usePlaylists.ts";
-import { useProfile } from "../../queries/useProfile.ts";
 import { useRecents } from "../../queries/useRecents.ts";
+import { AccountButton } from "../account/AccountButton.tsx";
 
 function toRecentItem(recent: RecentEntity): CarouselItem {
   return {
@@ -48,11 +41,8 @@ export function HomeScreen() {
   const t = useT("home");
   const tc = useT("common");
   const insets = useSafeAreaInsets();
-  const profile = useProfile();
   const recents = useRecents();
   const playlists = usePlaylists();
-  const signOut = useSignOut();
-  const [accountOpen, setAccountOpen] = useState(false);
 
   const clearance = { paddingBottom: floatingTabBarClearance(insets.bottom) };
 
@@ -106,37 +96,9 @@ export function HomeScreen() {
   return (
     <SafeAreaView testID="home" edges={["top"]} style={styles.screen}>
       <View style={styles.header}>
-        <Avatar
-          name={profile.data ? profileName(profile.data) : null}
-          accessibilityLabel={t("account.open")}
-          onPress={() => {
-            setAccountOpen(true);
-          }}
-        />
+        <AccountButton />
       </View>
       {body}
-      <Sheet
-        visible={accountOpen}
-        onClose={() => {
-          setAccountOpen(false);
-        }}
-        closeLabel={t("account.close")}
-        bottomInset={insets.bottom}
-      >
-        <Button
-          variant="secondary"
-          label={t("logout")}
-          loading={signOut.isPending}
-          onPress={() => {
-            signOut.mutate();
-          }}
-        />
-        {signOut.data?.kind === "failure" ? (
-          <Text variant="meta" tone="error">
-            {tc("error.generic")}
-          </Text>
-        ) : null}
-      </Sheet>
     </SafeAreaView>
   );
 }

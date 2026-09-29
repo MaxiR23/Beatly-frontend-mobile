@@ -1,0 +1,8 @@
+{
+  "back": "Back",
+  "all": "All",
+  "tracks_one": "{{count}} track",
+  "tracks_other": "{{count}} tracks",
+  "empty": "This genre has no playlists yet.",
+  "emptyCategory": "No playlists in this category."
+}

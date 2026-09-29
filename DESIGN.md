@@ -34,16 +34,18 @@ value: the value lives once, in the token file.
 
 ## Spacing and layout (`spacing`, `layout`)
 
-| Role                                                                                                          | Token                         |
-| ------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| Spacing scale, multiples of four                                                                              | `spacing.xxs` … `spacing.xxl` |
-| Screen edge padding                                                                                           | `layout.gutter`               |
-| Gap between items in a list/row                                                                               | `layout.gap`                  |
-| Minimum touch target padding (`hitSlop`)                                                                      | `layout.hitSlop`              |
-| Height of a form control (input, form button) or a floating tab bar item, and side of its square touch target | `layout.controlHeight`        |
-| Width of a carousel card and side of its cover                                                                | `layout.carouselCard`         |
-| Side of the header account avatar                                                                             | `layout.avatar`               |
-| Width of a floating tab bar item                                                                              | `layout.tabItemWidth`         |
+| Role                                                                                                          | Token                                            |
+| ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Spacing scale, multiples of four                                                                              | `spacing.xxs` … `spacing.xxl`                    |
+| Screen edge padding                                                                                           | `layout.gutter`                                  |
+| Gap between items in a list/row                                                                               | `layout.gap`                                     |
+| Minimum touch target padding (`hitSlop`)                                                                      | `layout.hitSlop`                                 |
+| Height of a form control (input, form button) or a floating tab bar item, and side of its square touch target | `layout.controlHeight`                           |
+| Width of a carousel card and side of its cover                                                                | `layout.carouselCard`                            |
+| Side of the header account avatar                                                                             | `layout.avatar`                                  |
+| Width of a floating tab bar item                                                                              | `layout.tabItemWidth`                            |
+| Height of a filter chip                                                                                       | `layout.chipHeight`                              |
+| Width / height of the genre accent bar in a genre row                                                         | `layout.genreBarWidth` / `layout.genreBarHeight` |
 
 ## Floating surfaces
 
@@ -56,10 +58,10 @@ value: the value lives once, in the token file.
 
 | Role                                                      | Token         |
 | --------------------------------------------------------- | ------------- |
-| Small radius (chips, badges)                              | `radius.sm`   |
+| Small radius (badges, covers)                             | `radius.sm`   |
 | Medium radius (cards, inputs, form buttons)               | `radius.md`   |
 | Large radius (sheets, large cards, form card, brand mark) | `radius.lg`   |
-| Fully round (pills, circular avatars/buttons)             | `radius.full` |
+| Fully round (pills, chips, circular avatars/buttons)      | `radius.full` |
 
 ## Border (`border`)
 

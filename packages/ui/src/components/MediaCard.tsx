@@ -10,12 +10,19 @@ interface MediaCardProps {
   subtitle?: string | undefined;
   urls: readonly string[];
   shape: "square" | "round";
+  size?: number;
 }
 
-export function MediaCard({ title, subtitle, urls, shape }: MediaCardProps) {
+export function MediaCard({
+  title,
+  subtitle,
+  urls,
+  shape,
+  size = layout.carouselCard,
+}: MediaCardProps) {
   return (
-    <View style={styles.card}>
-      <Cover urls={urls} shape={shape} />
+    <View style={[styles.card, { width: size }]}>
+      <Cover urls={urls} shape={shape} size={size} />
       {title !== undefined ? (
         <Text variant="rowTitle" numberOfLines={1}>
           {title}
@@ -31,5 +38,5 @@ export function MediaCard({ title, subtitle, urls, shape }: MediaCardProps) {
 }
 
 const styles = StyleSheet.create({
-  card: { width: layout.carouselCard, gap: spacing.xs },
+  card: { gap: spacing.xs },
 });

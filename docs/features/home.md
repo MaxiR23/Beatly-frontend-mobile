@@ -45,9 +45,10 @@ loading or failed (any reason) draws the avatar without a name.
 | Expected empty   | `EmptyState` when both lists have no items, no action                                                                   | `home:empty`                           |
 | Error with retry | `ErrorState` when either list failed, on the first load or on a next page of playlists; retry refetches the failed ones | `common:error.generic`, `common:retry` |
 
-The sheet holds the log out button (`home:logout`); a failed log out draws
-`common:error.generic`. The avatar and sheet close use `home:account.open` and
-`home:account.close`.
+The avatar and the sheet are `AccountButton`, shared with Explore. The sheet
+holds the log out button (`common:account.logout`); a failed log out draws
+`common:error.generic`. The avatar and sheet close use `common:account.open` and
+`common:account.close`.
 
 ## Data
 
