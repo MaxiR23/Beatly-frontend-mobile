@@ -147,6 +147,7 @@ that needs it opens a backend issue instead of computing it here.
       src/adapters/         one file per external library: http, auth, player, config, log, storage, i18n
       src/i18n/es/ en/      one namespace per screen, key parity enforced by a test
       src/providers/        thin React providers over core
+      src/auth/             pure helpers of the auth adapter (no library import)
       test/                 mirrors src/
     packages/core/
       src/ports/            the six interfaces

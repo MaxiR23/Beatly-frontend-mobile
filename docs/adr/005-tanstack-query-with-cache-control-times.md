@@ -25,8 +25,13 @@ goes stale the day the backend changes it.
   over a `core` service. Screens never hold fetched data in their own
   state.
 - The HTTP client in `core` exposes the `Cache-Control` max-age of
-  every response. The shared query hook derives `staleTime` from it.
-  A hook never writes a `staleTime` or `gcTime` literal.
+  every response. `staleTime` is derived once, in the `defaultOptions`
+  of `createQueryClient`, from the `maxAgeSeconds` of the core
+  `Success` outcome that a query function returns as its data (the
+  screen unwraps it with `select`). An infinite query's data has no
+  `maxAgeSeconds`, so under this default it is always stale; the
+  shared infinite-query hook decides that when it is written. A hook
+  never writes a `staleTime` or `gcTime` literal.
 - A response without `Cache-Control` gets the client's single
   documented default, defined once in `core`'s HTTP module. A route
   that should be cached longer and does not send the header is a

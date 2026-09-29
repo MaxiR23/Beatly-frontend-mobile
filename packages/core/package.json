@@ -11,10 +11,13 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "5.0.2",
     "vitest": "5.0.2"
+  },
+  "dependencies": {
+    "zod": "4.6.5"
   }
 }
