@@ -1,13 +1,12 @@
 # Tabs
 
-The tab navigator of the signed-in app and its placeholder tab.
+The tab navigator of the signed-in app.
 
 ## Purpose
 
 Four tabs: Home, Explore, Search and Library, icon only, each with an
-accessible label. Library shows a placeholder until its own
-issue; Explore and Search have their own screens (`explore.md`, `genre.md`,
-`search.md`).
+accessible label. Each tab has its own screen (`home.md`, `explore.md`,
+`genre.md`, `search.md`, `library.md`).
 
 ## Layout
 
@@ -27,15 +26,14 @@ iOS 26+ draws the native tab bar; Android and older iOS draw `FloatingTabBar`.
 
 ## States
 
-The placeholder tab has one state: an `EmptyState` with the tab's icon and
-`tabs:placeholder`. Loading, data and error do not apply: they read no data.
+The navigator reads no data, so none of the states apply.
 
-| State            | What is drawn   | i18n keys          |
-| ---------------- | --------------- | ------------------ |
-| Loading          | n/a             |                    |
-| With data        | n/a             |                    |
-| Expected empty   | the placeholder | `tabs:placeholder` |
-| Error with retry | n/a             |                    |
+| State            | What is drawn | i18n keys |
+| ---------------- | ------------- | --------- |
+| Loading          | n/a           |           |
+| With data        | n/a           |           |
+| Expected empty   | n/a           |           |
+| Error with retry | n/a           |           |
 
 ## Data
 
@@ -45,11 +43,12 @@ None.
 
 The `(tabs)` group of the root stack, signed in only. `index` is Home; `explore` is a nested stack
 (`explore/index`, `explore/genres/[slug]`); `search` is the search screen
-(`search.md`); `library` is the placeholder.
+(`search.md`); `library` is the library screen
+(`library.md`).
 
 ## i18n namespace
 
-`tabs`: `home`, `explore`, `search`, `library`, `placeholder`.
+`tabs`: `home`, `explore`, `search`, `library`.
 
 ## Checked by hand
 

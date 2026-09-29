@@ -23,5 +23,6 @@ export const layout = {
   genreBarWidth: 6,
   genreBarHeight: 28,
   rowCover: 40,
+  rowCoverMedium: 56,
   rowCoverLarge: 64,
 } as const;

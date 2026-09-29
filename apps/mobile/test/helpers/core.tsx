@@ -7,7 +7,7 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the profile, recents, playlists, genres and search fixtures and fakes, the in-memory storage, and the page builder)
+// (the profile, recents, playlists, library, created playlist, genres and search fixtures and fakes, the in-memory storage, and the page builder)
 //
 import type {
   ActivityService,
@@ -16,8 +16,11 @@ import type {
   GenrePlaylistListItem,
   GenresService,
   HttpOutcome,
+  LibraryEntry,
+  LibraryService,
   LogPort,
   PageResult,
+  Playlist,
   PlaylistListItem,
   PlaylistsService,
   Profile,
@@ -62,6 +65,56 @@ export const playlistFixture: PlaylistListItem = {
   created_at: "2026-01-01T00:00:00Z",
   updated_at: "2026-01-02T00:00:00Z",
   thumbnail_urls: ["test://img/1", "test://img/2", "test://img/3", "test://img/4"],
+};
+
+export const likedEntryFixture: LibraryEntry = {
+  kind: "playlist",
+  id: "liked",
+  title: "liked",
+  thumbnail_url: null,
+  subtitle: null,
+  source: "liked",
+  thumbnail_urls: [],
+};
+
+export const ownPlaylistEntryFixture: LibraryEntry = {
+  kind: "playlist",
+  id: "p1",
+  title: "Road trip",
+  thumbnail_url: null,
+  subtitle: null,
+  source: "user",
+  thumbnail_urls: ["test://img/1", "test://img/2", "test://img/3", "test://img/4"],
+};
+
+export const savedAlbumEntryFixture: LibraryEntry = {
+  kind: "album",
+  id: "a1",
+  title: "Saved album",
+  thumbnail_url: "test://img/a1",
+  subtitle: "Some artist",
+  source: "external",
+  thumbnail_urls: [],
+};
+
+export const savedPlaylistEntryFixture: LibraryEntry = {
+  kind: "playlist",
+  id: "gp1",
+  title: "Saved playlist",
+  thumbnail_url: null,
+  subtitle: null,
+  source: "genre",
+  thumbnail_urls: [],
+};
+
+export const createdPlaylistFixture: Playlist = {
+  id: "p9",
+  owner_id: "00000000-0000-0000-0000-000000000001",
+  title: "New one",
+  description: null,
+  is_public: false,
+  created_at: "2026-02-01T00:00:00Z",
+  updated_at: "2026-02-01T00:00:00Z",
 };
 
 export const genreFixture: Genre = { slug: "pop", name: "Pop", description: null };
@@ -178,6 +231,8 @@ export function makeCore(
     getMyProfile?: ProfileService["getMyProfile"];
     listRecents?: ActivityService["listRecents"];
     listPlaylists?: PlaylistsService["listPlaylists"];
+    createPlaylist?: PlaylistsService["createPlaylist"];
+    listLibrary?: LibraryService["listLibrary"];
     listGenres?: GenresService["listGenres"];
     listGenrePlaylists?: GenresService["listGenrePlaylists"];
     listGenreCategories?: GenresService["listGenreCategories"];
@@ -194,6 +249,13 @@ export function makeCore(
   );
   const listPlaylists = jest.fn<PlaylistsService["listPlaylists"]>(
     options.listPlaylists ?? (() => Promise.resolve(pageOf<PlaylistListItem>([]))),
+  );
+  const createPlaylist = jest.fn<PlaylistsService["createPlaylist"]>(
+    options.createPlaylist ??
+      (() => Promise.resolve({ kind: "success", data: createdPlaylistFixture, maxAgeSeconds: 0 })),
+  );
+  const listLibrary = jest.fn<LibraryService["listLibrary"]>(
+    options.listLibrary ?? (() => Promise.resolve(pageOf<LibraryEntry>([likedEntryFixture]))),
   );
   const listGenres = jest.fn<GenresService["listGenres"]>(
     options.listGenres ?? (() => Promise.resolve(pageOf<Genre>([]))),
@@ -214,8 +276,9 @@ export function makeCore(
     activity: { listRecents },
     auth,
     genres: { listGenres, listGenrePlaylists, listGenreCategories },
+    library: { listLibrary },
     log,
-    playlists: { listPlaylists },
+    playlists: { listPlaylists, createPlaylist },
     profile: { getMyProfile },
     recentSearches: createRecentSearchesService({ storage, log }),
     search: { search },
@@ -227,6 +290,8 @@ export function makeCore(
     getMyProfile,
     listRecents,
     listPlaylists,
+    createPlaylist,
+    listLibrary,
     listGenres,
     listGenrePlaylists,
     listGenreCategories,

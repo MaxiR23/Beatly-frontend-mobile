@@ -1,7 +1,7 @@
 // INFO: a bottom modal sheet on a GlassSurface, closed by its backdrop or
-// the system back action. The caller passes the close label translated.
+// the system back action, lifted above the keyboard on iOS. The caller passes the close label translated.
 import type { ReactNode } from "react";
-import { Modal, Pressable, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from "react-native";
 
 import { color } from "../tokens/color.ts";
 import { layout } from "../tokens/spacing.ts";
@@ -18,7 +18,10 @@ interface SheetProps {
 export function Sheet({ visible, onClose, closeLabel, bottomInset, children }: SheetProps) {
   return (
     <Modal transparent animationType="slide" visible={visible} onRequestClose={onClose}>
-      <View style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={closeLabel}
@@ -28,7 +31,7 @@ export function Sheet({ visible, onClose, closeLabel, bottomInset, children }: S
         <View style={[styles.sheet, { paddingBottom: bottomInset + layout.gutter }]}>
           <GlassSurface variant="sheet">{children}</GlassSurface>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

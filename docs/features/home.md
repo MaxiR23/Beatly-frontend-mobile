@@ -58,6 +58,9 @@ holds the log out button (`common:account.logout`); a failed log out draws
 | `GET /recents`    | single page of at most 30, never a cursor | `private, no-cache` | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                   | none; all draw the generic error                                                      |
 | `GET /profile/me` | no                                        | `private, no-cache` | `profile_not_found`                                                                       | none; feeds the avatar only                                                           |
 
+Creating a playlist from the library invalidates `playlists/mine`, so the shelf
+shows it the next time Home renders.
+
 Both lists answer "nothing" with `ok: true` and `items: []`: an expected empty
 state, never a retry. The `metadata` keys of a recent (`title`, `subtitle`,
 `thumbnail_url`) are optional and read leniently: a missing one, or a value

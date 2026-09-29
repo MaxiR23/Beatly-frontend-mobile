@@ -12,25 +12,26 @@ value: the value lives once, in the token file.
 
 ## Color (`color`)
 
-| Role                                                                                                                             | Token                    |
-| -------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| Base background of every screen                                                                                                  | `color.surface.base`     |
-| Sheet, modal, dialog and form `Card` background (the `ui` `Card` is only this raised card; a list card is a different component) | `color.surface.raised`   |
-| List card, input and image-placeholder background                                                                                | `color.surface.card`     |
-| Secondary control background (secondary button, inactive chip/tab)                                                               | `color.surface.control`  |
-| Card/sheet/input border, divider, skeleton base                                                                                  | `color.surface.border`   |
-| Primary text                                                                                                                     | `color.text.primary`     |
-| Secondary text (subtitles, artist names, descriptions)                                                                           | `color.text.secondary`   |
-| Tertiary text (meta, captions)                                                                                                   | `color.text.tertiary`    |
-| Disabled text                                                                                                                    | `color.text.disabled`    |
-| Text drawn on a light/accent background                                                                                          | `color.text.inverse`     |
-| The app's single accent (primary buttons, active state)                                                                          | `color.accent.primary`   |
-| Destructive/error state                                                                                                          | `color.status.error`     |
-| Success/confirmation state                                                                                                       | `color.status.success`   |
-| Sheet/modal backdrop                                                                                                             | `color.overlay.backdrop` |
-| Scrim over an image (behind a control or text)                                                                                   | `color.overlay.onImage`  |
-| Subtle translucent fill (ghost button, translucent chip)                                                                         | `color.overlay.subtle`   |
-| Muted translucent fill (seek track, icon-button background)                                                                      | `color.overlay.muted`    |
+| Role                                                                                                                             | Token                                                                                        |
+| -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Base background of every screen                                                                                                  | `color.surface.base`                                                                         |
+| Sheet, modal, dialog and form `Card` background (the `ui` `Card` is only this raised card; a list card is a different component) | `color.surface.raised`                                                                       |
+| List card, input and image-placeholder background                                                                                | `color.surface.card`                                                                         |
+| Secondary control background (secondary button, inactive chip/tab)                                                               | `color.surface.control`                                                                      |
+| Card/sheet/input border, divider, skeleton base                                                                                  | `color.surface.border`                                                                       |
+| Primary text                                                                                                                     | `color.text.primary`                                                                         |
+| Secondary text (subtitles, artist names, descriptions)                                                                           | `color.text.secondary`                                                                       |
+| Tertiary text (meta, captions)                                                                                                   | `color.text.tertiary`                                                                        |
+| Disabled text                                                                                                                    | `color.text.disabled`                                                                        |
+| Text drawn on a light/accent background                                                                                          | `color.text.inverse`                                                                         |
+| The app's single accent (primary buttons, active state)                                                                          | `color.accent.primary`                                                                       |
+| Switch: track and thumb when on, track and thumb when off                                                                        | `color.accent.primary` / `color.text.inverse`, `color.surface.border` / `color.text.primary` |
+| Destructive/error state                                                                                                          | `color.status.error`                                                                         |
+| Success/confirmation state                                                                                                       | `color.status.success`                                                                       |
+| Sheet/modal backdrop                                                                                                             | `color.overlay.backdrop`                                                                     |
+| Scrim over an image (behind a control or text)                                                                                   | `color.overlay.onImage`                                                                      |
+| Subtle translucent fill (ghost button, translucent chip)                                                                         | `color.overlay.subtle`                                                                       |
+| Muted translucent fill (seek track, icon-button background)                                                                      | `color.overlay.muted`                                                                        |
 
 ## Spacing and layout (`spacing`, `layout`)
 
@@ -47,6 +48,7 @@ value: the value lives once, in the token file.
 | Height of a filter chip                                                                                       | `layout.chipHeight`                              |
 | Width / height of the genre accent bar in a genre row                                                         | `layout.genreBarWidth` / `layout.genreBarHeight` |
 | Side of the cover in a list row                                                                               | `layout.rowCover`                                |
+| Side of the cover in the medium list row (library)                                                            | `layout.rowCoverMedium`                          |
 | Side of the cover in the large list row (search top artist)                                                   | `layout.rowCoverLarge`                           |
 
 ## Floating surfaces

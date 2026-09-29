@@ -105,6 +105,12 @@ enforced the same way in `eslint.config.js`; see ADR 017.
   TanStack Query. Its `staleTime` comes from the response's
   `Cache-Control`, never from a literal. Mutations invalidate the
   user-data queries the contract says they affect.
+  A mutation over a service that has only success and failure
+  outcomes throws `OutcomeError` from `mutationFn` when the outcome is
+  not `ok`, so the caller reads `isError` (`useCreatePlaylist`). A
+  mutation over a port with more results than success and failure
+  returns the outcome as data (the auth mutations, where
+  `confirmation_sent` is neither).
 - A **screen** reads the hook, maps each state (loading, data,
   expected empty, error) to `ui` components, and calls mutations. If a
   screen needs to compute something across pages, rank, aggregate or

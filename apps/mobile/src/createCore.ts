@@ -3,6 +3,7 @@ import {
   createActivityService,
   createGenresService,
   createHttpClient,
+  createLibraryService,
   createPlaylistsService,
   createProfileService,
   createRecentSearchesService,
@@ -12,6 +13,7 @@ import type {
   ActivityService,
   AuthPort,
   GenresService,
+  LibraryService,
   LogPort,
   PlaylistsService,
   ProfileService,
@@ -29,6 +31,7 @@ export interface Core {
   readonly activity: ActivityService;
   readonly auth: AuthPort;
   readonly genres: GenresService;
+  readonly library: LibraryService;
   readonly log: LogPort;
   readonly playlists: PlaylistsService;
   readonly profile: ProfileService;
@@ -53,6 +56,7 @@ export function createCore(): Core {
     activity: createActivityService(client),
     auth,
     genres: createGenresService(client),
+    library: createLibraryService(client),
     log,
     playlists: createPlaylistsService(client),
     profile: createProfileService(client),
