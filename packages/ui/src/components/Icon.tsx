@@ -5,6 +5,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Compass,
   Eye,
   EyeOff,
@@ -15,6 +16,7 @@ import {
   Music,
   Search,
   User,
+  X,
 } from "lucide-react-native";
 
 import { icon } from "../tokens/icon.ts";
@@ -24,6 +26,7 @@ const glyphs = {
   check: Check,
   chevronLeft: ChevronLeft,
   chevronRight: ChevronRight,
+  clock: Clock,
   compass: Compass,
   eye: Eye,
   eyeOff: EyeOff,
@@ -34,6 +37,7 @@ const glyphs = {
   music: Music,
   search: Search,
   user: User,
+  x: X,
 } as const;
 
 export type IconName = keyof typeof glyphs;

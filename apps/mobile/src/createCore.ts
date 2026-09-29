@@ -5,6 +5,8 @@ import {
   createHttpClient,
   createPlaylistsService,
   createProfileService,
+  createRecentSearchesService,
+  createSearchService,
 } from "@beatly/core";
 import type {
   ActivityService,
@@ -13,11 +15,14 @@ import type {
   LogPort,
   PlaylistsService,
   ProfileService,
+  RecentSearchesService,
+  SearchService,
 } from "@beatly/core";
 
 import { createAuthAdapter } from "./adapters/auth.ts";
 import { createHttpAdapter } from "./adapters/http.ts";
 import { createLogAdapter } from "./adapters/log.ts";
+import { createStorageAdapter } from "./adapters/storage.ts";
 import { readPublicEnv } from "./env.ts";
 
 export interface Core {
@@ -27,6 +32,8 @@ export interface Core {
   readonly log: LogPort;
   readonly playlists: PlaylistsService;
   readonly profile: ProfileService;
+  readonly recentSearches: RecentSearchesService;
+  readonly search: SearchService;
 }
 
 export function createCore(): Core {
@@ -49,5 +56,7 @@ export function createCore(): Core {
     log,
     playlists: createPlaylistsService(client),
     profile: createProfileService(client),
+    recentSearches: createRecentSearchesService({ storage: createStorageAdapter(), log }),
+    search: createSearchService(client),
   };
 }

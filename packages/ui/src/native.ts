@@ -31,3 +31,6 @@ export { GenreRow } from "./components/GenreRow.tsx";
 export { Chip } from "./components/Chip.tsx";
 export { IconButton } from "./components/IconButton.tsx";
 export { MediaGrid, gridCardSize } from "./components/MediaGrid.tsx";
+export { SearchBar } from "./components/SearchBar.tsx";
+export { MediaRow } from "./components/MediaRow.tsx";
+export { RecentRow } from "./components/RecentRow.tsx";

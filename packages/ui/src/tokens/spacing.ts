@@ -1,6 +1,6 @@
 // INFO: spacing tokens, a multiples-of-four scale, plus the layout
 // constants (gutter, gap, hitSlop, control height, and the carousel card,
-// avatar, tab item, chip and genre bar sizes).
+// avatar, tab item, chip, genre bar and row cover sizes).
 export const spacing = {
   xxs: 2,
   xs: 4,
@@ -22,4 +22,6 @@ export const layout = {
   chipHeight: 36,
   genreBarWidth: 6,
   genreBarHeight: 28,
+  rowCover: 40,
+  rowCoverLarge: 64,
 } as const;

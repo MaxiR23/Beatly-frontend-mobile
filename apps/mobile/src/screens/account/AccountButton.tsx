@@ -1,4 +1,4 @@
-// INFO: the header's account avatar and its sheet with log out, shared by the home and explore tabs.
+// INFO: the header's account avatar and its sheet with log out, shared by the home, explore and search tabs.
 import { profileName } from "@beatly/core";
 import { Avatar, Button, Sheet, Text } from "@beatly/ui/native";
 import { useState } from "react";
