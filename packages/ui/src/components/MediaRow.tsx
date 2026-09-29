@@ -1,8 +1,9 @@
-// INFO: a non-pressable list row: a cover at the start, a title and an optional secondary line; regular for songs, large for an artist.
+// INFO: a non-pressable list row: a cover at the start, a title and an optional secondary line; regular for songs, medium for the library, large for an artist; an icon replaces the images with an accent tile.
 import { StyleSheet, View } from "react-native";
 
 import { layout, spacing } from "../tokens/spacing.ts";
 import { Cover } from "./Cover.tsx";
+import type { IconName } from "./Icon.tsx";
 import { Text } from "./Text.tsx";
 
 interface MediaRowProps {
@@ -10,7 +11,8 @@ interface MediaRowProps {
   subtitle?: string | undefined;
   urls: readonly string[];
   shape: "square" | "round";
-  size?: "regular" | "large";
+  size?: "regular" | "medium" | "large";
+  icon?: IconName | undefined;
   testID?: string;
 }
 
@@ -20,12 +22,15 @@ export function MediaRow({
   urls,
   shape,
   size = "regular",
+  icon,
   testID,
 }: MediaRowProps) {
   const large = size === "large";
+  const medium = size === "medium";
+  const coverSize = large ? layout.rowCoverLarge : medium ? layout.rowCoverMedium : layout.rowCover;
   return (
-    <View style={styles.row} testID={testID}>
-      <Cover urls={urls} shape={shape} size={large ? layout.rowCoverLarge : layout.rowCover} />
+    <View style={[styles.row, medium ? styles.rowMedium : undefined]} testID={testID}>
+      <Cover urls={urls} shape={shape} size={coverSize} icon={icon} />
       <View style={styles.text}>
         <Text variant={large ? "subtitle" : "rowTitle"} numberOfLines={1}>
           {title}
@@ -48,5 +53,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     gap: layout.gap,
   },
+  rowMedium: { paddingVertical: spacing.xs },
   text: { flex: 1, gap: spacing.xxs },
 });

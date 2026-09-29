@@ -9,9 +9,13 @@
 // - Fails with a timeout, network or schema outcome
 // - Sends the cursor and returns the second page
 // - Drops a stale cursor and returns the first page on invalid_cursor
+// - createPlaylist posts the title, description and is_public and returns the playlist
+// - Omits description when it is not given
+// - Surfaces invalid_request as an api failure
+// - Fails with a timeout, network or schema outcome
 //
 // What is covered:
-// - Happy path, expected empty state, api failure, transport failure, pagination
+// - Happy path, expected empty state, api failure, transport failure, pagination, creation
 //
 // Run with: pnpm --filter @beatly/core test -- playlists
 //
@@ -49,8 +53,18 @@ function pageBody(items: unknown[], page: Record<string, unknown>) {
   return { ok: true, data: { items, page } };
 }
 
-function setup(handler: Handler) {
-  const http = createFakeHttp({ "GET /playlists": handler }, BASE_URL);
+const created = {
+  id: "p9",
+  owner_id: "u1",
+  title: "New one",
+  description: "Fresh",
+  is_public: true,
+  created_at: "2026-02-01T00:00:00Z",
+  updated_at: "2026-02-01T00:00:00Z",
+};
+
+function setup(handler: Handler, post: Handler = never) {
+  const http = createFakeHttp({ "GET /playlists": handler, "POST /playlists": post }, BASE_URL);
   const client = createHttpClient({
     http: http.port,
     auth: createFakeAuth().port,
@@ -148,5 +162,74 @@ describe("listPlaylists", () => {
     expect(http.requests[1]?.url).not.toContain("cursor");
     expect(outcome.kind === "success" && outcome.data.items).toEqual([withCover]);
     expect(outcome.kind === "success" && outcome.data.restartedFromFirstPage).toBe(true);
+  });
+});
+
+describe("createPlaylist", () => {
+  it("posts the title, description and is_public and returns the created playlist", async () => {
+    const { service, http } = setup(never, () => ({
+      headers: { "cache-control": "private, no-cache" },
+      body: { ok: true, data: created },
+    }));
+    const outcome = await service.createPlaylist({
+      title: "New one",
+      description: "Fresh",
+      is_public: true,
+    });
+    expect(outcome).toEqual({ kind: "success", maxAgeSeconds: 0, data: created });
+    expect(http.requests[0]?.method).toBe("POST");
+    expect(http.requests[0]?.url).toBe("test://api/playlists");
+    expect(http.requests[0]?.headers["content-type"]).toBe("application/json");
+    expect(JSON.parse(http.requests[0]?.body ?? "")).toEqual({
+      title: "New one",
+      description: "Fresh",
+      is_public: true,
+    });
+  });
+
+  it("omits description when it is not given", async () => {
+    const { service, http } = setup(never, () => ({ body: { ok: true, data: created } }));
+    await service.createPlaylist({ title: "New one", is_public: false });
+    expect(JSON.parse(http.requests[0]?.body ?? "")).toEqual({
+      title: "New one",
+      is_public: false,
+    });
+  });
+
+  it("surfaces invalid_request as an api failure", async () => {
+    const { service } = setup(never, () => ({
+      status: 422,
+      body: { ok: false, reason: "invalid_request" },
+    }));
+    expect(await service.createPlaylist({ title: "", is_public: false })).toEqual({
+      kind: "api_failure",
+      reason: "invalid_request",
+    });
+  });
+
+  it("fails with a timeout outcome when the API does not answer", async () => {
+    vi.useFakeTimers();
+    const { service } = setup(never, never);
+    const pending = service.createPlaylist({ title: "x", is_public: false });
+    await vi.advanceTimersByTimeAsync(DEFAULT_TIMEOUT_MS + 1);
+    expect(await pending).toEqual({ kind: "transport_failure", cause: "timeout" });
+  });
+
+  it("fails with a network outcome when the request cannot be sent", async () => {
+    const { service } = setup(never, () => Promise.reject(new Error("offline")));
+    expect(await service.createPlaylist({ title: "x", is_public: false })).toEqual({
+      kind: "transport_failure",
+      cause: "network",
+    });
+  });
+
+  it("fails with a schema outcome when the created playlist has no owner_id", async () => {
+    const withoutOwner: Record<string, unknown> = { ...created };
+    delete withoutOwner.owner_id;
+    const { service } = setup(never, () => ({ body: { ok: true, data: withoutOwner } }));
+    expect(await service.createPlaylist({ title: "x", is_public: false })).toEqual({
+      kind: "transport_failure",
+      cause: "schema",
+    });
   });
 });

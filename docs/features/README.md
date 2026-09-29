@@ -9,4 +9,5 @@ One file per screen; every file follows `_template.md`.
 | `explore.md` | the explore tab                               |
 | `genre.md`   | a genre's playlists                           |
 | `search.md`  | the search tab                                |
-| `tabs.md`    | the tab navigator and the library placeholder |
+| `library.md` | the library tab and the create-playlist sheet |
+| `tabs.md`    | the tab navigator                             |

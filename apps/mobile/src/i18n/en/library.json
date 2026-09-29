@@ -1,0 +1,23 @@
+{
+  "title": "Library",
+  "liked": "Liked songs",
+  "you": "You",
+  "kind": {
+    "playlist": "Playlist",
+    "album": "Album"
+  },
+  "meta": "{{kind}} · {{owner}}",
+  "empty": "Create a playlist or save albums to see them here.",
+  "create": {
+    "open": "Create playlist",
+    "title": "New playlist",
+    "name": "Name",
+    "nameTooLong": "Use {{max}} characters or fewer",
+    "description": "Description (optional)",
+    "public": "Public",
+    "publicHelper": "Anyone with the link can open it.",
+    "cancel": "Cancel",
+    "submit": "Create",
+    "close": "Close"
+  }
+}

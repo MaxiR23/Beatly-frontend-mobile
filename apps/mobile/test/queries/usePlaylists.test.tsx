@@ -4,24 +4,38 @@
 //
 // Tested:
 // - usePlaylists
+// - useCreatePlaylist
 //
 // What is covered:
 // - the first page unwrapped, cache time from Cache-Control
+// - creation refetching the library and the playlists, and a rejected creation surfacing its outcome
 //
 // Run with: pnpm --filter @beatly/mobile test -- usePlaylists
 //
 // SEE: apps/mobile/src/queries/usePlaylists.ts
 
 import { createHttpClient, createPlaylistsService } from "@beatly/core";
-import type { HttpPort } from "@beatly/core";
+import type { HttpPort, LibraryEntry, PlaylistListItem } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import { renderHook, waitFor } from "@testing-library/react-native";
+import { act, renderHook, waitFor } from "@testing-library/react-native";
 import type { ReactNode } from "react";
 
 import type { Core } from "../../src/createCore.ts";
+import { OutcomeError } from "../../src/queries/outcomeError.ts";
 import { createQueryClient } from "../../src/queries/queryClient.ts";
-import { usePlaylists } from "../../src/queries/usePlaylists.ts";
-import { makeAuth, makeCore, makeLog, playlistFixture, Wrapper } from "../helpers/core.tsx";
+import { useLibrary } from "../../src/queries/useLibrary.ts";
+import { useCreatePlaylist, usePlaylists } from "../../src/queries/usePlaylists.ts";
+import {
+  createdPlaylistFixture,
+  likedEntryFixture,
+  makeAuth,
+  makeCore,
+  makeLog,
+  ownPlaylistEntryFixture,
+  pageOf,
+  playlistFixture,
+  Wrapper,
+} from "../helpers/core.tsx";
 
 afterEach(() => {
   jest.useRealTimers();
@@ -81,5 +95,75 @@ describe("usePlaylists", () => {
     await mountAndSettle(wrapper);
     await mountAndSettle(wrapper);
     expect(send).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("useCreatePlaylist", () => {
+  const input = { title: "New one", is_public: false };
+  const created: PlaylistListItem = { ...createdPlaylistFixture, thumbnail_urls: [] };
+  const newEntry: LibraryEntry = {
+    ...ownPlaylistEntryFixture,
+    id: created.id,
+    title: created.title,
+  };
+
+  function mount(options: Parameters<typeof makeCore>[0]) {
+    const ctx = makeCore(options);
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <Wrapper core={ctx.core}>{children}</Wrapper>
+    );
+    return { ctx, wrapper };
+  }
+
+  it("refetches the library and the caller's playlists after creating one", async () => {
+    const { ctx, wrapper } = mount({
+      listLibrary: jest
+        .fn<() => ReturnType<typeof ctx.listLibrary>>()
+        .mockResolvedValueOnce(pageOf([likedEntryFixture]))
+        .mockResolvedValue(pageOf([likedEntryFixture, newEntry])),
+      listPlaylists: jest
+        .fn<() => ReturnType<typeof ctx.listPlaylists>>()
+        .mockResolvedValueOnce(pageOf<PlaylistListItem>([]))
+        .mockResolvedValue(pageOf([created])),
+    });
+    const { result } = await renderHook(
+      () => ({ library: useLibrary(), playlists: usePlaylists(), create: useCreatePlaylist() }),
+      { wrapper },
+    );
+    await waitFor(() => {
+      expect(result.current.library.data).toEqual([likedEntryFixture]);
+      expect(result.current.playlists.data).toEqual([]);
+    });
+    await act(() => result.current.create.mutateAsync(input));
+    await waitFor(() => {
+      expect(result.current.library.data).toEqual([likedEntryFixture, newEntry]);
+      expect(result.current.playlists.data).toEqual([created]);
+    });
+    expect(ctx.listLibrary).toHaveBeenCalledTimes(2);
+    expect(ctx.listPlaylists).toHaveBeenCalledTimes(2);
+    expect(ctx.createPlaylist).toHaveBeenCalledWith(input);
+  });
+
+  it("fails with the outcome when the API rejects the playlist", async () => {
+    const rejected = { kind: "api_failure", reason: "invalid_request" } as const;
+    const { ctx, wrapper } = mount({ createPlaylist: () => Promise.resolve(rejected) });
+    const { result } = await renderHook(
+      () => ({ library: useLibrary(), playlists: usePlaylists(), create: useCreatePlaylist() }),
+      { wrapper },
+    );
+    await waitFor(() => {
+      expect(result.current.library.isFetching).toBe(false);
+      expect(result.current.playlists.isFetching).toBe(false);
+    });
+    await act(async () => {
+      result.current.create.mutate(input);
+      await waitFor(() => {
+        expect(result.current.create.isError).toBe(true);
+      });
+    });
+    const error = result.current.create.error;
+    expect(error instanceof OutcomeError && error.outcome).toEqual(rejected);
+    expect(ctx.listLibrary).toHaveBeenCalledTimes(1);
+    expect(ctx.listPlaylists).toHaveBeenCalledTimes(1);
   });
 });

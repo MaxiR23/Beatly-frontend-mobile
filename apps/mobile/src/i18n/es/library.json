@@ -1,0 +1,23 @@
+{
+  "title": "Biblioteca",
+  "liked": "Tus me gusta",
+  "you": "Tú",
+  "kind": {
+    "playlist": "Playlist",
+    "album": "Álbum"
+  },
+  "meta": "{{kind}} · {{owner}}",
+  "empty": "Crea una playlist o guarda álbumes para verlos aquí.",
+  "create": {
+    "open": "Crear playlist",
+    "title": "Nueva playlist",
+    "name": "Nombre",
+    "nameTooLong": "Usa {{max}} caracteres o menos",
+    "description": "Descripción (opcional)",
+    "public": "Pública",
+    "publicHelper": "Cualquiera con el enlace puede abrirla.",
+    "cancel": "Cancelar",
+    "submit": "Crear",
+    "close": "Cerrar"
+  }
+}

@@ -1,6 +1,6 @@
-// INFO: the library tab, a placeholder until its screen is ported.
-import { PlaceholderScreen } from "../../src/screens/placeholder/PlaceholderScreen.tsx";
+// INFO: the library tab.
+import { LibraryScreen } from "../../src/screens/library/LibraryScreen.tsx";
 
 export default function LibraryTab() {
-  return <PlaceholderScreen icon="library" testID="library" />;
+  return <LibraryScreen />;
 }

@@ -6,7 +6,7 @@
 // - Cover
 //
 // What is covered:
-// - the 2 x 2 mosaic with four urls, the first url with one to three, the placeholder with none, the round shape, the size of the box and the mosaic cells
+// - the 2 x 2 mosaic with four urls, the first url with one to three, the placeholder with none, the accent tile with an icon, the round shape, the size of the box and the mosaic cells
 //
 // Run with: pnpm --filter @beatly/ui test -- Cover
 //
@@ -16,6 +16,7 @@ import { describe, expect, it } from "@jest/globals";
 import { render, screen } from "@testing-library/react-native";
 
 import { Cover } from "../../src/components/Cover.tsx";
+import { color } from "../../src/tokens/color.ts";
 import { radius } from "../../src/tokens/radius.ts";
 import { layout } from "../../src/tokens/spacing.ts";
 
@@ -61,6 +62,16 @@ describe("Cover", () => {
     await render(<Cover urls={[]} shape="square" />);
     expect(screen.getByTestId("cover-placeholder")).toBeTruthy();
     expect(nodesWithProp(screen.toJSON(), "source")).toHaveLength(0);
+  });
+
+  it("draws the accent tile with its icon instead of images when given an icon", async () => {
+    await render(<Cover urls={urls} shape="square" icon="heart" />);
+    const tile = screen.getByTestId("cover-tile");
+    expect(tile.props.style).toEqual(
+      expect.objectContaining({ backgroundColor: color.accent.primary }),
+    );
+    expect(nodesWithProp(screen.toJSON(), "source")).toHaveLength(0);
+    expect(screen.queryByTestId("cover-mosaic")).toBeNull();
   });
 
   it("rounds the box for the round shape", async () => {
