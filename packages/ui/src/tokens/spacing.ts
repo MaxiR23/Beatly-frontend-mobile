@@ -1,5 +1,6 @@
 // INFO: spacing tokens, a multiples-of-four scale, plus the layout
-// constants (gutter, gap, hitSlop, control height) built from the same scale.
+// constants (gutter, gap, hitSlop, control height, and the carousel card,
+// avatar and tab item sizes).
 export const spacing = {
   xxs: 2,
   xs: 4,
@@ -15,4 +16,7 @@ export const layout = {
   gap: 12,
   hitSlop: 8,
   controlHeight: 48,
+  carouselCard: 140,
+  avatar: 36,
+  tabItemWidth: 64,
 } as const;

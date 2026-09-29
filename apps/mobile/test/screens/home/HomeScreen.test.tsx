@@ -1,25 +1,36 @@
 // apps/mobile/test/screens/home/HomeScreen.test.tsx
 //
-// Tests for the signed-in placeholder screen.
+// Tests for the home tab.
 //
 // Tested:
 // - HomeScreen
 //
 // What is covered:
-// - loading, the greeting and its fallbacks, profile_not_found, a generic failure with retry, log out, en and es
+// - loading, both sections, a hidden empty section, the empty state, the generic error with retry
+// - the next page of playlists at the end of the carousel
+// - the avatar initials, the account sheet and logout in every state, en and es
 //
 // Run with: pnpm --filter @beatly/mobile test -- HomeScreen
 //
 // SEE: apps/mobile/src/screens/home/HomeScreen.tsx
 
-import type { HttpOutcome, Profile } from "@beatly/core";
+import type { HttpOutcome, PageResult, PlaylistListItem, RecentEntity } from "@beatly/core";
 import { afterEach, describe, expect, it } from "@jest/globals";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { HomeScreen } from "../../../src/screens/home/HomeScreen.tsx";
-import { makeCore, profileFixture, successOf, Wrapper } from "../../helpers/core.tsx";
+import {
+  makeCore,
+  pageOf,
+  playlistFixture,
+  profileFixture,
+  recentFixture,
+  successOf,
+  Wrapper,
+} from "../../helpers/core.tsx";
 
 afterEach(async () => {
   await i18n.changeLanguage("en");
@@ -27,97 +38,161 @@ afterEach(async () => {
 
 const en = resources.en;
 
-async function setup(outcome: HttpOutcome<Profile> | Promise<HttpOutcome<Profile>>) {
-  const ctx = makeCore({ getMyProfile: () => Promise.resolve(outcome) });
+const metrics = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 0, left: 0, right: 0, bottom: 0 },
+};
+
+function Screen() {
+  return (
+    <SafeAreaProvider initialMetrics={metrics}>
+      <HomeScreen />
+    </SafeAreaProvider>
+  );
+}
+
+type Options = Parameters<typeof makeCore>[0];
+
+async function setup(options: Options = {}) {
+  const ctx = makeCore(options);
   await render(
     <Wrapper core={ctx.core}>
-      <HomeScreen />
+      <Screen />
     </Wrapper>,
   );
   return ctx;
 }
 
+function recents(items: RecentEntity[]) {
+  return () => Promise.resolve(pageOf(items));
+}
+
+function playlistsOf(items: PlaylistListItem[]) {
+  return () => Promise.resolve(pageOf(items));
+}
+
+const failure: HttpOutcome<PageResult<never>> = { kind: "api_failure", reason: "upstream_error" };
+
 describe("HomeScreen", () => {
-  it("draws the loading state while the profile loads", async () => {
-    const ctx = makeCore({ getMyProfile: () => new Promise(() => undefined) });
-    await render(
-      <Wrapper core={ctx.core}>
-        <HomeScreen />
-      </Wrapper>,
-    );
+  it("draws the loading state while either list loads", async () => {
+    await setup({
+      listRecents: recents([recentFixture]),
+      listPlaylists: () => new Promise(() => undefined),
+    });
     expect(screen.getByLabelText(en.common.loading)).toBeTruthy();
   });
 
-  it("greets by username", async () => {
-    await setup(successOf(profileFixture));
-    expect(await screen.findByText("Hi, maxi_23")).toBeTruthy();
+  it("draws both sections when both have items", async () => {
+    await setup({
+      listRecents: recents([recentFixture]),
+      listPlaylists: playlistsOf([playlistFixture]),
+    });
+    expect(await screen.findByText(en.home.recents)).toBeTruthy();
+    expect(screen.getByText(en.home.playlists)).toBeTruthy();
+    expect(screen.getByText("Recent album")).toBeTruthy();
+    expect(screen.getByText("Road trip")).toBeTruthy();
+    expect(screen.getByText("Windows down")).toBeTruthy();
   });
 
-  it("falls back to the display name when the username is null", async () => {
-    await setup(successOf({ ...profileFixture, username: null }));
-    expect(await screen.findByText("Hi, Maxi")).toBeTruthy();
+  it("hides recently played when it is empty", async () => {
+    await setup({ listPlaylists: playlistsOf([playlistFixture]) });
+    expect(await screen.findByText(en.home.playlists)).toBeTruthy();
+    expect(screen.queryByText(en.home.recents)).toBeNull();
   });
 
-  it("draws greetingNoName when both names are null", async () => {
-    await setup(successOf({ ...profileFixture, username: null, display_name: null }));
-    expect(await screen.findByText(en.home.greetingNoName)).toBeTruthy();
+  it("hides your playlists when it is empty", async () => {
+    await setup({ listRecents: recents([recentFixture]) });
+    expect(await screen.findByText(en.home.recents)).toBeTruthy();
+    expect(screen.queryByText(en.home.playlists)).toBeNull();
   });
 
-  it("draws profileNotFound and its action signs out", async () => {
-    const ctx = await setup({ kind: "api_failure", reason: "profile_not_found" });
-    expect(await screen.findByText(en.home.profileNotFound)).toBeTruthy();
-    await fireEvent.press(screen.getByText(en.home.logout));
+  it("draws the empty state with no button when both are empty", async () => {
+    await setup();
+    expect(await screen.findByText(en.home.empty)).toBeTruthy();
+    expect(screen.queryByText(en.common.retry)).toBeNull();
+    expect(screen.queryByText(en.home.recents)).toBeNull();
+    expect(screen.queryByText(en.home.playlists)).toBeNull();
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+  });
+
+  it("draws the generic error when recents fail and retry refetches only them", async () => {
+    const ctx = await setup({ listRecents: () => Promise.resolve(failure) });
+    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    await fireEvent.press(screen.getByText(en.common.retry));
+    await waitFor(() => {
+      expect(ctx.listRecents).toHaveBeenCalledTimes(2);
+    });
+    expect(ctx.listPlaylists).toHaveBeenCalledTimes(1);
+  });
+
+  it("loads the next page of playlists at the end of the carousel", async () => {
+    const second = { ...playlistFixture, id: "p2", title: "Second page" };
+    const ctx = await setup({
+      listRecents: recents([recentFixture]),
+      listPlaylists: (cursor) =>
+        Promise.resolve(
+          cursor === null
+            ? pageOf([playlistFixture], { has_more: true, next_cursor: "c1" })
+            : pageOf([second]),
+        ),
+    });
+    await screen.findByText("Road trip");
+    await fireEvent(screen.getByTestId("playlists"), "onEndReached");
+    expect(await screen.findByText("Second page")).toBeTruthy();
+    expect(ctx.listPlaylists).toHaveBeenLastCalledWith("c1");
+  });
+
+  it("draws the initials of the profile name in the avatar", async () => {
+    await setup({
+      getMyProfile: () =>
+        Promise.resolve(successOf({ ...profileFixture, username: null, display_name: "Max Reb" })),
+    });
+    expect(await screen.findByText("MR")).toBeTruthy();
+  });
+
+  it("opens the account sheet from the avatar and logs out", async () => {
+    const ctx = await setup();
+    await screen.findByText(en.home.empty);
+    await fireEvent.press(screen.getByRole("button", { name: en.home.account.open }));
+    await fireEvent.press(await screen.findByRole("button", { name: en.home.logout }));
     await waitFor(() => {
       expect(ctx.auth.signOut).toHaveBeenCalledTimes(1);
     });
   });
 
-  it("shows a busy logout while signing out from profileNotFound", async () => {
-    const ctx = makeCore({
-      getMyProfile: () => Promise.resolve({ kind: "api_failure", reason: "profile_not_found" }),
-    });
-    ctx.auth.signOut.mockImplementation(() => new Promise(() => undefined));
-    await render(
-      <Wrapper core={ctx.core}>
-        <HomeScreen />
-      </Wrapper>,
-    );
-    await fireEvent.press(await screen.findByText(en.home.logout));
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: en.home.logout }).props.accessibilityState).toEqual(
-        expect.objectContaining({ busy: true }),
-      );
-    });
-  });
-
-  it("draws the generic error when signing out from profileNotFound fails", async () => {
-    const ctx = makeCore({
-      getMyProfile: () => Promise.resolve({ kind: "api_failure", reason: "profile_not_found" }),
-    });
+  it("draws the generic error in the sheet when logout fails", async () => {
+    const ctx = makeCore();
     ctx.auth.signOut.mockImplementation(() =>
       Promise.resolve({ kind: "failure", reason: "unknown" }),
     );
     await render(
       <Wrapper core={ctx.core}>
-        <HomeScreen />
+        <Screen />
       </Wrapper>,
     );
-    await fireEvent.press(await screen.findByText(en.home.logout));
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    await fireEvent.press(screen.getByRole("button", { name: en.home.account.open }));
+    await fireEvent.press(await screen.findByRole("button", { name: en.home.logout }));
+    expect(await screen.findAllByText(en.common.error.generic)).not.toHaveLength(0);
   });
 
-  it("draws the generic error for any other failure and retry refetches", async () => {
-    const ctx = await setup({ kind: "api_failure", reason: "upstream_error" });
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
-    await fireEvent.press(screen.getByText(en.common.retry));
+  it("keeps the avatar and logout reachable when the profile fails", async () => {
+    const ctx = await setup({
+      getMyProfile: () => Promise.resolve({ kind: "api_failure", reason: "profile_not_found" }),
+    });
+    await screen.findByText(en.home.empty);
+    expect(screen.queryByText("M")).toBeNull();
+    await fireEvent.press(screen.getByRole("button", { name: en.home.account.open }));
+    await fireEvent.press(await screen.findByRole("button", { name: en.home.logout }));
     await waitFor(() => {
-      expect(ctx.getMyProfile).toHaveBeenCalledTimes(2);
+      expect(ctx.auth.signOut).toHaveBeenCalledTimes(1);
     });
   });
 
-  it("signs out from the log out button", async () => {
-    const ctx = await setup(successOf(profileFixture));
-    await fireEvent.press(await screen.findByText(en.home.logout));
+  it("keeps logout reachable in the error state", async () => {
+    const ctx = await setup({ listPlaylists: () => Promise.resolve(failure) });
+    await screen.findByText(en.common.retry);
+    await fireEvent.press(screen.getByRole("button", { name: en.home.account.open }));
+    await fireEvent.press(await screen.findByRole("button", { name: en.home.logout }));
     await waitFor(() => {
       expect(ctx.auth.signOut).toHaveBeenCalledTimes(1);
     });
@@ -125,8 +200,11 @@ describe("HomeScreen", () => {
 
   it("draws in es", async () => {
     await i18n.changeLanguage("es");
-    await setup(successOf(profileFixture));
-    expect(await screen.findByText("Hola, maxi_23")).toBeTruthy();
-    expect(screen.getByText(resources.es.home.logout)).toBeTruthy();
+    await setup({
+      listRecents: recents([recentFixture]),
+      listPlaylists: playlistsOf([playlistFixture]),
+    });
+    expect(await screen.findByText(resources.es.home.recents)).toBeTruthy();
+    expect(screen.getByText(resources.es.home.playlists)).toBeTruthy();
   });
 });

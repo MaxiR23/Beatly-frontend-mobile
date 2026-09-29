@@ -1,7 +1,9 @@
 // INFO: ESLint flat config. Besides the usual TypeScript rules it encodes
 // the import boundaries of ARCHITECTURE.md: what core may not import,
 // what ui may not import, and which libraries may only be imported from
-// their adapter in apps/mobile. A boundary is a rule here, not a habit.
+// their adapter in apps/mobile. Two libraries have a single importer inside
+// packages/ui instead: lucide-react-native (Icon.tsx) and expo-glass-effect
+// (GlassSurface.tsx). A boundary is a rule here, not a habit.
 
 import js from "@eslint/js";
 import comments from "@eslint-community/eslint-plugin-eslint-comments/configs";
@@ -46,6 +48,14 @@ const iconLibraryOnlyInIcon = {
   group: ["lucide-react-native", "lucide-react-native/*"],
   message:
     "Icons are drawn with the Icon component of @beatly/ui/native; packages/ui/src/components/Icon.tsx is the only importer of lucide-react-native.",
+};
+
+// Floating surfaces are drawn with GlassSurface of packages/ui; its file is
+// the only importer of the glass library.
+const glassLibraryOnlyInGlassSurface = {
+  group: ["expo-glass-effect"],
+  message:
+    "Floating surfaces are drawn with GlassSurface of @beatly/ui/native; packages/ui/src/components/GlassSurface.tsx is the only importer of expo-glass-effect.",
 };
 
 // A workspace is imported by its package name, never by a relative path
@@ -207,6 +217,28 @@ export default tseslint.config(
     },
   },
 
+  // The GlassSurface component is the one file allowed to import the glass
+  // library. Same shape as the Icon block; the negation lives in one group
+  // because a negation only works inside the group that names the pattern.
+  {
+    files: ["packages/ui/src/components/GlassSurface.tsx"],
+    rules: {
+      ...memoization,
+      ...restricted(
+        ["@beatly/mobile", "@tanstack/*", ...adapterOnlyLibraries, ...crossWorkspacePaths],
+        "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
+        [
+          iconLibraryOnlyInIcon,
+          {
+            group: ["expo-*", "!expo-glass-effect"],
+            message:
+              "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
+          },
+        ],
+      ),
+    },
+  },
+
   // packages/ui's main entry and its tokens: apps/mobile/app.config.ts
   // evaluates this entry under Node, which cannot parse react-native's
   // source. react-native-dependent tokens go in packages/ui/src/native.ts,
@@ -230,7 +262,7 @@ export default tseslint.config(
       ...restricted(
         [...adapterOnlyLibraries, ...crossWorkspacePaths],
         "This library is imported only by its adapter under apps/mobile/src/adapters/. Everything else goes through the port.",
-        [iconLibraryOnlyInIcon],
+        [iconLibraryOnlyInIcon, glassLibraryOnlyInGlassSurface],
       ),
     },
   },

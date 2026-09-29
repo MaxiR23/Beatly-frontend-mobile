@@ -80,7 +80,9 @@ port because `core` never translates.
 
 The list grows by one row per adapter, in the same PR as the adapter,
 and the library's name is added to the adapter-only list in
-`eslint.config.js` in that same PR.
+`eslint.config.js` in that same PR. The exception is a library that draws UI:
+it has a single importer in `packages/ui` (`Icon.tsx`, `GlassSurface.tsx`),
+enforced the same way in `eslint.config.js`; see ADR 017.
 
 ## How a screen gets data
 
@@ -138,17 +140,17 @@ string comes from i18n in both languages. A parity test keeps `es` and
 
 ## Where does this go?
 
-| I need to...                             | It goes in                                     |
-| ---------------------------------------- | ---------------------------------------------- |
-| call a new API route                     | a service in `core`, a schema in `core/domain` |
-| talk to a new native module or library   | a port in `core`, an adapter in `apps/mobile`  |
-| show data on a screen                    | a query hook, then the screen                  |
-| add a visual value (color, size, radius) | `packages/ui/src/tokens/`, with a named role   |
-| add a reusable piece of UI               | `packages/ui/src/components/`                  |
-| add text                                 | `apps/mobile/src/i18n/es/` and `en/`, same PR  |
-| decide something non-obvious             | `docs/adr/`                                    |
-| document what a screen uses and draws    | `docs/features/`                               |
-| compute across pages, rank, aggregate    | a backend issue                                |
+| I need to...                             | It goes in                                                                                           |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| call a new API route                     | a service in `core`, a schema in `core/domain`                                                       |
+| talk to a new native module or library   | a port in `core`, an adapter in `apps/mobile` (a UI-drawing one: a single importer in `packages/ui`) |
+| show data on a screen                    | a query hook, then the screen                                                                        |
+| add a visual value (color, size, radius) | `packages/ui/src/tokens/`, with a named role                                                         |
+| add a reusable piece of UI               | `packages/ui/src/components/`                                                                        |
+| add text                                 | `apps/mobile/src/i18n/es/` and `en/`, same PR                                                        |
+| decide something non-obvious             | `docs/adr/`                                                                                          |
+| document what a screen uses and draws    | `docs/features/`                                                                                     |
+| compute across pages, rank, aggregate    | a backend issue                                                                                      |
 
 ## See also
 

@@ -22,7 +22,7 @@ import type { Core } from "../../src/createCore.ts";
 import { OutcomeError } from "../../src/queries/outcomeError.ts";
 import { createQueryClient } from "../../src/queries/queryClient.ts";
 import { useProfile } from "../../src/queries/useProfile.ts";
-import { makeAuth, makeLog, profileFixture, Wrapper } from "../helpers/core.tsx";
+import { makeAuth, makeCore, makeLog, profileFixture, Wrapper } from "../helpers/core.tsx";
 
 afterEach(() => {
   jest.useRealTimers();
@@ -39,7 +39,7 @@ function setup(headers: Record<string, string>, response?: { status: number; bod
   const auth = makeAuth();
   const log = makeLog();
   const client = createHttpClient({ http: { send }, auth, log, baseUrl: "test://api" });
-  const core: Core = { auth, log, profile: createProfileService(client) };
+  const core: Core = { ...makeCore().core, auth, log, profile: createProfileService(client) };
   const queryClient = createQueryClient();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Wrapper core={core} client={queryClient}>

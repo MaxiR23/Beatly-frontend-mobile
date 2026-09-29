@@ -143,3 +143,10 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
   `retry: false`, so an error reaches the screen within the HTTP
   client's 15 seconds instead of about 67, and the error state's retry
   is the only one.
+- `017-native-tabs-and-glass-surfaces.md` — why the tab bar is native on
+  iOS 26+ and `FloatingTabBar` elsewhere, and why `GlassSurface` is the
+  only importer of `expo-glass-effect`.
+- `018-infinite-query-cache-time-and-cursor-restart.md` — why an infinite
+  query's stale time is the smallest max-age among its pages, and why the
+  shared infinite-query hook drops the pages before a restart from the
+  first page.
