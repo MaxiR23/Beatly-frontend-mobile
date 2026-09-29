@@ -42,25 +42,5 @@
     "jest-expo": "57.0.5",
     "react-dom": "19.2.3",
     "test-renderer": "1.2.0"
-  },
-  "jest": {
-    "preset": "jest-expo",
-    "setupFiles": [
-      "<rootDir>/test/setup/glass.ts"
-    ],
-    "transformIgnorePatterns": [
-      "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|lucide-react-native))",
-      "/node_modules/react-native-reanimated/plugin/"
-    ],
-    "transform": {
-      "\\.mjs$": [
-        "babel-jest",
-        {
-          "presets": [
-            "babel-preset-expo"
-          ]
-        }
-      ]
-    }
   }
 }
