@@ -144,7 +144,7 @@ that needs it opens a backend issue instead of computing it here.
       app/                  expo-router routes, thin files that render a screen
       src/screens/          one folder per screen
       src/queries/          TanStack Query hooks over core services
-      src/adapters/         one file per external library: http, auth, player, config, log, storage
+      src/adapters/         one file per external library: http, auth, player, config, log, storage, i18n
       src/i18n/es/ en/      one namespace per screen, key parity enforced by a test
       src/providers/        thin React providers over core
       test/                 mirrors src/

@@ -1,0 +1,5 @@
+{
+  "loading": "Loading…",
+  "error": { "generic": "Something went wrong" },
+  "retry": "Retry"
+}

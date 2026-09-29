@@ -8,7 +8,7 @@ Conventions for tests in this repo.
     pnpm --filter @beatly/core test             vitest, core only
     pnpm --filter @beatly/core test -- <pattern>
     pnpm --filter @beatly/core test --coverage  vitest with the v8 coverage report
-    pnpm --filter @beatly/ui test               vitest, ui only
+    pnpm --filter @beatly/ui test               jest-expo, ui only
     pnpm --filter @beatly/mobile test           jest-expo, mobile only
 
 Coverage is available in `core` only: `@vitest/coverage-v8` is in its
@@ -25,18 +25,15 @@ Two runners, chosen by what the code imports, not by preference:
   simulator. `core` imports neither `react` nor `react-native` nor
   `expo-*`, so nothing in it needs more than Node. If a test in `core`
   needs jest-expo, the code under test is in the wrong package.
-  `packages/ui` runs the same vitest setup with `passWithNoTests`
-  until it has tests, so `pnpm test` covers every workspace; its first
-  component test brings jest-expo with it, in the same change.
-- **jest-expo** in `apps/mobile`, and in `packages/ui` once it has a
-  component test, only for code that renders or touches a native
+  `packages/ui` runs jest-expo, because it has component tests.
+- **jest-expo** in `apps/mobile`, and in `packages/ui`, only for code that renders or touches a native
   module. A pure helper that happens to live in `apps/mobile` still
   gets a plain unit test. `describe` / `it` / `expect` come from
   explicit `@jest/globals` imports in each test file, not from ambient
   types, so `tsconfig.base.json` keeps `"types": []`.
-  `@testing-library/react-native` stays on the 13.x line: 14.x
-  requires the separate `test-renderer` package in place of
-  `react-test-renderer`, which is not adopted yet.
+  `@testing-library/react-native` is on 14.x with `test-renderer` 1.2
+  (the React 19.2 line); `render`, `fireEvent`, `act` and
+  `renderRouter` are async and are awaited.
 
 ## File location
 

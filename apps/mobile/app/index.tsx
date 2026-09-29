@@ -1,7 +1,7 @@
-// INFO: the single empty route; draws nothing but the dark base surface.
-import { color } from "@beatly/ui";
-import { View } from "react-native";
+// INFO: the index route; renders the Phase 1 showcase until the login
+// screen replaces it.
+import { ShowcaseScreen } from "../src/screens/showcase/ShowcaseScreen.tsx";
 
 export default function Index() {
-  return <View testID="root-route" style={{ flex: 1, backgroundColor: color.surface.base }} />;
+  return <ShowcaseScreen />;
 }

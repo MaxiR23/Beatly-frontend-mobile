@@ -36,7 +36,17 @@ const adapterOnlyLibraries = [
   "@supabase/*",
   "@react-native-async-storage/*",
   "@react-native-community/netinfo",
+  "i18next",
+  "expo-localization",
 ];
+
+// Icons are drawn with the Icon component of packages/ui; its file is the
+// only importer of the icon library.
+const iconLibraryOnlyInIcon = {
+  group: ["lucide-react-native", "lucide-react-native/*"],
+  message:
+    "Icons are drawn with the Icon component of @beatly/ui/native; packages/ui/src/components/Icon.tsx is the only importer of lucide-react-native.",
+};
 
 // A workspace is imported by its package name, never by a relative path
 // that crosses into another workspace's src.
@@ -59,12 +69,13 @@ const crossWorkspacePaths = [
 // through.
 const relativeImportWithoutExtension = String.raw`^\.{1,2}(?:/(?:[^/]*/)*[^./]*)?$|^\.{1,2}/.*\.(?:js|jsx|mjs|cjs)$`;
 
-const restricted = (patterns, message) => ({
+const restricted = (patterns, message, extra = []) => ({
   "no-restricted-imports": [
     "error",
     {
       patterns: [
         ...patterns.map((group) => ({ group: [group], message })),
+        ...extra,
         {
           regex: relativeImportWithoutExtension,
           message:
@@ -163,7 +174,34 @@ export default tseslint.config(
     rules: {
       ...memoization,
       ...restricted(
-        ["@beatly/mobile", "expo-*", "@supabase/*", "@tanstack/*", ...crossWorkspacePaths],
+        [
+          "@beatly/mobile",
+          "expo-*",
+          "@tanstack/*",
+          ...adapterOnlyLibraries,
+          ...crossWorkspacePaths,
+        ],
+        "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
+        [iconLibraryOnlyInIcon],
+      ),
+    },
+  },
+
+  // The Icon component is the one file allowed to import the icon library.
+  // A later block replaces no-restricted-imports wholesale, so the full ui
+  // list is repeated here.
+  {
+    files: ["packages/ui/src/components/Icon.tsx"],
+    rules: {
+      ...memoization,
+      ...restricted(
+        [
+          "@beatly/mobile",
+          "expo-*",
+          "@tanstack/*",
+          ...adapterOnlyLibraries,
+          ...crossWorkspacePaths,
+        ],
         "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
       ),
     },
@@ -192,6 +230,7 @@ export default tseslint.config(
       ...restricted(
         [...adapterOnlyLibraries, ...crossWorkspacePaths],
         "This library is imported only by its adapter under apps/mobile/src/adapters/. Everything else goes through the port.",
+        [iconLibraryOnlyInIcon],
       ),
     },
   },
