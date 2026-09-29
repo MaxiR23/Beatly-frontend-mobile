@@ -1,5 +1,7 @@
 {
   "recents": "Recently played",
   "playlists": "Your playlists",
+  "kind": { "artist": "Artist", "album": "Album", "playlist": "Playlist" },
+  "meta": "{{kind}} · {{owner}}",
   "empty": "Nothing here yet. Search or explore to start listening."
 }

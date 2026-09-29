@@ -20,7 +20,11 @@ sheet with log out from the avatar.
 - Card: `layout.carouselCard` wide. Cover `layout.carouselCard` square,
   `radius.sm`, or `radius.full` for an artist, on `color.surface.card`. Title in
   `typography.rowTitle`, one line; subtitle in `typography.meta` in
-  `color.text.secondary`, one line.
+  `color.text.secondary`, one line. For an own playlist the subtitle is the
+  profile name (username, or display name when username is null), and nothing
+  when the profile has no name, is loading or failed. For a recent it is
+  `Artist` for an artist, and `<Kind> · <metadata.subtitle>` or `<Kind>` alone
+  for an album or playlist.
 - Cover rule: with 4 `thumbnail_urls`, a 2 x 2 mosaic; with 1 to 3, the first
   entry; with none, the placeholder. `GET /playlists` has no `thumbnail_url`. A
   recent draws its `metadata.thumbnail_url`, or the placeholder.
@@ -36,14 +40,15 @@ elsewhere. The tab bar is described in `tabs.md`.
 
 The body reads recents and playlists together. The avatar and the account sheet
 are drawn in every state, so log out is always reachable. A profile that is
-loading or failed (any reason) draws the avatar without a name.
+loading or failed (any reason) draws the avatar without a name and own
+playlists without a subtitle.
 
-| State            | What is drawn                                                                                                           | i18n keys                              |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| Loading          | `LoadingState` while either list loads                                                                                  | `common:loading`                       |
-| With data        | the non-empty sections; an empty one is hidden                                                                          | `home:recents`, `home:playlists`       |
-| Expected empty   | `EmptyState` when both lists have no items, no action                                                                   | `home:empty`                           |
-| Error with retry | `ErrorState` when either list failed, on the first load or on a next page of playlists; retry refetches the failed ones | `common:error.generic`, `common:retry` |
+| State            | What is drawn                                                                                                           | i18n keys                                                    |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Loading          | `LoadingState` while either list loads                                                                                  | `common:loading`                                             |
+| With data        | the non-empty sections; an empty one is hidden                                                                          | `home:recents`, `home:playlists`, `home:kind.*`, `home:meta` |
+| Expected empty   | `EmptyState` when both lists have no items, no action                                                                   | `home:empty`                                                 |
+| Error with retry | `ErrorState` when either list failed, on the first load or on a next page of playlists; retry refetches the failed ones | `common:error.generic`, `common:retry`                       |
 
 The avatar and the sheet are `AccountButton`, shared with Explore. The sheet
 holds the log out button (`common:account.logout`); a failed log out draws
@@ -56,7 +61,7 @@ holds the log out button (`common:account.logout`); a failed log out draws
 | ----------------- | ----------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | `GET /playlists`  | yes, cursor, through `useInfiniteList`    | `private, no-cache` | `invalid_request`, `invalid_cursor`, `unauthorized`, `upstream_error`, `upstream_timeout` | none; all draw the generic error; `invalid_cursor` is handled by the paginated helper |
 | `GET /recents`    | single page of at most 30, never a cursor | `private, no-cache` | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                   | none; all draw the generic error                                                      |
-| `GET /profile/me` | no                                        | `private, no-cache` | `profile_not_found`                                                                       | none; feeds the avatar only                                                           |
+| `GET /profile/me` | no                                        | `private, no-cache` | `profile_not_found`                                                                       | none; feeds the avatar and the own playlists' subtitle                                |
 
 Creating a playlist from the library invalidates `playlists/mine`, so the shelf
 shows it the next time Home renders.
@@ -65,8 +70,9 @@ Both lists answer "nothing" with `ok: true` and `items: []`: an expected empty
 state, never a retry. The `metadata` keys of a recent (`title`, `subtitle`,
 `thumbnail_url`) are optional and read leniently: a missing one, or a value
 that is not a string, is treated as absent and omits that line or draws the
-placeholder cover. The contract types `metadata` as a free-form object, so a
-non-string value must not fail the page.
+placeholder cover. The contract gives `metadata` a fixed shape on write, but it is not
+validated on read and older rows may lack `title`, so a non-string value must
+not fail the page.
 
 Playlists load with `useInfiniteList`. If fetching a next page fails, the query
 goes into error and the whole body draws `ErrorState`, hiding the shelves already

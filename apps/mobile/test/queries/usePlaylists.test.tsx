@@ -155,11 +155,11 @@ describe("useCreatePlaylist", () => {
       expect(result.current.library.isFetching).toBe(false);
       expect(result.current.playlists.isFetching).toBe(false);
     });
-    await act(async () => {
+    await act(() => {
       result.current.create.mutate(input);
-      await waitFor(() => {
-        expect(result.current.create.isError).toBe(true);
-      });
+    });
+    await waitFor(() => {
+      expect(result.current.create.isError).toBe(true);
     });
     const error = result.current.create.error;
     expect(error instanceof OutcomeError && error.outcome).toEqual(rejected);

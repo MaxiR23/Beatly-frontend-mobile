@@ -8,6 +8,7 @@
 //
 // What is covered:
 // - loading, the liked entry first then the rest in the API's order, the next page, the empty message, the generic error with retry
+// - own playlists named after the profile (username, display name, or the kind alone when it fails)
 // - creating a playlist, the disabled and too-long name states, the inline failure, an omitted description, cancel, es
 //
 // Run with: pnpm --filter @beatly/mobile test -- LibraryScreen
@@ -28,9 +29,11 @@ import {
   makeCore,
   ownPlaylistEntryFixture,
   pageOf,
+  profileFixture,
   savedAlbumEntryFixture,
   savedPlaylistEntryFixture,
   stateFlag,
+  successOf,
   Wrapper,
 } from "../../helpers/core.tsx";
 
@@ -70,6 +73,12 @@ function full(
   return () => Promise.resolve(pageOf(items));
 }
 
+function ownRow() {
+  const row = screen.getAllByTestId("library-entry")[1];
+  if (row === undefined) throw new Error("no own playlist row");
+  return within(row);
+}
+
 async function openSheet() {
   await screen.findByText(en.library.liked);
   await fireEvent.press(screen.getByRole("button", { name: en.library.create.open }));
@@ -94,10 +103,10 @@ describe("LibraryScreen", () => {
     };
     const [liked, own, album, saved] = [at(0), at(1), at(2), at(3)];
     expect(liked.getByText(en.library.liked)).toBeTruthy();
-    expect(liked.getByText("Playlist · You")).toBeTruthy();
+    expect(liked.getByText("Playlist")).toBeTruthy();
     expect(liked.getByTestId("cover-tile")).toBeTruthy();
     expect(own.getByText("Road trip")).toBeTruthy();
-    expect(own.getByText("Playlist · You")).toBeTruthy();
+    expect(await own.findByText("Playlist · maxi_23")).toBeTruthy();
     expect(own.getByTestId("cover-mosaic")).toBeTruthy();
     expect(album.getByText("Saved album")).toBeTruthy();
     expect(album.getByText("Album · Some artist")).toBeTruthy();
@@ -105,6 +114,29 @@ describe("LibraryScreen", () => {
     expect(saved.getByText("Saved playlist")).toBeTruthy();
     expect(saved.getByText("Playlist")).toBeTruthy();
     expect(screen.queryByText(en.library.empty)).toBeNull();
+  });
+
+  it("draws the display name for own playlists when there is no username", async () => {
+    await setup({
+      listLibrary: full(),
+      getMyProfile: () =>
+        Promise.resolve(successOf({ ...profileFixture, username: null, display_name: "Maxi" })),
+    });
+    await screen.findByText(en.library.liked);
+    const own = ownRow();
+    expect(await own.findByText("Playlist · Maxi")).toBeTruthy();
+  });
+
+  it("draws only the kind for own playlists when the profile fails", async () => {
+    await setup({
+      listLibrary: full(),
+      getMyProfile: () => Promise.resolve({ kind: "api_failure", reason: "profile_not_found" }),
+    });
+    await screen.findByText(en.library.liked);
+    const own = ownRow();
+    expect(own.getByText("Road trip")).toBeTruthy();
+    expect(own.getByText("Playlist")).toBeTruthy();
+    expect(own.queryByText(/·/)).toBeNull();
   });
 
   it("loads the next page at the end of the list", async () => {

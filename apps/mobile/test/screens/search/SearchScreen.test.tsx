@@ -8,6 +8,7 @@
 // What is covered:
 // - recent queries: newest first, recorded on submit and kept after a remount, removed one by one and all, run from a row
 // - results in order (artist, songs, albums), no results, the generic error with retry, loading, the debounce, clear
+// - the top artist image, and the placeholder when it has none
 // - the account sheet, en and es
 //
 // Run with: pnpm --filter @beatly/mobile test -- SearchScreen
@@ -17,13 +18,13 @@
 import { RECENT_SEARCHES_KEY } from "@beatly/core";
 import type { HttpOutcome, SearchResult, StoragePort } from "@beatly/core";
 import { afterEach, describe, expect, it } from "@jest/globals";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { SearchScreen } from "../../../src/screens/search/SearchScreen.tsx";
-import { makeCore, memoryStorage, Wrapper } from "../../helpers/core.tsx";
+import { makeCore, memoryStorage, searchResultFixture, Wrapper } from "../../helpers/core.tsx";
 
 afterEach(async () => {
   await i18n.changeLanguage("en");
@@ -156,6 +157,31 @@ describe("SearchScreen results", () => {
     expect(at(en.search.albums)).toBeLessThan(at("Test Album"));
     expect(screen.getByText("Test Artist · 3:45")).toBeTruthy();
     expect(screen.getByText(en.search.artist)).toBeTruthy();
+  });
+
+  it("draws the top artist's image", async () => {
+    await setup();
+    await fireEvent.changeText(input(), "test");
+    await screen.findByText("Test Song");
+    const cover = within(screen.getByTestId("search-artist")).getByTestId("cover-single");
+    expect(cover.props.source as unknown).toEqual({ uri: "test://img/ar1" });
+  });
+
+  it("draws the placeholder when the top artist has no image", async () => {
+    const artist = { id: "ar1", name: "Test Artist", thumbnail_url: null };
+    await setup({
+      search: () =>
+        Promise.resolve({
+          kind: "success",
+          data: { ...searchResultFixture, artist },
+          maxAgeSeconds: 0,
+        }),
+    });
+    await fireEvent.changeText(input(), "test");
+    await screen.findByText("Test Song");
+    const row = within(screen.getByTestId("search-artist"));
+    expect(row.getByTestId("cover-placeholder")).toBeTruthy();
+    expect(row.queryByTestId("cover-single")).toBeNull();
   });
 
   it("draws no results with the query and no retry", async () => {

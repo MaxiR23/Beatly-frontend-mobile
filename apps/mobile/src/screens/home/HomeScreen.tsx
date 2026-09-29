@@ -1,5 +1,5 @@
 // INFO: the home tab: the account avatar and sheet, and the recently played and own playlists shelves.
-import type { PlaylistListItem, RecentEntity } from "@beatly/core";
+import { profileName, type PlaylistListItem, type RecentEntity } from "@beatly/core";
 import { color, layout, spacing } from "@beatly/ui";
 import {
   Carousel,
@@ -14,28 +14,9 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { useT } from "../../adapters/i18n.ts";
 import { usePlaylists } from "../../queries/usePlaylists.ts";
+import { useProfile } from "../../queries/useProfile.ts";
 import { useRecents } from "../../queries/useRecents.ts";
 import { AccountButton } from "../account/AccountButton.tsx";
-
-function toRecentItem(recent: RecentEntity): CarouselItem {
-  return {
-    key: `${recent.entity_type}:${recent.entity_id}`,
-    title: recent.metadata.title ?? undefined,
-    subtitle: recent.metadata.subtitle ?? undefined,
-    urls: recent.metadata.thumbnail_url ? [recent.metadata.thumbnail_url] : [],
-    shape: recent.entity_type === "artist" ? "round" : "square",
-  };
-}
-
-function toPlaylistItem(playlist: PlaylistListItem): CarouselItem {
-  return {
-    key: playlist.id,
-    title: playlist.title,
-    subtitle: playlist.description ?? undefined,
-    urls: playlist.thumbnail_urls,
-    shape: "square",
-  };
-}
 
 export function HomeScreen() {
   const t = useT("home");
@@ -43,6 +24,31 @@ export function HomeScreen() {
   const insets = useSafeAreaInsets();
   const recents = useRecents();
   const playlists = usePlaylists();
+  const profile = useProfile();
+  const owner = profile.data ? profileName(profile.data) : null;
+
+  const recentLine = (recent: RecentEntity) => {
+    if (recent.entity_type === "artist") return t("kind.artist");
+    const kind = t(recent.entity_type === "album" ? "kind.album" : "kind.playlist");
+    const subtitle = recent.metadata.subtitle;
+    return subtitle ? t("meta", { kind, owner: subtitle }) : kind;
+  };
+
+  const toRecentItem = (recent: RecentEntity): CarouselItem => ({
+    key: `${recent.entity_type}:${recent.entity_id}`,
+    title: recent.metadata.title ?? undefined,
+    subtitle: recentLine(recent),
+    urls: recent.metadata.thumbnail_url ? [recent.metadata.thumbnail_url] : [],
+    shape: recent.entity_type === "artist" ? "round" : "square",
+  });
+
+  const toPlaylistItem = (playlist: PlaylistListItem): CarouselItem => ({
+    key: playlist.id,
+    title: playlist.title,
+    subtitle: owner ?? undefined,
+    urls: playlist.thumbnail_urls,
+    shape: "square",
+  });
 
   const clearance = { paddingBottom: floatingTabBarClearance(insets.bottom) };
 

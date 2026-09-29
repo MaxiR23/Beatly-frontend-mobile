@@ -7,6 +7,7 @@
 //
 // What is covered:
 // - loading, both sections, a hidden empty section, the empty state, the generic error with retry
+// - own playlists named after the profile, and the line of each recent by type (en and es)
 // - the next page of playlists at the end of the carousel
 // - the avatar initials, the account sheet and logout in every state, en and es
 //
@@ -16,7 +17,7 @@
 
 import type { HttpOutcome, PageResult, PlaylistListItem, RecentEntity } from "@beatly/core";
 import { afterEach, describe, expect, it } from "@jest/globals";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
@@ -91,7 +92,55 @@ describe("HomeScreen", () => {
     expect(screen.getByText(en.home.playlists)).toBeTruthy();
     expect(screen.getByText("Recent album")).toBeTruthy();
     expect(screen.getByText("Road trip")).toBeTruthy();
-    expect(screen.getByText("Windows down")).toBeTruthy();
+    expect(await screen.findByText("maxi_23")).toBeTruthy();
+    expect(screen.queryByText("Windows down")).toBeNull();
+  });
+
+  it("draws the display name under own playlists when there is no username", async () => {
+    await setup({
+      listPlaylists: playlistsOf([playlistFixture]),
+      getMyProfile: () =>
+        Promise.resolve(successOf({ ...profileFixture, username: null, display_name: "Maxi" })),
+    });
+    await screen.findByText("Road trip");
+    expect(await within(screen.getByTestId("playlists")).findByText("Maxi")).toBeTruthy();
+  });
+
+  it("draws no subtitle under own playlists when the profile fails", async () => {
+    await setup({
+      listPlaylists: playlistsOf([playlistFixture]),
+      getMyProfile: () => Promise.resolve({ kind: "api_failure", reason: "profile_not_found" }),
+    });
+    expect(await screen.findByText("Road trip")).toBeTruthy();
+    expect(screen.queryByText("maxi_23")).toBeNull();
+    expect(screen.queryByText("Windows down")).toBeNull();
+  });
+
+  it("draws the line of each recent by type", async () => {
+    const meta = { subtitle: null, thumbnail_url: null };
+    await setup({
+      listRecents: recents([
+        {
+          ...recentFixture,
+          entity_type: "artist",
+          entity_id: "ar1",
+          metadata: { title: "An artist", ...meta },
+        },
+        recentFixture,
+        {
+          ...recentFixture,
+          entity_type: "playlist",
+          entity_id: "pl1",
+          metadata: { title: "A playlist", subtitle: "Someone", thumbnail_url: null },
+        },
+        { ...recentFixture, entity_id: "a2", metadata: { title: "Bare album", ...meta } },
+      ]),
+    });
+    const row = within(await screen.findByTestId("recents"));
+    expect(row.getByText("Artist")).toBeTruthy();
+    expect(row.getByText("Album · Some artist")).toBeTruthy();
+    expect(row.getByText("Playlist · Someone")).toBeTruthy();
+    expect(row.getAllByText("Album")).toHaveLength(1);
   });
 
   it("hides recently played when it is empty", async () => {
@@ -206,5 +255,6 @@ describe("HomeScreen", () => {
     });
     expect(await screen.findByText(resources.es.home.recents)).toBeTruthy();
     expect(screen.getByText(resources.es.home.playlists)).toBeTruthy();
+    expect(screen.getByText("Álbum · Some artist")).toBeTruthy();
   });
 });

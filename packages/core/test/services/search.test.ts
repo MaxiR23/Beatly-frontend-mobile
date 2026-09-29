@@ -4,6 +4,7 @@
 //
 // Tested:
 // - search returns the top artist, songs and albums for a query
+// - Keeps an artist without an image, an artist reference without an id and an album without year or cover
 // - Returns a null artist and empty lists as a success when nothing matches
 // - Surfaces upstream_error and upstream_timeout as api failures
 // - Fails with a timeout, network or schema outcome
@@ -25,7 +26,7 @@ import { createFakeLog } from "../fakes/log.ts";
 
 const BASE_URL = "test://api";
 const data = {
-  artist: { id: "ar1", name: "Daft Punk" },
+  artist: { id: "ar1", name: "Daft Punk", thumbnail_url: "test://img/ar1" },
   songs: [
     {
       track_id: "t1",
@@ -81,9 +82,9 @@ describe("search", () => {
     expect(http.requests[0]?.headers.authorization).toBe("Bearer test-token");
   });
 
-  it("keeps an artist reference without an id and an album without year or cover", async () => {
+  it("keeps an artist without an image, an artist reference without an id and an album without year or cover", async () => {
     const odd = {
-      artist: null,
+      artist: { ...data.artist, thumbnail_url: null },
       songs: [{ ...data.songs[0], artists: [{ id: null, name: "Various" }] }],
       albums: [{ ...data.albums[0], artists: [], year: null, thumbnail_url: null }],
     };
