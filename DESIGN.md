@@ -62,18 +62,18 @@ value: the value lives once, in the token file.
 Roles, not raw sizes. Every role uses the platform's system font (no
 `fontFamily` override).
 
-| Role                    | Token                 | Used for                                                                                         |
-| ----------------------- | --------------------- | ------------------------------------------------------------------------------------------------ |
-| Display                 | `typography.display`  | The largest number/title on a screen                                                             |
-| Title                   | `typography.title`    | Screen title                                                                                     |
-| Section                 | `typography.section`  | Section heading                                                                                  |
-| Subtitle                | `typography.subtitle` | Card/sheet subtitle                                                                              |
-| Row title               | `typography.rowTitle` | Track/list row title                                                                             |
-| Body                    | `typography.body`     | Default paragraph/body text                                                                      |
-| Meta                    | `typography.meta`     | Secondary/meta text (duration, counts)                                                           |
-| Label                   | `typography.label`    | Uppercase label (badge, form label)                                                              |
-| Button                  | `typography.button`   | Button text                                                                                      |
-| Accessibility scale cap | `maxFontScale`        | `maxFontSizeMultiplier` the `ui` Text component will apply once it ships; nothing applies it yet |
+| Role                    | Token                 | Used for                                                         |
+| ----------------------- | --------------------- | ---------------------------------------------------------------- |
+| Display                 | `typography.display`  | The largest number/title on a screen                             |
+| Title                   | `typography.title`    | Screen title                                                     |
+| Section                 | `typography.section`  | Section heading                                                  |
+| Subtitle                | `typography.subtitle` | Card/sheet subtitle                                              |
+| Row title               | `typography.rowTitle` | Track/list row title                                             |
+| Body                    | `typography.body`     | Default paragraph/body text                                      |
+| Meta                    | `typography.meta`     | Secondary/meta text (duration, counts)                           |
+| Label                   | `typography.label`    | Uppercase label (badge, form label)                              |
+| Button                  | `typography.button`   | Button text                                                      |
+| Accessibility scale cap | `maxFontScale`        | `maxFontSizeMultiplier` the `ui` Text and Input components apply |
 
 ## Motion (`motion`)
 
@@ -88,8 +88,8 @@ Roles, not raw sizes. Every role uses the platform's system font (no
 
 ## Icons (`icon`)
 
-Sizes and stroke only; the icon component and its library are a
-separate change.
+Sizes and stroke. The component is `Icon` in `@beatly/ui/native`, the
+only importer of `lucide-react-native`.
 
 | Role             | Token            |
 | ---------------- | ---------------- |

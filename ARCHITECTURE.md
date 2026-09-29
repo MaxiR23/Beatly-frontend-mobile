@@ -71,6 +71,9 @@ in-memory fake in `packages/core/test/fakes/`.
 | `log`     | `debug`, `info`, `warn`, `error` with structured fields                | `adapters/log.ts`     | `console`, the only file allowed to           | an array                                 |
 | `storage` | get / set / delete small key-value data (recent searches, preferences) | `adapters/storage.ts` | async storage                                 | a `Map`                                  |
 
+`adapters/i18n.ts` wraps `i18next` and `expo-localization`. It has no
+port because `core` never translates.
+
 The list grows by one row per adapter, in the same PR as the adapter,
 and the library's name is added to the adapter-only list in
 `eslint.config.js` in that same PR.

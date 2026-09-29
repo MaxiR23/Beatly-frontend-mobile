@@ -1,5 +1,5 @@
 // INFO: icon tokens: the size scale and the stroke width every icon draws
-// with. The icon component and its library are a separate change.
+// with. The Icon component (components/Icon.tsx) draws with them.
 export const icon = {
   size: {
     sm: 16,

@@ -1,35 +1,32 @@
 // apps/mobile/test/app/index.test.tsx
 //
-// Tests for the single empty route.
+// Tests for the index route.
 //
 // Tested:
-// - Renders the root route on the base surface
-// - Renders no visible text
+// - Renders the showcase at the index route
+// - Hides the stack header
 //
 // What is covered:
-// - The dark background is drawn through the @beatly/ui token, and no
-//   text node exists anywhere in the rendered tree (including the
-//   stack header, which the root layout hides)
+// - The route renders the showcase screen, and the stack's default header
+//   (which would read "index") is hidden by the root layout
 //
 // Run with: pnpm --filter @beatly/mobile test -- index
 //
 // SEE: apps/mobile/app/index.tsx, apps/mobile/app/_layout.tsx
 
-import { color } from "@beatly/ui";
 import { renderRouter, screen } from "expo-router/testing-library";
 import { describe, expect, it } from "@jest/globals";
 
-describe("the root route", () => {
-  it("renders the root route on the base surface", () => {
-    renderRouter("app", { initialUrl: "/" });
+describe("the index route", () => {
+  it("renders the showcase at the index route", async () => {
+    await renderRouter("app", { initialUrl: "/" });
 
-    const view = screen.getByTestId("root-route");
-    expect(view.props.style).toEqual({ flex: 1, backgroundColor: color.surface.base });
+    expect(screen.getByTestId("showcase")).toBeTruthy();
   });
 
-  it("renders no visible text", () => {
-    renderRouter("app", { initialUrl: "/" });
+  it("hides the stack header", async () => {
+    await renderRouter("app", { initialUrl: "/" });
 
-    expect(screen.queryByText(/./)).toBeNull();
+    expect(screen.queryByText("index")).toBeNull();
   });
 });

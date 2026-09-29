@@ -25,6 +25,12 @@ section if there was none. -->
 <!-- What was checked on a physical device, and on which platform.
 Delete this section if nothing was. -->
 
+## Screenshots
+
+<!-- For changes that touch a screen: one screenshot per platform
+checked, of every state the change draws. Delete this section if
+the change touches no screen. -->
+
 ## Still to check by hand
 
 <!-- What the gate cannot verify: device checks, visual checks.
