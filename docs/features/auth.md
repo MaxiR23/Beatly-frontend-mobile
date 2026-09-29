@@ -13,6 +13,19 @@ The first feature doc: the routes the auth screens use and the states they draw.
 
 The root layout keeps the native splash up until the session status is known.
 
+## Layout
+
+Login and sign up share `apps/mobile/src/screens/auth/AuthLayout.tsx`: the brand
+block (the legacy brand icon at `apps/mobile/assets/brand-icon.png`,
+`common:brand` and the per-screen `subtitle`), the `Card` with the title, the
+description, the form and the switch line, and `common:footer`. Password fields
+have an eye button (`common:password.show` / `common:password.hide`).
+
+The switch line draws two keys side by side, `{switchText} <Link label={switchLabel} />`,
+with the link always last. It is two sentences, not interpolation, so ADR 009 is
+not broken. It holds for es and en, as in legacy, and the repo has no rich-text
+i18n helper. A language that needs the link first would need one.
+
 ## API
 
 `GET /profile/me`: not paginated, `Cache-Control: private, no-cache` (always stale).
@@ -44,12 +57,12 @@ timeout, is a typed `AuthFailure`.
 
 ## States per screen
 
-| Screen   | Loading                                | With data                                  | Expected empty                                | Error with retry                                                                             |
-| -------- | -------------------------------------- | ------------------------------------------ | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Login    | submit button `loading`                | the form                                   | n/a (form)                                    | the mapped message above the submit; the submit is the retry                                 |
-| Sign up  | submit button `loading`                | the form with the live password rule list  | n/a (form)                                    | the mapped message; success is the "check your email" empty state                            |
-| Callback | `LoadingState` while verifying         | redirect to `/`                            | missing or malformed link draws `invalidLink` | `link_invalid`: `invalidLink` with "back to log in"; anything else: generic error with retry |
-| Home     | `LoadingState` while the profile loads | greeting, or `greetingNoName`, and log out | n/a (data or failure)                         | `profile_not_found`: message with log out; any other: generic error with retry               |
+| Screen   | Loading                                | With data                                       | Expected empty                                | Error with retry                                                                             |
+| -------- | -------------------------------------- | ----------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Login    | submit button `loading`                | the form                                        | n/a (form)                                    | the mapped message above the submit; the submit is the retry                                 |
+| Sign up  | submit button `loading`                | the form with the password rule, green when met | n/a (form)                                    | the mapped message; success is the "check your email" empty state                            |
+| Callback | `LoadingState` while verifying         | redirect to `/`                                 | missing or malformed link draws `invalidLink` | `link_invalid`: `invalidLink` with "back to log in"; anything else: generic error with retry |
+| Home     | `LoadingState` while the profile loads | greeting, or `greetingNoName`, and log out      | n/a (data or failure)                         | `profile_not_found`: message with log out; any other: generic error with retry               |
 
 ## Session
 
@@ -75,6 +88,7 @@ timeout, is a typed `AuthFailure`.
 
 ## Checked by hand
 
+- Both screens against the layout of issue 25, on a device (screenshots in the PR).
 - Sign up, email confirmation, login and logout end to end, on a device, with the
   real provider, a real email and the backend.
 - The session persists across a restart, the token refreshes, and with an expired

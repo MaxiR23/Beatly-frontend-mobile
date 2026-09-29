@@ -1,5 +1,5 @@
 // INFO: spacing tokens, a multiples-of-four scale, plus the layout
-// constants (gutter, gap, hitSlop) built from the same scale.
+// constants (gutter, gap, hitSlop, control height) built from the same scale.
 export const spacing = {
   xxs: 2,
   xs: 4,
@@ -14,4 +14,5 @@ export const layout = {
   gutter: 16,
   gap: 12,
   hitSlop: 8,
+  controlHeight: 48,
 } as const;

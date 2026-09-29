@@ -1,5 +1,13 @@
 {
   "loading": "Loading…",
-  "error": { "generic": "Something went wrong" },
-  "retry": "Retry"
+  "error": {
+    "generic": "Something went wrong"
+  },
+  "retry": "Retry",
+  "brand": "Beatly",
+  "footer": "© 2026 Beatly. All rights reserved.",
+  "password": {
+    "show": "Show password",
+    "hide": "Hide password"
+  }
 }

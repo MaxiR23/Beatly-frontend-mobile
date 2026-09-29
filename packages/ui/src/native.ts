@@ -14,6 +14,8 @@ export const border = {
 
 export { Text } from "./components/Text.tsx";
 export { Button } from "./components/Button.tsx";
+export { Card } from "./components/Card.tsx";
+export { Link } from "./components/Link.tsx";
 export { Input } from "./components/Input.tsx";
 export { Icon, type IconName } from "./components/Icon.tsx";
 export { LoadingState } from "./components/LoadingState.tsx";

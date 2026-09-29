@@ -1,13 +1,17 @@
 {
-  "title": "Create an account",
-  "name": "Name",
+  "title": "Create Account",
+  "description": "Fill in your details to sign up",
+  "subtitle": "Join the best music experience",
+  "name": "Full name",
   "email": "Email",
   "password": "Password",
-  "submit": "Sign up",
+  "submit": "Create Account",
   "haveAccount": "Already have an account?",
-  "goToLogin": "Log in",
+  "goToLogin": "Log in here",
   "nameTooLong": "Use {{max}} characters or fewer",
-  "rules": { "minLength": "At least {{min}} characters" },
+  "rules": {
+    "minLength": "At least {{min}} characters"
+  },
   "errors": {
     "weakPassword": "That password is too weak. Try a different one.",
     "userAlreadyExists": "An account with that email already exists",

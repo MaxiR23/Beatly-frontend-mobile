@@ -6,7 +6,7 @@
 // - LoginScreen
 //
 // What is covered:
-// - the form in en and es, the submit rules, the mapped failure messages, navigation to sign up
+// - the form in en and es, the brand block and footer, the eye button, the submit rules, the mapped failure messages, navigation to sign up
 //
 // Run with: pnpm --filter @beatly/mobile test -- LoginScreen
 //
@@ -55,8 +55,12 @@ describe("LoginScreen", () => {
     expect(screen.getAllByText(r.title)).toHaveLength(2);
     expect(screen.getByLabelText(r.email)).toBeTruthy();
     expect(screen.getByLabelText(r.password)).toBeTruthy();
-    expect(screen.getByText(r.noAccount)).toBeTruthy();
+    expect(screen.getByText(r.noAccount, { exact: false })).toBeTruthy();
     expect(screen.getByText(r.goToSignUp)).toBeTruthy();
+    expect(screen.getByText(r.subtitle)).toBeTruthy();
+    expect(screen.getByText(r.description)).toBeTruthy();
+    expect(screen.getByText(resources.en.common.brand)).toBeTruthy();
+    expect(screen.getByText(resources.en.common.footer)).toBeTruthy();
   });
 
   it("draws the form in es", async () => {
@@ -64,8 +68,20 @@ describe("LoginScreen", () => {
     await setup();
     const r = resources.es.login;
     expect(screen.getByLabelText(r.password)).toBeTruthy();
-    expect(screen.getByText(r.noAccount)).toBeTruthy();
+    expect(screen.getByText(r.noAccount, { exact: false })).toBeTruthy();
     expect(screen.getByText(r.goToSignUp)).toBeTruthy();
+    expect(screen.getByText(r.subtitle)).toBeTruthy();
+    expect(screen.getByText(resources.es.common.footer)).toBeTruthy();
+  });
+
+  it("shows and hides the password with the eye button", async () => {
+    await setup();
+    const { login, common } = resources.en;
+    expect(screen.getByLabelText(login.password).props.secureTextEntry).toBe(true);
+    await fireEvent.press(screen.getByRole("button", { name: common.password.show }));
+    expect(screen.getByLabelText(login.password).props.secureTextEntry).toBe(false);
+    await fireEvent.press(screen.getByRole("button", { name: common.password.hide }));
+    expect(screen.getByLabelText(login.password).props.secureTextEntry).toBe(true);
   });
 
   it("disables the submit while a field is empty", async () => {

@@ -6,13 +6,14 @@
 // - SignUpScreen
 //
 // What is covered:
-// - the form in en and es, the live rule row, the submit rules, the name length, the mapped failures, the confirmation state
+// - the form in en and es, the brand block and footer, the eye button, the live rule row and its success color, the submit rules, the name length, the mapped failures, the confirmation state
 //
 // Run with: pnpm --filter @beatly/mobile test -- SignUpScreen
 //
 // SEE: apps/mobile/src/screens/signUp/SignUpScreen.tsx
 
 import type { AuthFailureReason, SignUpResult } from "@beatly/core";
+import { color } from "@beatly/ui";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 
@@ -65,27 +66,43 @@ const submitButton = () => screen.getByRole("button", { name: en.signUp.submit }
 describe("SignUpScreen", () => {
   it("draws the form in en", async () => {
     await setup();
-    expect(screen.getByText(en.signUp.title)).toBeTruthy();
+    expect(screen.getAllByText(en.signUp.title)).toHaveLength(2);
+    expect(screen.getByText(en.signUp.subtitle)).toBeTruthy();
+    expect(screen.getByText(en.signUp.description)).toBeTruthy();
+    expect(screen.getByText(en.common.footer)).toBeTruthy();
     expect(screen.getByText(en.signUp.rules.minLength.replace("{{min}}", "6"))).toBeTruthy();
-    expect(screen.getByText(en.signUp.haveAccount)).toBeTruthy();
+    expect(screen.getByText(en.signUp.haveAccount, { exact: false })).toBeTruthy();
   });
 
   it("draws the form in es", async () => {
     await i18n.changeLanguage("es");
     await setup();
     const es = resources.es.signUp;
-    expect(screen.getByText(es.title)).toBeTruthy();
+    expect(screen.getAllByText(es.title)).toHaveLength(2);
+    expect(screen.getByText(es.subtitle)).toBeTruthy();
+    expect(screen.getByText(resources.es.common.footer)).toBeTruthy();
     expect(screen.getByText(es.rules.minLength.replace("{{min}}", "6"))).toBeTruthy();
-    expect(screen.getByText(es.haveAccount)).toBeTruthy();
+    expect(screen.getByText(es.haveAccount, { exact: false })).toBeTruthy();
   });
 
   it("switches the rule row from unmet to met as the password is typed", async () => {
     await setup();
     const label = en.signUp.rules.minLength.replace("{{min}}", "6");
     const row = () => screen.getByText(label).parent;
+    expect(screen.getByText(label)).toHaveStyle({ color: color.text.tertiary });
     expect(stateFlag(row() ?? { props: {} }, "checked")).toBe(false);
     await fireEvent.changeText(screen.getByLabelText(en.signUp.password), "123456");
     expect(stateFlag(row() ?? { props: {} }, "checked")).toBe(true);
+    expect(screen.getByText(label)).toHaveStyle({ color: color.status.success });
+  });
+
+  it("shows and hides the password with the eye button", async () => {
+    await setup();
+    expect(screen.getByLabelText(en.signUp.password).props.secureTextEntry).toBe(true);
+    await fireEvent.press(screen.getByRole("button", { name: en.common.password.show }));
+    expect(screen.getByLabelText(en.signUp.password).props.secureTextEntry).toBe(false);
+    await fireEvent.press(screen.getByRole("button", { name: en.common.password.hide }));
+    expect(screen.getByLabelText(en.signUp.password).props.secureTextEntry).toBe(true);
   });
 
   it("disables the submit until the form can be submitted", async () => {

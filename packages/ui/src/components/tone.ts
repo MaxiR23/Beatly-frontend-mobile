@@ -9,6 +9,7 @@ export const toneColor = {
   disabled: color.text.disabled,
   inverse: color.text.inverse,
   error: color.status.error,
+  success: color.status.success,
 } as const;
 
 export type Tone = keyof typeof toneColor;

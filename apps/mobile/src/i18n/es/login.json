@@ -1,10 +1,12 @@
 {
-  "title": "Iniciar sesión",
+  "title": "Iniciar Sesión",
+  "description": "Ingresa tus credenciales para continuar",
+  "subtitle": "Inicia sesión para acceder a tu música",
   "email": "Email",
   "password": "Contraseña",
-  "submit": "Iniciar sesión",
+  "submit": "Iniciar Sesión",
   "noAccount": "¿No tienes una cuenta?",
-  "goToSignUp": "Crear una cuenta",
+  "goToSignUp": "Regístrate aquí",
   "errors": {
     "invalidCredentials": "Email o contraseña incorrectos",
     "emailNotConfirmed": "Confirma tu email antes de iniciar sesión. Revisa tu bandeja de entrada.",
