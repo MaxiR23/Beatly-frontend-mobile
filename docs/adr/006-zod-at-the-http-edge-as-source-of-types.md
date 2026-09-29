@@ -36,8 +36,18 @@ that types them as required crashes on a legitimate response.
 - A contract change is a schema change, and a schema change fails a
   test before it fails a screen. The four service test cases in
   `docs/testing.md` are written against schema-shaped fixtures.
-- Every `reason` a screen branches on is a literal in a `z.enum`, so a
-  typo is a type error.
+- A `reason` is any snake_case string, not a closed enum: the backend
+  can send one the contract does not list yet (for example
+  `rate_limited`) and it stays an API failure instead of becoming a
+  schema failure. The consequence is that the client schema no longer
+  catches a typo in a `reason` comparison. Each service that branches
+  on reasons declares a `z.enum` of the ones its screen handles, and
+  compares against that, so a typo there is a type error.
+- The transport failure has four causes: `timeout`, `network`,
+  `schema` and `auth`. `auth` is a rejected access token read; calling
+  it `network` would lie in the log, and it must still reach the
+  screen as a typed outcome. One `timeoutMs` budget covers the token
+  read and the send, so a token read that stalls is a `timeout`.
 - zod is a dependency of `core` and adds to the bundle; accepted, it is
   the one library `core` is allowed to import directly because it has
   no platform in it.

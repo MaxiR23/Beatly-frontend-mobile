@@ -48,8 +48,9 @@ expo-router routes get their test under `test/app/`, not `test/src/`.
     apps/mobile/app/index.tsx                 -> apps/mobile/test/app/index.test.tsx
 
 Fakes for the ports live in `packages/core/test/fakes/`, one file per
-port, and are imported by the other workspaces' tests through the
-package. Cross-cutting tests that do not map to a single module live
+port. They are used by `core`'s own tests only: `@beatly/core` exports
+just `src/index.ts`, so other workspaces' tests write the few port
+literals they need inline. Cross-cutting tests that do not map to a single module live
 at the root of the workspace's `test/`, for example
 `apps/mobile/test/i18n-parity.test.ts`.
 
@@ -138,8 +139,9 @@ a device, not even a sandbox.
 - `http`: the fake takes handlers per route and returns the raw body
   and headers the real API would. An unhandled route throws, so a
   test can never silently reach a real endpoint. Never mock global
-  `fetch` in a service test; the HTTP client's own tests are the only
-  place that fakes `fetch`, to prove the timeout and the parsing.
+  `fetch` in a service test; the HTTP client's own tests fake this same
+  `http` port, including a route that never settles to prove the
+  timeout; the global `fetch` appears only in the `http` adapter.
 - `auth`: returns a fixed token. Supabase is never imported in a test.
 - `player`: an in-memory player with a manual clock, so "30 seconds
   played" is a method call, not a wait.
