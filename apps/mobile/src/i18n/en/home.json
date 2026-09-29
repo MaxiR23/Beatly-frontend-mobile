@@ -1,6 +1,10 @@
 {
-  "greeting": "Hi, {{name}}",
-  "greetingNoName": "Hi",
-  "logout": "Log out",
-  "profileNotFound": "We couldn't find your profile. Log out and try again later."
+  "recents": "Recently played",
+  "playlists": "Your playlists",
+  "empty": "Nothing here yet. Search or explore to start listening.",
+  "account": {
+    "open": "Account",
+    "close": "Close"
+  },
+  "logout": "Log out"
 }

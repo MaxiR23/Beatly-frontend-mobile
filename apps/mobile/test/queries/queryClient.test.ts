@@ -6,6 +6,7 @@
 // - createQueryClient staleTime from the max-age of a core outcome
 // - staleTimeFor
 // - a failed query is not retried
+// - the smallest max-age across the pages of an infinite query
 //
 // What is covered:
 // - fresh within max-age, stale without Cache-Control, stale for data that is not an outcome
@@ -104,5 +105,17 @@ describe("staleTimeFor", () => {
 
   it("converts the max-age of an outcome to milliseconds", () => {
     expect(staleTimeFor({ kind: "success", data: null, maxAgeSeconds: 2 })).toBe(2000);
+  });
+
+  it("uses the smallest max-age across the pages of an infinite query", () => {
+    const pages = [
+      { kind: "success", data: null, maxAgeSeconds: 60 },
+      { kind: "success", data: null, maxAgeSeconds: 10 },
+    ];
+    expect(staleTimeFor({ pages, pageParams: [null, "c1"] })).toBe(10_000);
+  });
+
+  it("is stale for an infinite query with no pages", () => {
+    expect(staleTimeFor({ pages: [], pageParams: [] })).toBe(0);
   });
 });

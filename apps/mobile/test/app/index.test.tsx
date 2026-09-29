@@ -11,7 +11,7 @@
 //
 // Run with: pnpm --filter @beatly/mobile test -- index
 //
-// SEE: apps/mobile/app/index.tsx, apps/mobile/app/_layout.tsx
+// SEE: apps/mobile/app/(tabs)/index.tsx, apps/mobile/app/_layout.tsx
 
 import { describe, expect, it, jest } from "@jest/globals";
 import { renderRouter, screen } from "expo-router/testing-library";

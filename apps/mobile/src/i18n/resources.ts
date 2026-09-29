@@ -5,11 +5,13 @@ import enCommon from "./en/common.json";
 import enHome from "./en/home.json";
 import enLogin from "./en/login.json";
 import enSignUp from "./en/signUp.json";
+import enTabs from "./en/tabs.json";
 import esAuthCallback from "./es/authCallback.json";
 import esCommon from "./es/common.json";
 import esHome from "./es/home.json";
 import esLogin from "./es/login.json";
 import esSignUp from "./es/signUp.json";
+import esTabs from "./es/tabs.json";
 
 export const resources = {
   es: {
@@ -18,6 +20,7 @@ export const resources = {
     signUp: esSignUp,
     authCallback: esAuthCallback,
     home: esHome,
+    tabs: esTabs,
   },
   en: {
     common: enCommon,
@@ -25,6 +28,7 @@ export const resources = {
     signUp: enSignUp,
     authCallback: enAuthCallback,
     home: enHome,
+    tabs: enTabs,
   },
 } as const;
 

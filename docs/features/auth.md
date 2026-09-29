@@ -4,12 +4,12 @@ The first feature doc: the routes the auth screens use and the states they draw.
 
 ## Screens and routes
 
-| Route            | Screen               | Guard                                                       |
-| ---------------- | -------------------- | ----------------------------------------------------------- |
-| `/login`         | `LoginScreen`        | signed out only (`Stack.Protected`, signed in lands on `/`) |
-| `/sign-up`       | `SignUpScreen`       | signed out only                                             |
-| `/auth/callback` | `AuthCallbackScreen` | none: the email link opens it before a session exists       |
-| `/`              | `HomeScreen`         | signed in only; a placeholder until the tabs replace it     |
+| Route            | Screen                               | Guard                                                       |
+| ---------------- | ------------------------------------ | ----------------------------------------------------------- |
+| `/login`         | `LoginScreen`                        | signed out only (`Stack.Protected`, signed in lands on `/`) |
+| `/sign-up`       | `SignUpScreen`                       | signed out only                                             |
+| `/auth/callback` | `AuthCallbackScreen`                 | none: the email link opens it before a session exists       |
+| `/`              | `HomeScreen` (first tab of `(tabs)`) | signed in only; see `home.md`                               |
 
 The root layout keeps the native splash up until the session status is known.
 
@@ -29,9 +29,7 @@ i18n helper. A language that needs the link first would need one.
 ## API
 
 `GET /profile/me`: not paginated, `Cache-Control: private, no-cache` (always stale).
-Reasons the screens branch on: `profile_not_found`. `unauthorized`,
-`upstream_error`, `upstream_timeout` and any other reason draw the generic error
-with retry.
+It now feeds the home avatar; see `home.md`.
 
 The core schema declares `username` as nullable, as the backend does: it is null
 until the user sets one, so `GET /profile/me` succeeds for a freshly signed-up
@@ -57,12 +55,11 @@ timeout, is a typed `AuthFailure`.
 
 ## States per screen
 
-| Screen   | Loading                                | With data                                       | Expected empty                                | Error with retry                                                                             |
-| -------- | -------------------------------------- | ----------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Login    | submit button `loading`                | the form                                        | n/a (form)                                    | the mapped message above the submit; the submit is the retry                                 |
-| Sign up  | submit button `loading`                | the form with the password rule, green when met | n/a (form)                                    | the mapped message; success is the "check your email" empty state                            |
-| Callback | `LoadingState` while verifying         | redirect to `/`                                 | missing or malformed link draws `invalidLink` | `link_invalid`: `invalidLink` with "back to log in"; anything else: generic error with retry |
-| Home     | `LoadingState` while the profile loads | greeting, or `greetingNoName`, and log out      | n/a (data or failure)                         | `profile_not_found`: message with log out; any other: generic error with retry               |
+| Screen   | Loading                        | With data                                       | Expected empty                                | Error with retry                                                                             |
+| -------- | ------------------------------ | ----------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Login    | submit button `loading`        | the form                                        | n/a (form)                                    | the mapped message above the submit; the submit is the retry                                 |
+| Sign up  | submit button `loading`        | the form with the password rule, green when met | n/a (form)                                    | the mapped message; success is the "check your email" empty state                            |
+| Callback | `LoadingState` while verifying | redirect to `/`                                 | missing or malformed link draws `invalidLink` | `link_invalid`: `invalidLink` with "back to log in"; anything else: generic error with retry |
 
 ## Session
 

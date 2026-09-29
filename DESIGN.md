@@ -34,13 +34,23 @@ value: the value lives once, in the token file.
 
 ## Spacing and layout (`spacing`, `layout`)
 
-| Role                                                                              | Token                         |
-| --------------------------------------------------------------------------------- | ----------------------------- |
-| Spacing scale, multiples of four                                                  | `spacing.xxs` … `spacing.xxl` |
-| Screen edge padding                                                               | `layout.gutter`               |
-| Gap between items in a list/row                                                   | `layout.gap`                  |
-| Minimum touch target padding (`hitSlop`)                                          | `layout.hitSlop`              |
-| Height of a form control (input, form button) and side of its square touch target | `layout.controlHeight`        |
+| Role                                                                                                          | Token                         |
+| ------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| Spacing scale, multiples of four                                                                              | `spacing.xxs` … `spacing.xxl` |
+| Screen edge padding                                                                                           | `layout.gutter`               |
+| Gap between items in a list/row                                                                               | `layout.gap`                  |
+| Minimum touch target padding (`hitSlop`)                                                                      | `layout.hitSlop`              |
+| Height of a form control (input, form button) or a floating tab bar item, and side of its square touch target | `layout.controlHeight`        |
+| Width of a carousel card and side of its cover                                                                | `layout.carouselCard`         |
+| Side of the header account avatar                                                                             | `layout.avatar`               |
+| Width of a floating tab bar item                                                                              | `layout.tabItemWidth`         |
+
+## Floating surfaces
+
+`GlassSurface` from `@beatly/ui/native`, the only importer of
+`expo-glass-effect`: native glass on iOS 26+, elsewhere
+`color.surface.raised` with a `border.width` border in
+`color.surface.border` and `shadow.floating`.
 
 ## Radius (`radius`)
 

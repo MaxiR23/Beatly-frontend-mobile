@@ -1,6 +1,10 @@
 {
-  "greeting": "Hola, {{name}}",
-  "greetingNoName": "Hola",
-  "logout": "Cerrar sesión",
-  "profileNotFound": "No encontramos tu perfil. Cierra sesión e inténtalo más tarde."
+  "recents": "Escuchado recientemente",
+  "playlists": "Tus playlists",
+  "empty": "Todavía no hay nada. Busca o explora para empezar a escuchar.",
+  "account": {
+    "open": "Cuenta",
+    "close": "Cerrar"
+  },
+  "logout": "Cerrar sesión"
 }
