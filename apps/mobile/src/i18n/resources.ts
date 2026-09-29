@@ -2,12 +2,16 @@
 // the states every screen draws (ADR 009). Bundled, so init is synchronous.
 import enAuthCallback from "./en/authCallback.json";
 import enCommon from "./en/common.json";
+import enExplore from "./en/explore.json";
+import enGenre from "./en/genre.json";
 import enHome from "./en/home.json";
 import enLogin from "./en/login.json";
 import enSignUp from "./en/signUp.json";
 import enTabs from "./en/tabs.json";
 import esAuthCallback from "./es/authCallback.json";
 import esCommon from "./es/common.json";
+import esExplore from "./es/explore.json";
+import esGenre from "./es/genre.json";
 import esHome from "./es/home.json";
 import esLogin from "./es/login.json";
 import esSignUp from "./es/signUp.json";
@@ -20,6 +24,8 @@ export const resources = {
     signUp: esSignUp,
     authCallback: esAuthCallback,
     home: esHome,
+    explore: esExplore,
+    genre: esGenre,
     tabs: esTabs,
   },
   en: {
@@ -28,6 +34,8 @@ export const resources = {
     signUp: enSignUp,
     authCallback: enAuthCallback,
     home: enHome,
+    explore: enExplore,
+    genre: enGenre,
     tabs: enTabs,
   },
 } as const;

@@ -9,5 +9,10 @@
   "password": {
     "show": "Mostrar contraseña",
     "hide": "Ocultar contraseña"
+  },
+  "account": {
+    "open": "Cuenta",
+    "close": "Cerrar",
+    "logout": "Cerrar sesión"
   }
 }

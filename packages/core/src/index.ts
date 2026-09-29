@@ -44,3 +44,7 @@ export { recentEntitySchema, recentEntityTypeSchema } from "./domain/activity.ts
 export type { RecentEntity } from "./domain/activity.ts";
 export { createActivityService } from "./services/activity.ts";
 export type { ActivityService } from "./services/activity.ts";
+export { genreCategorySchema, genrePlaylistListItemSchema, genreSchema } from "./domain/genre.ts";
+export type { Genre, GenrePlaylistListItem } from "./domain/genre.ts";
+export { createGenresService } from "./services/genres.ts";
+export type { GenresService } from "./services/genres.ts";

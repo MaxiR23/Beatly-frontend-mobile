@@ -1,0 +1,8 @@
+{
+  "back": "Volver",
+  "all": "Todas",
+  "tracks_one": "{{count}} canción",
+  "tracks_other": "{{count}} canciones",
+  "empty": "Este género todavía no tiene playlists.",
+  "emptyCategory": "No hay playlists en esta categoría."
+}

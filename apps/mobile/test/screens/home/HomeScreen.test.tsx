@@ -153,8 +153,8 @@ describe("HomeScreen", () => {
   it("opens the account sheet from the avatar and logs out", async () => {
     const ctx = await setup();
     await screen.findByText(en.home.empty);
-    await fireEvent.press(screen.getByRole("button", { name: en.home.account.open }));
-    await fireEvent.press(await screen.findByRole("button", { name: en.home.logout }));
+    await fireEvent.press(screen.getByRole("button", { name: en.common.account.open }));
+    await fireEvent.press(await screen.findByRole("button", { name: en.common.account.logout }));
     await waitFor(() => {
       expect(ctx.auth.signOut).toHaveBeenCalledTimes(1);
     });
@@ -170,8 +170,8 @@ describe("HomeScreen", () => {
         <Screen />
       </Wrapper>,
     );
-    await fireEvent.press(screen.getByRole("button", { name: en.home.account.open }));
-    await fireEvent.press(await screen.findByRole("button", { name: en.home.logout }));
+    await fireEvent.press(screen.getByRole("button", { name: en.common.account.open }));
+    await fireEvent.press(await screen.findByRole("button", { name: en.common.account.logout }));
     expect(await screen.findAllByText(en.common.error.generic)).not.toHaveLength(0);
   });
 
@@ -181,8 +181,8 @@ describe("HomeScreen", () => {
     });
     await screen.findByText(en.home.empty);
     expect(screen.queryByText("M")).toBeNull();
-    await fireEvent.press(screen.getByRole("button", { name: en.home.account.open }));
-    await fireEvent.press(await screen.findByRole("button", { name: en.home.logout }));
+    await fireEvent.press(screen.getByRole("button", { name: en.common.account.open }));
+    await fireEvent.press(await screen.findByRole("button", { name: en.common.account.logout }));
     await waitFor(() => {
       expect(ctx.auth.signOut).toHaveBeenCalledTimes(1);
     });
@@ -191,8 +191,8 @@ describe("HomeScreen", () => {
   it("keeps logout reachable in the error state", async () => {
     const ctx = await setup({ listPlaylists: () => Promise.resolve(failure) });
     await screen.findByText(en.common.retry);
-    await fireEvent.press(screen.getByRole("button", { name: en.home.account.open }));
-    await fireEvent.press(await screen.findByRole("button", { name: en.home.logout }));
+    await fireEvent.press(screen.getByRole("button", { name: en.common.account.open }));
+    await fireEvent.press(await screen.findByRole("button", { name: en.common.account.logout }));
     await waitFor(() => {
       expect(ctx.auth.signOut).toHaveBeenCalledTimes(1);
     });

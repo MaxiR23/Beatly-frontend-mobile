@@ -3,6 +3,8 @@
 // needs an icon.
 import {
   Check,
+  ChevronLeft,
+  ChevronRight,
   Compass,
   Eye,
   EyeOff,
@@ -20,6 +22,8 @@ import { toneColor, type Tone } from "./tone.ts";
 
 const glyphs = {
   check: Check,
+  chevronLeft: ChevronLeft,
+  chevronRight: ChevronRight,
   compass: Compass,
   eye: Eye,
   eyeOff: EyeOff,

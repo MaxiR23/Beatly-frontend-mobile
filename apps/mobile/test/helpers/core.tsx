@@ -7,11 +7,14 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the profile, recents and playlists fixtures and fakes, and the page builder)
+// (the profile, recents, playlists and genres fixtures and fakes, and the page builder)
 //
 import type {
   ActivityService,
   AuthPort,
+  Genre,
+  GenrePlaylistListItem,
+  GenresService,
   HttpOutcome,
   LogPort,
   PageResult,
@@ -54,6 +57,18 @@ export const playlistFixture: PlaylistListItem = {
   is_public: false,
   created_at: "2026-01-01T00:00:00Z",
   updated_at: "2026-01-02T00:00:00Z",
+  thumbnail_urls: ["test://img/1", "test://img/2", "test://img/3", "test://img/4"],
+};
+
+export const genreFixture: Genre = { slug: "pop", name: "Pop", description: null };
+
+export const genrePlaylistFixture: GenrePlaylistListItem = {
+  id: "gp1",
+  title: "Pop hits",
+  description: null,
+  thumbnail_url: "test://img/cover",
+  track_count: 12,
+  category: "Hits",
   thumbnail_urls: ["test://img/1", "test://img/2", "test://img/3", "test://img/4"],
 };
 
@@ -119,6 +134,9 @@ export function makeCore(
     getMyProfile?: ProfileService["getMyProfile"];
     listRecents?: ActivityService["listRecents"];
     listPlaylists?: PlaylistsService["listPlaylists"];
+    listGenres?: GenresService["listGenres"];
+    listGenrePlaylists?: GenresService["listGenrePlaylists"];
+    listGenreCategories?: GenresService["listGenreCategories"];
   } = {},
 ) {
   const auth = options.auth ?? makeAuth();
@@ -131,15 +149,35 @@ export function makeCore(
   const listPlaylists = jest.fn<PlaylistsService["listPlaylists"]>(
     options.listPlaylists ?? (() => Promise.resolve(pageOf<PlaylistListItem>([]))),
   );
+  const listGenres = jest.fn<GenresService["listGenres"]>(
+    options.listGenres ?? (() => Promise.resolve(pageOf<Genre>([]))),
+  );
+  const listGenrePlaylists = jest.fn<GenresService["listGenrePlaylists"]>(
+    options.listGenrePlaylists ?? (() => Promise.resolve(pageOf<GenrePlaylistListItem>([]))),
+  );
+  const listGenreCategories = jest.fn<GenresService["listGenreCategories"]>(
+    options.listGenreCategories ?? (() => Promise.resolve(pageOf<string>([]))),
+  );
   const log = makeLog();
   const core: Core = {
     activity: { listRecents },
     auth,
+    genres: { listGenres, listGenrePlaylists, listGenreCategories },
     log,
     playlists: { listPlaylists },
     profile: { getMyProfile },
   };
-  return { core, auth, log, getMyProfile, listRecents, listPlaylists };
+  return {
+    core,
+    auth,
+    log,
+    getMyProfile,
+    listRecents,
+    listPlaylists,
+    listGenres,
+    listGenrePlaylists,
+    listGenreCategories,
+  };
 }
 
 export function Wrapper({

@@ -8,36 +8,33 @@ import { layout } from "../tokens/spacing.ts";
 import { Icon } from "./Icon.tsx";
 
 const MOSAIC_SIZE = 4;
-const MOSAIC_CELL = layout.carouselCard / 2;
 
 interface CoverProps {
   urls: readonly string[];
   shape: "square" | "round";
+  size?: number;
 }
 
-export function Cover({ urls, shape }: CoverProps) {
+export function Cover({ urls, shape, size = layout.carouselCard }: CoverProps) {
   const first = urls[0];
+  const cell = { width: size / 2, height: size / 2 };
+  const box = { width: size, height: size };
 
   return (
-    <View style={[styles.box, shape === "round" ? styles.round : styles.square]}>
+    <View style={[styles.box, box, shape === "round" ? styles.round : styles.square]}>
       {urls.length >= MOSAIC_SIZE ? (
         <View style={styles.mosaic} testID="cover-mosaic">
           {urls.slice(0, MOSAIC_SIZE).map((url, index) => (
             <Image
               key={`${String(index)}:${url}`}
               source={{ uri: url }}
-              style={styles.cell}
+              style={cell}
               accessible={false}
             />
           ))}
         </View>
       ) : first !== undefined ? (
-        <Image
-          source={{ uri: first }}
-          style={styles.fill}
-          accessible={false}
-          testID="cover-single"
-        />
+        <Image source={{ uri: first }} style={box} accessible={false} testID="cover-single" />
       ) : (
         <View style={styles.placeholder} testID="cover-placeholder">
           <Icon name="music" size="xl" tone="tertiary" />
@@ -49,15 +46,11 @@ export function Cover({ urls, shape }: CoverProps) {
 
 const styles = StyleSheet.create({
   box: {
-    width: layout.carouselCard,
-    height: layout.carouselCard,
     overflow: "hidden",
     backgroundColor: color.surface.card,
   },
   square: { borderRadius: radius.sm },
   round: { borderRadius: radius.full },
   mosaic: { flexDirection: "row", flexWrap: "wrap" },
-  cell: { width: MOSAIC_CELL, height: MOSAIC_CELL },
-  fill: { width: layout.carouselCard, height: layout.carouselCard },
   placeholder: { flex: 1, alignItems: "center", justifyContent: "center" },
 });

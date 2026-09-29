@@ -1,10 +1,5 @@
 {
   "recents": "Escuchado recientemente",
   "playlists": "Tus playlists",
-  "empty": "Todavía no hay nada. Busca o explora para empezar a escuchar.",
-  "account": {
-    "open": "Cuenta",
-    "close": "Cerrar"
-  },
-  "logout": "Cerrar sesión"
+  "empty": "Todavía no hay nada. Busca o explora para empezar a escuchar."
 }

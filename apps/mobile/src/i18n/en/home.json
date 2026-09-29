@@ -1,10 +1,5 @@
 {
   "recents": "Recently played",
   "playlists": "Your playlists",
-  "empty": "Nothing here yet. Search or explore to start listening.",
-  "account": {
-    "open": "Account",
-    "close": "Close"
-  },
-  "logout": "Log out"
+  "empty": "Nothing here yet. Search or explore to start listening."
 }

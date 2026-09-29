@@ -9,5 +9,10 @@
   "password": {
     "show": "Show password",
     "hide": "Hide password"
+  },
+  "account": {
+    "open": "Account",
+    "close": "Close",
+    "logout": "Log out"
   }
 }

@@ -1,6 +1,7 @@
 // INFO: wires the adapters and the services once, at app start; takes no argument so route tests can replace this module.
 import {
   createActivityService,
+  createGenresService,
   createHttpClient,
   createPlaylistsService,
   createProfileService,
@@ -8,6 +9,7 @@ import {
 import type {
   ActivityService,
   AuthPort,
+  GenresService,
   LogPort,
   PlaylistsService,
   ProfileService,
@@ -21,6 +23,7 @@ import { readPublicEnv } from "./env.ts";
 export interface Core {
   readonly activity: ActivityService;
   readonly auth: AuthPort;
+  readonly genres: GenresService;
   readonly log: LogPort;
   readonly playlists: PlaylistsService;
   readonly profile: ProfileService;
@@ -42,6 +45,7 @@ export function createCore(): Core {
   return {
     activity: createActivityService(client),
     auth,
+    genres: createGenresService(client),
     log,
     playlists: createPlaylistsService(client),
     profile: createProfileService(client),

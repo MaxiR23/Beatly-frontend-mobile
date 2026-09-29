@@ -1,12 +1,12 @@
 # Tabs
 
-The tab navigator of the signed-in app and its three placeholder tabs.
+The tab navigator of the signed-in app and its two placeholder tabs.
 
 ## Purpose
 
 Four tabs: Home, Explore, Search and Library, icon only, each with an
-accessible label. Explore, Search and Library show a placeholder until their
-own issues.
+accessible label. Search and Library show a placeholder until their own
+issues; Explore has its own screens (`explore.md`, `genre.md`).
 
 ## Layout
 
@@ -42,8 +42,9 @@ None.
 
 ## Navigation
 
-The `(tabs)` group of the root stack, signed in only. `index` is Home; `explore`,
-`search` and `library` are the placeholders.
+The `(tabs)` group of the root stack, signed in only. `index` is Home; `explore` is a nested stack
+(`explore/index`, `explore/genres/[slug]`); `search` and `library` are the
+placeholders.
 
 ## i18n namespace
 
