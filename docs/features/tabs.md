@@ -47,7 +47,8 @@ the group names, and the URLs do not change: `/`, `/explore`, `/search`,
 `/library`. One `_layout.tsx`, in the array group
 `(home,explore,search,library)`, declares a stack for each tab, so every tab
 keeps its own back stack and shares the detail routes declared in that folder:
-`/album/[id]` (`album.md`). The Explore tab's genre route
+`/album/[id]` (`album.md`) and `/artist/[id]` (`artist.md`). Every navigator paints
+`color.surface.base` from the root navigation theme. The Explore tab's genre route
 (`explore/genres/[slug]`) lives in its own group. A new detail screen is one
 file in the array folder (ADR 020).
 

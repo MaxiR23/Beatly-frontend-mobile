@@ -28,6 +28,7 @@ export const layout = {
   rowCoverMedium: 56,
   rowCoverLarge: 64,
   heroCover: 240,
+  heroImageRatio: 1,
   trackNumber: 24,
   // Widths of the detail skeleton's placeholder bars, as a share of their row.
   skeletonBar: { title: "70%", meta: "45%", rowTitle: "60%", rowMeta: "35%" },

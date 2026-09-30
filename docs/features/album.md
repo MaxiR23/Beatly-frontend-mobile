@@ -1,6 +1,6 @@
 # Album
 
-An album's tracks and its related albums, on the detail screen base.
+An album's tracks and its related albums, on the detail screen base (which has a second, image hero, used by the artist).
 
 ## Purpose
 
@@ -17,7 +17,8 @@ the body:
 - Hero: the cover (its single url passed as `cover.urls`) in `layout.heroCover`, `radius.sm`, `shadow.cover`, over the
   wash from the dominant color. Then the title in `typography.title`.
 - Info: `layout.gutter` on the sides, `spacing.xs` gap, no padding below. The
-  artist names in `typography.rowTitle` and `color.text.secondary`, joined by
+  artist names in `typography.rowTitle` and `color.text.secondary` (a name with an id is a `Link`
+  that pushes `/artist/[id]`, in `typography.link`; a name without one is plain text), joined by
   `album:artistSeparator`, omitted when there are none; then the meta line in
   `typography.meta` and `color.text.tertiary`: the kind, the year, the song count
   and the duration in hours and minutes, each omitted when the API sends none.
@@ -69,6 +70,7 @@ through `adapters/imageColors.ts` (ADR 019), not from the API.
 Route `/album/[id]`, declared once in the shared stack of the four tabs
 (ADR 020). It opens from Home recently played, Search album results, Library saved
 albums and from the carousels of another album, always inside the current tab.
+An artist name with an id leads to the artist (`/artist/[id]`).
 Back pops the stack, or replaces with `/` when there is nothing to go back to.
 
 ## i18n namespace

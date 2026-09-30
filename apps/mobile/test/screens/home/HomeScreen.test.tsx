@@ -9,7 +9,7 @@
 // - loading, both sections, a hidden empty section, the empty state, the generic error with retry
 // - own playlists named after the profile, and the line of each recent by type (en and es)
 // - the next page of playlists at the end of the carousel
-// - an album recent opens the album, a playlist recent opens with its kind, an artist recent and a kind-less playlist recent do not, a card of your playlists opens the playlist
+// - an album recent opens the album, a playlist recent opens with its kind, an artist recent opens the artist, a kind-less playlist recent does not, a card of your playlists opens the playlist
 // - the avatar initials, the account sheet and logout in every state, en and es
 //
 // Run with: pnpm --filter @beatly/mobile test -- HomeScreen
@@ -278,7 +278,7 @@ describe("HomeScreen", () => {
     expect(mockPush).toHaveBeenCalledWith({ pathname: "/album/[id]", params: { id: "a1" } });
   });
 
-  it("does not open an artist recent or a playlist recent without a kind", async () => {
+  it("opens an artist recent", async () => {
     const meta = { subtitle: null, thumbnail_url: null };
     await setup({
       listRecents: recents([
@@ -288,6 +288,16 @@ describe("HomeScreen", () => {
           entity_id: "ar1",
           metadata: { title: "An artist", ...meta },
         },
+      ]),
+    });
+    await fireEvent.press(await screen.findByRole("button", { name: "An artist" }));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: "/artist/[id]", params: { id: "ar1" } });
+  });
+
+  it("does not open a playlist recent without a kind", async () => {
+    const meta = { subtitle: null, thumbnail_url: null };
+    await setup({
+      listRecents: recents([
         {
           ...recentFixture,
           entity_type: "playlist",
@@ -296,9 +306,7 @@ describe("HomeScreen", () => {
         },
       ]),
     });
-    await screen.findByText("An artist");
-    expect(screen.getByText("A playlist")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "An artist" })).toBeNull();
+    expect(await screen.findByText("A playlist")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "A playlist" })).toBeNull();
     expect(mockPush).not.toHaveBeenCalled();
   });

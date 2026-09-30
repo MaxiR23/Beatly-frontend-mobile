@@ -178,6 +178,9 @@ export function SearchScreen() {
             urls={artist.thumbnail_url !== null ? [artist.thumbnail_url] : []}
             title={artist.name}
             subtitle={t("artist")}
+            onPress={() => {
+              router.push({ pathname: "/artist/[id]", params: { id: artist.id } });
+            }}
           />
         ) : null}
         {songs.length > 0 ? (

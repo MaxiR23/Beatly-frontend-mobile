@@ -9,6 +9,7 @@
 // - the rows under the children, onEndReached, the mosaic and the tile covers
 // - the four bodies: the skeleton, the error with retry, the unavailable message, the ready hero with its title and children
 // - the hero title in typography.title
+// - the image hero: full width at the hero image ratio, the title over it in typography.display, the fade, the placeholder without an image, no centered cover or wash
 // - the floating back button, the more button only when given, the neutral wash and the gradient wash
 //
 // Run with: pnpm --filter @beatly/ui test -- DetailScreen
@@ -16,9 +17,11 @@
 // SEE: packages/ui/src/components/DetailScreen.tsx
 
 import { describe, expect, it, jest } from "@jest/globals";
-import { fireEvent, render, screen } from "@testing-library/react-native";
-import { StyleSheet, Text, type TextStyle } from "react-native";
+import { fireEvent, render, screen, within } from "@testing-library/react-native";
+import { StyleSheet, Text, type TextStyle, type ViewStyle } from "react-native";
 
+import { color } from "../../src/tokens/color.ts";
+import { layout } from "../../src/tokens/spacing.ts";
 import { typography } from "../../src/tokens/typography.ts";
 import { DetailScreen, type DetailBody } from "../../src/components/DetailScreen.tsx";
 
@@ -53,6 +56,18 @@ describe("DetailScreen", () => {
     expect(screen.getByTestId("detail-skeleton")).toBeTruthy();
     expect(screen.getByLabelText("Loading")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Back" })).toBeTruthy();
+  });
+
+  it("draws the image skeleton while loading with the image hero", async () => {
+    await draw({ kind: "loading", label: "Loading", hero: "image" });
+    expect(screen.getByTestId("detail-skeleton")).toBeTruthy();
+    expect(screen.getByTestId("detail-skeleton-image")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Back" })).toBeTruthy();
+  });
+
+  it("draws the cover skeleton, without the image block, by default", async () => {
+    await draw({ kind: "loading", label: "Loading" });
+    expect(screen.queryByTestId("detail-skeleton-image")).toBeNull();
   });
 
   it("draws the error with retry and calls onRetry", async () => {
@@ -161,5 +176,57 @@ describe("DetailScreen", () => {
       .map((node) => StyleSheet.flatten(node.props.style as TextStyle).fontSize);
     expect(sizes).toContain(typography.title.fontSize);
     expect(sizes).not.toContain(typography.display.fontSize);
+  });
+
+  describe("image hero", () => {
+    const imageHero = (urls: string[] = ["test://img/artist"]): DetailBody => ({
+      kind: "ready",
+      hero: "image",
+      title: "Artist name",
+      cover: { urls },
+      washColor: null,
+      children: <Text>body content</Text>,
+    });
+
+    it("draws the image hero stretched to the full width at the hero image ratio", async () => {
+      await draw(imageHero());
+      const style = StyleSheet.flatten(
+        screen.getByTestId("detail-hero-image").props.style as ViewStyle,
+      );
+      expect(style.alignSelf).toBe("stretch");
+      expect(style.aspectRatio).toBe(layout.heroImageRatio);
+      expect(screen.getByTestId("detail-hero-photo").props.source).toEqual({
+        uri: "test://img/artist",
+      });
+    });
+
+    it("draws the title over the image in the display role", async () => {
+      await draw(imageHero());
+      const title = within(screen.getByTestId("detail-hero-image")).getByText("Artist name");
+      const size = StyleSheet.flatten(title.props.style as TextStyle).fontSize;
+      expect(size).toBe(typography.display.fontSize);
+      expect(size).not.toBe(typography.title.fontSize);
+    });
+
+    it("fades the image into the base surface", async () => {
+      await draw(imageHero());
+      expect(screen.getByTestId("detail-hero-fade")).toBeTruthy();
+    });
+
+    it("draws the image hero on the placeholder surface when there is no image", async () => {
+      await draw(imageHero([]));
+      expect(screen.queryByTestId("detail-hero-photo")).toBeNull();
+      const style = StyleSheet.flatten(
+        screen.getByTestId("detail-hero-image").props.style as ViewStyle,
+      );
+      expect(style.backgroundColor).toBe(color.surface.card);
+    });
+
+    it("does not draw the centered cover or the wash in the image hero", async () => {
+      await draw(imageHero());
+      expect(screen.queryByTestId("cover-single")).toBeNull();
+      expect(screen.queryByTestId("detail-wash-neutral")).toBeNull();
+      expect(screen.queryByTestId("detail-wash-color")).toBeNull();
+    });
   });
 });

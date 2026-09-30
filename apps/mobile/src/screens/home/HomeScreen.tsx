@@ -49,18 +49,22 @@ export function HomeScreen() {
       urls: recent.metadata.thumbnail_url ? [recent.metadata.thumbnail_url] : [],
       shape: recent.entity_type === "artist" ? "round" : "square",
       onPress:
-        recent.entity_type === "album"
+        recent.entity_type === "artist"
           ? () => {
-              openAlbum(recent.entity_id);
+              router.push({ pathname: "/artist/[id]", params: { id: recent.entity_id } });
             }
-          : recent.entity_type === "playlist" && kind != null
+          : recent.entity_type === "album"
             ? () => {
-                router.push({
-                  pathname: "/playlist/[id]",
-                  params: { id: recent.entity_id, source: kind },
-                });
+                openAlbum(recent.entity_id);
               }
-            : undefined,
+            : kind != null
+              ? () => {
+                  router.push({
+                    pathname: "/playlist/[id]",
+                    params: { id: recent.entity_id, source: kind },
+                  });
+                }
+              : undefined,
     };
   };
 

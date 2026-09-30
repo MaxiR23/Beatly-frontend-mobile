@@ -1,0 +1,13 @@
+{
+  "back": "Back",
+  "popular": "Popular songs",
+  "albums": "Albums",
+  "singles": "Singles and EPs",
+  "similar": "Similar artists",
+  "kind": {
+    "single": "Single",
+    "ep": "EP"
+  },
+  "metaSeparator": " · ",
+  "notAvailable": "This artist is not available."
+}

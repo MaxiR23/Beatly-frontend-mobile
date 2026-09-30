@@ -1,12 +1,13 @@
 // INFO: the base of every detail screen (album, playlist, artist): floating
-// back and optional more buttons fixed over a hero with a cover over a wash,
-// and a title. Four bodies: loading skeleton, error with retry, unavailable,
+// back and optional more buttons fixed over a hero and a title. The hero is
+// either a centered cover over a wash or a full-width image with the title
+// over it. Four bodies: loading skeleton, error with retry, unavailable,
 // ready. The cover is a mosaic, an image, an accent tile or the placeholder;
 // the ready body is a list: the hero, the title and the children on top,
 // optional rows under them paged by onEndReached. It draws statically:
 // nothing moves with the scroll.
 import type { ReactNode } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
+import { FlatList, Image, StyleSheet, View } from "react-native";
 
 import { color } from "../tokens/color.ts";
 import { shadow } from "../tokens/shadow.ts";
@@ -27,11 +28,12 @@ export interface DetailRow {
 }
 
 export type DetailBody =
-  | { kind: "loading"; label: string }
+  | { kind: "loading"; label: string; hero?: "cover" | "image" | undefined }
   | { kind: "error"; message: string; retryLabel: string; onRetry: () => void }
   | { kind: "unavailable"; message: string }
   | {
       kind: "ready";
+      hero?: "cover" | "image" | undefined;
       title: string;
       cover: { urls: readonly string[]; icon?: IconName | undefined };
       washColor: string | null;
@@ -67,7 +69,7 @@ export function DetailScreen({
     <View style={styles.root} testID={testID}>
       {body.kind === "loading" ? (
         <View style={styles.fill}>
-          <DetailSkeleton label={body.label} topInset={topInset} />
+          <DetailSkeleton label={body.label} topInset={topInset} hero={body.hero} />
         </View>
       ) : null}
       {body.kind === "error" ? (
@@ -90,31 +92,60 @@ export function DetailScreen({
           contentContainerStyle={{ paddingBottom: bottomInset }}
           ListHeaderComponent={
             <>
-              <View
-                style={[styles.hero, { paddingTop: topInset + layout.controlHeight + spacing.sm }]}
-              >
-                {body.washColor === null ? (
-                  <View style={styles.washNeutral} testID="detail-wash-neutral" />
-                ) : (
-                  <View style={styles.wash} testID="detail-wash-color">
+              {body.hero === "image" ? (
+                <View style={styles.imageHero} testID="detail-hero-image">
+                  {body.cover.urls[0] !== undefined ? (
+                    <Image
+                      source={{ uri: body.cover.urls[0] }}
+                      style={StyleSheet.absoluteFill}
+                      accessible={false}
+                      testID="detail-hero-photo"
+                    />
+                  ) : null}
+                  <View style={styles.fade} testID="detail-hero-fade">
                     <GradientFill
                       direction="vertical"
-                      colors={[body.washColor, color.surface.base]}
+                      colors={[color.overlay.clear, color.overlay.clear, color.surface.base]}
                     />
                   </View>
-                )}
-                <View style={styles.cover}>
-                  <Cover
-                    urls={body.cover.urls}
-                    icon={body.cover.icon}
-                    shape="square"
-                    size={layout.heroCover}
-                  />
+                  <View style={styles.imageTitle}>
+                    <Text variant="display" numberOfLines={2}>
+                      {body.title}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-              <View style={styles.title}>
-                <Text variant="title">{body.title}</Text>
-              </View>
+              ) : (
+                <>
+                  <View
+                    style={[
+                      styles.hero,
+                      { paddingTop: topInset + layout.controlHeight + spacing.sm },
+                    ]}
+                  >
+                    {body.washColor === null ? (
+                      <View style={styles.washNeutral} testID="detail-wash-neutral" />
+                    ) : (
+                      <View style={styles.wash} testID="detail-wash-color">
+                        <GradientFill
+                          direction="vertical"
+                          colors={[body.washColor, color.surface.base]}
+                        />
+                      </View>
+                    )}
+                    <View style={styles.cover}>
+                      <Cover
+                        urls={body.cover.urls}
+                        icon={body.cover.icon}
+                        shape="square"
+                        size={layout.heroCover}
+                      />
+                    </View>
+                  </View>
+                  <View style={styles.title}>
+                    <Text variant="title">{body.title}</Text>
+                  </View>
+                </>
+              )}
               {body.children}
             </>
           }
@@ -143,6 +174,14 @@ const styles = StyleSheet.create({
   washNeutral: StyleSheet.absoluteFill,
   wash: StyleSheet.absoluteFill,
   cover: { ...shadow.cover },
+  imageHero: {
+    alignSelf: "stretch",
+    aspectRatio: layout.heroImageRatio,
+    justifyContent: "flex-end",
+    backgroundColor: color.surface.card,
+  },
+  fade: StyleSheet.absoluteFill,
+  imageTitle: { paddingHorizontal: layout.gutter, paddingBottom: spacing.lg },
   title: { paddingHorizontal: layout.gutter, paddingTop: spacing.lg },
   buttons: { position: "absolute", left: layout.gutter, right: layout.gutter },
   buttonsRow: { flexDirection: "row", justifyContent: "space-between" },

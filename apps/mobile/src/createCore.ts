@@ -2,6 +2,7 @@
 import {
   createActivityService,
   createAlbumService,
+  createArtistsService,
   createGenresService,
   createHttpClient,
   createLibraryService,
@@ -14,6 +15,7 @@ import {
 import type {
   ActivityService,
   AlbumService,
+  ArtistsService,
   AuthPort,
   GenresService,
   LibraryService,
@@ -34,6 +36,7 @@ import { readPublicEnv } from "./env.ts";
 export interface Core {
   readonly activity: ActivityService;
   readonly album: AlbumService;
+  readonly artists: ArtistsService;
   readonly auth: AuthPort;
   readonly genres: GenresService;
   readonly library: LibraryService;
@@ -62,6 +65,7 @@ export function createCore(): Core {
   return {
     activity: createActivityService(client),
     album: createAlbumService(client),
+    artists: createArtistsService(client),
     auth,
     genres: createGenresService(client),
     library: createLibraryService(client),

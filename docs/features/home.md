@@ -86,7 +86,7 @@ recently played pushes `/album/[id]` with the entry's `entity_id`, inside the
 Home tab's stack; a card of "Your playlists" pushes `/playlist/[id]?source=user`
 with the playlist's `id`; a playlist recent pushes
 `/playlist/[id]?source=<metadata.kind>` with its `entity_id`; a playlist recent
-without a kind, and every artist recent, is not pressable. Log out from the sheet lands on `/login` through the session gate.
+without a kind is not pressable; an artist recent pushes `/artist/[id]` with its `entity_id`. Log out from the sheet lands on `/login` through the session gate.
 
 ## i18n namespace
 

@@ -9,7 +9,7 @@
 // - recent queries: newest first, recorded on submit and kept after a remount, removed one by one and all, run from a row
 // - results in order (artist, songs, albums), no results, the generic error with retry, loading, the debounce, clear
 // - the top artist image, and the placeholder when it has none
-// - an album result opens the album
+// - an album result opens the album, the top artist opens the artist
 // - the account sheet, en and es
 //
 // Run with: pnpm --filter @beatly/mobile test -- SearchScreen
@@ -170,6 +170,13 @@ describe("SearchScreen results", () => {
     await screen.findByText("Test Song");
     const cover = within(screen.getByTestId("search-artist")).getByTestId("cover-single");
     expect(cover.props.source as unknown).toEqual({ uri: "test://img/ar1" });
+  });
+
+  it("opens the top artist", async () => {
+    await setup();
+    await fireEvent.changeText(input(), "test");
+    await fireEvent.press(await screen.findByRole("button", { name: "Test Artist" }));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: "/artist/[id]", params: { id: "ar1" } });
   });
 
   it("draws the placeholder when the top artist has no image", async () => {

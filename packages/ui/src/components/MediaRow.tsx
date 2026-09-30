@@ -1,4 +1,4 @@
-// INFO: a list row, pressable when given onPress: a cover at the start, a title and an optional secondary line; regular for songs, medium for the library, large for an artist; an icon replaces the images with an accent tile.
+// INFO: a list row, pressable when given onPress: a cover at the start, a title and an optional secondary line; regular for songs, medium for the library, large for an artist; an icon replaces the images with an accent tile; an unavailable row draws its texts disabled.
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { motion } from "../tokens/motion.ts";
@@ -14,6 +14,7 @@ interface MediaRowProps {
   shape: "square" | "round";
   size?: "regular" | "medium" | "large";
   icon?: IconName | undefined;
+  available?: boolean;
   onPress?: (() => void) | undefined;
   testID?: string;
 }
@@ -25,6 +26,7 @@ export function MediaRow({
   shape,
   size = "regular",
   icon,
+  available = true,
   onPress,
   testID,
 }: MediaRowProps) {
@@ -35,11 +37,15 @@ export function MediaRow({
     <>
       <Cover urls={urls} shape={shape} size={coverSize} icon={icon} />
       <View style={styles.text}>
-        <Text variant={large ? "subtitle" : "rowTitle"} numberOfLines={1}>
+        <Text
+          variant={large ? "subtitle" : "rowTitle"}
+          tone={available ? "primary" : "disabled"}
+          numberOfLines={1}
+        >
           {title}
         </Text>
         {subtitle !== undefined ? (
-          <Text variant="meta" tone="secondary" numberOfLines={1}>
+          <Text variant="meta" tone={available ? "secondary" : "disabled"} numberOfLines={1}>
             {subtitle}
           </Text>
         ) : null}
@@ -47,9 +53,15 @@ export function MediaRow({
     </>
   );
 
+  const state = available ? undefined : { disabled: true };
+
   if (onPress === undefined) {
     return (
-      <View style={[styles.row, medium ? styles.rowMedium : undefined]} testID={testID}>
+      <View
+        style={[styles.row, medium ? styles.rowMedium : undefined]}
+        accessibilityState={state}
+        testID={testID}
+      >
         {content}
       </View>
     );
@@ -59,6 +71,7 @@ export function MediaRow({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={title}
+      accessibilityState={state}
       onPress={onPress}
       style={({ pressed }) => [
         styles.row,
