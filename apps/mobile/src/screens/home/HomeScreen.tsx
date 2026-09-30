@@ -40,19 +40,29 @@ export function HomeScreen() {
     return subtitle ? t("meta", { kind, owner: subtitle }) : kind;
   };
 
-  const toRecentItem = (recent: RecentEntity): CarouselItem => ({
-    key: `${recent.entity_type}:${recent.entity_id}`,
-    title: recent.metadata.title ?? undefined,
-    subtitle: recentLine(recent),
-    urls: recent.metadata.thumbnail_url ? [recent.metadata.thumbnail_url] : [],
-    shape: recent.entity_type === "artist" ? "round" : "square",
-    onPress:
-      recent.entity_type === "album"
-        ? () => {
-            openAlbum(recent.entity_id);
-          }
-        : undefined,
-  });
+  const toRecentItem = (recent: RecentEntity): CarouselItem => {
+    const kind = recent.metadata.kind;
+    return {
+      key: `${recent.entity_type}:${recent.entity_id}`,
+      title: recent.metadata.title ?? undefined,
+      subtitle: recentLine(recent),
+      urls: recent.metadata.thumbnail_url ? [recent.metadata.thumbnail_url] : [],
+      shape: recent.entity_type === "artist" ? "round" : "square",
+      onPress:
+        recent.entity_type === "album"
+          ? () => {
+              openAlbum(recent.entity_id);
+            }
+          : recent.entity_type === "playlist" && kind != null
+            ? () => {
+                router.push({
+                  pathname: "/playlist/[id]",
+                  params: { id: recent.entity_id, source: kind },
+                });
+              }
+            : undefined,
+    };
+  };
 
   const toPlaylistItem = (playlist: PlaylistListItem): CarouselItem => ({
     key: playlist.id,
@@ -60,6 +70,9 @@ export function HomeScreen() {
     subtitle: owner ?? undefined,
     urls: playlist.thumbnail_urls,
     shape: "square",
+    onPress: () => {
+      router.push({ pathname: "/playlist/[id]", params: { id: playlist.id, source: "user" } });
+    },
   });
 
   const clearance = { paddingBottom: floatingTabBarClearance(insets.bottom) };

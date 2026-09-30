@@ -52,7 +52,14 @@ export function LibraryScreen() {
           ? () => {
               router.push({ pathname: "/album/[id]", params: { id: entry.id } });
             }
-          : undefined,
+          : entry.source === "liked" || entry.source === "user" || entry.source === "genre"
+            ? () => {
+                router.push({
+                  pathname: "/playlist/[id]",
+                  params: { id: entry.id, source: entry.source },
+                });
+              }
+            : undefined,
     };
   };
 

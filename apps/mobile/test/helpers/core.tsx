@@ -7,7 +7,7 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the profile, recents, playlists, library, created playlist, genres, search and album fixtures and fakes, the in-memory storage, and the page builder)
+// (the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, created playlist, genres, search and album fixtures and fakes, the in-memory storage, and the page builder)
 //
 import type {
   ActivityService,
@@ -19,14 +19,19 @@ import type {
   GenresService,
   HttpOutcome,
   LibraryEntry,
+  LikedPlaylist,
   LibraryService,
   LogPort,
   PageResult,
   Playlist,
+  PlaylistDetail,
   PlaylistListItem,
   PlaylistsService,
+  PlaylistTrack,
   Profile,
   ProfileService,
+  PublicGenrePlaylist,
+  PublicService,
   RecentEntity,
   SearchResult,
   SearchService,
@@ -67,6 +72,54 @@ export const playlistFixture: PlaylistListItem = {
   created_at: "2026-01-01T00:00:00Z",
   updated_at: "2026-01-02T00:00:00Z",
   thumbnail_urls: ["test://img/1", "test://img/2", "test://img/3", "test://img/4"],
+};
+
+export const playlistDetailFixture: PlaylistDetail = {
+  id: "p1",
+  owner_id: "00000000-0000-0000-0000-000000000001",
+  title: "Road trip",
+  description: "Windows down",
+  is_public: false,
+  created_at: "2026-01-01T00:00:00Z",
+  updated_at: "2026-01-02T00:00:00Z",
+  total_count: 2,
+  total_duration_seconds: 4440,
+  thumbnail_urls: ["test://img/1", "test://img/2", "test://img/3", "test://img/4"],
+};
+
+// The liked route sends no thumbnail_urls.
+export const likedDetailFixture: LikedPlaylist = {
+  owner_id: playlistDetailFixture.owner_id,
+  created_at: playlistDetailFixture.created_at,
+  updated_at: playlistDetailFixture.updated_at,
+  is_public: playlistDetailFixture.is_public,
+  id: "liked",
+  title: "liked",
+  description: null,
+  total_count: 0,
+  total_duration_seconds: 0,
+};
+
+export const publicGenrePlaylistFixture: PublicGenrePlaylist = {
+  id: "gp1",
+  title: "Pop hits",
+  description: null,
+  track_count: 12,
+  total_duration_seconds: 2400,
+  thumbnails: ["test://img/1", "test://img/2", "test://img/3", "test://img/4"],
+  thumbnail_url: "test://img/cover",
+  tracks: [],
+};
+
+export const playlistTrackFixture: PlaylistTrack = {
+  track_id: "t1",
+  title: "First Song",
+  artists: [{ id: "ar1", name: "Test Artist" }],
+  album: "Test Album",
+  album_id: "al1",
+  duration_seconds: 248,
+  thumbnail_url: "test://img/t1",
+  position: 1,
 };
 
 export const likedEntryFixture: LibraryEntry = {
@@ -289,6 +342,11 @@ export function makeCore(
     listGenreCategories?: GenresService["listGenreCategories"];
     search?: SearchService["search"];
     getAlbum?: AlbumService["getAlbum"];
+    getPlaylist?: PlaylistsService["getPlaylist"];
+    listPlaylistTracks?: PlaylistsService["listPlaylistTracks"];
+    getLikedPlaylist?: PlaylistsService["getLikedPlaylist"];
+    listLikedTracks?: PlaylistsService["listLikedTracks"];
+    getGenrePlaylist?: PublicService["getGenrePlaylist"];
     storage?: StoragePort;
   } = {},
 ) {
@@ -326,6 +384,29 @@ export function makeCore(
     options.getAlbum ??
       (() => Promise.resolve({ kind: "success", data: albumFixture, maxAgeSeconds: 0 })),
   );
+  const getPlaylist = jest.fn<PlaylistsService["getPlaylist"]>(
+    options.getPlaylist ??
+      (() => Promise.resolve({ kind: "success", data: playlistDetailFixture, maxAgeSeconds: 0 })),
+  );
+  const listPlaylistTracks = jest.fn<PlaylistsService["listPlaylistTracks"]>(
+    options.listPlaylistTracks ?? (() => Promise.resolve(pageOf<PlaylistTrack>([]))),
+  );
+  const getLikedPlaylist = jest.fn<PlaylistsService["getLikedPlaylist"]>(
+    options.getLikedPlaylist ??
+      (() => Promise.resolve({ kind: "success", data: likedDetailFixture, maxAgeSeconds: 0 })),
+  );
+  const listLikedTracks = jest.fn<PlaylistsService["listLikedTracks"]>(
+    options.listLikedTracks ?? (() => Promise.resolve(pageOf<PlaylistTrack>([]))),
+  );
+  const getGenrePlaylist = jest.fn<PublicService["getGenrePlaylist"]>(
+    options.getGenrePlaylist ??
+      (() =>
+        Promise.resolve({
+          kind: "success",
+          data: publicGenrePlaylistFixture,
+          maxAgeSeconds: 0,
+        })),
+  );
   const storage = options.storage ?? memoryStorage();
   const log = makeLog();
   const core: Core = {
@@ -335,8 +416,16 @@ export function makeCore(
     genres: { listGenres, listGenrePlaylists, listGenreCategories },
     library: { listLibrary },
     log,
-    playlists: { listPlaylists, createPlaylist },
+    playlists: {
+      listPlaylists,
+      createPlaylist,
+      getPlaylist,
+      listPlaylistTracks,
+      getLikedPlaylist,
+      listLikedTracks,
+    },
     profile: { getMyProfile },
+    publicShare: { getGenrePlaylist },
     recentSearches: createRecentSearchesService({ storage, log }),
     search: { search },
   };
@@ -354,6 +443,11 @@ export function makeCore(
     listGenreCategories,
     search,
     getAlbum,
+    getPlaylist,
+    listPlaylistTracks,
+    getLikedPlaylist,
+    listLikedTracks,
+    getGenrePlaylist,
     storage,
   };
 }

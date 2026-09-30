@@ -14,7 +14,7 @@ so the tracks are not pressable.
 Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), except
 the body:
 
-- Hero: the cover in `layout.heroCover`, `radius.sm`, `shadow.cover`, over the
+- Hero: the cover (its single url passed as `cover.urls`) in `layout.heroCover`, `radius.sm`, `shadow.cover`, over the
   wash from the dominant color. Then the title in `typography.title`.
 - Info: `layout.gutter` on the sides, `spacing.xs` gap, no padding below. The
   artist names in `typography.rowTitle` and `color.text.secondary`, joined by

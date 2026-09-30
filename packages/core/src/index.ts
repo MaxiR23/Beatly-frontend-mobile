@@ -36,8 +36,24 @@ export { profileName, profileSchema } from "./domain/profile.ts";
 export type { Profile } from "./domain/profile.ts";
 export { createProfileService, profileReasonSchema } from "./services/profile.ts";
 export type { ProfileReason, ProfileService } from "./services/profile.ts";
-export { playlistListItemSchema, playlistSchema } from "./domain/playlist.ts";
-export type { Playlist, PlaylistListItem } from "./domain/playlist.ts";
+export {
+  likedPlaylistSchema,
+  playlistDetailSchema,
+  playlistListItemSchema,
+  playlistSchema,
+  playlistTrackSchema,
+} from "./domain/playlist.ts";
+export type {
+  Playlist,
+  LikedPlaylist,
+  PlaylistDetail,
+  PlaylistListItem,
+  PlaylistTrack,
+} from "./domain/playlist.ts";
+export { publicGenrePlaylistSchema } from "./domain/public.ts";
+export type { PublicGenrePlaylist } from "./domain/public.ts";
+export { createPublicService } from "./services/public.ts";
+export type { PublicService } from "./services/public.ts";
 export { createPlaylistsService } from "./services/playlists.ts";
 export type { CreatePlaylistInput, PlaylistsService } from "./services/playlists.ts";
 export { libraryEntryKindSchema, libraryEntrySchema } from "./domain/library.ts";

@@ -286,11 +286,31 @@ describe("LibraryScreen", () => {
     expect(mockPush).toHaveBeenCalledWith({ pathname: "/album/[id]", params: { id: "a1" } });
   });
 
-  it("does not open a playlist entry", async () => {
+  it("opens liked, an own playlist and a saved genre playlist with their source", async () => {
     await setup({ listLibrary: full() });
+    await fireEvent.press(await screen.findByRole("button", { name: en.library.liked }));
+    await fireEvent.press(screen.getByRole("button", { name: "Road trip" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Saved playlist" }));
+    expect(mockPush).toHaveBeenNthCalledWith(1, {
+      pathname: "/playlist/[id]",
+      params: { id: "liked", source: "liked" },
+    });
+    expect(mockPush).toHaveBeenNthCalledWith(2, {
+      pathname: "/playlist/[id]",
+      params: { id: "p1", source: "user" },
+    });
+    expect(mockPush).toHaveBeenNthCalledWith(3, {
+      pathname: "/playlist/[id]",
+      params: { id: "gp1", source: "genre" },
+    });
+  });
+
+  it("does not open a playlist with another source", async () => {
+    await setup({
+      listLibrary: full([{ ...savedPlaylistEntryFixture, source: "external" }]),
+    });
     await screen.findByText("Saved playlist");
     expect(screen.queryByRole("button", { name: "Saved playlist" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Road trip" })).toBeNull();
     expect(mockPush).not.toHaveBeenCalled();
   });
 });

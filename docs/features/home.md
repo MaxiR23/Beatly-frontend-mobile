@@ -68,9 +68,10 @@ shows it the next time Home renders.
 
 Both lists answer "nothing" with `ok: true` and `items: []`: an expected empty
 state, never a retry. The `metadata` keys of a recent (`title`, `subtitle`,
-`thumbnail_url`) are optional and read leniently: a missing one, or a value
+`thumbnail_url`, and `kind` on a playlist recent) are optional and read leniently: a missing one, or a value
 that is not a string, is treated as absent and omits that line or draws the
-placeholder cover. The contract gives `metadata` a fixed shape on write, but it is not
+placeholder cover. An absent or unknown `kind` on a playlist recent also reads as
+absent: the card is not pressable. The contract gives `metadata` a fixed shape on write, but it is not
 validated on read and older rows may lack `title`, so a non-string value must
 not fail the page.
 
@@ -82,8 +83,10 @@ on screen until retry. Accepted for this issue.
 
 Route `/`, the first tab of `(tabs)`, reached after sign in. An album card in
 recently played pushes `/album/[id]` with the entry's `entity_id`, inside the
-Home tab's stack; artist and playlist cards and the playlist carousel are not
-pressable yet. Log out from the sheet lands on `/login` through the session gate.
+Home tab's stack; a card of "Your playlists" pushes `/playlist/[id]?source=user`
+with the playlist's `id`; a playlist recent pushes
+`/playlist/[id]?source=<metadata.kind>` with its `entity_id`; a playlist recent
+without a kind, and every artist recent, is not pressable. Log out from the sheet lands on `/login` through the session gate.
 
 ## i18n namespace
 

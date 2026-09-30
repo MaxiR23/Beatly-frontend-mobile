@@ -1,0 +1,14 @@
+{
+  "back": "Back",
+  "liked": "Liked songs",
+  "private": "Private",
+  "public": "Public",
+  "metaSeparator": " · ",
+  "artistSeparator": ", ",
+  "songs_one": "{{count}} song",
+  "songs_other": "{{count}} songs",
+  "durationMinutes": "{{minutes}} min",
+  "durationHours": "{{hours}} h {{minutes}} min",
+  "empty": "This playlist has no songs yet.",
+  "notFound": "Playlist not found"
+}

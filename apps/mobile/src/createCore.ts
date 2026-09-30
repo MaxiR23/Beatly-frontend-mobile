@@ -7,6 +7,7 @@ import {
   createLibraryService,
   createPlaylistsService,
   createProfileService,
+  createPublicService,
   createRecentSearchesService,
   createSearchService,
 } from "@beatly/core";
@@ -19,6 +20,7 @@ import type {
   LogPort,
   PlaylistsService,
   ProfileService,
+  PublicService,
   RecentSearchesService,
   SearchService,
 } from "@beatly/core";
@@ -38,6 +40,8 @@ export interface Core {
   readonly log: LogPort;
   readonly playlists: PlaylistsService;
   readonly profile: ProfileService;
+  // Named publicShare because public is a reserved word in strict mode.
+  readonly publicShare: PublicService;
   readonly recentSearches: RecentSearchesService;
   readonly search: SearchService;
 }
@@ -64,6 +68,7 @@ export function createCore(): Core {
     log,
     playlists: createPlaylistsService(client),
     profile: createProfileService(client),
+    publicShare: createPublicService(client),
     recentSearches: createRecentSearchesService({ storage: createStorageAdapter(), log }),
     search: createSearchService(client),
   };

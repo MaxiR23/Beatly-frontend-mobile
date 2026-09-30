@@ -72,7 +72,7 @@ export function AlbumScreen() {
     body = {
       kind: "ready",
       title: data.title,
-      coverUrl: data.thumbnail_url,
+      cover: { urls: data.thumbnail_url === null ? [] : [data.thumbnail_url] },
       washColor: wash,
       children: (
         <View style={styles.sections} testID="album-sections">

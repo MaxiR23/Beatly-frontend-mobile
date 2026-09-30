@@ -1,4 +1,4 @@
-// INFO: the shared infinite-query hook: every growable list pages through it; cache time comes from the pages' max-age via the QueryClient, and pages before an invalid_cursor restart are dropped.
+// INFO: the shared infinite-query hook: every growable list pages through it; cache time comes from the pages' max-age via the QueryClient, a caller can disable it, and a disabled list never fetches; and pages before an invalid_cursor restart are dropped.
 import type { HttpOutcome, PageResult } from "@beatly/core";
 import { useInfiniteQuery, type QueryKey } from "@tanstack/react-query";
 
@@ -9,10 +9,12 @@ const FIRST_PAGE: string | null = null;
 export function useInfiniteList<T>(options: {
   queryKey: QueryKey;
   fetchPage: (cursor: string | null) => Promise<HttpOutcome<PageResult<T>>>;
+  enabled?: boolean;
 }) {
   const query = useInfiniteQuery({
     queryKey: options.queryKey,
     initialPageParam: FIRST_PAGE,
+    enabled: options.enabled ?? true,
     queryFn: async ({ pageParam }) => {
       const outcome = await options.fetchPage(pageParam);
       if (outcome.kind !== "success") throw new OutcomeError(outcome);

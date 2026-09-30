@@ -9,7 +9,7 @@
 // - loading, both sections, a hidden empty section, the empty state, the generic error with retry
 // - own playlists named after the profile, and the line of each recent by type (en and es)
 // - the next page of playlists at the end of the carousel
-// - an album recent opens the album, an artist or playlist recent does not
+// - an album recent opens the album, a playlist recent opens with its kind, an artist recent and a kind-less playlist recent do not, a card of your playlists opens the playlist
 // - the avatar initials, the account sheet and logout in every state, en and es
 //
 // Run with: pnpm --filter @beatly/mobile test -- HomeScreen
@@ -263,13 +263,22 @@ describe("HomeScreen", () => {
     expect(screen.getByText("Álbum · Some artist")).toBeTruthy();
   });
 
+  it("opens an own playlist from your playlists", async () => {
+    await setup({ listPlaylists: playlistsOf([playlistFixture]) });
+    await fireEvent.press(await screen.findByRole("button", { name: "Road trip" }));
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: "/playlist/[id]",
+      params: { id: "p1", source: "user" },
+    });
+  });
+
   it("opens an album recent", async () => {
     await setup({ listRecents: recents([recentFixture]) });
     await fireEvent.press(await screen.findByRole("button", { name: "Recent album" }));
     expect(mockPush).toHaveBeenCalledWith({ pathname: "/album/[id]", params: { id: "a1" } });
   });
 
-  it("does not open an artist or playlist recent", async () => {
+  it("does not open an artist recent or a playlist recent without a kind", async () => {
     const meta = { subtitle: null, thumbnail_url: null };
     await setup({
       listRecents: recents([
@@ -292,5 +301,34 @@ describe("HomeScreen", () => {
     expect(screen.queryByRole("button", { name: "An artist" })).toBeNull();
     expect(screen.queryByRole("button", { name: "A playlist" })).toBeNull();
     expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("opens a playlist recent with its kind: user, genre and liked", async () => {
+    const meta = { subtitle: null, thumbnail_url: null };
+    const playlistRecent = (id: string, title: string, kind: "user" | "genre" | "liked") => ({
+      ...recentFixture,
+      entity_type: "playlist" as const,
+      entity_id: id,
+      metadata: { title, kind, ...meta },
+    });
+    await setup({
+      listRecents: recents([
+        playlistRecent("pl1", "Own one", "user"),
+        playlistRecent("gp1", "Genre one", "genre"),
+        playlistRecent("liked", "Liked one", "liked"),
+      ]),
+    });
+    for (const [title, id, source] of [
+      ["Own one", "pl1", "user"],
+      ["Genre one", "gp1", "genre"],
+      ["Liked one", "liked", "liked"],
+    ] as const) {
+      await fireEvent.press(await screen.findByRole("button", { name: title }));
+      expect(mockPush).toHaveBeenLastCalledWith({
+        pathname: "/playlist/[id]",
+        params: { id, source },
+      });
+    }
+    expect(mockPush).toHaveBeenCalledTimes(3);
   });
 });

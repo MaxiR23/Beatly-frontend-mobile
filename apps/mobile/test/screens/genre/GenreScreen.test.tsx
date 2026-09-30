@@ -23,16 +23,23 @@ import { resources } from "../../../src/i18n/resources.ts";
 import { GenreScreen } from "../../../src/screens/genre/GenreScreen.tsx";
 import { genrePlaylistFixture, makeCore, pageOf, Wrapper } from "../../helpers/core.tsx";
 
+const mockPush = jest.fn();
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
 let mockCanGoBack = true;
 let mockParams: Record<string, string | undefined> = { slug: "pop", name: "Pop" };
 jest.mock("expo-router", () => ({
-  useRouter: () => ({ back: mockBack, replace: mockReplace, canGoBack: () => mockCanGoBack }),
+  useRouter: () => ({
+    push: mockPush,
+    back: mockBack,
+    replace: mockReplace,
+    canGoBack: () => mockCanGoBack,
+  }),
   useLocalSearchParams: () => mockParams,
 }));
 
 afterEach(async () => {
+  mockPush.mockClear();
   mockBack.mockClear();
   mockReplace.mockClear();
   mockCanGoBack = true;
@@ -80,7 +87,7 @@ function chipLabels() {
   return screen
     .getAllByRole("button")
     .map((button) => button.props.accessibilityLabel as string)
-    .filter((label) => label !== en.genre.back);
+    .filter((label) => label !== en.genre.back && !/ one$|^No category$/.test(label));
 }
 
 describe("GenreScreen", () => {
@@ -192,13 +199,16 @@ describe("GenreScreen", () => {
     expect(screen.getByText("12 tracks")).toBeTruthy();
   });
 
-  it("draws no pressable cards", async () => {
+  it("opens a playlist from the grid with source genre", async () => {
     await setup({
       listGenrePlaylists: playlistsOf([hits]),
       listGenreCategories: categoriesOf(["Hits"]),
     });
-    await screen.findByText("Hits one");
-    expect(screen.getAllByRole("button")).toHaveLength(3);
+    await fireEvent.press(await screen.findByRole("button", { name: /Hits one/ }));
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: "/playlist/[id]",
+      params: { id: "h", source: "genre" },
+    });
   });
 
   it("draws the empty state with no retry when the genre has no playlists", async () => {
