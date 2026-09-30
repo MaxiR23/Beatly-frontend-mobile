@@ -1,6 +1,7 @@
 {
   "playingFrom": "Reproduciendo desde",
   "searchSource": "Búsqueda “{{query}}”",
+  "trackSource": "Canciones como “{{title}}”",
   "artistSeparator": ", ",
   "open": "Abrir reproductor",
   "close": "Cerrar reproductor",
@@ -15,5 +16,20 @@
   "empty": "No se está reproduciendo nada.",
   "error": {
     "unplayable": "No se puede reproducir esta canción ahora."
+  },
+  "sheet": {
+    "open": "A continuación, letra y relacionados",
+    "close": "Volver al reproductor",
+    "tabs": {
+      "upNext": "A continuación",
+      "lyrics": "Letra",
+      "related": "Relacionados"
+    },
+    "upNextEmpty": "No hay nada a continuación.",
+    "lyricsEmpty": "Esta canción no tiene letra.",
+    "relatedEmpty": "No hay nada relacionado con esta canción.",
+    "songs": "Canciones",
+    "artists": "Artistas",
+    "albums": "Álbumes"
   }
 }

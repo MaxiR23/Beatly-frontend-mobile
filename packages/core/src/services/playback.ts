@@ -1,4 +1,4 @@
-// INFO: the playback controller: the queue, the play order (shuffle), repeat one, the current track and the status over the player port; an immutable snapshot plus subscribe.
+// INFO: the playback controller: the queue, the play order (shuffle), repeat one, the current track, a jump to a position of the queue and the status over the player port; an immutable snapshot plus subscribe.
 import type { LogPort } from "../ports/log.ts";
 import type { PlayerEvent, PlayerPort } from "../ports/player.ts";
 
@@ -11,10 +11,10 @@ export interface PlayableTrack {
 }
 
 export interface PlaybackSource {
-  readonly kind: "album" | "playlist" | "artist" | "search";
-  // The album, playlist or artist id; the query for search.
+  readonly kind: "album" | "playlist" | "artist" | "search" | "track";
+  // The album, playlist or artist id; the query for search; the track id whose suggestions or related songs play.
   readonly id: string;
-  // The album, playlist or artist name; the query for search.
+  // The album, playlist or artist name; the query for search; the track title for track.
   readonly name: string;
 }
 
@@ -55,6 +55,8 @@ export interface PlaybackController {
   toggle(): Promise<void>;
   next(): Promise<void>;
   previous(): Promise<void>;
+  // Plays the track at a position of the play order (state.queue); an idle controller or a position out of range is logged and ignored.
+  skipTo(position: number): Promise<void>;
   seek(seconds: number): Promise<void>;
   setShuffle(on: boolean): void;
   setRepeatOne(on: boolean): void;
@@ -253,6 +255,18 @@ export function createPlaybackController(deps: {
         return;
       }
       await startAt(state.index - 1);
+    },
+    skipTo: async (position) => {
+      if (
+        state.current === null ||
+        !Number.isInteger(position) ||
+        position < 0 ||
+        position >= state.queue.length
+      ) {
+        log.warn("playback.invalid_skip", { length: state.queue.length, position });
+        return;
+      }
+      await startAt(position);
     },
     seek: seekTo,
     setShuffle: (on) => {

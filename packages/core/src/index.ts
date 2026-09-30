@@ -124,3 +124,27 @@ export type {
 } from "./services/playback.ts";
 export { STREAM_CONTAINERS, chooseStreamFormat, createStreamResolver } from "./services/streams.ts";
 export type { ChosenStreamFormat, StreamFormat, StreamPlatform } from "./services/streams.ts";
+export {
+  lyricsLineSchema,
+  lyricsSchema,
+  trackLyricsSchema,
+  trackRefSchema,
+  trackRelatedSchema,
+  upNextSchema,
+} from "./domain/track.ts";
+export type {
+  LyricsLine,
+  Lyrics,
+  TrackLyrics,
+  TrackRef,
+  TrackRelated,
+  UpNext,
+} from "./domain/track.ts";
+export { createTracksService } from "./services/tracks.ts";
+export type { TracksService } from "./services/tracks.ts";
+export {
+  SHEET_NUDGE_KEY,
+  SHEET_NUDGE_LIMIT,
+  createSheetNudgeService,
+} from "./services/sheetNudge.ts";
+export type { SheetNudgeOutcome, SheetNudgeService } from "./services/sheetNudge.ts";

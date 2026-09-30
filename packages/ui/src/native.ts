@@ -45,5 +45,8 @@ export { DetailScreen, type DetailBody, type DetailRow } from "./components/Deta
 export { TrackRow } from "./components/TrackRow.tsx";
 export { MiniPlayer } from "./components/MiniPlayer.tsx";
 export { SeekBar } from "./components/SeekBar.tsx";
+export { VerticalDrag } from "./components/VerticalDrag.tsx";
 export { DragToClose } from "./components/DragToClose.tsx";
 export { PauseScale } from "./components/PauseScale.tsx";
+export { PullUpSheet } from "./components/PullUpSheet.tsx";
+export { SegmentedControl } from "./components/SegmentedControl.tsx";

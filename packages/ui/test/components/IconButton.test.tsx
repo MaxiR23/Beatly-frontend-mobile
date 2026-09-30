@@ -6,7 +6,7 @@
 // - IconButton
 //
 // What is covered:
-// - the plain default, the primary variant box, the selected toggle states and their glyph tone, the busy indicator, the press
+// - the plain default, the primary variant box, the primaryCompact variant, the selected toggle states and their glyph tone, the busy indicator, the press
 // - the glyph size by default, by variant and by iconSize, and the filled glyph
 //
 // Run with: pnpm --filter @beatly/ui test -- IconButton
@@ -61,6 +61,28 @@ describe("IconButton", () => {
       height: layout.playButton,
       borderRadius: radius.full,
       backgroundColor: color.accent.primary,
+    });
+  });
+
+  it("draws primaryCompact as a control-height accent circle with an inverse lg glyph", async () => {
+    await render(
+      <IconButton
+        icon="play"
+        accessibilityLabel="Play"
+        variant="primaryCompact"
+        onPress={jest.fn()}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Play" })).toHaveStyle({
+      width: layout.controlHeight,
+      height: layout.controlHeight,
+      borderRadius: radius.full,
+      backgroundColor: color.accent.primary,
+    });
+    const [glyph] = glyphs(screen.toJSON());
+    expect(glyph?.props).toMatchObject({
+      width: icon.size.lg,
+      stroke: color.text.inverse,
     });
   });
 
