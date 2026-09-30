@@ -7,7 +7,7 @@
 // optional rows under them paged by onEndReached. It draws statically:
 // nothing moves with the scroll.
 import type { ReactNode } from "react";
-import { FlatList, Image, StyleSheet, View } from "react-native";
+import { FlatList, Image, StyleSheet, useWindowDimensions, View } from "react-native";
 
 import { color } from "../tokens/color.ts";
 import { shadow } from "../tokens/shadow.ts";
@@ -62,6 +62,8 @@ export function DetailScreen({
   bottomInset,
   testID,
 }: DetailScreenProps) {
+  const { height: windowHeight } = useWindowDimensions();
+  const heroMaxHeight = { maxHeight: windowHeight * layout.heroImageMaxHeightShare };
   const buttonsPosition = { top: topInset + spacing.xs };
   const belowButtons = { paddingTop: topInset + layout.controlHeight };
 
@@ -93,11 +95,12 @@ export function DetailScreen({
           ListHeaderComponent={
             <>
               {body.hero === "image" ? (
-                <View style={styles.imageHero} testID="detail-hero-image">
+                <View style={[styles.imageHero, heroMaxHeight]} testID="detail-hero-image">
                   {body.cover.urls[0] !== undefined ? (
                     <Image
                       source={{ uri: body.cover.urls[0] }}
                       style={StyleSheet.absoluteFill}
+                      resizeMode="cover"
                       accessible={false}
                       testID="detail-hero-photo"
                     />

@@ -18,7 +18,7 @@
 
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, within } from "@testing-library/react-native";
-import { StyleSheet, Text, type TextStyle, type ViewStyle } from "react-native";
+import { Dimensions, StyleSheet, Text, type TextStyle, type ViewStyle } from "react-native";
 
 import { color } from "../../src/tokens/color.ts";
 import { layout } from "../../src/tokens/spacing.ts";
@@ -62,6 +62,11 @@ describe("DetailScreen", () => {
     await draw({ kind: "loading", label: "Loading", hero: "image" });
     expect(screen.getByTestId("detail-skeleton")).toBeTruthy();
     expect(screen.getByTestId("detail-skeleton-image")).toBeTruthy();
+    const style = StyleSheet.flatten(
+      screen.getByTestId("detail-skeleton-image").props.style as ViewStyle,
+    );
+    expect(style.aspectRatio).toBe(layout.heroImageRatio);
+    expect(style.maxHeight).toBe(Dimensions.get("window").height * layout.heroImageMaxHeightShare);
     expect(screen.getByRole("button", { name: "Back" })).toBeTruthy();
   });
 
@@ -195,6 +200,10 @@ describe("DetailScreen", () => {
       );
       expect(style.alignSelf).toBe("stretch");
       expect(style.aspectRatio).toBe(layout.heroImageRatio);
+      expect(style.maxHeight).toBe(
+        Dimensions.get("window").height * layout.heroImageMaxHeightShare,
+      );
+      expect(screen.getByTestId("detail-hero-photo").props.resizeMode).toBe("cover");
       expect(screen.getByTestId("detail-hero-photo").props.source).toEqual({
         uri: "test://img/artist",
       });

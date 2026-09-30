@@ -2,7 +2,7 @@
 // title bar, a meta bar and six track rows, in the skeleton base color. The
 // image variant swaps the centered cover for a full-width hero block with the
 // title bar at its bottom left. It draws no motion.
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, useWindowDimensions, View } from "react-native";
 
 import { color } from "../tokens/color.ts";
 import { radius } from "../tokens/radius.ts";
@@ -18,6 +18,7 @@ interface DetailSkeletonProps {
 }
 
 export function DetailSkeleton({ label, topInset, hero }: DetailSkeletonProps) {
+  const { height: windowHeight } = useWindowDimensions();
   if (hero === "image") {
     return (
       <View
@@ -26,7 +27,10 @@ export function DetailSkeleton({ label, topInset, hero }: DetailSkeletonProps) {
         accessibilityLabel={label}
         testID="detail-skeleton"
       >
-        <View style={styles.imageHero} testID="detail-skeleton-image">
+        <View
+          style={[styles.imageHero, { maxHeight: windowHeight * layout.heroImageMaxHeightShare }]}
+          testID="detail-skeleton-image"
+        >
           <View style={styles.titleBar} />
         </View>
         <View style={styles.imageBody}>

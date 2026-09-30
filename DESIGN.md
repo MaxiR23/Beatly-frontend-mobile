@@ -54,6 +54,7 @@ value: the value lives once, in the token file.
 | Side of the cover in the large list row (search top artist)                                                   | `layout.rowCoverLarge`                                          |
 | Side of the cover in a detail hero                                                                            | `layout.heroCover`                                              |
 | Width / height ratio of the full-width detail hero image                                                      | `layout.heroImageRatio`                                         |
+| Share of the window height the detail hero image may take at most                                             | `layout.heroImageMaxHeightShare`                                |
 | Width of the track-number column in a track row                                                               | `layout.trackNumber`                                            |
 | Width of a detail skeleton placeholder bar (title, meta, row title, row meta), as a share of its row          | `layout.skeletonBar.title` / `.meta` / `.rowTitle` / `.rowMeta` |
 
@@ -75,7 +76,8 @@ scroll.
   over a wash. The cover follows `Cover`'s rules: a mosaic with four urls, an image, the
   accent tile with a glyph, or the placeholder. The wash is `color.surface.base` until a dominant color is known,
   then a vertical gradient from that color to `color.surface.base`, drawn at once.
-- Image hero (artist): the image stretched to the full width at `layout.heroImageRatio`
+- Image hero (artist): the image stretched to the full width at `layout.heroImageRatio`, at most
+  `layout.heroImageMaxHeightShare` of the window height, cropped to fill (`cover`) and centered,
   on `color.surface.card`, a vertical fade from `color.overlay.clear` to
   `color.surface.base` over its bottom half, and the title over it at the bottom left in
   `typography.display`, `layout.gutter` from the side and `spacing.lg` from the bottom.
@@ -91,7 +93,7 @@ scroll.
   every state. The more button is drawn only when the screen passes a `more` prop.
 - Skeleton: `DetailSkeleton`, a static cover block, a title bar, a meta bar and six
   track rows in `color.surface.border`, bar widths from `layout.skeletonBar`. With
-  `hero: "image"` (artist) the cover is a full-width `layout.heroImageRatio` block with the
+  `hero: "image"` (artist) the cover is a full-width `layout.heroImageRatio` block, capped like the loaded hero, with the
   title bar at its bottom left, then the meta bar and the rows.
 - Track row: `TrackRow`, a `meta` number in a `layout.trackNumber` column, the
   title in `typography.rowTitle` and the artists in `typography.meta`;

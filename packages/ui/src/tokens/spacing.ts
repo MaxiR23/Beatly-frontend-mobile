@@ -28,7 +28,10 @@ export const layout = {
   rowCoverMedium: 56,
   rowCoverLarge: 64,
   heroCover: 240,
+  // Width:height ratio of the full-width detail image hero.
   heroImageRatio: 1,
+  // Most of the window height, as a share, the detail image hero may take.
+  heroImageMaxHeightShare: 0.5,
   trackNumber: 24,
   // Widths of the detail skeleton's placeholder bars, as a share of their row.
   skeletonBar: { title: "70%", meta: "45%", rowTitle: "60%", rowMeta: "35%" },
