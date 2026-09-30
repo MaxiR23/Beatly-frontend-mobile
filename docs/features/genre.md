@@ -24,7 +24,7 @@ Show a genre's playlists in a two-column grid and filter them by category chip.
   `layout.gutter`. The card side is the window width minus both gutters and the
   gap, over two. Cover `radius.sm` on `color.surface.card`. Title in
   `typography.rowTitle`, the track count in `typography.meta` and
-  `color.text.secondary`. The cards are not pressable.
+  `color.text.secondary`. Each card is pressable and opens the playlist screen.
 - Cover rule: 4 `thumbnail_urls` draw a 2 x 2 mosaic; 1 to 3 draw the first; with
   none, `thumbnail_url` if there is one, else the placeholder.
 - Bottom: the grid clears the floating tab bar with `floatingTabBarClearance`.
@@ -60,7 +60,8 @@ The back button is labeled `genre:back`.
 ## Navigation
 
 Route `/explore/genres/[slug]?name=`, pushed from the Explore rows onto the
-shared stack of the Explore tab (ADR 020). Back pops
+shared stack of the Explore tab (ADR 020). A grid card pushes
+`/playlist/[id]?source=genre` with the playlist's `id`. Back pops
 the stack, or replaces with `/explore` when there is nothing to go back to.
 
 ## i18n namespace

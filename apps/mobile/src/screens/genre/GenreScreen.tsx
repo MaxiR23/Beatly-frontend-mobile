@@ -50,6 +50,9 @@ export function GenreScreen() {
             ? [playlist.thumbnail_url]
             : [],
       shape: "square",
+      onPress: () => {
+        router.push({ pathname: "/playlist/[id]", params: { id: playlist.id, source: "genre" } });
+      },
     };
   }
 

@@ -4,6 +4,7 @@
 //
 // Tested:
 // - listRecents returns the caller's recent entities with their metadata
+// - listRecents reads a playlist recent's kind, and an unknown kind as absent
 // - Returns an empty first page as a success when there is no recent activity
 // - Surfaces unauthorized as an api failure
 // - Fails with a timeout, network or schema outcome
@@ -66,6 +67,12 @@ describe("listRecents", () => {
               played_at: "2026-01-02T00:00:00Z",
               metadata: {},
             },
+            {
+              entity_type: "playlist",
+              entity_id: "pl1",
+              played_at: "2026-01-03T00:00:00Z",
+              metadata: { title: "A playlist", kind: "genre" },
+            },
           ],
           page: PAGE,
         },
@@ -87,6 +94,12 @@ describe("listRecents", () => {
             entity_id: "r1",
             played_at: "2026-01-02T00:00:00Z",
             metadata: {},
+          },
+          {
+            entity_type: "playlist",
+            entity_id: "pl1",
+            played_at: "2026-01-03T00:00:00Z",
+            metadata: { title: "A playlist", kind: "genre" },
           },
         ],
         page: PAGE,
@@ -136,6 +149,30 @@ describe("listRecents", () => {
     expect(metadata?.title).toBeUndefined();
     expect(metadata?.subtitle).toBeUndefined();
     expect(metadata?.thumbnail_url).toBe("test://img/1");
+  });
+
+  it("reads a playlist recent with an unknown kind as having none", async () => {
+    const { service } = setup(() => ({
+      body: {
+        ok: true,
+        data: {
+          items: [
+            {
+              entity_type: "playlist",
+              entity_id: "pl1",
+              played_at: "2026-01-01T00:00:00Z",
+              metadata: { title: "A playlist", kind: "mix" },
+            },
+          ],
+          page: PAGE,
+        },
+      },
+    }));
+    const outcome = await service.listRecents();
+    expect(outcome.kind).toBe("success");
+    const metadata = outcome.kind === "success" ? outcome.data.items[0]?.metadata : undefined;
+    expect(metadata?.kind).toBeUndefined();
+    expect(metadata?.title).toBe("A playlist");
   });
 
   it("fails with a timeout outcome when the API does not answer", async () => {

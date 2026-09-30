@@ -1,0 +1,14 @@
+{
+  "back": "Volver",
+  "liked": "Tus me gusta",
+  "private": "Privada",
+  "public": "Pública",
+  "metaSeparator": " · ",
+  "artistSeparator": ", ",
+  "songs_one": "{{count}} canción",
+  "songs_other": "{{count}} canciones",
+  "durationMinutes": "{{minutes}} min",
+  "durationHours": "{{hours}} h {{minutes}} min",
+  "empty": "Esta playlist todavía no tiene canciones.",
+  "notFound": "Playlist no encontrada"
+}

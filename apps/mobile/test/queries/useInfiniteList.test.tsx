@@ -6,7 +6,7 @@
 // - useInfiniteList
 //
 // What is covered:
-// - pages flattened in order, loadMore, no next page, restart from the first page, OutcomeError
+// - pages flattened in order, loadMore, no next page, restart from the first page, disabled, OutcomeError
 //
 // Run with: pnpm --filter @beatly/mobile test -- useInfiniteList
 //
@@ -25,14 +25,20 @@ import { pageOf } from "../helpers/core.tsx";
 
 type Fetch = (cursor: string | null) => Promise<HttpOutcome<PageResult<number>>>;
 
-async function mount(fetchPage: Fetch) {
+async function mount(fetchPage: Fetch, enabled?: boolean) {
   const queryClient = createQueryClient();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
-  const rendered = await renderHook(() => useInfiniteList({ queryKey: ["list"], fetchPage }), {
-    wrapper,
-  });
+  const rendered = await renderHook(
+    () =>
+      useInfiniteList({
+        queryKey: ["list"],
+        fetchPage,
+        ...(enabled === undefined ? {} : { enabled }),
+      }),
+    { wrapper },
+  );
   await waitFor(() => {
     expect(rendered.result.current.isFetching).toBe(false);
   });
@@ -83,6 +89,17 @@ describe("useInfiniteList", () => {
       await Promise.resolve();
     });
     expect(fetchPage).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not fetch while disabled", async () => {
+    const fetchPage = jest.fn<Fetch>(twoPages);
+    const { result } = await mount(fetchPage, false);
+    expect(result.current.isPending).toBe(true);
+    await act(async () => {
+      result.current.loadMore();
+      await Promise.resolve();
+    });
+    expect(fetchPage).not.toHaveBeenCalled();
   });
 
   it("drops the pages before a restart from the first page", async () => {

@@ -8,6 +8,7 @@
 // What is covered:
 // - opening a genre from explore and going back
 // - opening an album from home recents, a search result, a saved album and the explore stack, back returning to the same tab
+// - opening a playlist recent from home, an own playlist from home, liked and a saved genre playlist from library, and a genre playlist from the genre grid, back returning to the origin
 // - opening another album from an album's carousel and going back to the first album
 //
 // Run with: pnpm --filter @beatly/mobile test -- "(home,explore,search,library)/_layout"
@@ -22,9 +23,13 @@ import { resources } from "../../../../src/i18n/resources.ts";
 import {
   albumFixture,
   genreFixture,
+  genrePlaylistFixture,
+  likedEntryFixture,
   pageOf,
+  playlistFixture,
   recentFixture,
   savedAlbumEntryFixture,
+  savedPlaylistEntryFixture,
 } from "../../../helpers/core.tsx";
 import { installCore } from "../../../helpers/routeCore.ts";
 
@@ -139,5 +144,85 @@ describe("the shared tab stack", () => {
     await fireEvent.press(backButton());
     expect((await screen.findAllByText("Test Album")).length).toBeGreaterThan(0);
     expect(screen.queryByText("Second Album")).toBeNull();
+  });
+
+  function playlistBack() {
+    return screen.getByRole("button", { name: en.playlist.back });
+  }
+
+  it("opens an own playlist from home and back returns to home with home selected", async () => {
+    mockCore.set("signed_in", { listPlaylists: () => Promise.resolve(pageOf([playlistFixture])) });
+    await renderRouter("app", { initialUrl: "/" });
+    await fireEvent.press(await screen.findByRole("button", { name: "Road trip" }));
+    expect(await screen.findByTestId("playlist")).toBeTruthy();
+    await fireEvent.press(playlistBack());
+    expect(await screen.findByTestId("home")).toBeTruthy();
+    expect(isSelected(screen.getByRole("tab", { name: en.tabs.home }))).toBe(true);
+  });
+
+  it("opens a playlist recent from home and back returns to home with home selected", async () => {
+    mockCore.set("signed_in", {
+      listRecents: () =>
+        Promise.resolve(
+          pageOf([
+            {
+              ...recentFixture,
+              entity_type: "playlist",
+              entity_id: "p1",
+              metadata: { title: "A playlist", kind: "user" },
+            },
+          ]),
+        ),
+    });
+    await renderRouter("app", { initialUrl: "/" });
+    await fireEvent.press(await screen.findByRole("button", { name: "A playlist" }));
+    expect(await screen.findByTestId("playlist")).toBeTruthy();
+    await fireEvent.press(playlistBack());
+    expect(await screen.findByTestId("home")).toBeTruthy();
+    expect(isSelected(screen.getByRole("tab", { name: en.tabs.home }))).toBe(true);
+  });
+
+  it("opens liked from library and back returns to library", async () => {
+    mockCore.set("signed_in", { listLibrary: () => Promise.resolve(pageOf([likedEntryFixture])) });
+    await renderRouter("app", { initialUrl: "/" });
+    await screen.findByTestId("home");
+    await fireEvent.press(screen.getByRole("tab", { name: en.tabs.library }));
+    await fireEvent.press(await screen.findByRole("button", { name: en.library.liked }));
+    expect(await screen.findByTestId("playlist")).toBeTruthy();
+    expect(await screen.findByText(en.playlist.liked)).toBeTruthy();
+    await fireEvent.press(playlistBack());
+    expect(await screen.findByTestId("library")).toBeTruthy();
+    expect(isSelected(screen.getByRole("tab", { name: en.tabs.library }))).toBe(true);
+  });
+
+  it("opens a saved genre playlist from library and back returns to library", async () => {
+    mockCore.set("signed_in", {
+      listLibrary: () => Promise.resolve(pageOf([savedPlaylistEntryFixture])),
+    });
+    await renderRouter("app", { initialUrl: "/" });
+    await screen.findByTestId("home");
+    await fireEvent.press(screen.getByRole("tab", { name: en.tabs.library }));
+    await fireEvent.press(await screen.findByRole("button", { name: "Saved playlist" }));
+    expect(await screen.findByTestId("playlist")).toBeTruthy();
+    expect((await screen.findAllByText("Pop hits")).length).toBeGreaterThan(0);
+    await fireEvent.press(playlistBack());
+    expect(await screen.findByTestId("library")).toBeTruthy();
+  });
+
+  it("opens a genre playlist from the genre grid and back returns to the genre in explore", async () => {
+    mockCore.set("signed_in", {
+      listGenres: () => Promise.resolve(pageOf([genreFixture])),
+      listGenrePlaylists: () => Promise.resolve(pageOf([genrePlaylistFixture])),
+    });
+    await renderRouter("app", { initialUrl: "/" });
+    await screen.findByTestId("home");
+    await fireEvent.press(screen.getByRole("tab", { name: en.tabs.explore }));
+    await fireEvent.press(await screen.findByRole("button", { name: "Pop" }));
+    await screen.findByTestId("genre");
+    await fireEvent.press(await screen.findByRole("button", { name: /Pop hits/ }));
+    expect(await screen.findByTestId("playlist")).toBeTruthy();
+    await fireEvent.press(playlistBack());
+    expect(await screen.findByTestId("genre")).toBeTruthy();
+    expect(isSelected(screen.getByRole("tab", { name: en.tabs.explore }))).toBe(true);
   });
 });

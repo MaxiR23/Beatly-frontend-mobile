@@ -44,6 +44,7 @@ value: the value lives once, in the token file.
 | Height of a form control (input, form button) or a floating tab bar item, and side of its square touch target | `layout.controlHeight`                                          |
 | Width of a carousel card and side of its cover                                                                | `layout.carouselCard`                                           |
 | Side of the header account avatar                                                                             | `layout.avatar`                                                 |
+| Side of the leading mark (avatar or brand mark) in a detail creator line                                      | `layout.creatorMark`                                            |
 | Width of a floating tab bar item                                                                              | `layout.tabItemWidth`                                           |
 | Height of a filter chip                                                                                       | `layout.chipHeight`                                             |
 | Width / height of the genre accent bar in a genre row                                                         | `layout.genreBarWidth` / `layout.genreBarHeight`                |
@@ -65,13 +66,19 @@ buttons).
 
 ## Detail screen base
 
-`DetailScreen` from `@beatly/ui/native`. Used by the album screen; the playlist
-and artist screens will reuse it. It draws statically: nothing moves with the
+`DetailScreen` from `@beatly/ui/native`. Used by the album and playlist screens; the
+artist screen will reuse it. It draws statically: nothing moves with the
 scroll.
 
 - Hero: a `layout.heroCover` cover in `radius.sm` with `shadow.cover`, centered
-  over a wash. The wash is `color.surface.base` until a dominant color is known,
+  over a wash. The cover follows `Cover`'s rules: a mosaic with four urls, an image, the
+  accent tile with a glyph, or the placeholder. The wash is `color.surface.base` until a dominant color is known,
   then a vertical gradient from that color to `color.surface.base`, drawn at once.
+- Body: a `FlatList`; the hero, the title and the children are its header, and optional
+  rows follow, paged with `onEndReached`.
+- Creator line (playlist): a `layout.creatorMark` mark (avatar or brand mark on
+  `color.accent.primary`, `radius.full`) with the name in `typography.rowTitle`, gap
+  `spacing.sm`.
 - Title: `typography.title` under the hero. The base reserves no space for an action
   row; the screen owns the gap below its own title block.
 - Floating back and more buttons: `GlassSurface` `circle` fixed over the hero, in

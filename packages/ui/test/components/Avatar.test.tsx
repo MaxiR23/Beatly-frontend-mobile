@@ -6,7 +6,7 @@
 // - Avatar
 //
 // What is covered:
-// - initials or the user icon, the gradient stop from the name, the press and its role
+// - initials or the user icon, the gradient stop from the name, the press and its role, the plain view without onPress, the creator size
 //
 // Run with: pnpm --filter @beatly/ui test -- Avatar
 //
@@ -14,9 +14,10 @@
 
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import { processColor } from "react-native";
+import { processColor, StyleSheet, type ViewStyle } from "react-native";
 
 import { Avatar } from "../../src/components/Avatar.tsx";
+import { layout } from "../../src/tokens/spacing.ts";
 import { avatarGradient } from "../../src/components/avatarIdentity.ts";
 
 interface JsonNode {
@@ -58,6 +59,22 @@ describe("Avatar", () => {
     // The svg renderer stores the gradient as [offset, color, offset, color] with signed ARGB colors.
     const expected = Number(processColor(avatarGradient("Max Reb")[0])) | 0;
     expect(gradient?.props.gradient).toEqual(expect.arrayContaining([0, expected]));
+  });
+
+  it("is not a button without onPress", async () => {
+    await render(<Avatar name="Max Reb" />);
+    expect(screen.getByText("MR")).toBeTruthy();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("draws the creator size at layout.creatorMark", async () => {
+    await render(<Avatar name="Max Reb" size="creator" />);
+    const root = screen.toJSON();
+    const style = StyleSheet.flatten(
+      (isJsonNode(root) ? root.props.style : undefined) as ViewStyle,
+    );
+    expect(style.width).toBe(layout.creatorMark);
+    expect(style.height).toBe(layout.creatorMark);
   });
 
   it("calls onPress and exposes a button with the given label", async () => {

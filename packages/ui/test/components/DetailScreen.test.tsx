@@ -6,6 +6,7 @@
 // - DetailScreen
 //
 // What is covered:
+// - the rows under the children, onEndReached, the mosaic and the tile covers
 // - the four bodies: the skeleton, the error with retry, the unavailable message, the ready hero with its title and children
 // - the hero title in typography.title
 // - the floating back button, the more button only when given, the neutral wash and the gradient wash
@@ -24,7 +25,7 @@ import { DetailScreen, type DetailBody } from "../../src/components/DetailScreen
 const ready = (washColor: string | null = null): DetailBody => ({
   kind: "ready",
   title: "Album title",
-  coverUrl: "test://img/cover",
+  cover: { urls: ["test://img/cover"] },
   washColor,
   children: <Text>body content</Text>,
 });
@@ -74,6 +75,46 @@ describe("DetailScreen", () => {
     expect(screen.getByText("Album title")).toBeTruthy();
     expect(screen.getByTestId("cover-single")).toBeTruthy();
     expect(screen.getByText("body content")).toBeTruthy();
+  });
+
+  it("draws the rows under the children when ready", async () => {
+    await draw({
+      ...(ready() as Extract<DetailBody, { kind: "ready" }>),
+      rows: [
+        { key: "a", element: <Text>row a</Text> },
+        { key: "b", element: <Text>row b</Text> },
+      ],
+    });
+    expect(screen.getByText("body content")).toBeTruthy();
+    expect(screen.getByText("row a")).toBeTruthy();
+    expect(screen.getByText("row b")).toBeTruthy();
+  });
+
+  it("calls onEndReached at the end of the list", async () => {
+    const onEndReached = jest.fn();
+    await draw({
+      ...(ready() as Extract<DetailBody, { kind: "ready" }>),
+      rows: [{ key: "a", element: <Text>row a</Text> }],
+      onEndReached,
+    });
+    await fireEvent(screen.getByTestId("detail-list"), "onEndReached");
+    expect(onEndReached).toHaveBeenCalledTimes(1);
+  });
+
+  it("draws a mosaic cover with four urls", async () => {
+    await draw({
+      ...(ready() as Extract<DetailBody, { kind: "ready" }>),
+      cover: { urls: ["a", "b", "c", "d"].map((n) => `test://img/${n}`) },
+    });
+    expect(screen.getByTestId("cover-mosaic")).toBeTruthy();
+  });
+
+  it("draws the accent tile with an icon cover", async () => {
+    await draw({
+      ...(ready() as Extract<DetailBody, { kind: "ready" }>),
+      cover: { urls: [], icon: "heart" },
+    });
+    expect(screen.getByTestId("cover-tile")).toBeTruthy();
   });
 
   it("calls onBack from the floating back button", async () => {

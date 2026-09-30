@@ -1,6 +1,6 @@
 // INFO: spacing tokens, a multiples-of-four scale, plus the layout
 // constants (gutter, gap, hitSlop, control height, and the carousel card,
-// avatar, tab item, chip, genre bar, row cover, detail hero cover and
+// avatar, creator mark, tab item, chip, genre bar, row cover, detail hero cover and
 // track-number column sizes, and the skeleton bar widths).
 export const spacing = {
   xxs: 2,
@@ -19,6 +19,7 @@ export const layout = {
   controlHeight: 48,
   carouselCard: 140,
   avatar: 36,
+  creatorMark: 24,
   tabItemWidth: 64,
   chipHeight: 36,
   genreBarWidth: 6,
