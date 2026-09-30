@@ -32,31 +32,33 @@ value: the value lives once, in the token file.
 | Scrim over an image (behind a control or text)                                                                                   | `color.overlay.onImage`                                                                      |
 | Subtle translucent fill (ghost button, translucent chip)                                                                         | `color.overlay.subtle`                                                                       |
 | Muted translucent fill (seek track, icon-button background)                                                                      | `color.overlay.muted`                                                                        |
-| Clear start of a fade into the base surface (the detail hero image)                                                              | `color.overlay.clear`                                                                        |
+| Clear start of a fade into the base surface (the detail hero image); the see-through container of the player route               | `color.overlay.clear`                                                                        |
 
 ## Spacing and layout (`spacing`, `layout`)
 
-| Role                                                                                                          | Token                                                           |
-| ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Spacing scale, multiples of four                                                                              | `spacing.xxs` … `spacing.xxl`                                   |
-| Screen edge padding                                                                                           | `layout.gutter`                                                 |
-| Gap between items in a list/row                                                                               | `layout.gap`                                                    |
-| Minimum touch target padding (`hitSlop`)                                                                      | `layout.hitSlop`                                                |
-| Height of a form control (input, form button) or a floating tab bar item, and side of its square touch target | `layout.controlHeight`                                          |
-| Width of a carousel card and side of its cover                                                                | `layout.carouselCard`                                           |
-| Side of the header account avatar                                                                             | `layout.avatar`                                                 |
-| Side of the leading mark (avatar or brand mark) in a detail creator line                                      | `layout.creatorMark`                                            |
-| Width of a floating tab bar item                                                                              | `layout.tabItemWidth`                                           |
-| Height of a filter chip                                                                                       | `layout.chipHeight`                                             |
-| Width / height of the genre accent bar in a genre row                                                         | `layout.genreBarWidth` / `layout.genreBarHeight`                |
-| Side of the cover in a list row                                                                               | `layout.rowCover`                                               |
-| Side of the cover in the medium list row (library)                                                            | `layout.rowCoverMedium`                                         |
-| Side of the cover in the large list row (search top artist)                                                   | `layout.rowCoverLarge`                                          |
-| Side of the cover in a detail hero                                                                            | `layout.heroCover`                                              |
-| Width / height ratio of the full-width detail hero image                                                      | `layout.heroImageRatio`                                         |
-| Share of the window height the detail hero image may take at most                                             | `layout.heroImageMaxHeightShare`                                |
-| Width of the track-number column in a track row                                                               | `layout.trackNumber`                                            |
-| Width of a detail skeleton placeholder bar (title, meta, row title, row meta), as a share of its row          | `layout.skeletonBar.title` / `.meta` / `.rowTitle` / `.rowMeta` |
+| Role                                                                                                                                               | Token                                                           |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Spacing scale, multiples of four                                                                                                                   | `spacing.xxs` … `spacing.xxl`                                   |
+| Screen edge padding                                                                                                                                | `layout.gutter`                                                 |
+| Gap between items in a list/row                                                                                                                    | `layout.gap`                                                    |
+| Minimum touch target padding (`hitSlop`)                                                                                                           | `layout.hitSlop`                                                |
+| Height of a form control (input, form button) or a floating tab bar item, the height of the player header row, and side of its square touch target | `layout.controlHeight`                                          |
+| Width of a carousel card and side of its cover                                                                                                     | `layout.carouselCard`                                           |
+| Side of the header account avatar                                                                                                                  | `layout.avatar`                                                 |
+| Side of the leading mark (avatar or brand mark) in a detail creator line                                                                           | `layout.creatorMark`                                            |
+| Width of a floating tab bar item                                                                                                                   | `layout.tabItemWidth`                                           |
+| Height of a filter chip                                                                                                                            | `layout.chipHeight`                                             |
+| Width / height of the genre accent bar in a genre row                                                                                              | `layout.genreBarWidth` / `layout.genreBarHeight`                |
+| Side of the cover in a list row and in the mini player                                                                                             | `layout.rowCover`                                               |
+| Side of the cover in the medium list row (library)                                                                                                 | `layout.rowCoverMedium`                                         |
+| Side of the cover in the large list row (search top artist)                                                                                        | `layout.rowCoverLarge`                                          |
+| Side of the cover in a detail hero                                                                                                                 | `layout.heroCover`                                              |
+| Width / height ratio of the full-width detail hero image                                                                                           | `layout.heroImageRatio`                                         |
+| Share of the window height the detail hero image may take at most                                                                                  | `layout.heroImageMaxHeightShare`                                |
+| Width of the track-number column in a track row                                                                                                    | `layout.trackNumber`                                            |
+| Side of the large play or pause button of the player                                                                                               | `layout.playButton`                                             |
+| Height of the seek bar track / side of its thumb                                                                                                   | `layout.seekTrack` / `layout.seekThumb`                         |
+| Width of a detail skeleton placeholder bar (title, meta, row title, row meta), as a share of its row                                               | `layout.skeletonBar.title` / `.meta` / `.rowTitle` / `.rowMeta` |
 
 ## Floating surfaces
 
@@ -65,7 +67,8 @@ value: the value lives once, in the token file.
 `color.surface.raised` with a `border.width` border in
 `color.surface.border` and `shadow.floating`. Variants: `bar` (the tab bar pill),
 `sheet` and `circle` (a `layout.controlHeight` circle for the floating detail
-buttons).
+buttons). An optional `tint` (a cover's dominant color, a runtime value) colors the glass or replaces the
+fallback's `color.surface.raised`.
 
 ## Detail screen base
 
@@ -100,14 +103,34 @@ scroll.
   unavailable uses `color.text.disabled`. `MediaRow` with `available={false}` draws its title
   and meta in `color.text.disabled` the same way.
 
+## Player
+
+- Mini player: `MiniPlayer` on a `GlassSurface` `bar` with `tint`, a round `Cover` of `layout.rowCover`, the
+  title in `typography.rowTitle`, the subtitle in `typography.meta` (`color.status.error` on a failure), then
+  play or pause and next as `IconButton`s. Content height `layout.controlHeight`, so the pill has the tab bar's height.
+  A `spacing.md` gap above the floating tab bar; inside the iOS 26+ system accessory it draws bare (no `GlassSurface`,
+  no tint), filling and clipped to the system's frame.
+- Seek bar: `SeekBar`, a `layout.seekTrack` track in `color.overlay.muted`, `radius.full`, the fill in
+  `color.text.primary`, a `layout.seekThumb` thumb in `color.accent.primary` with `shadow.control`, a
+  `layout.seekThumb` tall bar with a vertical `hitSlop` up to `layout.controlHeight`, the times `spacing.sm` below in
+  `typography.meta` and `color.text.secondary`.
+- Player screen: `spacing.xl` sides; a `layout.controlHeight` header with the chevron-down close (`icon.size.lg`), "Playing from" in
+  `typography.label` / `color.text.secondary` over the source in `typography.rowTitle`; a wash from the dominant color to
+  `color.surface.base` by the middle of the screen (three stops); `spacing.xl` below, a square cover as wide as the
+  content, `radius.md`, `shadow.cover`; `spacing.xxl` below, `typography.title` and `typography.body` in
+  `color.text.secondary`; `spacing.xl` below, the seek bar; `spacing.lg` below, the controls spread across the width:
+  shuffle and repeat at `icon.size.md` (`color.text.secondary`, `color.text.primary` on), previous and next filled at
+  `icon.size.xl`, and play or pause in a `layout.playButton` circle in `color.accent.primary` with a `color.text.inverse`
+  glyph. The column scrolls when it does not fit. Dragged down it follows the finger and closes past `motion.dragToClose.distanceShare` of the window height or above `motion.dragToClose.velocity`, springing back with `motion.spring` otherwise; the cover drops to `motion.pausedScale` while paused. Under reduce motion nothing moves or scales and the route fades. iOS has no close button.
+
 ## Radius (`radius`)
 
-| Role                                                      | Token         |
-| --------------------------------------------------------- | ------------- |
-| Small radius (badges, covers)                             | `radius.sm`   |
-| Medium radius (cards, inputs, form buttons)               | `radius.md`   |
-| Large radius (sheets, large cards, form card, brand mark) | `radius.lg`   |
-| Fully round (pills, chips, circular avatars/buttons)      | `radius.full` |
+| Role                                                          | Token         |
+| ------------------------------------------------------------- | ------------- |
+| Small radius (badges, covers)                                 | `radius.sm`   |
+| Medium radius (cards, inputs, form buttons, the player cover) | `radius.md`   |
+| Large radius (sheets, large cards, form card, brand mark)     | `radius.lg`   |
+| Fully round (pills, chips, circular avatars/buttons)          | `radius.full` |
 
 ## Border (`border`)
 
@@ -138,14 +161,20 @@ Roles, not raw sizes. Every role uses the platform's system font (no
 
 ## Motion (`motion`)
 
-| Role                         | Token                                    |
-| ---------------------------- | ---------------------------------------- |
-| Fast transition              | `motion.duration.fast`                   |
-| Base transition              | `motion.duration.base`                   |
-| Slow transition              | `motion.duration.slow`                   |
-| Shimmer loop (skeleton)      | `motion.duration.shimmer`                |
-| The one spring               | `motion.spring` (`damping`, `stiffness`) |
-| Opacity of a pressed control | `motion.pressOpacity`                    |
+| Role                                                                         | Token                                    |
+| ---------------------------------------------------------------------------- | ---------------------------------------- |
+| Fast transition                                                              | `motion.duration.fast`                   |
+| Base transition                                                              | `motion.duration.base`                   |
+| Slow transition                                                              | `motion.duration.slow`                   |
+| Shimmer loop (skeleton)                                                      | `motion.duration.shimmer`                |
+| The one spring (the player cover's pause scale, a drag that springs back)    | `motion.spring` (`damping`, `stiffness`) |
+| Opacity of a pressed control                                                 | `motion.pressOpacity`                    |
+| Scale the player cover drops to while paused                                 | `motion.pausedScale`                     |
+| Downward travel, in points, before the player takes a drag from its content  | `motion.dragToClose.slop`                |
+| Share of the window height a released drag must pass to close the player     | `motion.dragToClose.distanceShare`       |
+| Downward speed, in points per millisecond, that closes the player on release | `motion.dragToClose.velocity`            |
+
+`DragToClose` and `PauseScale` in `@beatly/ui/native` are the only animated components. They use React Native's `Animated` with the native driver and `PanResponder`, and take `reduceMotion` from the app.
 
 ## Icons (`icon`)
 
@@ -161,6 +190,8 @@ only importer of `lucide-react-native`.
 | Hero icon (empty states, the auth brand mark) | `icon.size.hero` |
 | Stroke width                                  | `icon.stroke`    |
 
+`Icon` draws a glyph filled in its tone with `filled`; `IconButton` takes an `iconSize`.
+
 ## Shadows (`shadow`)
 
 All black; iOS reads `shadowOpacity`/`shadowRadius`/`shadowOffset`,
@@ -170,7 +201,7 @@ Android reads `elevation`.
 | ----------------------------------------------- | ----------------- |
 | Cover art / hero image                          | `shadow.cover`    |
 | Floating control (mini player, floating action) | `shadow.floating` |
-| Small control (icon button)                     | `shadow.control`  |
+| Small control (icon button, the seek bar thumb) | `shadow.control`  |
 
 ## Decorative palettes (`genrePalette`, `avatarPalette`)
 

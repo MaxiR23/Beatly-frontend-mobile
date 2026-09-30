@@ -13,4 +13,5 @@ One file per screen; every file follows `_template.md`.
 | `playlist.md` | a playlist (own, liked, genre)                |
 | `search.md`   | the search tab                                |
 | `library.md`  | the library tab and the create-playlist sheet |
+| `player.md`   | the mini player and the player                |
 | `tabs.md`     | the tab navigator                             |

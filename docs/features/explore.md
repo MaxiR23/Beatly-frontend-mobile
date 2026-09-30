@@ -18,7 +18,7 @@ from a row.
   its `fallback`; the name in `typography.display`, one line; a `chevronRight`
   icon in `icon.size.md` and `color.text.tertiary`.
 - Divider: `border.hairline` in `color.surface.border` under each row.
-- Bottom: the list clears the floating tab bar with `floatingTabBarClearance`.
+- Bottom: the list clears the floating tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
 ## Platform differences
 

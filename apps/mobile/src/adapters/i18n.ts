@@ -34,6 +34,7 @@ void i18n.init({
     "search",
     "album",
     "artist",
+    "player",
   ],
   defaultNS: "common",
   interpolation: { escapeValue: false },

@@ -1,0 +1,242 @@
+// INFO: the player: dragged down from its header, or from its column at the top, it closes (springs back if released early); the cover shrinks while paused; iOS has no close button, Android does; reduce motion keeps the player and the cover still; close (chevron down, Android only) and the source in a control-height header, then a scrolling column: the full-width cover, the title and artists, the seek bar and the controls row (shuffle, previous, play or pause, next, repeat one); loading spins the play button, a failure draws the error with retry in place of the controls, nothing loaded draws the empty state.
+import { color, layout, spacing } from "@beatly/ui";
+import {
+  Cover,
+  DragToClose,
+  EmptyState,
+  ErrorState,
+  GradientFill,
+  IconButton,
+  PauseScale,
+  SeekBar,
+  Text,
+} from "@beatly/ui/native";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { Platform, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { useT } from "../../adapters/i18n.ts";
+import { useDominantColor } from "../detail/useDominantColor.ts";
+import { formatDuration } from "../search/formatDuration.ts";
+import { usePlayback, usePlaybackActions } from "./usePlayback.ts";
+import { useReduceMotion } from "./useReduceMotion.ts";
+
+export function PlayerScreen() {
+  const t = useT("player");
+  const tc = useT("common");
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const playback = usePlaybackActions();
+  const state = usePlayback((s) => s);
+  const { current, source, status } = state;
+  const wash = useDominantColor(current?.coverUrl ?? null);
+  const reduceMotion = useReduceMotion();
+  const [atTop, setAtTop] = useState(true);
+
+  function close() {
+    // A deep link has nothing to go back to, so it lands on home.
+    if (router.canGoBack()) router.back();
+    else router.replace("/");
+  }
+
+  const leading =
+    Platform.OS === "ios" ? (
+      <View style={styles.balance} />
+    ) : (
+      <IconButton icon="chevronDown" accessibilityLabel={t("close")} onPress={close} />
+    );
+  const top = { paddingTop: insets.top };
+  const bottom = { paddingBottom: insets.bottom + spacing.xl };
+
+  if (current === null) {
+    return (
+      <DragToClose onClose={close} enabled reduceMotion={reduceMotion} testID="player-drag">
+        <View style={styles.root} testID="player">
+          <View style={top}>
+            <View style={styles.header} testID="player-header">
+              {leading}
+            </View>
+          </View>
+          <View style={styles.state}>
+            <EmptyState icon="music" message={t("empty")} />
+          </View>
+        </View>
+      </DragToClose>
+    );
+  }
+
+  const duration = state.durationSeconds;
+  const coverSize = width - 2 * spacing.xl;
+  const hasSeek = duration !== null && duration > 0;
+  const failed = status === "failed";
+  const sourceName =
+    source === null
+      ? ""
+      : source.kind === "search"
+        ? t("searchSource", { query: source.name })
+        : source.name;
+
+  return (
+    <DragToClose onClose={close} enabled={atTop} reduceMotion={reduceMotion} testID="player-drag">
+      <View style={styles.root} testID="player">
+        {wash === null ? null : (
+          <View style={StyleSheet.absoluteFill} testID="player-wash">
+            <GradientFill
+              direction="vertical"
+              colors={[wash, color.surface.base, color.surface.base]}
+            />
+          </View>
+        )}
+        <View style={top}>
+          <View style={styles.header} testID="player-header">
+            {leading}
+            <View style={styles.source}>
+              <Text variant="label" tone="secondary" align="center" numberOfLines={1}>
+                {t("playingFrom")}
+              </Text>
+              <Text variant="rowTitle" align="center" numberOfLines={1}>
+                {sourceName}
+              </Text>
+            </View>
+            <View style={styles.balance} />
+          </View>
+        </View>
+        <ScrollView
+          bounces={false}
+          style={styles.scroll}
+          contentContainerStyle={[styles.content, bottom]}
+          onScroll={(event) => {
+            setAtTop(event.nativeEvent.contentOffset.y <= 0);
+          }}
+          testID="player-content"
+        >
+          <View style={styles.cover} testID="player-cover">
+            <PauseScale
+              paused={status === "paused"}
+              reduceMotion={reduceMotion}
+              testID="player-cover-scale"
+            >
+              <Cover
+                urls={current.coverUrl === null ? [] : [current.coverUrl]}
+                shape="square"
+                corner="md"
+                size={coverSize}
+                elevated
+              />
+            </PauseScale>
+          </View>
+          <View style={styles.titles} testID="player-titles">
+            <Text variant="title" numberOfLines={1}>
+              {current.title}
+            </Text>
+            <Text tone="secondary" numberOfLines={1}>
+              {current.artists.join(t("artistSeparator"))}
+            </Text>
+          </View>
+          {failed ? (
+            <View style={styles.below}>
+              <ErrorState
+                message={t("error.unplayable")}
+                retryLabel={tc("retry")}
+                onRetry={() => {
+                  void playback.retry();
+                }}
+              />
+            </View>
+          ) : (
+            <>
+              {hasSeek ? (
+                <View style={styles.below} testID="player-seek">
+                  <SeekBar
+                    positionSeconds={state.positionSeconds}
+                    durationSeconds={duration}
+                    elapsedLabel={formatDuration(state.positionSeconds)}
+                    remainingLabel={t("remaining", {
+                      time: formatDuration(duration - state.positionSeconds),
+                    })}
+                    accessibilityLabel={t("seek")}
+                    onSeek={(seconds) => {
+                      void playback.seek(seconds);
+                    }}
+                  />
+                </View>
+              ) : null}
+              <View
+                style={[styles.controls, hasSeek ? styles.afterSeek : styles.below]}
+                testID="player-controls"
+              >
+                <IconButton
+                  icon="shuffle"
+                  iconSize="md"
+                  accessibilityLabel={t("shuffle")}
+                  selected={state.shuffle}
+                  onPress={() => {
+                    playback.setShuffle(!state.shuffle);
+                  }}
+                />
+                <IconButton
+                  icon="skipBack"
+                  iconSize="xl"
+                  filled
+                  accessibilityLabel={t("previous")}
+                  onPress={() => {
+                    void playback.previous();
+                  }}
+                />
+                <IconButton
+                  variant="primary"
+                  icon={status === "playing" ? "pause" : "play"}
+                  accessibilityLabel={status === "playing" ? t("pause") : t("play")}
+                  busy={status === "loading"}
+                  onPress={() => {
+                    void playback.toggle();
+                  }}
+                />
+                <IconButton
+                  icon="skipForward"
+                  iconSize="xl"
+                  filled
+                  accessibilityLabel={t("next")}
+                  onPress={() => {
+                    void playback.next();
+                  }}
+                />
+                <IconButton
+                  icon="repeat1"
+                  iconSize="md"
+                  accessibilityLabel={t("repeatOne")}
+                  selected={state.repeatOne}
+                  onPress={() => {
+                    playback.setRepeatOne(!state.repeatOne);
+                  }}
+                />
+              </View>
+            </>
+          )}
+        </ScrollView>
+      </View>
+    </DragToClose>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: color.surface.base },
+  header: {
+    height: layout.controlHeight,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.xl,
+  },
+  source: { flex: 1, alignItems: "center" },
+  balance: { width: layout.controlHeight },
+  state: { flex: 1 },
+  scroll: { flex: 1 },
+  content: { paddingHorizontal: spacing.xl },
+  cover: { marginTop: spacing.xl },
+  titles: { marginTop: spacing.xxl, gap: spacing.xs },
+  below: { marginTop: spacing.xl },
+  controls: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  afterSeek: { marginTop: spacing.lg },
+});

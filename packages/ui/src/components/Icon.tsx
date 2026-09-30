@@ -3,6 +3,7 @@
 // needs an icon.
 import {
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -16,8 +17,14 @@ import {
   Library,
   Mail,
   Music,
+  Pause,
+  Play,
   Plus,
+  Repeat1,
   Search,
+  Shuffle,
+  SkipBack,
+  SkipForward,
   User,
   X,
 } from "lucide-react-native";
@@ -27,6 +34,7 @@ import { toneColor, type Tone } from "./tone.ts";
 
 const glyphs = {
   check: Check,
+  chevronDown: ChevronDown,
   chevronLeft: ChevronLeft,
   chevronRight: ChevronRight,
   clock: Clock,
@@ -40,8 +48,14 @@ const glyphs = {
   library: Library,
   mail: Mail,
   music: Music,
+  pause: Pause,
+  play: Play,
   plus: Plus,
+  repeat1: Repeat1,
   search: Search,
+  shuffle: Shuffle,
+  skipBack: SkipBack,
+  skipForward: SkipForward,
   user: User,
   x: X,
 } as const;
@@ -52,15 +66,17 @@ interface IconProps {
   name: IconName;
   size?: keyof typeof icon.size;
   tone?: Tone;
+  filled?: boolean | undefined;
 }
 
-export function Icon({ name, size = "md", tone = "primary" }: IconProps) {
+export function Icon({ name, size = "md", tone = "primary", filled }: IconProps) {
   const Glyph = glyphs[name];
   return (
     <Glyph
       size={icon.size[size]}
       strokeWidth={icon.stroke}
       color={toneColor[tone]}
+      fill={filled === true ? toneColor[tone] : "none"}
       accessible={false}
     />
   );

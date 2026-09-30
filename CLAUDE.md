@@ -23,16 +23,19 @@ legacy audit that drives the port lives in the old repo under
     callbacks; never fetches.
   - `apps/mobile`: Expo, latest stable SDK, React Compiler on. Holds the
     routes, the screens, the query hooks and every adapter.
-- One HTTP client, in `core`. It reads `ok`/`reason` from the body,
-  validates every response with zod at the edge, and has a timeout. The
-  global `fetch` lives in the `http` adapter and nowhere else.
+- One HTTP client, in `core`, for the Beatly API. It reads `ok`/`reason`
+  from the body, validates every response with zod at the edge, and has
+  a timeout. The stream resolver is the second caller of the `http`
+  port (ADR 021). The global `fetch` lives in the `http` adapter and
+  nowhere else.
 - TanStack Query for data in the UI. Cache times come from the
   backend's `Cache-Control` header, exposed by the HTTP client. They
   are never hardcoded in a hook.
 - Audio: `expo-audio` behind the `player` port. Only its adapter
   imports it.
 - Supabase for auth only, behind the `auth` port. Every other byte
-  goes through the backend API.
+  goes through the backend API, except the stream resolution request
+  and the audio itself, which go to the external provider (ADR 021).
 - i18n in `es` and `en` from the first screen. Single dark theme,
   defined once in `packages/ui` tokens.
 - Tests: vitest in `core`; jest-expo only where React Native is
@@ -115,9 +118,11 @@ that needs it opens a backend issue instead of computing it here.
   gradient.
 - No visible text outside i18n. Every string ships in `es` and `en`
   in the same change.
-- No HTTP call outside the `core` client. The global `fetch` appears in
-  exactly one file, `apps/mobile/src/adapters/http.ts`, behind the
-  `http` port. Screens and hooks never build a URL.
+- No HTTP call outside `core`: the Beatly API goes through the `core`
+  client, and the external provider's stream endpoint through the stream
+  resolver (ADR 021). The global `fetch` appears in exactly one file,
+  `apps/mobile/src/adapters/http.ts`, behind the `http` port. Screens
+  and hooks never build a URL.
 - No external library imported outside its adapter. `expo-audio`,
   `@supabase/*`, storage, file system: each one lives in one file
   under `apps/mobile/src/adapters/`. The one exception: libraries that
@@ -125,8 +130,9 @@ that needs it opens a backend issue instead of computing it here.
   `GlassSurface.tsx`, `GradientFill.tsx`), enforced in `eslint.config.js`; see ADR 017.
 - Never name the external provider, in code, comments, docs, tests or
   commits. It is "the external provider".
-- Zero secrets in the code. The only env values are the API base URL
-  and the Supabase URL and anon key, which are public by design.
+- Zero secrets in the code. The only env values are the API base URL,
+  the Supabase URL and anon key, and the three stream config values
+  (endpoint, client name and version; ADR 021), all public by design.
   Anything else has no place in a client bundle.
 - No direct `console.*`. Use the `log` port. No `any`, explicit or via
   a cast; a response without a type gets a zod schema.
@@ -277,8 +283,8 @@ the secret and provider ones (and for `https://`) before
 
 Blocking:
 
-- An HTTP call outside the `core` client, or the global `fetch` outside
-  its adapter.
+- An HTTP call outside the `core` client and the stream resolver, or
+  the global `fetch` outside its adapter.
 - An external library imported outside its adapter.
 - A `useMemo`, `useCallback` or `memo` without the comment that says
   why the React Compiler is not enough.

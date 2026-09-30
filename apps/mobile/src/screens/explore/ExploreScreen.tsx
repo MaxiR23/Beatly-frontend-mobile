@@ -1,30 +1,23 @@
 // INFO: the explore tab: the genres in the order the API sends them, each opening its genre screen.
 import { color, layout, spacing } from "@beatly/ui";
-import {
-  EmptyState,
-  ErrorState,
-  GenreRow,
-  LoadingState,
-  Text,
-  border,
-  floatingTabBarClearance,
-} from "@beatly/ui/native";
+import { EmptyState, ErrorState, GenreRow, LoadingState, Text, border } from "@beatly/ui/native";
 import { useRouter } from "expo-router";
 import { FlatList, StyleSheet, View } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
 import { useGenres } from "../../queries/useGenres.ts";
 import { AccountButton } from "../account/AccountButton.tsx";
+import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 
 export function ExploreScreen() {
   const t = useT("explore");
   const tc = useT("common");
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const tabBarClearance = useTabBarClearance();
   const genres = useGenres();
 
-  const clearance = { paddingBottom: floatingTabBarClearance(insets.bottom) };
+  const clearance = { paddingBottom: tabBarClearance };
 
   let body;
   if (genres.isPending) {

@@ -32,7 +32,7 @@ Requires Node 24 (`.nvmrc`) and pnpm (`packageManager` in
 
     nvm use
     pnpm install               also installs the git hooks
-    cp .env.example .env       three public values, no secrets
+    cp .env.example .env       six public values, no secrets
 
     pnpm dev                    Expo dev server for apps/mobile
 

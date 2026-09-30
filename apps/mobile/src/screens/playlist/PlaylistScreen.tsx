@@ -7,7 +7,6 @@ import {
   EmptyState,
   MediaRow,
   Text,
-  floatingTabBarClearance,
   type DetailBody,
   type DetailRow,
 } from "@beatly/ui/native";
@@ -23,6 +22,9 @@ import { useProfile } from "../../queries/useProfile.ts";
 import { useDominantColor } from "../detail/useDominantColor.ts";
 import { playlistMeta } from "./playlistMeta.ts";
 import { playlistSource } from "./playlistSource.ts";
+import { toQueue } from "../player/queue.ts";
+import { usePlaybackActions } from "../player/usePlayback.ts";
+import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 
 function isNotFound(error: unknown): boolean {
   return (
@@ -37,6 +39,8 @@ export function PlaylistScreen() {
   const tc = useT("common");
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const tabBarClearance = useTabBarClearance();
+  const playback = usePlaybackActions();
   const { id = "", source } = useLocalSearchParams<{ id?: string; source?: string }>();
   const kind = playlistSource(source);
   const header = usePlaylistHeader(kind, id);
@@ -116,7 +120,20 @@ export function PlaylistScreen() {
       };
     }
 
-    const rows: DetailRow[] = list.map((track) => ({
+    const play = (tapped: number) => {
+      const queue = toQueue(list, tapped, (track) => ({
+        trackId: track.track_id,
+        title: track.title,
+        artists: track.artists.map((a) => a.name),
+        coverUrl: track.thumbnail_url,
+        durationSeconds: track.duration_seconds,
+      }));
+      if (queue !== null) {
+        void playback.playList(queue.tracks, queue.index, { kind: "playlist", id, name: title });
+      }
+    };
+
+    const rows: DetailRow[] = list.map((track, position) => ({
       key: `${track.track_id}:${String(track.position)}`,
       element: (
         <MediaRow
@@ -130,6 +147,9 @@ export function PlaylistScreen() {
               : undefined
           }
           urls={[track.thumbnail_url]}
+          onPress={() => {
+            play(position);
+          }}
         />
       ),
     }));
@@ -184,7 +204,7 @@ export function PlaylistScreen() {
       backLabel={t("back")}
       onBack={goBack}
       topInset={insets.top}
-      bottomInset={floatingTabBarClearance(insets.bottom)}
+      bottomInset={tabBarClearance}
     />
   );
 }

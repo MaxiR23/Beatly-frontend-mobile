@@ -7,7 +7,7 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, and the page builder)
+// (the playback controller over an inline player, the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, and the page builder)
 //
 import type {
   ActivityService,
@@ -29,6 +29,8 @@ import type {
   PlaylistDetail,
   PlaylistListItem,
   PlaylistsService,
+  PlayerEvent,
+  PlayerPort,
   PlaylistTrack,
   Profile,
   ProfileService,
@@ -38,8 +40,9 @@ import type {
   SearchResult,
   SearchService,
   StoragePort,
+  StreamResolver,
 } from "@beatly/core";
-import { createRecentSearchesService } from "@beatly/core";
+import { createPlaybackController, createRecentSearchesService } from "@beatly/core";
 import { jest } from "@jest/globals";
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
@@ -363,13 +366,38 @@ export function makeLog() {
 }
 
 // Reads a flag of a node's accessibilityState without an untyped member access.
-export function stateFlag(node: { props: unknown }, flag: "disabled" | "busy" | "checked") {
+export function stateFlag(
+  node: { props: unknown },
+  flag: "disabled" | "busy" | "checked" | "selected",
+) {
   const props = node.props;
   if (typeof props !== "object" || props === null || !("accessibilityState" in props))
     return undefined;
   const state = props.accessibilityState;
   if (typeof state !== "object" || state === null || !(flag in state)) return undefined;
   return (state as Record<string, unknown>)[flag];
+}
+
+// An inline player port: jest.fn members and an emit that sends an event to the registered listener.
+export function makePlayer() {
+  let listener: (event: PlayerEvent) => void = () => undefined;
+  const port = {
+    load: jest.fn<PlayerPort["load"]>(),
+    play: jest.fn<PlayerPort["play"]>(),
+    pause: jest.fn<PlayerPort["pause"]>(),
+    seek: jest.fn<PlayerPort["seek"]>(() => Promise.resolve()),
+    unload: jest.fn<PlayerPort["unload"]>(),
+    onEvent: jest.fn<PlayerPort["onEvent"]>((next) => {
+      listener = next;
+      return () => undefined;
+    }),
+  };
+  return {
+    port,
+    emit: (event: PlayerEvent) => {
+      listener(event);
+    },
+  };
 }
 
 export function makeCore(
@@ -392,6 +420,7 @@ export function makeCore(
     listLikedTracks?: PlaylistsService["listLikedTracks"];
     getGenrePlaylist?: PublicService["getGenrePlaylist"];
     storage?: StoragePort;
+    resolve?: StreamResolver["resolve"];
   } = {},
 ) {
   const auth = options.auth ?? makeAuth();
@@ -457,6 +486,15 @@ export function makeCore(
   );
   const storage = options.storage ?? memoryStorage();
   const log = makeLog();
+  const player = makePlayer();
+  const resolve = jest.fn<StreamResolver["resolve"]>(
+    options.resolve ?? ((id) => Promise.resolve({ kind: "resolved", url: `test://audio/${id}` })),
+  );
+  const playback = createPlaybackController({
+    player: player.port,
+    streams: { resolve },
+    log,
+  });
   const core: Core = {
     activity: { listRecents },
     album: { getAlbum },
@@ -465,6 +503,7 @@ export function makeCore(
     genres: { listGenres, listGenrePlaylists, listGenreCategories },
     library: { listLibrary },
     log,
+    playback,
     playlists: {
       listPlaylists,
       createPlaylist,
@@ -499,6 +538,9 @@ export function makeCore(
     listLikedTracks,
     getGenrePlaylist,
     storage,
+    playback,
+    player,
+    resolve,
   };
 }
 

@@ -6,8 +6,7 @@ The search tab: recent queries kept on the device, and the top artist, songs and
 
 Find music by text. While the field is empty the user sees their recent queries and can run,
 remove or clear them. With text, the screen shows the top artist, the songs and the albums the
-API returns. An album card opens the album; the rest of the results are not pressable yet:
-playback and the other detail screens are later issues.
+API returns. An album card opens the album; pressing a song plays the songs from it with a `search` source named by the query (`player.md`).
 
 ## Layout
 
@@ -28,7 +27,7 @@ playback and the other detail screens are later issues.
   `typography.rowTitle`, artists and duration in `typography.meta`; `spacing.sm` above and below.
 - Sections: `spacing.xl` between them, `spacing.md` between the songs header and its rows; the
   albums are a `Carousel`.
-- Bottom: the list clears the floating tab bar with `floatingTabBarClearance`.
+- Bottom: the list clears the floating tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
 The top artist circle draws `data.artist.thumbnail_url`, or the `Cover` placeholder when it is null
 (including responses cached before the field existed, for up to an hour).

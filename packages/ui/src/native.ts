@@ -23,13 +23,19 @@ export { EmptyState } from "./components/EmptyState.tsx";
 export { ErrorState } from "./components/ErrorState.tsx";
 export type { Tone } from "./components/tone.ts";
 export { GlassSurface, isGlassAvailable } from "./components/GlassSurface.tsx";
-export { FloatingTabBar, floatingTabBarClearance } from "./components/FloatingTabBar.tsx";
+export {
+  FloatingTabBar,
+  floatingTabBarClearance,
+  floatingTabBarWidth,
+} from "./components/FloatingTabBar.tsx";
 export { SwitchRow } from "./components/SwitchRow.tsx";
 export { Sheet } from "./components/Sheet.tsx";
 export { Avatar } from "./components/Avatar.tsx";
 export { Carousel, type CarouselItem } from "./components/Carousel.tsx";
 export { GenreRow } from "./components/GenreRow.tsx";
 export { Chip } from "./components/Chip.tsx";
+export { Cover } from "./components/Cover.tsx";
+export { GradientFill } from "./components/GradientFill.tsx";
 export { IconButton } from "./components/IconButton.tsx";
 export { MediaGrid, gridCardSize } from "./components/MediaGrid.tsx";
 export { SearchBar } from "./components/SearchBar.tsx";
@@ -37,3 +43,7 @@ export { MediaRow } from "./components/MediaRow.tsx";
 export { RecentRow } from "./components/RecentRow.tsx";
 export { DetailScreen, type DetailBody, type DetailRow } from "./components/DetailScreen.tsx";
 export { TrackRow } from "./components/TrackRow.tsx";
+export { MiniPlayer } from "./components/MiniPlayer.tsx";
+export { SeekBar } from "./components/SeekBar.tsx";
+export { DragToClose } from "./components/DragToClose.tsx";
+export { PauseScale } from "./components/PauseScale.tsx";

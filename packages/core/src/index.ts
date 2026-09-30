@@ -1,4 +1,4 @@
-// INFO: public entry of @beatly/core: ports, the envelope, the HTTP client, the paginated helper and the services.
+// INFO: public entry of @beatly/core: ports, the envelope, the HTTP client, the paginated helper, the services, the playback controller and the stream resolver.
 export type {
   AuthChange,
   AuthFailure,
@@ -12,7 +12,9 @@ export type {
   SignUpResult,
 } from "./ports/auth.ts";
 export type { HttpMethod, HttpPort, HttpRequest, HttpResponse } from "./ports/http.ts";
+export type { ConfigPort } from "./ports/config.ts";
 export type { LogFields, LogPort } from "./ports/log.ts";
+export type { PlayerEvent, PlayerPort } from "./ports/player.ts";
 export {
   apiReasonSchema,
   envelopeSchema,
@@ -108,3 +110,17 @@ export type {
   RecentSearchesService,
   StorageFailure,
 } from "./services/recentSearches.ts";
+export { PREVIOUS_RESTARTS_AFTER_SECONDS, createPlaybackController } from "./services/playback.ts";
+export type {
+  PlayableTrack,
+  PlaybackController,
+  PlaybackFailure,
+  PlaybackSource,
+  PlaybackState,
+  PlaybackStatus,
+  StreamFailureCause,
+  StreamResolution,
+  StreamResolver,
+} from "./services/playback.ts";
+export { STREAM_CONTAINERS, chooseStreamFormat, createStreamResolver } from "./services/streams.ts";
+export type { ChosenStreamFormat, StreamFormat, StreamPlatform } from "./services/streams.ts";

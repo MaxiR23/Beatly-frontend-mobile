@@ -6,24 +6,24 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
-  floatingTabBarClearance,
   type CarouselItem,
 } from "@beatly/ui/native";
 import { useRouter } from "expo-router";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
 import { usePlaylists } from "../../queries/usePlaylists.ts";
 import { useProfile } from "../../queries/useProfile.ts";
 import { useRecents } from "../../queries/useRecents.ts";
 import { AccountButton } from "../account/AccountButton.tsx";
+import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 
 export function HomeScreen() {
   const t = useT("home");
   const tc = useT("common");
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const tabBarClearance = useTabBarClearance();
   const recents = useRecents();
   const playlists = usePlaylists();
   const profile = useProfile();
@@ -79,7 +79,7 @@ export function HomeScreen() {
     },
   });
 
-  const clearance = { paddingBottom: floatingTabBarClearance(insets.bottom) };
+  const clearance = { paddingBottom: tabBarClearance };
 
   let body;
   if (recents.isPending || playlists.isPending) {

@@ -13,6 +13,8 @@ import { layout, spacing } from "../tokens/spacing.ts";
 interface GlassSurfaceProps {
   variant: "bar" | "sheet" | "circle";
   children: ReactNode;
+  // A runtime color (a cover's dominant color) laid over the surface; null or unset keeps it neutral.
+  tint?: string | null;
   testID?: string;
 }
 
@@ -21,19 +23,31 @@ export function isGlassAvailable(): boolean {
   return Platform.OS === "ios" && isLiquidGlassAvailable();
 }
 
-export function GlassSurface({ variant, children, testID }: GlassSurfaceProps) {
+export function GlassSurface({ variant, children, tint, testID }: GlassSurfaceProps) {
   const shape = styles[variant];
 
   if (isGlassAvailable()) {
     return (
-      <GlassView glassEffectStyle="regular" style={shape} testID={testID}>
+      <GlassView
+        glassEffectStyle="regular"
+        style={shape}
+        {...(typeof tint === "string" ? { tintColor: tint } : {})}
+        testID={testID}
+      >
         {children}
       </GlassView>
     );
   }
 
   return (
-    <View style={[shape, styles.fallback]} testID={testID}>
+    <View
+      style={[
+        shape,
+        styles.fallback,
+        typeof tint === "string" ? { backgroundColor: tint } : undefined,
+      ]}
+      testID={testID}
+    >
       {children}
     </View>
   );

@@ -27,7 +27,7 @@ Show a genre's playlists in a two-column grid and filter them by category chip.
   `color.text.secondary`. Each card is pressable and opens the playlist screen.
 - Cover rule: 4 `thumbnail_urls` draw a 2 x 2 mosaic; 1 to 3 draw the first; with
   none, `thumbnail_url` if there is one, else the placeholder.
-- Bottom: the grid clears the floating tab bar with `floatingTabBarClearance`.
+- Bottom: the grid clears the floating tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
 ## Platform differences
 

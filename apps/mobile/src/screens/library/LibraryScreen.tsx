@@ -8,30 +8,30 @@ import {
   LoadingState,
   MediaRow,
   Text,
-  floatingTabBarClearance,
 } from "@beatly/ui/native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
 import { useLibrary } from "../../queries/useLibrary.ts";
 import { useProfile } from "../../queries/useProfile.ts";
 import { AccountButton } from "../account/AccountButton.tsx";
 import { CreatePlaylistSheet } from "./CreatePlaylistSheet.tsx";
+import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 
 export function LibraryScreen() {
   const t = useT("library");
   const tc = useT("common");
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const tabBarClearance = useTabBarClearance();
   const library = useLibrary();
   const profile = useProfile();
   const name = profile.data ? profileName(profile.data) : null;
   const [creating, setCreating] = useState(false);
 
-  const clearance = { paddingBottom: floatingTabBarClearance(insets.bottom) };
+  const clearance = { paddingBottom: tabBarClearance };
 
   const toRow = (entry: LibraryEntry) => {
     const liked = entry.source === "liked";

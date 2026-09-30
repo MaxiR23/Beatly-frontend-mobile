@@ -7,13 +7,14 @@
 //
 // What is covered:
 // - four icon-only tabs with accessible labels, home selected on "/", explore, search and library from their tabs
+// - no mini player while idle, the mini player above the tabs once a track is loaded and opening the player from it
 //
 // Run with: pnpm --filter @beatly/mobile test -- _layout
 //
 // SEE: apps/mobile/app/(tabs)/_layout.tsx
 
 import { describe, expect, it, jest } from "@jest/globals";
-import { fireEvent, renderRouter, screen } from "expo-router/testing-library";
+import { act, fireEvent, renderRouter, screen } from "expo-router/testing-library";
 
 import { resources } from "../../../src/i18n/resources.ts";
 import { installCore } from "../../helpers/routeCore.ts";
@@ -75,5 +76,29 @@ describe("the tabs layout", () => {
     expect(await screen.findByTestId("library")).toBeTruthy();
     expect(await screen.findByText(en.library.liked)).toBeTruthy();
     expect(isSelected(screen.getByRole("tab", { name: en.tabs.library }))).toBe(true);
+  });
+
+  it("draws no mini player while nothing is loaded", async () => {
+    mockCore.set("signed_in");
+    await renderRouter("app", { initialUrl: "/" });
+    await screen.findByTestId("home");
+    expect(screen.queryByTestId("mini-player")).toBeNull();
+  });
+
+  it("draws the mini player above the tabs once a track is loaded and opens the player from it", async () => {
+    mockCore.set("signed_in");
+    await renderRouter("app", { initialUrl: "/" });
+    await screen.findByTestId("home");
+    await act(async () => {
+      await mockCore.current.playback.playList(
+        [{ trackId: "t1", title: "Song", artists: ["Ann"], coverUrl: null, durationSeconds: 100 }],
+        0,
+        { kind: "album", id: "a1", name: "Album" },
+      );
+    });
+    expect(await screen.findByTestId("mini-player")).toBeTruthy();
+    expect(screen.getByText("Song")).toBeTruthy();
+    await fireEvent.press(screen.getByRole("button", { name: en.player.open }));
+    expect(await screen.findByTestId("player")).toBeTruthy();
   });
 });

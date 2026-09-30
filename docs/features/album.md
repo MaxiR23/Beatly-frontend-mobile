@@ -6,8 +6,8 @@ An album's tracks and its related albums, on the detail screen base (which has a
 
 Show an album: its cover, title, artists, meta line and tracks, and the albums
 that are other versions of it or recommended with it. Opening another album
-pushes a new album in the same tab. Playback and track actions are later issues,
-so the tracks are not pressable.
+pushes a new album in the same tab. Pressing an available track plays the album from it
+(`player.md`); an unavailable track is not pressable. Track actions are a later issue.
 
 ## Layout
 
@@ -31,7 +31,7 @@ the body:
   artists, or the year when there are none.
 - Sections are `spacing.xl` apart, and that one gap is also the space between the info
   (the end of the title block) and the tracks: nothing else adds to it. The bottom clears the floating tab bar with
-  `floatingTabBarClearance`.
+  `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
 ## Platform differences
 

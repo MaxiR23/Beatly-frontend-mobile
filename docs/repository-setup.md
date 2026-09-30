@@ -76,7 +76,7 @@ Copy the env file and fill in the public values:
 
     cp .env.example .env
 
-It holds only the API base URL and the Supabase URL and anon key.
+It holds only the API base URL, the Supabase URL and anon key, and the stream endpoint, client name and version (ADR 021).
 There are no secrets in a client; if a value looks like one, it does
 not belong here.
 

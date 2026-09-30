@@ -87,6 +87,26 @@ record described.
 commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
   `ls-files`), `gh issue create`, `gh issue edit`, `gh label list`,
   `gh pr view` and `gh pr list`; the deny list is unchanged.
+- `004-expo-audio-behind-the-player-port.md` says "The stream URL the
+  port receives comes from the backend, like every other piece of data.
+  The client does not resolve audio." Since
+  `021-stream-resolution-in-the-client-behind-a-config-port.md`, the
+  client resolves the stream URL in `core`, because the external
+  provider's stream URLs are bound to the IP that resolves them.
+- `011-no-secrets-in-code-and-provider-never-named.md` says the
+  environment holds exactly three values and the client talks to the
+  Beatly API and Supabase auth and to nothing else. Since
+  `021-stream-resolution-in-the-client-behind-a-config-port.md`, the
+  environment holds six public values (those three plus the stream
+  endpoint, client name and version) and the client also calls the
+  external provider's resolution endpoint. No secret and the provider
+  never named still stand.
+- `004-expo-audio-behind-the-player-port.md` does not say what the
+  player's queue is. Since issue #43 the queue is the tracks loaded when
+  a row is tapped, handed to the playback controller in `core`: the
+  controller does not drive the infinite query, so a long paginated
+  playlist (own or liked) stops after its loaded pages. Autoplay or an
+  up-next list needs a new record.
 
 ## Files
 
@@ -157,3 +177,6 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
 - `020-shared-detail-routes-per-tab.md` — why the four tabs are groups
   sharing one layout, so a detail screen opens inside the current tab and
   keeps that tab's back stack.
+- `021-stream-resolution-in-the-client-behind-a-config-port.md` — why the
+  client resolves a track's stream URL itself, behind a `config` port with
+  three public values, instead of receiving it from the backend.

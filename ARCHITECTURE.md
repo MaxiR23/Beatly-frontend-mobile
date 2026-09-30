@@ -62,18 +62,19 @@ port has exactly one adapter in `apps/mobile/src/adapters/`, which is
 the only file allowed to import the library behind it, and one
 in-memory fake in `packages/core/test/fakes/`.
 
-| Port      | What core needs                                                        | Adapter               | Library behind it                             | Fake for tests                           |
-| --------- | ---------------------------------------------------------------------- | --------------------- | --------------------------------------------- | ---------------------------------------- |
-| `http`    | send a request, get status, headers and raw body back                  | `adapters/http.ts`    | the platform `fetch`                          | handlers per route; unknown route throws |
-| `auth`    | the access token, sign in / up / out, confirmEmail, getStatus, events  | `adapters/auth.ts`    | `@supabase/supabase-js` + `expo-secure-store` | a fixed token                            |
-| `player`  | load a URL, play, pause, seek, queue the next one, playback events     | `adapters/player.ts`  | `expo-audio`                                  | in-memory player with a manual clock     |
-| `log`     | `debug`, `info`, `warn`, `error` with structured fields                | `adapters/log.ts`     | `console`, the only file allowed to           | an array                                 |
-| `storage` | get / set / delete small key-value data (recent searches, preferences) | `adapters/storage.ts` | async storage                                 | a `Map`                                  |
+| Port      | What core needs                                                                               | Adapter               | Library behind it                             | Fake for tests                           |
+| --------- | --------------------------------------------------------------------------------------------- | --------------------- | --------------------------------------------- | ---------------------------------------- |
+| `http`    | send a request, get status, headers and raw body back                                         | `adapters/http.ts`    | the platform `fetch`                          | handlers per route; unknown route throws |
+| `auth`    | the access token, sign in / up / out, confirmEmail, getStatus, events                         | `adapters/auth.ts`    | `@supabase/supabase-js` + `expo-secure-store` | a fixed token                            |
+| `player`  | load a URL, play, pause, seek, unload, playback events (queue-next arrives with preloading)   | `adapters/player.ts`  | `expo-audio`                                  | in-memory player with a manual clock     |
+| `config`  | the public build-time values core needs: the stream endpoint, client name and version         | `adapters/config.ts`  | the build-time env, read in `src/env.ts`      | an object literal                        |
+| `log`     | `debug`, `info`, `warn`, `error` with structured fields                                       | `adapters/log.ts`     | `console`, the only file allowed to           | an array                                 |
+| `storage` | get / set / delete small key-value data (recent searches, the stream identifier, preferences) | `adapters/storage.ts` | async storage                                 | a `Map`                                  |
 
-There is no `config` port for now: the three public build-time values (API
-base URL, auth URL and anon key) are read in `apps/mobile/src/env.ts`, which
-`createCore()` passes to the adapters that need them. A `config` row is added
-if `core` ever needs a value that is not one of those.
+The six public build-time values are read in `apps/mobile/src/env.ts`.
+`createCore()` passes the API base URL, auth URL and anon key to the
+adapters that need them, and the three stream values to `core` through the
+`config` port (ADR 021).
 
 `adapters/i18n.ts` wraps `i18next` and `expo-localization`. It has no
 port because `core` never translates.
@@ -99,7 +100,10 @@ enforced the same way in `eslint.config.js`; see ADR 017.
   timeout, reads `ok`/`reason`, validates the body with zod and turns
   the response into one of three outcomes: success with typed data,
   API failure with its `reason`, transport failure. It also exposes
-  the `Cache-Control` max-age of the response.
+  the `Cache-Control` max-age of the response. The one other caller of
+  the `http` port is the stream resolver (`services/streams.ts`, ADR 021),
+  because the external provider's endpoint does not answer the envelope;
+  it applies its own timeout and zod schema and never sends the token.
 - A **service** (`packages/core/src/services/`) is a use case over the
   client and the other ports: `listPlaylists`, `likeTrack`,
   `playFromQueue`. It returns outcomes; it never throws for an
