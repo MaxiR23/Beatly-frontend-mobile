@@ -6,7 +6,6 @@ import {
   DetailScreen,
   MediaRow,
   Text,
-  floatingTabBarClearance,
   type CarouselItem,
   type DetailBody,
 } from "@beatly/ui/native";
@@ -18,6 +17,9 @@ import { useT } from "../../adapters/i18n.ts";
 import { OutcomeError } from "../../queries/outcomeError.ts";
 import { useArtist } from "../../queries/useArtist.ts";
 import { singleMeta } from "./singleMeta.ts";
+import { toQueue } from "../player/queue.ts";
+import { usePlaybackActions } from "../player/usePlayback.ts";
+import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 
 const urlsOf = (url: string | null): string[] => (url === null ? [] : [url]);
 
@@ -26,6 +28,8 @@ export function ArtistScreen() {
   const tc = useT("common");
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const tabBarClearance = useTabBarClearance();
+  const playback = usePlaybackActions();
   const { id = "" } = useLocalSearchParams<{ id?: string }>();
   const artist = useArtist(id);
 
@@ -67,6 +71,26 @@ export function ArtistScreen() {
     };
   } else {
     const data = artist.data;
+    const playSong = (tapped: number) => {
+      const queue = toQueue(data.songs, tapped, (song) =>
+        song.track_id === null
+          ? null
+          : {
+              trackId: song.track_id,
+              title: song.title,
+              artists: song.artists.length > 0 ? song.artists.map((a) => a.name) : [data.name],
+              coverUrl: song.thumbnail_url,
+              durationSeconds: song.duration_seconds,
+            },
+      );
+      if (queue !== null) {
+        void playback.playList(queue.tracks, queue.index, {
+          kind: "artist",
+          id: data.id,
+          name: data.name,
+        });
+      }
+    };
     body = {
       kind: "ready",
       hero: "image",
@@ -88,6 +112,13 @@ export function ArtistScreen() {
                   title={song.title}
                   subtitle={song.album ?? undefined}
                   available={song.track_id !== null}
+                  onPress={
+                    song.track_id === null
+                      ? undefined
+                      : () => {
+                          playSong(index);
+                        }
+                  }
                 />
               ))}
             </View>
@@ -140,7 +171,7 @@ export function ArtistScreen() {
       backLabel={t("back")}
       onBack={goBack}
       topInset={insets.top}
-      bottomInset={floatingTabBarClearance(insets.bottom)}
+      bottomInset={tabBarClearance}
     />
   );
 }

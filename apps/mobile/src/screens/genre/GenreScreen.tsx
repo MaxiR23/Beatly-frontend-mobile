@@ -9,28 +9,28 @@ import {
   LoadingState,
   MediaGrid,
   Text,
-  floatingTabBarClearance,
   type CarouselItem,
 } from "@beatly/ui/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
 import { useGenreCategories, useGenrePlaylists } from "../../queries/useGenres.ts";
+import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 
 export function GenreScreen() {
   const t = useT("genre");
   const tc = useT("common");
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const tabBarClearance = useTabBarClearance();
   const { slug = "", name } = useLocalSearchParams<{ slug?: string; name?: string }>();
   const playlists = useGenrePlaylists(slug);
   const categories = useGenreCategories(slug);
   const [category, setCategory] = useState<string | null>(null);
 
-  const clearance = { paddingBottom: floatingTabBarClearance(insets.bottom) };
+  const clearance = { paddingBottom: tabBarClearance };
 
   function goBack() {
     // A deep link has nothing to go back to, so it lands on the explore list.
@@ -122,7 +122,7 @@ export function GenreScreen() {
           <MediaGrid
             testID="genre-playlists"
             items={visible.map(toGridItem)}
-            bottomPadding={floatingTabBarClearance(insets.bottom)}
+            bottomPadding={tabBarClearance}
           />
         )}
       </View>

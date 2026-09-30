@@ -145,6 +145,16 @@ describe("SearchScreen recents", () => {
 });
 
 describe("SearchScreen results", () => {
+  it("starts the songs from the pressed one with the search source", async () => {
+    const ctx = await setup();
+    await fireEvent.changeText(input(), "test");
+    await screen.findByText("Test Song");
+    await fireEvent.press(screen.getByRole("button", { name: "Test Song" }));
+    const state = ctx.playback.getState();
+    expect(state.current?.trackId).toBe("t1");
+    expect(state.source).toEqual({ kind: "search", id: "test", name: "test" });
+  });
+
   it("draws the top artist, then songs, then albums", async () => {
     await setup();
     await fireEvent.changeText(input(), "test");

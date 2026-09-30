@@ -6,7 +6,7 @@
 // - SessionProvider, useSession
 //
 // What is covered:
-// - the status is unknown, then the stored one; events win; sign out clears the query cache
+// - the status is unknown, then the stored one; events win; sign out clears the query cache and stops playback
 //
 // Run with: pnpm --filter @beatly/mobile test -- SessionProvider
 //
@@ -34,11 +34,13 @@ function setup(getStatus: () => Promise<AuthStatus>) {
       return () => undefined;
     }),
   });
-  const { core, log } = makeCore({ auth });
+  const { core, log, playback, player } = makeCore({ auth });
   const client = createQueryClient();
   return {
     core,
     client,
+    playback,
+    player,
     emit: (change: AuthChange) => {
       emit(change);
     },
@@ -101,6 +103,25 @@ describe("SessionProvider", () => {
       s.emit({ status: "signed_out" });
     });
     expect(s.client.getQueryData(["seed"])).toBeUndefined();
+  });
+
+  it("stops playback on a signed_in to signed_out change", async () => {
+    const s = setup(() => Promise.resolve("signed_in"));
+    await mount(s);
+    await screen.findByText("signed_in");
+    await act(async () => {
+      await s.playback.playList(
+        [{ trackId: "t1", title: "Song", artists: [], coverUrl: null, durationSeconds: 100 }],
+        0,
+        { kind: "album", id: "a1", name: "Album" },
+      );
+    });
+    expect(s.playback.getState().current).not.toBeNull();
+    await act(() => {
+      s.emit({ status: "signed_out" });
+    });
+    expect(s.playback.getState().current).toBeNull();
+    expect(s.player.port.unload).toHaveBeenCalled();
   });
 
   it("logs and stays unknown when the stored status is unreadable", async () => {

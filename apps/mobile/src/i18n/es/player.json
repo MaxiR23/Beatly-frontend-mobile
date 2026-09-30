@@ -1,0 +1,19 @@
+{
+  "playingFrom": "Reproduciendo desde",
+  "searchSource": "Búsqueda “{{query}}”",
+  "artistSeparator": ", ",
+  "open": "Abrir reproductor",
+  "close": "Cerrar reproductor",
+  "play": "Reproducir",
+  "pause": "Pausar",
+  "next": "Siguiente",
+  "previous": "Anterior",
+  "shuffle": "Aleatorio",
+  "repeatOne": "Repetir canción",
+  "seek": "Posición de la canción",
+  "remaining": "-{{time}}",
+  "empty": "No se está reproduciendo nada.",
+  "error": {
+    "unplayable": "No se puede reproducir esta canción ahora."
+  }
+}

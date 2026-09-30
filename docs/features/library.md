@@ -18,7 +18,7 @@ playlist screen; a playlist with another source is not pressable.
   `spacing.xs` vertical padding so the row is 64 high, `layout.gap` between
   cover and text, title in `typography.rowTitle`, meta in `typography.meta`
   with `color.text.secondary`. The list pads its end with
-  `floatingTabBarClearance`.
+  `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 - The liked entry draws a tile on `color.accent.primary` with a heart in
   `color.text.inverse`.
 - Covers per `source`: `user` (own playlist) uses `thumbnail_urls` as is;

@@ -7,9 +7,8 @@ An own, the liked or a genre playlist, on the detail screen base.
 Show a playlist: its cover, title, creator, description, meta line and tracks.
 There are three kinds, chosen by the `source` param of the route: `user` (an own
 playlist), `liked` (the liked songs) and `genre` (a curated playlist). Own and liked
-tracks load with infinite scroll; a genre playlist loads whole with its header, in one request. Playback,
-track actions, editing and sharing are later issues, so the tracks are not
-pressable and there is no more button.
+tracks load with infinite scroll; a genre playlist loads whole with its header, in one request. Pressing a track plays the loaded tracks from it, with the playlist as the
+source (`player.md`). Track actions, editing and sharing are later issues, so there is no more button.
 
 ## Layout
 
@@ -29,7 +28,7 @@ the info block:
   - Meta line in `typography.meta` and `color.text.tertiary`: Private or Public (own
     only), the song count and the duration in hours and minutes.
 - Tracks: one `MediaRow` `regular` per track (`layout.rowCover` cover), in API order.
-  The bottom clears the floating tab bar with `floatingTabBarClearance`.
+  The bottom clears the floating tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
 ## Platform differences
 

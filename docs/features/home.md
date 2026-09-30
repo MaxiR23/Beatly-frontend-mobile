@@ -29,7 +29,7 @@ sheet with log out from the avatar.
   entry; with none, the placeholder. `GET /playlists` has no `thumbnail_url`. A
   recent draws its `metadata.thumbnail_url`, or the placeholder.
 - Account sheet: on `GlassSurface`, `radius.lg`, `spacing.xl` padding.
-- Bottom: the content clears the floating tab bar with `floatingTabBarClearance`.
+- Bottom: the content clears the floating tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
 ## Platform differences
 

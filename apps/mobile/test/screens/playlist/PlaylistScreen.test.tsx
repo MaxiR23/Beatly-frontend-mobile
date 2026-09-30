@@ -204,20 +204,31 @@ describe("PlaylistScreen", () => {
     expect(await screen.findByText("Private · 1 song · 4 min")).toBeTruthy();
   });
 
-  it("draws each track with its title and artists, not pressable", async () => {
+  it("draws each track with its title and artists as a pressable row", async () => {
     await setup({ listPlaylistTracks: tracksOf(two) });
     expect(await screen.findByText("First Song")).toBeTruthy();
     expect(screen.getByText("Second Song")).toBeTruthy();
     expect(screen.getByText("Test Artist, Guest")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /First Song/ })).toBeNull();
+    expect(screen.getByRole("button", { name: "First Song" })).toBeTruthy();
   });
 
-  it("draws no more button", async () => {
+  it("starts the loaded list from the pressed row with the playlist source", async () => {
+    const ctx = await setup({ listPlaylistTracks: tracksOf(two) });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: "Second Song" }));
+    const state = ctx.playback.getState();
+    expect(state.current?.trackId).toBe("t2");
+    expect(state.queue.map((t) => t.trackId)).toEqual(["t1", "t2"]);
+    expect(state.index).toBe(1);
+    expect(state.source).toEqual({ kind: "playlist", id: "p1", name: "Road trip" });
+    expect(state.current?.artists).toEqual(["Test Artist", "Guest"]);
+  });
+
+  it("draws no more button, only back and the rows", async () => {
     await setup({ listPlaylistTracks: tracksOf(two) });
     await screen.findByText("First Song");
-    const buttons = screen.getAllByRole("button");
-    expect(buttons).toHaveLength(1);
-    expect(screen.getByRole("button", { name: en.playlist.back })).toBeTruthy();
+    const names = screen.getAllByRole("button").map((b) => b.props.accessibilityLabel as unknown);
+    expect(new Set(names)).toEqual(new Set([en.playlist.back, "First Song", "Second Song"]));
   });
 
   it("loads the next page of an own playlist at the end of the list", async () => {

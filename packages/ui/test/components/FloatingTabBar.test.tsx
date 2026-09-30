@@ -4,10 +4,11 @@
 //
 // Tested:
 // - FloatingTabBar
-// - floatingTabBarClearance
+// - floatingTabBarClearance, floatingTabBarWidth
 //
 // What is covered:
 // - icon-only tabs with roles and labels, the selected one, the press, the clearance formula
+// - the width formula and the accessory drawn above the tabs at that width, with its md gap
 //
 // Run with: pnpm --filter @beatly/ui test -- FloatingTabBar
 //
@@ -15,8 +16,13 @@
 
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react-native";
+import { Text } from "react-native";
 
-import { FloatingTabBar, floatingTabBarClearance } from "../../src/components/FloatingTabBar.tsx";
+import {
+  FloatingTabBar,
+  floatingTabBarClearance,
+  floatingTabBarWidth,
+} from "../../src/components/FloatingTabBar.tsx";
 import { color } from "../../src/tokens/color.ts";
 import { layout, spacing } from "../../src/tokens/spacing.ts";
 
@@ -67,7 +73,38 @@ describe("FloatingTabBar", () => {
   });
 });
 
+describe("accessory", () => {
+  it("draws the accessory above the tabs inside a view of the pill's width", async () => {
+    await render(
+      <FloatingTabBar tabs={makeTabs()} bottomInset={0} accessory={<Text>mini</Text>} />,
+    );
+    expect(screen.getByText("mini")).toBeTruthy();
+    expect(screen.getByTestId("tab-accessory")).toHaveStyle({
+      width: floatingTabBarWidth(2),
+      marginBottom: spacing.md,
+    });
+  });
+
+  it("draws no accessory view without one", async () => {
+    await render(<FloatingTabBar tabs={makeTabs()} bottomInset={0} />);
+    expect(screen.queryByTestId("tab-accessory")).toBeNull();
+  });
+});
+
+describe("floatingTabBarWidth", () => {
+  it("adds the items, the gaps between them and the padding", () => {
+    expect(floatingTabBarWidth(2)).toBe(2 * layout.tabItemWidth + spacing.xs + 2 * spacing.xs);
+    expect(floatingTabBarWidth(4)).toBe(4 * layout.tabItemWidth + 3 * spacing.xs + 2 * spacing.xs);
+  });
+});
+
 describe("floatingTabBarClearance", () => {
+  it("adds the accessory's height and gap when there is one", () => {
+    expect(floatingTabBarClearance(10, true)).toBe(
+      floatingTabBarClearance(10) + layout.controlHeight + 2 * spacing.xs + spacing.md,
+    );
+  });
+
   it("adds the bar offset, its height and one section gap to the inset", () => {
     expect(floatingTabBarClearance(10)).toBe(
       10 + spacing.sm + layout.controlHeight + 2 * spacing.xs + spacing.xl,

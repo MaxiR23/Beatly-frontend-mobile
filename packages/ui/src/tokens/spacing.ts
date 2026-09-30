@@ -1,7 +1,7 @@
 // INFO: spacing tokens, a multiples-of-four scale, plus the layout
 // constants (gutter, gap, hitSlop, control height, and the carousel card,
-// avatar, creator mark, tab item, chip, genre bar, row cover, detail hero cover and
-// track-number column sizes, and the skeleton bar widths).
+// avatar, creator mark, tab item, chip, genre bar, row cover, detail hero cover,
+// track-number column, large play button and seek bar sizes, and the skeleton bar widths).
 export const spacing = {
   xxs: 2,
   xs: 4,
@@ -33,6 +33,11 @@ export const layout = {
   // Most of the window height, as a share, the detail image hero may take.
   heroImageMaxHeightShare: 0.5,
   trackNumber: 24,
+  // Side of the large play or pause button of the player.
+  playButton: 72,
+  // Height of the seek bar track, and the side of its thumb.
+  seekTrack: 6,
+  seekThumb: 14,
   // Widths of the detail skeleton's placeholder bars, as a share of their row.
   skeletonBar: { title: "70%", meta: "45%", rowTitle: "60%", rowMeta: "35%" },
 } as const;

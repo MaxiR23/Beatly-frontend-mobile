@@ -8,7 +8,6 @@ import {
   Link,
   Text,
   TrackRow,
-  floatingTabBarClearance,
   type CarouselItem,
   type DetailBody,
 } from "@beatly/ui/native";
@@ -22,12 +21,17 @@ import { useAlbum } from "../../queries/useAlbum.ts";
 import { OutcomeError } from "../../queries/outcomeError.ts";
 import { useDominantColor } from "../detail/useDominantColor.ts";
 import { albumMeta } from "./albumMeta.ts";
+import { toQueue } from "../player/queue.ts";
+import { usePlaybackActions } from "../player/usePlayback.ts";
+import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 
 export function AlbumScreen() {
   const t = useT("album");
   const tc = useT("common");
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const tabBarClearance = useTabBarClearance();
+  const playback = usePlaybackActions();
   const { id = "" } = useLocalSearchParams<{ id?: string }>();
   const album = useAlbum(id);
   const wash = useDominantColor(album.data?.thumbnail_url ?? null);
@@ -71,6 +75,26 @@ export function AlbumScreen() {
     };
   } else {
     const data = album.data;
+    const playTrack = (tapped: number) => {
+      const queue = toQueue(data.tracks, tapped, (track) =>
+        track.track_id === null || !track.is_available
+          ? null
+          : {
+              trackId: track.track_id,
+              title: track.title,
+              artists: (track.artists.length > 0 ? track.artists : data.artists).map((a) => a.name),
+              coverUrl: data.thumbnail_url,
+              durationSeconds: track.duration_seconds,
+            },
+      );
+      if (queue !== null) {
+        void playback.playList(queue.tracks, queue.index, {
+          kind: "album",
+          id: data.id,
+          name: data.title,
+        });
+      }
+    };
     body = {
       kind: "ready",
       title: data.title,
@@ -109,13 +133,20 @@ export function AlbumScreen() {
             <EmptyState icon="music" message={t("empty")} />
           ) : (
             <View>
-              {data.tracks.map((track) => (
+              {data.tracks.map((track, index) => (
                 <TrackRow
                   key={track.track_number}
                   number={track.track_number}
                   title={track.title}
                   subtitle={track.artists.length > 0 ? artistNames(track.artists) : undefined}
                   available={track.is_available}
+                  onPress={
+                    track.track_id !== null && track.is_available
+                      ? () => {
+                          playTrack(index);
+                        }
+                      : undefined
+                  }
                 />
               ))}
             </View>
@@ -146,7 +177,7 @@ export function AlbumScreen() {
       backLabel={t("back")}
       onBack={goBack}
       topInset={insets.top}
-      bottomInset={floatingTabBarClearance(insets.bottom)}
+      bottomInset={tabBarClearance}
     />
   );
 }

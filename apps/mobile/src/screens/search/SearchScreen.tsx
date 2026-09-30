@@ -12,12 +12,11 @@ import {
   RecentRow,
   SearchBar,
   Text,
-  floatingTabBarClearance,
 } from "@beatly/ui/native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
 import {
@@ -30,6 +29,9 @@ import { useSearch } from "../../queries/useSearch.ts";
 import { AccountButton } from "../account/AccountButton.tsx";
 import { formatDuration } from "./formatDuration.ts";
 import { useDebouncedValue } from "./useDebouncedValue.ts";
+import { toQueue } from "../player/queue.ts";
+import { usePlaybackActions } from "../player/usePlayback.ts";
+import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 
 export const SEARCH_DEBOUNCE_MS = 300;
 
@@ -37,7 +39,8 @@ export function SearchScreen() {
   const t = useT("search");
   const tc = useT("common");
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const tabBarClearance = useTabBarClearance();
+  const playback = usePlaybackActions();
   const [text, setText] = useState("");
   const trimmed = text.trim();
   const debounced = useDebouncedValue(trimmed, SEARCH_DEBOUNCE_MS);
@@ -49,7 +52,7 @@ export function SearchScreen() {
   const remove = useRemoveRecentSearch();
   const clear = useClearRecentSearches();
 
-  const clearance = { paddingBottom: floatingTabBarClearance(insets.bottom) };
+  const clearance = { paddingBottom: tabBarClearance };
 
   const artistNames = (artists: readonly SearchArtistRef[]) =>
     artists.map((a) => a.name).join(t("song.artistSeparator"));
@@ -164,6 +167,22 @@ export function SearchScreen() {
     );
   } else {
     const { artist, songs, albums } = results.data;
+    const playSong = (tapped: number) => {
+      const queue = toQueue(songs, tapped, (song) => ({
+        trackId: song.track_id,
+        title: song.title,
+        artists: song.artists.map((a) => a.name),
+        coverUrl: song.thumbnail_url,
+        durationSeconds: song.duration_seconds,
+      }));
+      if (queue !== null) {
+        void playback.playList(queue.tracks, queue.index, {
+          kind: "search",
+          id: active,
+          name: active,
+        });
+      }
+    };
     body = (
       <ScrollView
         keyboardShouldPersistTaps="handled"
@@ -188,13 +207,16 @@ export function SearchScreen() {
             <View style={styles.sectionHeader}>
               <Text variant="section">{t("songs")}</Text>
             </View>
-            {songs.map((song) => (
+            {songs.map((song, index) => (
               <MediaRow
                 key={song.track_id}
                 shape="square"
                 urls={[song.thumbnail_url]}
                 title={song.title}
                 subtitle={songMeta(song)}
+                onPress={() => {
+                  playSong(index);
+                }}
               />
             ))}
           </View>

@@ -6,11 +6,13 @@ import {
   createGenresService,
   createHttpClient,
   createLibraryService,
+  createPlaybackController,
   createPlaylistsService,
   createProfileService,
   createPublicService,
   createRecentSearchesService,
   createSearchService,
+  createStreamResolver,
 } from "@beatly/core";
 import type {
   ActivityService,
@@ -20,6 +22,7 @@ import type {
   GenresService,
   LibraryService,
   LogPort,
+  PlaybackController,
   PlaylistsService,
   ProfileService,
   PublicService,
@@ -27,9 +30,13 @@ import type {
   SearchService,
 } from "@beatly/core";
 
+import { Platform } from "react-native";
+
 import { createAuthAdapter } from "./adapters/auth.ts";
+import { createConfigAdapter } from "./adapters/config.ts";
 import { createHttpAdapter } from "./adapters/http.ts";
 import { createLogAdapter } from "./adapters/log.ts";
+import { createPlayerAdapter } from "./adapters/player.ts";
 import { createStorageAdapter } from "./adapters/storage.ts";
 import { readPublicEnv } from "./env.ts";
 
@@ -41,6 +48,7 @@ export interface Core {
   readonly genres: GenresService;
   readonly library: LibraryService;
   readonly log: LogPort;
+  readonly playback: PlaybackController;
   readonly playlists: PlaylistsService;
   readonly profile: ProfileService;
   // Named publicShare because public is a reserved word in strict mode.
@@ -56,8 +64,10 @@ export function createCore(): Core {
     supabaseUrl: env.supabaseUrl,
     supabaseAnonKey: env.supabaseAnonKey,
   });
+  const http = createHttpAdapter();
+  const storage = createStorageAdapter();
   const client = createHttpClient({
-    http: createHttpAdapter(),
+    http,
     auth,
     log,
     baseUrl: env.apiUrl,
@@ -70,10 +80,21 @@ export function createCore(): Core {
     genres: createGenresService(client),
     library: createLibraryService(client),
     log,
+    playback: createPlaybackController({
+      player: createPlayerAdapter({ log }),
+      streams: createStreamResolver({
+        http,
+        config: createConfigAdapter(env),
+        storage,
+        log,
+        platform: Platform.OS === "ios" ? "ios" : "android",
+      }),
+      log,
+    }),
     playlists: createPlaylistsService(client),
     profile: createProfileService(client),
     publicShare: createPublicService(client),
-    recentSearches: createRecentSearchesService({ storage: createStorageAdapter(), log }),
+    recentSearches: createRecentSearchesService({ storage, log }),
     search: createSearchService(client),
   };
 }

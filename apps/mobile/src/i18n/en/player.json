@@ -1,0 +1,19 @@
+{
+  "playingFrom": "Playing from",
+  "searchSource": "Search “{{query}}”",
+  "artistSeparator": ", ",
+  "open": "Open player",
+  "close": "Close player",
+  "play": "Play",
+  "pause": "Pause",
+  "next": "Next",
+  "previous": "Previous",
+  "shuffle": "Shuffle",
+  "repeatOne": "Repeat song",
+  "seek": "Song position",
+  "remaining": "-{{time}}",
+  "empty": "Nothing is playing.",
+  "error": {
+    "unplayable": "This song can't be played right now."
+  }
+}

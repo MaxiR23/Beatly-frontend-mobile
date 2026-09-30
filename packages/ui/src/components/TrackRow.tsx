@@ -1,8 +1,9 @@
-// INFO: a non-pressable track row: a leading number in a fixed column, a
+// INFO: a track row, pressable when given onPress: a leading number in a fixed column, a
 // one-line title and an optional one-line artists line; an unavailable
 // track draws both texts disabled.
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
+import { motion } from "../tokens/motion.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
 import { Text } from "./Text.tsx";
 
@@ -11,12 +12,13 @@ interface TrackRowProps {
   title: string;
   subtitle?: string | undefined;
   available: boolean;
+  onPress?: (() => void) | undefined;
   testID?: string;
 }
 
-export function TrackRow({ number, title, subtitle, available, testID }: TrackRowProps) {
-  return (
-    <View style={styles.row} accessibilityState={{ disabled: !available }} testID={testID}>
+export function TrackRow({ number, title, subtitle, available, onPress, testID }: TrackRowProps) {
+  const content = (
+    <>
       <View style={styles.number}>
         <Text variant="meta" tone={available ? "tertiary" : "disabled"}>
           {String(number)}
@@ -32,7 +34,28 @@ export function TrackRow({ number, title, subtitle, available, testID }: TrackRo
           </Text>
         ) : null}
       </View>
-    </View>
+    </>
+  );
+
+  if (onPress === undefined) {
+    return (
+      <View style={styles.row} accessibilityState={{ disabled: !available }} testID={testID}>
+        {content}
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: !available }}
+      onPress={onPress}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      testID={testID}
+    >
+      {content}
+    </Pressable>
   );
 }
 
@@ -44,6 +67,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     gap: layout.gap,
   },
+  pressed: { opacity: motion.pressOpacity },
   number: { width: layout.trackNumber },
   text: { flex: 1, gap: spacing.xxs },
 });

@@ -128,13 +128,31 @@ describe("ArtistScreen", () => {
     expect(stateFlag(hidden.parent?.parent ?? hidden, "disabled")).toBe(true);
   });
 
-  it("draws no action buttons and no pressable song", async () => {
+  it("draws no action buttons and a pressable song only when it has a track id", async () => {
     await setup();
     await screen.findByTestId("artist-popular");
     const names = screen.getAllByRole("button").map((b) => b.props.accessibilityLabel as unknown);
     expect(new Set(names)).toEqual(
-      new Set([en.artist.back, "First Album", "A Single", "An EP", "Similar Artist"]),
+      new Set([
+        en.artist.back,
+        "Popular Song",
+        "First Album",
+        "A Single",
+        "An EP",
+        "Similar Artist",
+      ]),
     );
+  });
+
+  it("starts the popular songs from the pressed one with the artist source", async () => {
+    const ctx = await setup();
+    await screen.findByTestId("artist-popular");
+    await fireEvent.press(screen.getByRole("button", { name: "Popular Song" }));
+    const state = ctx.playback.getState();
+    expect(state.current?.trackId).toBe("t1");
+    expect(state.queue.map((t) => t.trackId)).toEqual(["t1"]);
+    expect(state.source).toEqual({ kind: "artist", id: "UCar1", name: "Test Artist" });
+    expect(screen.queryByRole("button", { name: "Hidden Song" })).toBeNull();
   });
 
   it("draws the year under an album and the kind with the year under a single", async () => {

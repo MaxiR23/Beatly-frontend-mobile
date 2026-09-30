@@ -19,6 +19,10 @@ accessible label. Each tab has its own screen (`home.md`, `explore.md`,
   `color.overlay.muted` with `color.text.primary`, inactive in
   `color.text.secondary`, `spacing.sm` above the bottom safe area.
 
+The mini player sits above the bar when a track is loaded: on iOS 26+ as
+`NativeTabs.BottomAccessory`, bare inside the system's capsule, elsewhere as the `accessory` of `FloatingTabBar`, drawn `spacing.md` above the
+pill at `floatingTabBarWidth`. Screens clear both with `useTabBarClearance`. See `player.md`.
+
 ## Platform differences
 
 iOS 26+ draws the native tab bar; Android and older iOS draw `FloatingTabBar`.

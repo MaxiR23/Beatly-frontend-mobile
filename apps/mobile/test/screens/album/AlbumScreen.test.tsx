@@ -206,6 +206,34 @@ describe("AlbumScreen", () => {
     expect(ctx.getAlbum.mock.calls.length).toBeGreaterThan(before);
   });
 
+  it("starts the album from the pressed track without the unavailable one", async () => {
+    const third = {
+      track_id: "t3",
+      title: "Third Song",
+      artists: [],
+      duration_seconds: 100,
+      is_available: true,
+      track_number: 3,
+    };
+    const ctx = await setup({
+      getAlbum: albumOf({ ...albumFixture, tracks: [...albumFixture.tracks, third] }),
+    });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: "Third Song" }));
+    const state = ctx.playback.getState();
+    expect(state.queue.map((t) => t.trackId)).toEqual(["t1", "t3"]);
+    expect(state.index).toBe(1);
+    expect(state.source).toEqual({ kind: "album", id: "MPREb_1", name: "Test Album" });
+    expect(state.current?.coverUrl).toBe("test://img/al1");
+  });
+
+  it("does not make the unavailable track a button", async () => {
+    await setup();
+    await screen.findByText("First Song");
+    expect(screen.getByRole("button", { name: "First Song" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Hidden Song" })).toBeNull();
+  });
+
   it("draws the generic error for a transport failure", async () => {
     await setup({
       getAlbum: () => Promise.resolve({ kind: "transport_failure", cause: "network" }),

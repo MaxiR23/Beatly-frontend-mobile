@@ -6,7 +6,7 @@
 // - Cover
 //
 // What is covered:
-// - the 2 x 2 mosaic with four urls, the first url with one to three, the placeholder with none, the accent tile with an icon, the round shape, the size of the box and the mosaic cells
+// - the 2 x 2 mosaic with four urls, the first url with one to three, the placeholder with none, the accent tile with an icon, the round shape, the small and medium corners of a square, the size of the box and the mosaic cells
 //
 // Run with: pnpm --filter @beatly/ui test -- Cover
 //
@@ -18,7 +18,9 @@ import { render, screen } from "@testing-library/react-native";
 import { Cover } from "../../src/components/Cover.tsx";
 import { color } from "../../src/tokens/color.ts";
 import { radius } from "../../src/tokens/radius.ts";
+import { shadow } from "../../src/tokens/shadow.ts";
 import { layout } from "../../src/tokens/spacing.ts";
+import { StyleSheet } from "react-native";
 
 const urls = ["test://img/1", "test://img/2", "test://img/3", "test://img/4"];
 
@@ -45,6 +47,24 @@ function nodesWithProp(tree: unknown, key: string): JsonNode[] {
 }
 
 describe("Cover", () => {
+  it("puts the shadow on an unclipped outer view, not on the clipping one", async () => {
+    await render(<Cover urls={[]} shape="square" corner="md" elevated />);
+    const outer: unknown = StyleSheet.flatten(screen.getByTestId("cover-shadow").props.style);
+    const inner: unknown = StyleSheet.flatten(
+      screen.getByTestId("cover-placeholder").parent?.props.style,
+    );
+    expect(outer).toEqual(expect.objectContaining(shadow.cover));
+    expect(outer).not.toHaveProperty("overflow");
+    expect(inner).toEqual(expect.objectContaining({ overflow: "hidden", borderRadius: radius.md }));
+    expect(inner).not.toHaveProperty("shadowOpacity");
+    expect(inner).not.toHaveProperty("elevation");
+  });
+
+  it("draws no shadow view when not elevated", async () => {
+    await render(<Cover urls={[]} shape="square" />);
+    expect(screen.queryByTestId("cover-shadow")).toBeNull();
+  });
+
   it("draws a 2 x 2 mosaic of four images with four urls", async () => {
     await render(<Cover urls={urls} shape="square" />);
     expect(screen.getByTestId("cover-mosaic")).toBeTruthy();
@@ -79,6 +99,18 @@ describe("Cover", () => {
     const box = screen.getByTestId("cover-placeholder").parent;
     expect(box?.props.style).toEqual(
       expect.arrayContaining([expect.objectContaining({ borderRadius: radius.full })]),
+    );
+  });
+
+  it("uses the small corner on a square by default and the medium one when asked", async () => {
+    const view = await render(<Cover urls={[]} shape="square" />);
+    const corner = (): unknown => screen.getByTestId("cover-placeholder").parent?.props.style;
+    expect(corner()).toEqual(
+      expect.arrayContaining([expect.objectContaining({ borderRadius: radius.sm })]),
+    );
+    await view.rerender(<Cover urls={[]} shape="square" corner="md" />);
+    expect(corner()).toEqual(
+      expect.arrayContaining([expect.objectContaining({ borderRadius: radius.md })]),
     );
   });
 

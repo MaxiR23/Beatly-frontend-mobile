@@ -8,6 +8,7 @@
 //
 // What is covered:
 // - the solid fallback when glass is unavailable, the glass view when it is, the availability test
+// - the tint on the fallback and on the glass view
 //
 // Run with: pnpm --filter @beatly/ui test -- GlassSurface
 //
@@ -77,6 +78,25 @@ describe("GlassSurface", () => {
       width: layout.controlHeight,
       height: layout.controlHeight,
     });
+  });
+
+  it("draws the tint as the fallback background and keeps the raised surface without one", async () => {
+    await render(
+      <GlassSurface variant="bar" tint="#123456" testID="tinted">
+        <Text>inside</Text>
+      </GlassSurface>,
+    );
+    expect(screen.getByTestId("tinted")).toHaveStyle({ backgroundColor: "#123456" });
+  });
+
+  it("passes the tint to the glass view as its tint color", async () => {
+    mockGlass.available = true;
+    await render(
+      <GlassSurface variant="bar" tint="#123456" testID="tinted">
+        <Text>inside</Text>
+      </GlassSurface>,
+    );
+    expect(screen.getByTestId("tinted").props.tintColor).toBe("#123456");
   });
 
   it("reports glass only on iOS when the library says it is available", () => {

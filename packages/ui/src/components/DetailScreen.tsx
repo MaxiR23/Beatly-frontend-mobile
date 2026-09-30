@@ -10,7 +10,6 @@ import type { ReactNode } from "react";
 import { FlatList, Image, StyleSheet, useWindowDimensions, View } from "react-native";
 
 import { color } from "../tokens/color.ts";
-import { shadow } from "../tokens/shadow.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
 import { Cover } from "./Cover.tsx";
 import { DetailSkeleton } from "./DetailSkeleton.tsx";
@@ -135,14 +134,13 @@ export function DetailScreen({
                         />
                       </View>
                     )}
-                    <View style={styles.cover}>
-                      <Cover
-                        urls={body.cover.urls}
-                        icon={body.cover.icon}
-                        shape="square"
-                        size={layout.heroCover}
-                      />
-                    </View>
+                    <Cover
+                      urls={body.cover.urls}
+                      icon={body.cover.icon}
+                      shape="square"
+                      size={layout.heroCover}
+                      elevated
+                    />
                   </View>
                   <View style={styles.title}>
                     <Text variant="title">{body.title}</Text>
@@ -176,7 +174,6 @@ const styles = StyleSheet.create({
   hero: { alignItems: "center", paddingBottom: spacing.xl },
   washNeutral: StyleSheet.absoluteFill,
   wash: StyleSheet.absoluteFill,
-  cover: { ...shadow.cover },
   imageHero: {
     alignSelf: "stretch",
     aspectRatio: layout.heroImageRatio,

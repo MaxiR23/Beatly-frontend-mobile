@@ -6,8 +6,7 @@ An artist's popular songs, albums, singles and EPs, and similar artists, on the 
 
 Show an artist: a full-width image with the name over it, its popular songs, its albums, its
 singles and EPs, and similar artists. Albums and singles push the album; a similar artist pushes
-another artist in the same tab. Playback and track actions are later issues, so the songs are not
-pressable, and there are no action buttons.
+another artist in the same tab. Pressing a popular song with a `track_id` plays the popular songs from it (`player.md`); a song without one is not pressable. There are no action buttons.
 
 ## Layout
 
@@ -23,7 +22,7 @@ Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), excep
   square covers with `radius.sm`, round for similar artists. The album subtitle is the year; the
   single subtitle is the kind and the year, each omitted when the API sends none.
 - Sections are `spacing.xl` apart, and each empty one is hidden. The bottom clears the floating tab
-  bar with `floatingTabBarClearance`.
+  bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
 ## Platform differences
 
