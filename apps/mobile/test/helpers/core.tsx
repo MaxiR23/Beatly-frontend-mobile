@@ -7,12 +7,14 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, created playlist, genres, search and album fixtures and fakes, the in-memory storage, and the page builder)
+// (the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, and the page builder)
 //
 import type {
   ActivityService,
   Album,
   AlbumService,
+  Artist,
+  ArtistsService,
   AuthPort,
   Genre,
   GenrePlaylistListItem,
@@ -209,6 +211,47 @@ export const searchResultFixture: SearchResult = {
   ],
 };
 
+export const artistFixture: Artist = {
+  id: "UCar1",
+  name: "Test Artist",
+  thumbnail_url: "test://img/ar1",
+  songs: [
+    {
+      track_id: "t1",
+      title: "Popular Song",
+      artists: [{ id: "UCar1", name: "Test Artist" }],
+      album: "Test Album",
+      album_id: "MPREb_1",
+      duration_seconds: 248,
+      thumbnail_url: "test://img/t1",
+    },
+    {
+      track_id: null,
+      title: "Hidden Song",
+      artists: [],
+      album: null,
+      album_id: null,
+      duration_seconds: null,
+      thumbnail_url: null,
+    },
+  ],
+  albums: [
+    {
+      id: "MPREb_1",
+      title: "First Album",
+      artists: [{ id: "UCar1", name: "Test Artist" }],
+      year: "2013",
+      audio_playlist_id: null,
+      thumbnail_url: null,
+    },
+  ],
+  singles: [
+    { id: "MPREb_4", title: "A Single", year: "2024", type: "Single", thumbnail_url: null },
+    { id: "MPREb_5", title: "An EP", year: "2023", type: "EP", thumbnail_url: null },
+  ],
+  related: [{ id: "UCar2", name: "Similar Artist", thumbnail_url: null }],
+};
+
 export const albumFixture: Album = {
   id: "MPREb_1",
   title: "Test Album",
@@ -342,6 +385,7 @@ export function makeCore(
     listGenreCategories?: GenresService["listGenreCategories"];
     search?: SearchService["search"];
     getAlbum?: AlbumService["getAlbum"];
+    getArtist?: ArtistsService["getArtist"];
     getPlaylist?: PlaylistsService["getPlaylist"];
     listPlaylistTracks?: PlaylistsService["listPlaylistTracks"];
     getLikedPlaylist?: PlaylistsService["getLikedPlaylist"];
@@ -384,6 +428,10 @@ export function makeCore(
     options.getAlbum ??
       (() => Promise.resolve({ kind: "success", data: albumFixture, maxAgeSeconds: 0 })),
   );
+  const getArtist = jest.fn<ArtistsService["getArtist"]>(
+    options.getArtist ??
+      (() => Promise.resolve({ kind: "success", data: artistFixture, maxAgeSeconds: 0 })),
+  );
   const getPlaylist = jest.fn<PlaylistsService["getPlaylist"]>(
     options.getPlaylist ??
       (() => Promise.resolve({ kind: "success", data: playlistDetailFixture, maxAgeSeconds: 0 })),
@@ -412,6 +460,7 @@ export function makeCore(
   const core: Core = {
     activity: { listRecents },
     album: { getAlbum },
+    artists: { getArtist },
     auth,
     genres: { listGenres, listGenrePlaylists, listGenreCategories },
     library: { listLibrary },
@@ -443,6 +492,7 @@ export function makeCore(
     listGenreCategories,
     search,
     getAlbum,
+    getArtist,
     getPlaylist,
     listPlaylistTracks,
     getLikedPlaylist,

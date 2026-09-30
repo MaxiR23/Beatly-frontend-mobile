@@ -32,6 +32,7 @@ value: the value lives once, in the token file.
 | Scrim over an image (behind a control or text)                                                                                   | `color.overlay.onImage`                                                                      |
 | Subtle translucent fill (ghost button, translucent chip)                                                                         | `color.overlay.subtle`                                                                       |
 | Muted translucent fill (seek track, icon-button background)                                                                      | `color.overlay.muted`                                                                        |
+| Clear start of a fade into the base surface (the detail hero image)                                                              | `color.overlay.clear`                                                                        |
 
 ## Spacing and layout (`spacing`, `layout`)
 
@@ -52,6 +53,8 @@ value: the value lives once, in the token file.
 | Side of the cover in the medium list row (library)                                                            | `layout.rowCoverMedium`                                         |
 | Side of the cover in the large list row (search top artist)                                                   | `layout.rowCoverLarge`                                          |
 | Side of the cover in a detail hero                                                                            | `layout.heroCover`                                              |
+| Width / height ratio of the full-width detail hero image                                                      | `layout.heroImageRatio`                                         |
+| Share of the window height the detail hero image may take at most                                             | `layout.heroImageMaxHeightShare`                                |
 | Width of the track-number column in a track row                                                               | `layout.trackNumber`                                            |
 | Width of a detail skeleton placeholder bar (title, meta, row title, row meta), as a share of its row          | `layout.skeletonBar.title` / `.meta` / `.rowTitle` / `.rowMeta` |
 
@@ -66,14 +69,19 @@ buttons).
 
 ## Detail screen base
 
-`DetailScreen` from `@beatly/ui/native`. Used by the album and playlist screens; the
-artist screen will reuse it. It draws statically: nothing moves with the
+`DetailScreen` from `@beatly/ui/native`. Used by the album, playlist and artist screens. It draws statically: nothing moves with the
 scroll.
 
 - Hero: a `layout.heroCover` cover in `radius.sm` with `shadow.cover`, centered
   over a wash. The cover follows `Cover`'s rules: a mosaic with four urls, an image, the
   accent tile with a glyph, or the placeholder. The wash is `color.surface.base` until a dominant color is known,
   then a vertical gradient from that color to `color.surface.base`, drawn at once.
+- Image hero (artist): the image stretched to the full width at `layout.heroImageRatio`, at most
+  `layout.heroImageMaxHeightShare` of the window height, cropped to fill (`cover`) and centered,
+  on `color.surface.card`, a vertical fade from `color.overlay.clear` to
+  `color.surface.base` over its bottom half, and the title over it at the bottom left in
+  `typography.display`, `layout.gutter` from the side and `spacing.lg` from the bottom.
+  No wash. `color.overlay.clear` is `color.surface.base` at zero alpha, so the two must change together.
 - Body: a `FlatList`; the hero, the title and the children are its header, and optional
   rows follow, paged with `onEndReached`.
 - Creator line (playlist): a `layout.creatorMark` mark (avatar or brand mark on
@@ -84,10 +92,13 @@ scroll.
 - Floating back and more buttons: `GlassSurface` `circle` fixed over the hero, in
   every state. The more button is drawn only when the screen passes a `more` prop.
 - Skeleton: `DetailSkeleton`, a static cover block, a title bar, a meta bar and six
-  track rows in `color.surface.border`, bar widths from `layout.skeletonBar`.
+  track rows in `color.surface.border`, bar widths from `layout.skeletonBar`. With
+  `hero: "image"` (artist) the cover is a full-width `layout.heroImageRatio` block, capped like the loaded hero, with the
+  title bar at its bottom left, then the meta bar and the rows.
 - Track row: `TrackRow`, a `meta` number in a `layout.trackNumber` column, the
   title in `typography.rowTitle` and the artists in `typography.meta`;
-  unavailable uses `color.text.disabled`.
+  unavailable uses `color.text.disabled`. `MediaRow` with `available={false}` draws its title
+  and meta in `color.text.disabled` the same way.
 
 ## Radius (`radius`)
 

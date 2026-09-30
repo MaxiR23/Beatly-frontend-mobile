@@ -6,7 +6,8 @@
 // - GradientFill
 //
 // What is covered:
-// - the stop colors and offsets for two and three colors, the gradient direction
+// - the stop colors and offsets for two and three colors, the gradient direction,
+//   the stop alpha taken from the color (a transparent stop stays transparent)
 //
 // Run with: pnpm --filter @beatly/ui test -- GradientFill
 //
@@ -17,6 +18,7 @@ import { render, screen } from "@testing-library/react-native";
 import { processColor } from "react-native";
 
 import { GradientFill } from "../../src/components/GradientFill.tsx";
+import { color } from "../../src/tokens/color.ts";
 
 interface JsonNode {
   props: Record<string, unknown>;
@@ -63,5 +65,20 @@ describe("GradientFill", () => {
       argb("#778899"),
     ]);
     expect(gradient?.props).toMatchObject({ x1: "0", y1: "0", x2: "0", y2: "1" });
+  });
+
+  it("keeps the alpha of a transparent stop and leaves opaque stops opaque", async () => {
+    await render(
+      <GradientFill
+        colors={[color.overlay.clear, color.overlay.clear, color.surface.base]}
+        direction="vertical"
+      />,
+    );
+    const [gradient] = nodesWithProp(screen.toJSON(), "gradient");
+    const flat = gradient?.props.gradient;
+    if (!Array.isArray(flat)) throw new Error("gradient is not an array");
+    const alphaAt = (i: number) => (Number(flat[i]) >>> 24) & 0xff;
+    expect([flat[0], flat[2], flat[4]]).toEqual([0, 0.5, 1]);
+    expect([alphaAt(1), alphaAt(3), alphaAt(5)]).toEqual([0, 0, 255]);
   });
 });

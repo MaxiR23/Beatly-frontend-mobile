@@ -9,7 +9,7 @@
 // - the skeleton, the title, artists and meta line with plural forms, null year and count omitted
 // - one spacing token between the title block and the tracks
 // - the tracks with an unavailable one disabled, the empty tracks message, hidden empty carousels
-// - opening another album from a carousel, not available for invalid_request without retry
+// - opening another album from a carousel, opening an artist from the artist names, an artist without an id as plain text, not available for invalid_request without retry
 // - the generic error with retry for upstream_error and a transport failure, back and its fallback, es
 //
 // Run with: pnpm --filter @beatly/mobile test -- AlbumScreen
@@ -170,6 +170,20 @@ describe("AlbumScreen", () => {
     await setup();
     await fireEvent.press(await screen.findByRole("button", { name: "Other Version" }));
     expect(mockPush).toHaveBeenCalledWith({ pathname: "/album/[id]", params: { id: "MPREb_2" } });
+  });
+
+  it("opens an artist from the album's artist names", async () => {
+    await setup();
+    await fireEvent.press(await screen.findByRole("link", { name: "Test Artist" }));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: "/artist/[id]", params: { id: "ar1" } });
+  });
+
+  it("draws an artist without an id as plain text", async () => {
+    await setup({
+      getAlbum: albumOf({ ...albumFixture, artists: [{ id: null, name: "Various" }] }),
+    });
+    expect((await screen.findAllByText("Various")).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("link", { name: "Various" })).toBeNull();
   });
 
   it("draws not available for invalid_request, without retry", async () => {

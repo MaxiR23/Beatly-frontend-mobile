@@ -29,9 +29,12 @@ was dark only; no screen had a light branch.
 - Decorative palettes that are product content (genre gradients, the
   avatar gradients) are tokens too, migrated from the legacy as they
   are, with their names.
-- One theme, dark. No `ThemeProvider` switch, no light branch, no
+- One theme, dark. No theme switching: no light branch, no
   `useColorScheme`. Tokens are a plain object, importable anywhere in
-  `ui` and `apps/mobile` without a context.
+  `ui` and `apps/mobile` without a context. The one exception is a
+  single fixed root navigation `ThemeProvider` built from tokens: without
+  it expo-router falls back to its light default and paints a white edge
+  during native transitions. It never switches.
 - Text is a `ui` component with a role prop and a capped accessibility
   scale; raw `Text` from React Native is not used outside `ui`.
 

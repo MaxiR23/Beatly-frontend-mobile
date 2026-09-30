@@ -10,18 +10,23 @@
 // - opening an album from home recents, a search result, a saved album and the explore stack, back returning to the same tab
 // - opening a playlist recent from home, an own playlist from home, liked and a saved genre playlist from library, and a genre playlist from the genre grid, back returning to the origin
 // - opening another album from an album's carousel and going back to the first album
+// - opening an artist from the search top artist, a home artist recent and an album's artist name, and a similar artist from an artist, back returning to the origin
+//
+// Setup:
+// - a beforeAll pays the cold start of the whole route tree once, outside the per-test budget
 //
 // Run with: pnpm --filter @beatly/mobile test -- "(home,explore,search,library)/_layout"
 //
 // SEE: apps/mobile/app/(tabs)/(home,explore,search,library)/_layout.tsx
 
-import { describe, expect, it, jest } from "@jest/globals";
+import { beforeAll, describe, expect, it, jest } from "@jest/globals";
 import { router } from "expo-router";
-import { act, fireEvent, renderRouter, screen } from "expo-router/testing-library";
+import { act, cleanup, fireEvent, renderRouter, screen } from "expo-router/testing-library";
 
 import { resources } from "../../../../src/i18n/resources.ts";
 import {
   albumFixture,
+  artistFixture,
   genreFixture,
   genrePlaylistFixture,
   likedEntryFixture,
@@ -52,6 +57,17 @@ function backButton() {
 }
 
 describe("the shared tab stack", () => {
+  // Cold start of the whole route tree (transform and require of every route, screen and ui
+  // module): measured 12 s cold locally and over the 15 s test budget on CI on 2026-09-30. Paid
+  // here so every test keeps the 15 s budget that exposes a real hang; otherwise the first test
+  // times out and the second fails as fallout of the first one's pending presses.
+  beforeAll(async () => {
+    mockCore.set("signed_in");
+    await renderRouter("app", { initialUrl: "/" });
+    await screen.findByTestId("home");
+    await cleanup();
+  }, 60_000);
+
   it("opens a genre from explore and goes back", async () => {
     mockCore.set("signed_in", { listGenres: () => Promise.resolve(pageOf([genreFixture])) });
     await renderRouter("app", { initialUrl: "/" });
@@ -224,5 +240,85 @@ describe("the shared tab stack", () => {
     await fireEvent.press(playlistBack());
     expect(await screen.findByTestId("genre")).toBeTruthy();
     expect(isSelected(screen.getByRole("tab", { name: en.tabs.explore }))).toBe(true);
+  });
+
+  function artistBack() {
+    return screen.getByRole("button", { name: en.artist.back });
+  }
+
+  it("opens an artist from the search top artist and back returns to search with search selected", async () => {
+    mockCore.set("signed_in");
+    await renderRouter("app", { initialUrl: "/" });
+    await screen.findByTestId("home");
+    await fireEvent.press(screen.getByRole("tab", { name: en.tabs.search }));
+    await screen.findByTestId("search");
+    await fireEvent.changeText(screen.getByPlaceholderText(en.search.placeholder), "test");
+    await fireEvent.press(await screen.findByRole("button", { name: "Test Artist" }));
+    expect(await screen.findByTestId("artist")).toBeTruthy();
+    await fireEvent.press(artistBack());
+    expect(await screen.findByTestId("search")).toBeTruthy();
+    expect(isSelected(screen.getByRole("tab", { name: en.tabs.search }))).toBe(true);
+  });
+
+  it("opens an artist recent from home and back returns to home with home selected", async () => {
+    mockCore.set("signed_in", {
+      listRecents: () =>
+        Promise.resolve(
+          pageOf([
+            {
+              ...recentFixture,
+              entity_type: "artist",
+              entity_id: "UCar1",
+              metadata: { title: "A recent artist", subtitle: null, thumbnail_url: null },
+            },
+          ]),
+        ),
+    });
+    await renderRouter("app", { initialUrl: "/" });
+    await fireEvent.press(await screen.findByRole("button", { name: "A recent artist" }));
+    expect(await screen.findByTestId("artist")).toBeTruthy();
+    await fireEvent.press(artistBack());
+    expect(await screen.findByTestId("home")).toBeTruthy();
+    expect(isSelected(screen.getByRole("tab", { name: en.tabs.home }))).toBe(true);
+  });
+
+  it("opens an artist from an album's artist name and back returns to the album", async () => {
+    mockCore.set("signed_in");
+    await renderRouter("app", { initialUrl: "/" });
+    await screen.findByTestId("home");
+    await act(async () => {
+      router.push({ pathname: "/album/[id]", params: { id: "MPREb_1" } });
+      await Promise.resolve();
+    });
+    await fireEvent.press(await screen.findByRole("link", { name: "Test Artist" }));
+    expect(await screen.findByTestId("artist")).toBeTruthy();
+    await fireEvent.press(artistBack());
+    expect(await screen.findByTestId("album")).toBeTruthy();
+    expect((await screen.findAllByText("Test Album")).length).toBeGreaterThan(0);
+  });
+
+  it("opens a similar artist from an artist and back returns to the first artist", async () => {
+    mockCore.set("signed_in", {
+      getArtist: (id) =>
+        Promise.resolve({
+          kind: "success",
+          maxAgeSeconds: 0,
+          data:
+            id === "UCar2"
+              ? { ...artistFixture, id, name: "Second Artist", related: [] }
+              : artistFixture,
+        }),
+    });
+    await renderRouter("app", { initialUrl: "/" });
+    await screen.findByTestId("home");
+    await act(async () => {
+      router.push({ pathname: "/artist/[id]", params: { id: "UCar1" } });
+      await Promise.resolve();
+    });
+    await fireEvent.press(await screen.findByRole("button", { name: "Similar Artist" }));
+    expect((await screen.findAllByText("Second Artist")).length).toBeGreaterThan(0);
+    await fireEvent.press(artistBack());
+    expect((await screen.findAllByText("Test Artist")).length).toBeGreaterThan(0);
+    expect(screen.queryByText("Second Artist")).toBeNull();
   });
 });

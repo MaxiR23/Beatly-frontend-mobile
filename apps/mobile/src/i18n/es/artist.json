@@ -1,0 +1,13 @@
+{
+  "back": "Volver",
+  "popular": "Canciones populares",
+  "albums": "Álbumes",
+  "singles": "Sencillos y EP",
+  "similar": "Artistas similares",
+  "kind": {
+    "single": "Sencillo",
+    "ep": "EP"
+  },
+  "metaSeparator": " · ",
+  "notAvailable": "Este artista no está disponible."
+}

@@ -77,7 +77,7 @@ query over a corrupted value starts a fresh list, so the feature always recovers
 ## Navigation
 
 Route `/search`, the third tab. An album card pushes `/album/[id]` with the
-result's `id`, inside the Search tab's stack. Nothing else in the screen navigates.
+result's `id`, inside the Search tab's stack; the top artist pushes `/artist/[id]` with its `id`. Nothing else in the screen navigates.
 
 ## i18n namespace
 

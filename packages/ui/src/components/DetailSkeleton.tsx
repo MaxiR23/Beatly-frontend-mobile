@@ -1,7 +1,8 @@
 // INFO: the static loading skeleton of a detail screen: a cover block, a
-// title bar, a meta bar and six track rows, in the skeleton base color. It
-// draws no motion.
-import { StyleSheet, View } from "react-native";
+// title bar, a meta bar and six track rows, in the skeleton base color. The
+// image variant swaps the centered cover for a full-width hero block with the
+// title bar at its bottom left. It draws no motion.
+import { StyleSheet, useWindowDimensions, View } from "react-native";
 
 import { color } from "../tokens/color.ts";
 import { radius } from "../tokens/radius.ts";
@@ -13,9 +14,34 @@ const ROWS = [0, 1, 2, 3, 4, 5] as const;
 interface DetailSkeletonProps {
   label: string;
   topInset: number;
+  hero?: "cover" | "image" | undefined;
 }
 
-export function DetailSkeleton({ label, topInset }: DetailSkeletonProps) {
+export function DetailSkeleton({ label, topInset, hero }: DetailSkeletonProps) {
+  const { height: windowHeight } = useWindowDimensions();
+  if (hero === "image") {
+    return (
+      <View
+        style={styles.imageRoot}
+        accessibilityRole="progressbar"
+        accessibilityLabel={label}
+        testID="detail-skeleton"
+      >
+        <View
+          style={[styles.imageHero, { maxHeight: windowHeight * layout.heroImageMaxHeightShare }]}
+          testID="detail-skeleton-image"
+        >
+          <View style={styles.titleBar} />
+        </View>
+        <View style={styles.imageBody}>
+          <View style={styles.metaBar} />
+          {ROWS.map((row) => (
+            <SkeletonRow key={row} />
+          ))}
+        </View>
+      </View>
+    );
+  }
   return (
     <View
       style={[styles.root, { paddingTop: topInset + layout.controlHeight + spacing.sm }]}
@@ -27,19 +53,35 @@ export function DetailSkeleton({ label, topInset }: DetailSkeletonProps) {
       <View style={styles.titleBar} />
       <View style={styles.metaBar} />
       {ROWS.map((row) => (
-        <View key={row} style={styles.row}>
-          <View style={styles.number} />
-          <View style={styles.rowText}>
-            <View style={styles.rowTitle} />
-            <View style={styles.rowMeta} />
-          </View>
-        </View>
+        <SkeletonRow key={row} />
       ))}
     </View>
   );
 }
 
+function SkeletonRow() {
+  return (
+    <View style={styles.row}>
+      <View style={styles.number} />
+      <View style={styles.rowText}>
+        <View style={styles.rowTitle} />
+        <View style={styles.rowMeta} />
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  imageRoot: { flex: 1 },
+  imageHero: {
+    alignSelf: "stretch",
+    aspectRatio: layout.heroImageRatio,
+    justifyContent: "flex-end",
+    paddingHorizontal: layout.gutter,
+    paddingBottom: spacing.lg,
+    backgroundColor: color.surface.card,
+  },
+  imageBody: { gap: spacing.md, paddingHorizontal: layout.gutter, paddingTop: spacing.lg },
   root: { flex: 1, gap: spacing.md, paddingHorizontal: layout.gutter },
   cover: {
     alignSelf: "center",

@@ -87,6 +87,15 @@ export { albumRefSchema, albumSchema, albumTrackSchema } from "./domain/album.ts
 export type { Album, AlbumRef, AlbumTrack } from "./domain/album.ts";
 export { createAlbumService } from "./services/album.ts";
 export type { AlbumService } from "./services/album.ts";
+export {
+  artistSchema,
+  artistSingleSchema,
+  artistSongSchema,
+  relatedArtistSchema,
+} from "./domain/artist.ts";
+export type { Artist, ArtistSingle, ArtistSong, RelatedArtist } from "./domain/artist.ts";
+export { createArtistsService } from "./services/artists.ts";
+export type { ArtistsService } from "./services/artists.ts";
 export { createSearchService } from "./services/search.ts";
 export type { SearchService } from "./services/search.ts";
 export {

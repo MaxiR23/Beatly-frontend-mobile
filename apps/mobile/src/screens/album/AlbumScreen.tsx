@@ -5,6 +5,7 @@ import {
   Carousel,
   DetailScreen,
   EmptyState,
+  Link,
   Text,
   TrackRow,
   floatingTabBarClearance,
@@ -12,6 +13,7 @@ import {
   type DetailBody,
 } from "@beatly/ui/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { Fragment } from "react";
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -79,7 +81,24 @@ export function AlbumScreen() {
           <View style={styles.info} testID="album-info">
             {data.artists.length > 0 ? (
               <Text variant="rowTitle" tone="secondary">
-                {artistNames(data.artists)}
+                {data.artists.map((artist, index) => {
+                  const artistId = artist.id;
+                  return (
+                    <Fragment key={`${String(index)}:${artist.name}`}>
+                      {index > 0 ? t("artistSeparator") : null}
+                      {artistId !== null ? (
+                        <Link
+                          label={artist.name}
+                          onPress={() => {
+                            router.push({ pathname: "/artist/[id]", params: { id: artistId } });
+                          }}
+                        />
+                      ) : (
+                        artist.name
+                      )}
+                    </Fragment>
+                  );
+                })}
               </Text>
             ) : null}
             <Text variant="meta" tone="tertiary">

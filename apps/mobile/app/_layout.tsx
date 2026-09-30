@@ -1,10 +1,11 @@
 // INFO: root layout of the app; wires the core and the providers, holds the splash until the session is known, and gates the routes by session status.
 import { color } from "@beatly/ui";
-import { Stack } from "expo-router";
+import { Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 
+import { navigationTheme } from "../src/navigationTheme.ts";
 import { createCore } from "../src/createCore.ts";
 import { CoreProvider } from "../src/providers/CoreProvider.tsx";
 import { QueryProvider } from "../src/providers/QueryProvider.tsx";
@@ -44,8 +45,10 @@ export default function RootLayout() {
     <CoreProvider core={core}>
       <QueryProvider>
         <SessionProvider>
-          <StatusBar style="light" />
-          <RootNavigator />
+          <ThemeProvider value={navigationTheme}>
+            <StatusBar style="light" />
+            <RootNavigator />
+          </ThemeProvider>
         </SessionProvider>
       </QueryProvider>
     </CoreProvider>
