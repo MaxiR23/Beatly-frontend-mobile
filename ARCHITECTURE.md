@@ -68,7 +68,7 @@ in-memory fake in `packages/core/test/fakes/`.
 | `auth`    | the access token, sign in / up / out, confirmEmail, getStatus, events                         | `adapters/auth.ts`    | `@supabase/supabase-js` + `expo-secure-store` | a fixed token                            |
 | `player`  | load a URL, play, pause, seek, unload, playback events (queue-next arrives with preloading)   | `adapters/player.ts`  | `expo-audio`                                  | in-memory player with a manual clock     |
 | `config`  | the public build-time values core needs: the stream endpoint, client name and version         | `adapters/config.ts`  | the build-time env, read in `src/env.ts`      | an object literal                        |
-| `log`     | `debug`, `info`, `warn`, `error` with structured fields                                       | `adapters/log.ts`     | `console`, the only file allowed to           | an array                                 |
+| `log`     | `debug`, `info`, `warn`, `error` with structured fields; `debug` writes only in dev builds    | `adapters/log.ts`     | `console`, the only file allowed to           | an array                                 |
 | `storage` | get / set / delete small key-value data (recent searches, the stream identifier, preferences) | `adapters/storage.ts` | async storage                                 | a `Map`                                  |
 
 The six public build-time values are read in `apps/mobile/src/env.ts`.
