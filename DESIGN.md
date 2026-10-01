@@ -47,10 +47,10 @@ value: the value lives once, in the token file.
 | Side of the header account avatar                                                                                                                  | `layout.avatar`                                                 |
 | Side of the leading mark (avatar or brand mark) in a detail creator line                                                                           | `layout.creatorMark`                                            |
 | Width of a floating tab bar item                                                                                                                   | `layout.tabItemWidth`                                           |
-| Height of a filter chip                                                                                                                            | `layout.chipHeight`                                             |
+| Height of a filter chip and of a segmented control option                                                                                          | `layout.chipHeight`                                             |
 | Width / height of the genre accent bar in a genre row                                                                                              | `layout.genreBarWidth` / `layout.genreBarHeight`                |
 | Side of the cover in a list row and in the mini player                                                                                             | `layout.rowCover`                                               |
-| Side of the cover in the medium list row (library)                                                                                                 | `layout.rowCoverMedium`                                         |
+| Side of the cover in the medium list row (library) and the song row of the player sheet                                                            | `layout.rowCoverMedium`                                         |
 | Side of the cover in the large list row (search top artist)                                                                                        | `layout.rowCoverLarge`                                          |
 | Side of the cover in a detail hero                                                                                                                 | `layout.heroCover`                                              |
 | Width / height ratio of the full-width detail hero image                                                                                           | `layout.heroImageRatio`                                         |
@@ -58,6 +58,7 @@ value: the value lives once, in the token file.
 | Width of the track-number column in a track row                                                                                                    | `layout.trackNumber`                                            |
 | Side of the large play or pause button of the player                                                                                               | `layout.playButton`                                             |
 | Height of the seek bar track / side of its thumb                                                                                                   | `layout.seekTrack` / `layout.seekThumb`                         |
+| Width / height of the sheet handle bar                                                                                                             | `layout.handleWidth` / `layout.handleHeight`                    |
 | Width of a detail skeleton placeholder bar (title, meta, row title, row meta), as a share of its row                                               | `layout.skeletonBar.title` / `.meta` / `.rowTitle` / `.rowMeta` |
 
 ## Floating surfaces
@@ -122,6 +123,17 @@ scroll.
   shuffle and repeat at `icon.size.md` (`color.text.secondary`, `color.text.primary` on), previous and next filled at
   `icon.size.xl`, and play or pause in a `layout.playButton` circle in `color.accent.primary` with a `color.text.inverse`
   glyph. The column scrolls when it does not fit. Dragged down it follows the finger and closes past `motion.dragToClose.distanceShare` of the window height or above `motion.dragToClose.velocity`, springing back with `motion.spring` otherwise; the cover drops to `motion.pausedScale` while paused. Under reduce motion nothing moves or scales and the route fades. iOS has no close button.
+- Player sheet: `PullUpSheet`, opened by a drag up on, or a press of, a handle (`layout.handleWidth` x `layout.handleHeight`,
+  `radius.full`, `color.overlay.muted`) centered in a `layout.controlHeight` row above the bottom inset; the handle nudges
+  `motion.handleNudge` with `motion.duration.base` and `motion.spring` the first three openings. While the sheet moves, the player
+  darkens to `color.overlay.backdrop` and drops to `motion.behindSheetScale` with the sheet's position. The panel is full screen,
+  `radius.lg` top corners, `shadow.floating`, with the wash from the dominant color to `color.surface.base`; a downward
+  drag on its header (or its list at the top) closes it past the `motion.dragToClose.*` thresholds. The header is the song row (a
+  `layout.rowCoverMedium` cover at `radius.sm`, `typography.title`, `typography.body` in `color.text.secondary`, and an
+  `IconButton` `primaryCompact`, a `layout.controlHeight` circle in `color.accent.primary` with a `color.text.inverse` glyph),
+  then a `SegmentedControl` (options of `layout.chipHeight` on `color.overlay.subtle`, the selected one on `color.overlay.muted`
+  in `color.text.primary`). Rows are `MediaRow`s; synced lyrics are `typography.title` lines, `color.text.primary` for the playing
+  one and `color.text.tertiary` for the others. Under reduce motion the sheet and the dim fade and nothing moves or scales.
 
 ## Radius (`radius`)
 
@@ -161,20 +173,22 @@ Roles, not raw sizes. Every role uses the platform's system font (no
 
 ## Motion (`motion`)
 
-| Role                                                                         | Token                                    |
-| ---------------------------------------------------------------------------- | ---------------------------------------- |
-| Fast transition                                                              | `motion.duration.fast`                   |
-| Base transition                                                              | `motion.duration.base`                   |
-| Slow transition                                                              | `motion.duration.slow`                   |
-| Shimmer loop (skeleton)                                                      | `motion.duration.shimmer`                |
-| The one spring (the player cover's pause scale, a drag that springs back)    | `motion.spring` (`damping`, `stiffness`) |
-| Opacity of a pressed control                                                 | `motion.pressOpacity`                    |
-| Scale the player cover drops to while paused                                 | `motion.pausedScale`                     |
-| Downward travel, in points, before the player takes a drag from its content  | `motion.dragToClose.slop`                |
-| Share of the window height a released drag must pass to close the player     | `motion.dragToClose.distanceShare`       |
-| Downward speed, in points per millisecond, that closes the player on release | `motion.dragToClose.velocity`            |
+| Role                                                                                                                                          | Token                                    |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| Fast transition                                                                                                                               | `motion.duration.fast`                   |
+| Base transition                                                                                                                               | `motion.duration.base`                   |
+| Slow transition                                                                                                                               | `motion.duration.slow`                   |
+| Shimmer loop (skeleton)                                                                                                                       | `motion.duration.shimmer`                |
+| The one spring (the player cover's pause scale, a drag that springs back, the sheet opening and closing, the handle settling after its nudge) | `motion.spring` (`damping`, `stiffness`) |
+| Opacity of a pressed control                                                                                                                  | `motion.pressOpacity`                    |
+| Scale the player cover drops to while paused                                                                                                  | `motion.pausedScale`                     |
+| Scale the player drops to behind the open sheet                                                                                               | `motion.behindSheetScale`                |
+| Points the sheet handle rises when it nudges                                                                                                  | `motion.handleNudge`                     |
+| Travel, in points, before a vertical drag is taken (the player's close, the sheet's open and close)                                           | `motion.dragToClose.slop`                |
+| Share of the window height a released vertical drag must pass to commit                                                                       | `motion.dragToClose.distanceShare`       |
+| Speed, in points per millisecond, that commits a vertical drag on release                                                                     | `motion.dragToClose.velocity`            |
 
-`DragToClose` and `PauseScale` in `@beatly/ui/native` are the only animated components. They use React Native's `Animated` with the native driver and `PanResponder`, and take `reduceMotion` from the app.
+`VerticalDrag` (the one vertical drag), `DragToClose` and `PullUpSheet` over it, and `PauseScale` in `@beatly/ui/native` are the only animated components. They use React Native's `Animated` with the native driver and `PanResponder`, and take `reduceMotion` from the app.
 
 ## Icons (`icon`)
 

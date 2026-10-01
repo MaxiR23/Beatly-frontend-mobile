@@ -6,7 +6,7 @@
 // - PlayerScreen
 //
 // What is covered:
-// - the source, title, artists and the elapsed and remaining times, a search source drawn as its own label
+// - the source, title, artists and the elapsed and remaining times, a search source and a track source drawn as their own label
 // - play or pause, next, previous, shuffle, repeat one and the seek bar reaching the controller
 // - the spec's layout: header, full-width cover, gaps, controls row, the wash to the base surface by the middle, the transport icon sizes
 // - the empty state, the resolution failure with retry, loading, close and its fallback, es
@@ -259,6 +259,12 @@ describe("PlayerScreen", () => {
     const ctx = await setup();
     await start(ctx, { kind: "search", id: "moon", name: "moon" });
     expect(screen.getByText("Search “moon”")).toBeTruthy();
+  });
+
+  it("draws a track source as its own label", async () => {
+    const ctx = await setup();
+    await start(ctx, { kind: "track", id: "1", name: "Song 1" });
+    expect(screen.getByText("Songs like “Song 1”")).toBeTruthy();
   });
 
   it("pauses and plays from the large button", async () => {

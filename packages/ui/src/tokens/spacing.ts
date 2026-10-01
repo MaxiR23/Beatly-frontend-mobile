@@ -1,7 +1,7 @@
 // INFO: spacing tokens, a multiples-of-four scale, plus the layout
 // constants (gutter, gap, hitSlop, control height, and the carousel card,
 // avatar, creator mark, tab item, chip, genre bar, row cover, detail hero cover,
-// track-number column, large play button and seek bar sizes, and the skeleton bar widths).
+// track-number column, large play button, seek bar and sheet handle sizes, and the skeleton bar widths).
 export const spacing = {
   xxs: 2,
   xs: 4,
@@ -38,6 +38,9 @@ export const layout = {
   // Height of the seek bar track, and the side of its thumb.
   seekTrack: 6,
   seekThumb: 14,
+  // Width and height of the sheet handle bar.
+  handleWidth: 36,
+  handleHeight: 4,
   // Widths of the detail skeleton's placeholder bars, as a share of their row.
   skeletonBar: { title: "70%", meta: "45%", rowTitle: "60%", rowMeta: "35%" },
 } as const;

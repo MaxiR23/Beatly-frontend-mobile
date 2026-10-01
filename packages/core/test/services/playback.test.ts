@@ -7,7 +7,7 @@
 //
 // What is covered:
 // - with data, expected empty (an empty or out-of-range start), the typed resolution failure and the player error
-// - toggle, next, previous with its restart rule, seek, shuffle on and off, repeat one, ended at the end of the list, a stale resolution, stop
+// - toggle, next, previous with its restart rule, skipTo, seek, shuffle on and off, repeat one, ended at the end of the list, a stale resolution, stop
 // - Not applicable: ok:false reasons, because the controller does not call the API
 //
 // Run with: pnpm --filter @beatly/core test -- playback
@@ -233,6 +233,48 @@ describe("next and previous", () => {
     await controller.previous();
     expect(controller.getState().current?.trackId).toBe("t1");
     expect(player.calls.at(-1)).toEqual({ type: "seek", seconds: 0 });
+  });
+});
+
+describe("skipTo", () => {
+  const five = ["t1", "t2", "t3", "t4", "t5"].map(track);
+
+  it("plays the track at a position of the queue", async () => {
+    const { controller, player } = setup();
+    await controller.playList(list, 0, source);
+    await controller.skipTo(2);
+    expect(controller.getState().current?.trackId).toBe("t3");
+    expect(controller.getState().index).toBe(2);
+    expect(controller.getState().source).toEqual(source);
+    expect(loads(player.calls).at(-1)).toBe("test://audio/t3");
+  });
+
+  it("keeps the shuffled order and jumps in play order", async () => {
+    const { controller } = setup(() => 0);
+    controller.setShuffle(true);
+    await controller.playList(five, 2, source);
+    const before = controller.getState().queue.map((t) => t.trackId);
+    await controller.skipTo(3);
+    expect(controller.getState().queue.map((t) => t.trackId)).toEqual(before);
+    expect(controller.getState().index).toBe(3);
+    expect(controller.getState().current?.trackId).toBe(before[3]);
+  });
+
+  it("logs and ignores a position out of range", async () => {
+    const { controller, log } = setup();
+    await controller.playList(list, 0, source);
+    await controller.skipTo(3);
+    await controller.skipTo(-1);
+    expect(controller.getState().index).toBe(0);
+    expect(log.entries.filter((e) => e.message === "playback.invalid_skip")).toHaveLength(2);
+  });
+
+  it("does nothing while idle", async () => {
+    const { controller, player, log } = setup();
+    await controller.skipTo(0);
+    expect(controller.getState().status).toBe("idle");
+    expect(player.calls).toEqual([]);
+    expect(log.entries.map((e) => e.message)).toEqual(["playback.invalid_skip"]);
   });
 });
 

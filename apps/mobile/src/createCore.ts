@@ -12,7 +12,9 @@ import {
   createPublicService,
   createRecentSearchesService,
   createSearchService,
+  createSheetNudgeService,
   createStreamResolver,
+  createTracksService,
 } from "@beatly/core";
 import type {
   ActivityService,
@@ -28,6 +30,8 @@ import type {
   PublicService,
   RecentSearchesService,
   SearchService,
+  SheetNudgeService,
+  TracksService,
 } from "@beatly/core";
 
 import { Platform } from "react-native";
@@ -55,6 +59,8 @@ export interface Core {
   readonly publicShare: PublicService;
   readonly recentSearches: RecentSearchesService;
   readonly search: SearchService;
+  readonly sheetNudge: SheetNudgeService;
+  readonly tracks: TracksService;
 }
 
 export function createCore(): Core {
@@ -96,5 +102,7 @@ export function createCore(): Core {
     publicShare: createPublicService(client),
     recentSearches: createRecentSearchesService({ storage, log }),
     search: createSearchService(client),
+    sheetNudge: createSheetNudgeService({ storage, log }),
+    tracks: createTracksService(client),
   };
 }

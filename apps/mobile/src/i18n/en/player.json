@@ -1,6 +1,7 @@
 {
   "playingFrom": "Playing from",
   "searchSource": "Search “{{query}}”",
+  "trackSource": "Songs like “{{title}}”",
   "artistSeparator": ", ",
   "open": "Open player",
   "close": "Close player",
@@ -15,5 +16,20 @@
   "empty": "Nothing is playing.",
   "error": {
     "unplayable": "This song can't be played right now."
+  },
+  "sheet": {
+    "open": "Up next, lyrics and related",
+    "close": "Back to the player",
+    "tabs": {
+      "upNext": "Up next",
+      "lyrics": "Lyrics",
+      "related": "Related"
+    },
+    "upNextEmpty": "Nothing up next.",
+    "lyricsEmpty": "This song has no lyrics.",
+    "relatedEmpty": "Nothing related to this song.",
+    "songs": "Songs",
+    "artists": "Artists",
+    "albums": "Albums"
   }
 }

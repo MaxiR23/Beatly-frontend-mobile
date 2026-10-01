@@ -7,7 +7,7 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the playback controller over an inline player, the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, and the page builder)
+// (the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, and the page builder)
 //
 import type {
   ActivityService,
@@ -41,8 +41,16 @@ import type {
   SearchService,
   StoragePort,
   StreamResolver,
+  TrackLyrics,
+  TrackRelated,
+  TracksService,
+  UpNext,
 } from "@beatly/core";
-import { createPlaybackController, createRecentSearchesService } from "@beatly/core";
+import {
+  createPlaybackController,
+  createRecentSearchesService,
+  createSheetNudgeService,
+} from "@beatly/core";
 import { jest } from "@jest/globals";
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
@@ -304,6 +312,48 @@ export const albumFixture: Album = {
   ],
 };
 
+const trackRef = (id: string) => ({
+  track_id: id,
+  title: `Up ${id}`,
+  artists: [{ id: "ar1", name: "Test Artist" }],
+  album: "Test Album",
+  album_id: "al1",
+  duration_seconds: 200,
+  thumbnail_url: `test://img/${id}`,
+});
+
+// The first track is the requested one, as the route sends it.
+export const upNextFixture: UpNext = {
+  tracks: [trackRef("t1"), trackRef("u2"), trackRef("u3")],
+};
+
+export const lyricsFixture: TrackLyrics = {
+  lyrics: {
+    has_timestamps: true,
+    source: "test",
+    lines: [
+      { text: "Line one", start_ms: 0, end_ms: 10000 },
+      { text: "Line two", start_ms: 10000, end_ms: 20000 },
+      { text: "Line three", start_ms: 20000, end_ms: 30000 },
+    ],
+  },
+};
+
+export const relatedFixture: TrackRelated = {
+  songs: [trackRef("r1")],
+  artists: [{ id: "UCar2", name: "Similar Artist", thumbnail_url: null }],
+  albums: [
+    {
+      id: "MPREb_2",
+      title: "Related Album",
+      artists: [{ id: "ar2", name: "Another Artist" }],
+      year: "2014",
+      audio_playlist_id: null,
+      thumbnail_url: null,
+    },
+  ],
+};
+
 export function memoryStorage(initial: Record<string, string> = {}): StoragePort {
   const values = new Map<string, string>(Object.entries(initial));
   return {
@@ -419,6 +469,9 @@ export function makeCore(
     getLikedPlaylist?: PlaylistsService["getLikedPlaylist"];
     listLikedTracks?: PlaylistsService["listLikedTracks"];
     getGenrePlaylist?: PublicService["getGenrePlaylist"];
+    getUpNext?: TracksService["getUpNext"];
+    getLyrics?: TracksService["getLyrics"];
+    getRelated?: TracksService["getRelated"];
     storage?: StoragePort;
     resolve?: StreamResolver["resolve"];
   } = {},
@@ -484,6 +537,18 @@ export function makeCore(
           maxAgeSeconds: 0,
         })),
   );
+  const getUpNext = jest.fn<TracksService["getUpNext"]>(
+    options.getUpNext ??
+      (() => Promise.resolve({ kind: "success", data: upNextFixture, maxAgeSeconds: 0 })),
+  );
+  const getLyrics = jest.fn<TracksService["getLyrics"]>(
+    options.getLyrics ??
+      (() => Promise.resolve({ kind: "success", data: lyricsFixture, maxAgeSeconds: 0 })),
+  );
+  const getRelated = jest.fn<TracksService["getRelated"]>(
+    options.getRelated ??
+      (() => Promise.resolve({ kind: "success", data: relatedFixture, maxAgeSeconds: 0 })),
+  );
   const storage = options.storage ?? memoryStorage();
   const log = makeLog();
   const player = makePlayer();
@@ -516,6 +581,8 @@ export function makeCore(
     publicShare: { getGenrePlaylist },
     recentSearches: createRecentSearchesService({ storage, log }),
     search: { search },
+    sheetNudge: createSheetNudgeService({ storage, log }),
+    tracks: { getUpNext, getLyrics, getRelated },
   };
   return {
     core,
@@ -537,6 +604,9 @@ export function makeCore(
     getLikedPlaylist,
     listLikedTracks,
     getGenrePlaylist,
+    getUpNext,
+    getLyrics,
+    getRelated,
     storage,
     playback,
     player,
