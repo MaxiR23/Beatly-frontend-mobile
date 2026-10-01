@@ -48,9 +48,12 @@ The back button is labeled `artist:back`.
 | Route                     | Paginated                                         | Cache-Control                                             | Reasons listed                                                                                  | Branches on                                                                                       |
 | ------------------------- | ------------------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `GET /artist/{artist_id}` | no; songs, albums, singles and related come whole | `max-age=<seconds left>`, at most 12 h; errors `no-store` | `invalid_request` (422), `unauthorized` (401), `upstream_error` (502), `upstream_timeout` (504) | `invalid_request` draws `artist:notAvailable`; everything else draws the generic error with retry |
+| `POST /recents`           | no                                                | `private, no-cache`                                       | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                         | none; a failure is logged and nothing is drawn                                                    |
 
 A well-formed id that does not exist comes back as `upstream_error`, so it draws the generic error.
 Any of the four lists `[]` is `ok: true`: an expected empty state, never a retry.
+
+Starting a list from a popular song registers it with `POST /recents`, and a failure never stops the music.
 
 ## Navigation
 

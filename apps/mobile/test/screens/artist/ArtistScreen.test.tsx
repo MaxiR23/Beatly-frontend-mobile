@@ -9,6 +9,7 @@
 // - the skeleton, the request for the route's artist, the name over the full-width image hero
 // - the four sections with their titles, a song without track_id dimmed, no action button and no pressable song
 // - the year under an album, the kind and year under a single, each empty section hidden, only the hero when all are empty
+// - starting the popular songs registers the artist as a recent
 // - opening an album from the albums and singles carousels and a similar artist
 // - not available for invalid_request without retry, the generic error with retry for upstream_error and upstream_timeout and a transport failure
 // - back and its fallback, es
@@ -153,6 +154,17 @@ describe("ArtistScreen", () => {
     expect(state.queue.map((t) => t.trackId)).toEqual(["t1"]);
     expect(state.source).toEqual({ kind: "artist", id: "UCar1", name: "Test Artist" });
     expect(screen.queryByRole("button", { name: "Hidden Song" })).toBeNull();
+  });
+
+  it("registers the artist as a recent with its image and no subtitle", async () => {
+    const ctx = await setup();
+    await screen.findByTestId("artist-popular");
+    await fireEvent.press(screen.getByRole("button", { name: "Popular Song" }));
+    expect(ctx.registerRecent).toHaveBeenCalledWith({
+      entity_type: "artist",
+      entity_id: "UCar1",
+      metadata: { title: "Test Artist", subtitle: null, thumbnail_url: "test://img/ar1" },
+    });
   });
 
   it("draws the year under an album and the kind with the year under a single", async () => {

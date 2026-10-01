@@ -1,4 +1,4 @@
-// INFO: an artist: the detail base with a full-width image hero and the name over it, then popular songs, albums, singles and EPs and similar artists, each hidden when empty; unavailable for an invalid id.
+// INFO: an artist: the detail base with a full-width image hero and the name over it, then popular songs, albums, singles and EPs and similar artists, each hidden when empty; unavailable for an invalid id; starting a list registers it as a recent.
 import type { AlbumRef } from "@beatly/core";
 import { layout, spacing } from "@beatly/ui";
 import {
@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useT } from "../../adapters/i18n.ts";
 import { OutcomeError } from "../../queries/outcomeError.ts";
 import { useArtist } from "../../queries/useArtist.ts";
+import { useRegisterRecent } from "../../queries/useRecents.ts";
 import { singleMeta } from "./singleMeta.ts";
 import { toQueue } from "../player/queue.ts";
 import { usePlaybackActions } from "../player/usePlayback.ts";
@@ -30,6 +31,7 @@ export function ArtistScreen() {
   const insets = useSafeAreaInsets();
   const tabBarClearance = useTabBarClearance();
   const playback = usePlaybackActions();
+  const registerRecent = useRegisterRecent();
   const { id = "" } = useLocalSearchParams<{ id?: string }>();
   const artist = useArtist(id);
 
@@ -78,7 +80,9 @@ export function ArtistScreen() {
           : {
               trackId: song.track_id,
               title: song.title,
-              artists: song.artists.length > 0 ? song.artists.map((a) => a.name) : [data.name],
+              artists: song.artists.length > 0 ? song.artists : [{ id: data.id, name: data.name }],
+              album: song.album,
+              albumId: song.album_id,
               coverUrl: song.thumbnail_url,
               durationSeconds: song.duration_seconds,
             },
@@ -88,6 +92,11 @@ export function ArtistScreen() {
           kind: "artist",
           id: data.id,
           name: data.name,
+        });
+        registerRecent.mutate({
+          entity_type: "artist",
+          entity_id: data.id,
+          metadata: { title: data.name, subtitle: null, thumbnail_url: data.thumbnail_url },
         });
       }
     };

@@ -91,7 +91,17 @@ describe("the tabs layout", () => {
     await screen.findByTestId("home");
     await act(async () => {
       await mockCore.current.playback.playList(
-        [{ trackId: "t1", title: "Song", artists: ["Ann"], coverUrl: null, durationSeconds: 100 }],
+        [
+          {
+            trackId: "t1",
+            title: "Song",
+            artists: [{ id: "ar1", name: "Ann" }],
+            album: "Album",
+            albumId: "a1",
+            coverUrl: null,
+            durationSeconds: 100,
+          },
+        ],
         0,
         { kind: "album", id: "a1", name: "Album" },
       );

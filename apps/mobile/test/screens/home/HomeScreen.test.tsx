@@ -329,7 +329,7 @@ describe("HomeScreen", () => {
     for (const [title, id, source] of [
       ["Own one", "pl1", "user"],
       ["Genre one", "gp1", "genre"],
-      ["Liked one", "liked", "liked"],
+      [en.playlist.liked, "liked", "liked"],
     ] as const) {
       await fireEvent.press(await screen.findByRole("button", { name: title }));
       expect(mockPush).toHaveBeenLastCalledWith({
@@ -338,5 +338,29 @@ describe("HomeScreen", () => {
       });
     }
     expect(mockPush).toHaveBeenCalledTimes(3);
+  });
+
+  it("draws a liked recent title from i18n and a user playlist recent with its stored title", async () => {
+    const meta = { subtitle: null, thumbnail_url: null };
+    await setup({
+      listRecents: recents([
+        {
+          ...recentFixture,
+          entity_type: "playlist",
+          entity_id: "liked",
+          metadata: { title: "Tus me gusta guardado", kind: "liked", ...meta },
+        },
+        {
+          ...recentFixture,
+          entity_type: "playlist",
+          entity_id: "pl1",
+          metadata: { title: "Own one", kind: "user", ...meta },
+        },
+      ]),
+    });
+    const row = within(await screen.findByTestId("recents"));
+    expect(row.getByText(en.playlist.liked)).toBeTruthy();
+    expect(row.queryByText("Tus me gusta guardado")).toBeNull();
+    expect(row.getByText("Own one")).toBeTruthy();
   });
 });

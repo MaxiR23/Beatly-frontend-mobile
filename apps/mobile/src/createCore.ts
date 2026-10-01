@@ -6,6 +6,7 @@ import {
   createGenresService,
   createHttpClient,
   createLibraryService,
+  createListeningCounter,
   createPlaybackController,
   createPlaylistsService,
   createProfileService,
@@ -78,25 +79,29 @@ export function createCore(): Core {
     log,
     baseUrl: env.apiUrl,
   });
+  const activity = createActivityService(client);
+  const playback = createPlaybackController({
+    player: createPlayerAdapter({ log }),
+    streams: createStreamResolver({
+      http,
+      config: createConfigAdapter(env),
+      storage,
+      log,
+      platform: Platform.OS === "ios" ? "ios" : "android",
+    }),
+    log,
+  });
+  // Lives as long as the app: counts listening and registers plays; the unsubscribe is not kept.
+  createListeningCounter({ playback, activity, log });
   return {
-    activity: createActivityService(client),
+    activity,
     album: createAlbumService(client),
     artists: createArtistsService(client),
     auth,
     genres: createGenresService(client),
     library: createLibraryService(client),
     log,
-    playback: createPlaybackController({
-      player: createPlayerAdapter({ log }),
-      streams: createStreamResolver({
-        http,
-        config: createConfigAdapter(env),
-        storage,
-        log,
-        platform: Platform.OS === "ios" ? "ios" : "android",
-      }),
-      log,
-    }),
+    playback,
     playlists: createPlaylistsService(client),
     profile: createProfileService(client),
     publicShare: createPublicService(client),

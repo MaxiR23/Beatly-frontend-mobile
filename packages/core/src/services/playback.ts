@@ -1,11 +1,15 @@
 // INFO: the playback controller: the queue, the play order (shuffle), repeat one, the current track, a jump to a position of the queue and the status over the player port; an immutable snapshot plus subscribe.
+import type { SearchArtistRef } from "../domain/search.ts";
 import type { LogPort } from "../ports/log.ts";
 import type { PlayerEvent, PlayerPort } from "../ports/player.ts";
 
 export interface PlayableTrack {
   readonly trackId: string;
   readonly title: string;
-  readonly artists: readonly string[];
+  readonly artists: readonly SearchArtistRef[];
+  // The album as POST /plays takes it; null when the screen has none, and then no play is registered.
+  readonly album: string | null;
+  readonly albumId: string | null;
   readonly coverUrl: string | null;
   readonly durationSeconds: number | null;
 }
@@ -45,6 +49,8 @@ export interface PlaybackState {
   readonly durationSeconds: number | null;
   readonly shuffle: boolean;
   readonly repeatOne: boolean;
+  // Bumped on every track start, every repeat-one replay and when the list ends; 0 when idle. A seek keeps it.
+  readonly listen: number;
 }
 
 export interface PlaybackController {
@@ -77,6 +83,7 @@ const IDLE: PlaybackState = Object.freeze({
   durationSeconds: null,
   shuffle: false,
   repeatOne: false,
+  listen: 0,
 });
 
 export function createPlaybackController(deps: {
@@ -99,6 +106,8 @@ export function createPlaybackController(deps: {
   // True once the engine holds the current track's source.
   let loaded = false;
   let endedGeneration = -1;
+  let listens = 0;
+  const nextListen = (): number => (listens += 1);
 
   const update = (patch: Partial<PlaybackState>): void => {
     state = Object.freeze({ ...state, ...patch });
@@ -138,6 +147,7 @@ export function createPlaybackController(deps: {
       failure: null,
       positionSeconds: 0,
       durationSeconds: track.durationSeconds,
+      listen: nextListen(),
     });
     const resolution = await streams.resolve(track.trackId);
     if (mine !== generation) {
@@ -168,6 +178,7 @@ export function createPlaybackController(deps: {
     if (state.repeatOne) {
       // The replayed track can end again.
       endedGeneration = -1;
+      update({ listen: nextListen() });
       await seekTo(0);
       player.play();
       update({ status: "playing" });
@@ -178,7 +189,7 @@ export function createPlaybackController(deps: {
       return;
     }
     player.pause();
-    update({ status: "paused", positionSeconds: 0 });
+    update({ status: "paused", positionSeconds: 0, listen: nextListen() });
     await player.seek(0);
   };
 

@@ -1,4 +1,4 @@
-// INFO: public entry of @beatly/core: ports, the envelope, the HTTP client, the paginated helper, the services, the playback controller and the stream resolver.
+// INFO: public entry of @beatly/core: ports, the envelope, the HTTP client, the paginated helper, the services, the playback controller, the listening counter and the stream resolver.
 export type {
   AuthChange,
   AuthFailure,
@@ -62,10 +62,10 @@ export { libraryEntryKindSchema, libraryEntrySchema } from "./domain/library.ts"
 export type { LibraryEntry } from "./domain/library.ts";
 export { createLibraryService } from "./services/library.ts";
 export type { LibraryService } from "./services/library.ts";
-export { recentEntitySchema, recentEntityTypeSchema } from "./domain/activity.ts";
-export type { RecentEntity } from "./domain/activity.ts";
+export { playEventSchema, recentEntitySchema, recentEntityTypeSchema } from "./domain/activity.ts";
+export type { PlayEvent, RecentEntity } from "./domain/activity.ts";
 export { createActivityService } from "./services/activity.ts";
-export type { ActivityService } from "./services/activity.ts";
+export type { ActivityService, PlayArtist, PlayInput, RecentInput } from "./services/activity.ts";
 export { genreCategorySchema, genrePlaylistListItemSchema, genreSchema } from "./domain/genre.ts";
 export type { Genre, GenrePlaylistListItem } from "./domain/genre.ts";
 export { createGenresService } from "./services/genres.ts";
@@ -148,3 +148,8 @@ export {
   createSheetNudgeService,
 } from "./services/sheetNudge.ts";
 export type { SheetNudgeOutcome, SheetNudgeService } from "./services/sheetNudge.ts";
+export {
+  MAX_LISTEN_STEP_SECONDS,
+  PLAY_AFTER_SECONDS,
+  createListeningCounter,
+} from "./services/listening.ts";

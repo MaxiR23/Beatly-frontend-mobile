@@ -111,7 +111,17 @@ describe("SessionProvider", () => {
     await screen.findByText("signed_in");
     await act(async () => {
       await s.playback.playList(
-        [{ trackId: "t1", title: "Song", artists: [], coverUrl: null, durationSeconds: 100 }],
+        [
+          {
+            trackId: "t1",
+            title: "Song",
+            artists: [],
+            album: null,
+            albumId: null,
+            coverUrl: null,
+            durationSeconds: 100,
+          },
+        ],
         0,
         { kind: "album", id: "a1", name: "Album" },
       );

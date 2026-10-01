@@ -59,11 +59,14 @@ The back button is labeled `album:back`.
 | Route                   | Paginated                                   | Cache-Control                                             | Reasons listed                                                                                  | Branches on                                                                                      |
 | ----------------------- | ------------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | `GET /album/{album_id}` | no; tracks and referenced albums come whole | `max-age=<seconds left>`, at most 24 h; errors `no-store` | `invalid_request` (422), `unauthorized` (401), `upstream_error` (502), `upstream_timeout` (504) | `invalid_request` draws `album:notAvailable`; everything else draws the generic error with retry |
+| `POST /recents`         | no                                          | `private, no-cache`                                       | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                         | none; a failure is logged and nothing is drawn                                                   |
 
 A well-formed id that does not exist comes back as `upstream_error`, so it draws
 the generic error. `tracks: []` with the album populated is `ok: true`: an
 expected empty state, never a retry. The dominant color comes from the cover
 through `adapters/imageColors.ts` (ADR 019), not from the API.
+
+Starting a list from a track registers it with `POST /recents`, and a failure never stops the music.
 
 ## Navigation
 

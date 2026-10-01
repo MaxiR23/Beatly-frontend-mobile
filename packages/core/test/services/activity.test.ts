@@ -8,9 +8,11 @@
 // - Returns an empty first page as a success when there is no recent activity
 // - Surfaces unauthorized as an api failure
 // - Fails with a timeout, network or schema outcome
+// - logPlay posts the play and returns the logged event; surfaces upstream_error; fails with a timeout, network or schema outcome
+// - registerRecent posts the recent and returns the saved entity; surfaces upstream_error; fails with a timeout, network or schema outcome
 //
 // What is covered:
-// - Happy path, expected empty state, api failure, transport failure
+// - Happy path, expected empty state (listRecents only: the two writes have none), api failure, transport failure
 //
 // Run with: pnpm --filter @beatly/core test -- activity
 //
@@ -19,7 +21,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createHttpClient, DEFAULT_TIMEOUT_MS } from "../../src/http/client.ts";
-import { createActivityService } from "../../src/services/activity.ts";
+import {
+  createActivityService,
+  type PlayInput,
+  type RecentInput,
+} from "../../src/services/activity.ts";
 import { createFakeAuth } from "../fakes/auth.ts";
 import { createFakeHttp, never, type Handler } from "../fakes/http.ts";
 import { createFakeLog } from "../fakes/log.ts";
@@ -27,8 +33,11 @@ import { createFakeLog } from "../fakes/log.ts";
 const BASE_URL = "test://api";
 const PAGE = { limit: 30, next_cursor: null, has_more: false, total: 2 };
 
-function setup(handler: Handler) {
-  const http = createFakeHttp({ "GET /recents": handler }, BASE_URL);
+function setup(handler: Handler, post: Handler = never, postRecent: Handler = never) {
+  const http = createFakeHttp(
+    { "GET /recents": handler, "POST /plays": post, "POST /recents": postRecent },
+    BASE_URL,
+  );
   const client = createHttpClient({
     http: http.port,
     auth: createFakeAuth().port,
@@ -206,5 +215,136 @@ describe("listRecents", () => {
       },
     }));
     expect(await service.listRecents()).toEqual({ kind: "transport_failure", cause: "schema" });
+  });
+});
+
+const playInput: PlayInput = {
+  track_id: "t1",
+  title: "Song",
+  artists: [{ id: "ar1", name: "Artist" }],
+  album: "Album",
+  album_id: "a1",
+  thumbnail_url: "test://img/1",
+  duration_seconds: 200,
+};
+const playData = { track_id: "t1", played_at: "2026-01-01T00:00:00Z" };
+
+describe("logPlay", () => {
+  it("posts the play and returns the logged event", async () => {
+    const { service, http } = setup(never, () => ({
+      headers: { "cache-control": "private, no-cache" },
+      body: { ok: true, data: { ...playData, metadata: { title: "Song" } } },
+    }));
+    expect(await service.logPlay(playInput)).toEqual({
+      kind: "success",
+      maxAgeSeconds: 0,
+      data: playData,
+    });
+    expect(http.requests[0]?.method).toBe("POST");
+    expect(http.requests[0]?.url).toBe("test://api/plays");
+    expect(JSON.parse(http.requests[0]?.body ?? "null")).toEqual(playInput);
+  });
+
+  it("surfaces upstream_error as an api failure", async () => {
+    const { service } = setup(never, () => ({
+      status: 502,
+      body: { ok: false, reason: "upstream_error" },
+    }));
+    expect(await service.logPlay(playInput)).toEqual({
+      kind: "api_failure",
+      reason: "upstream_error",
+    });
+  });
+
+  it("fails with a timeout outcome when the API does not answer", async () => {
+    vi.useFakeTimers();
+    const { service } = setup(never, never);
+    const pending = service.logPlay(playInput);
+    await vi.advanceTimersByTimeAsync(DEFAULT_TIMEOUT_MS + 1);
+    expect(await pending).toEqual({ kind: "transport_failure", cause: "timeout" });
+  });
+
+  it("fails with a network outcome when the request cannot be sent", async () => {
+    const { service } = setup(never, () => Promise.reject(new Error("offline")));
+    expect(await service.logPlay(playInput)).toEqual({
+      kind: "transport_failure",
+      cause: "network",
+    });
+  });
+
+  it("fails with a schema outcome for a play without played_at", async () => {
+    const { service } = setup(never, () => ({
+      body: { ok: true, data: { track_id: "t1" } },
+    }));
+    expect(await service.logPlay(playInput)).toEqual({
+      kind: "transport_failure",
+      cause: "schema",
+    });
+  });
+});
+
+const recentInput: RecentInput = {
+  entity_type: "album",
+  entity_id: "a1",
+  metadata: { title: "Album", subtitle: "Artist", thumbnail_url: "test://img/1" },
+};
+const savedRecent = {
+  entity_type: "album",
+  entity_id: "a1",
+  played_at: "2026-01-01T00:00:00Z",
+  metadata: { title: "Album", subtitle: "Artist", thumbnail_url: "test://img/1" },
+};
+
+describe("registerRecent", () => {
+  it("posts the recent and returns the saved entity", async () => {
+    const { service, http } = setup(never, never, () => ({
+      headers: { "cache-control": "private, no-cache" },
+      body: { ok: true, data: savedRecent },
+    }));
+    expect(await service.registerRecent(recentInput)).toEqual({
+      kind: "success",
+      maxAgeSeconds: 0,
+      data: savedRecent,
+    });
+    expect(http.requests[0]?.method).toBe("POST");
+    expect(http.requests[0]?.url).toBe("test://api/recents");
+    expect(JSON.parse(http.requests[0]?.body ?? "null")).toEqual(recentInput);
+  });
+
+  it("surfaces upstream_error as an api failure", async () => {
+    const { service } = setup(never, never, () => ({
+      status: 502,
+      body: { ok: false, reason: "upstream_error" },
+    }));
+    expect(await service.registerRecent(recentInput)).toEqual({
+      kind: "api_failure",
+      reason: "upstream_error",
+    });
+  });
+
+  it("fails with a timeout outcome when the API does not answer", async () => {
+    vi.useFakeTimers();
+    const { service } = setup(never, never, never);
+    const pending = service.registerRecent(recentInput);
+    await vi.advanceTimersByTimeAsync(DEFAULT_TIMEOUT_MS + 1);
+    expect(await pending).toEqual({ kind: "transport_failure", cause: "timeout" });
+  });
+
+  it("fails with a network outcome when the request cannot be sent", async () => {
+    const { service } = setup(never, never, () => Promise.reject(new Error("offline")));
+    expect(await service.registerRecent(recentInput)).toEqual({
+      kind: "transport_failure",
+      cause: "network",
+    });
+  });
+
+  it("fails with a schema outcome for an unknown entity_type", async () => {
+    const { service } = setup(never, never, () => ({
+      body: { ok: true, data: { ...savedRecent, entity_type: "track" } },
+    }));
+    expect(await service.registerRecent(recentInput)).toEqual({
+      kind: "transport_failure",
+      cause: "schema",
+    });
   });
 });

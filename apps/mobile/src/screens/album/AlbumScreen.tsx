@@ -1,4 +1,4 @@
-// INFO: an album: the detail base with its cover, title, artists, meta line, tracks and the carousels of other versions and recommended albums; unavailable for an invalid id.
+// INFO: an album: the detail base with its cover, title, artists, meta line, tracks and the carousels of other versions and recommended albums; unavailable for an invalid id; starting a list registers it as a recent.
 import type { AlbumRef, SearchArtistRef } from "@beatly/core";
 import { layout, spacing } from "@beatly/ui";
 import {
@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
 import { useAlbum } from "../../queries/useAlbum.ts";
+import { useRegisterRecent } from "../../queries/useRecents.ts";
 import { OutcomeError } from "../../queries/outcomeError.ts";
 import { useDominantColor } from "../detail/useDominantColor.ts";
 import { albumMeta } from "./albumMeta.ts";
@@ -32,6 +33,7 @@ export function AlbumScreen() {
   const insets = useSafeAreaInsets();
   const tabBarClearance = useTabBarClearance();
   const playback = usePlaybackActions();
+  const registerRecent = useRegisterRecent();
   const { id = "" } = useLocalSearchParams<{ id?: string }>();
   const album = useAlbum(id);
   const wash = useDominantColor(album.data?.thumbnail_url ?? null);
@@ -82,7 +84,10 @@ export function AlbumScreen() {
           : {
               trackId: track.track_id,
               title: track.title,
-              artists: (track.artists.length > 0 ? track.artists : data.artists).map((a) => a.name),
+              artists: track.artists.length > 0 ? track.artists : data.artists,
+              // The album being played fills what the track lacks.
+              album: data.title,
+              albumId: data.id,
               coverUrl: data.thumbnail_url,
               durationSeconds: track.duration_seconds,
             },
@@ -92,6 +97,15 @@ export function AlbumScreen() {
           kind: "album",
           id: data.id,
           name: data.title,
+        });
+        registerRecent.mutate({
+          entity_type: "album",
+          entity_id: data.id,
+          metadata: {
+            title: data.title,
+            subtitle: data.artists.length > 0 ? artistNames(data.artists) : null,
+            thumbnail_url: data.thumbnail_url,
+          },
         });
       }
     };

@@ -67,7 +67,7 @@ The sheet's own keys are `player:sheet.open`, `player:sheet.close`, `player:shee
 
 ## Data
 
-The player itself calls no Beatly API route. The sheet reads three, each only when its tab is opened, not paginated, cached
+The player registers plays: after 30 seconds of real listening of one listen (position steps while playing; a step above 2 s or backwards is a seek and does not count; a pause stops the count; a listen starts on every track start, every repeat-one replay and after the list ends) `core`'s listening counter sends `POST /plays` once (`private, no-cache`; reasons `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`; branches on none). `album` and `album_id` come from the track, or from the album being played; a track without album, without cover or without an artist id is not registered. A failure is logged and never touches playback. Besides that, the player calls no other Beatly API route. The sheet reads three, each only when its tab is opened, not paginated, cached
 per track for the `Cache-Control: max-age` they send (at most 6 h, 24 h and 12 h): `GET /tracks/{id}/upnext`,
 `GET /tracks/{id}/lyrics` and `GET /tracks/{id}/related`. The reasons listed are `track_not_found`, `unauthorized`,
 `upstream_error` and `upstream_timeout`; the sheet branches on none: every failure is `common:error.generic` with retry. The first

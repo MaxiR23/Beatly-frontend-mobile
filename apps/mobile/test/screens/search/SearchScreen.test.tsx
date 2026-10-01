@@ -153,6 +153,7 @@ describe("SearchScreen results", () => {
     const state = ctx.playback.getState();
     expect(state.current?.trackId).toBe("t1");
     expect(state.source).toEqual({ kind: "search", id: "test", name: "test" });
+    expect(ctx.registerRecent).not.toHaveBeenCalled();
   });
 
   it("draws the top artist, then songs, then albums", async () => {

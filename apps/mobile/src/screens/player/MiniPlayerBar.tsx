@@ -20,7 +20,11 @@ export function MiniPlayerBar({ surface = "glass" }: { surface?: "glass" | "bare
   return (
     <MiniPlayer
       title={current.title}
-      subtitle={failed ? t("error.unplayable") : current.artists.join(t("artistSeparator"))}
+      subtitle={
+        failed
+          ? t("error.unplayable")
+          : current.artists.map((artist) => artist.name).join(t("artistSeparator"))
+      }
       failed={failed}
       coverUrl={current.coverUrl}
       tint={tint}

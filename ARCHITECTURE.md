@@ -76,6 +76,15 @@ The six public build-time values are read in `apps/mobile/src/env.ts`.
 adapters that need them, and the three stream values to `core` through the
 `config` port (ADR 021).
 
+`createCore()` also starts one headless subscriber, `createListeningCounter`.
+It lives as long as the app and its unsubscribe is not kept. It reads the
+player's state through the playback controller and posts a play to the API
+after 30 seconds of real listening, with no screen or hook involved. It is
+headless because a play must count whichever screen is open, or none; a
+screen that mounts and unmounts would lose or double the count. It is the
+first `core` service that runs without a screen or a hook, and a failure is
+only logged.
+
 `adapters/i18n.ts` wraps `i18next` and `expo-localization`. It has no
 port because `core` never translates.
 

@@ -21,7 +21,9 @@ export function playableOf(ref: TrackRef): PlayableTrack {
   return {
     trackId: ref.track_id,
     title: ref.title,
-    artists: ref.artists.map((artist) => artist.name),
+    artists: ref.artists,
+    album: ref.album,
+    albumId: ref.album_id,
     coverUrl: ref.thumbnail_url,
     durationSeconds: ref.duration_seconds,
   };
