@@ -7,7 +7,7 @@
 //
 // What is covered:
 // - the handle opening the sheet, the tab routes loading only once opened, the player's drag to close refused while it is open
-// - the body drawn while the sheet is dragged up and while it closes, unmounted once the close ends, the body drag taking a downward drag again after a reopen or a track change
+// - the body drawn while the sheet is dragged up and while it closes, unmounted once the close ends or the spring back of a short handle drag ends, the body drag taking a downward drag again after a reopen or a track change
 // - the system back and the accessibility escape closing the sheet first and the player next, no back handler while it is closed
 // - the song row closing it, the cache per track across a close and a reopen
 // - up next: the rest of the queue then the suggestions without the current track, a press jumping in the queue or playing the suggestions, loading, error with retry, expected empty
@@ -242,6 +242,33 @@ describe("the handle and the sheet", () => {
     });
     expect(screen.getByTestId("player-sheet-upnext", { includeHiddenElements: true })).toBeTruthy();
     expect(ctx.getUpNext).toHaveBeenCalledWith("t1");
+  });
+
+  it("unmounts the body when the spring back of a short handle drag ends", async () => {
+    await setup();
+    let done: ((result: { finished: boolean }) => void) | undefined;
+    spring.mockImplementationOnce(
+      () =>
+        ({
+          start: (next?: (result: { finished: boolean }) => void) => {
+            done = next;
+          },
+        }) as unknown as Animated.CompositeAnimation,
+    );
+    const handle = (name: string, event: unknown) =>
+      act(() => {
+        const handler: unknown = screen.getByTestId("player-sheet-handle-drag").props[name];
+        (handler as (event: unknown) => void)(event);
+      });
+    await handle("onResponderGrant", touch(300, 300, 101));
+    await handle("onResponderMove", touch(300, 290, 5101));
+    expect(screen.getByTestId("player-sheet-upnext", { includeHiddenElements: true })).toBeTruthy();
+    await handle("onResponderRelease", touch(300, 290, 5101));
+    expect(screen.getByTestId("player-sheet-upnext", { includeHiddenElements: true })).toBeTruthy();
+    await act(() => {
+      done?.({ finished: true });
+    });
+    expect(screen.queryByTestId("player-sheet-upnext", { includeHiddenElements: true })).toBeNull();
   });
 
   it("keeps the body while the sheet closes and unmounts it when the close ends", async () => {

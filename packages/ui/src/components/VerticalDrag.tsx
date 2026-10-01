@@ -1,4 +1,4 @@
-// INFO: the one vertical drag: while enabled it takes a mostly vertical drag in its direction past motion.dragToClose.slop, moves the caller's position away from rest with the finger (never past rest), springs it back to rest with the one spring when released short or taken away, and calls onCommit past motion.dragToClose.distanceShare of the window height or on a flick faster than motion.dragToClose.velocity, leaving the position where the finger left it; under reduce motion it moves nothing and still commits.
+// INFO: the one vertical drag: while enabled it takes a mostly vertical drag in its direction past motion.dragToClose.slop, moves the caller's position away from rest with the finger (never past rest), springs it back to rest with the one spring when released short or taken away, and calls onCommit past motion.dragToClose.distanceShare of the window height or on a flick faster than motion.dragToClose.velocity, leaving the position where the finger left it; onSettle tells the caller the spring back to rest ended (not a cut one, not a commit), and under reduce motion it moves nothing, fires onSettle right away on a cancelled release and still commits.
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Animated,
@@ -18,6 +18,7 @@ interface VerticalDragProps {
   reduceMotion: boolean;
   onCommit: () => void;
   onDragStart?: (() => void) | undefined;
+  onSettle?: (() => void) | undefined;
   children: ReactNode;
   style?: StyleProp<Animated.WithAnimatedValue<ViewStyle>>;
   onAccessibilityEscape?: (() => void) | undefined;
@@ -32,6 +33,7 @@ export function VerticalDrag({
   reduceMotion,
   onCommit,
   onDragStart,
+  onSettle,
   children,
   style,
   onAccessibilityEscape,
@@ -46,6 +48,7 @@ export function VerticalDrag({
     reduceMotion,
     onCommit,
     onDragStart,
+    onSettle,
     height,
   });
   useEffect(() => {
@@ -57,6 +60,7 @@ export function VerticalDrag({
       reduceMotion,
       onCommit,
       onDragStart,
+      onSettle,
       height,
     };
   });
@@ -67,6 +71,7 @@ export function VerticalDrag({
       const { position: value, rest: at } = latest.current;
       if (latest.current.reduceMotion) {
         value.setValue(at);
+        latest.current.onSettle?.();
         return;
       }
       Animated.spring(value, {
@@ -74,7 +79,9 @@ export function VerticalDrag({
         damping: motion.spring.damping,
         stiffness: motion.spring.stiffness,
         useNativeDriver: true,
-      }).start();
+      }).start(({ finished }) => {
+        if (finished) latest.current.onSettle?.();
+      });
     };
     return PanResponder.create({
       onMoveShouldSetPanResponderCapture: (_event, gesture) =>

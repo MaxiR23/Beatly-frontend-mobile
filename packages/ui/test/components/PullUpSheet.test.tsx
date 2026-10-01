@@ -10,7 +10,7 @@
 // - the dim and the recede following the sheet's position, the springs of opening and closing, no animation on mount
 // - the closed panel and the open content hidden from accessibility, the nudge once, the wash only with a color
 // - reduce motion (fades instead of movement and scale, no nudge), a live change of it while open leaving the panel and the dim drawn
-// - onDragStart on a handle drag, onClosed when the close animation finishes and not when it is cut
+// - onDragStart on a handle drag, onClosed when the close animation finishes and not when it is cut, or when a cancelled handle drag settles back and not when it commits
 //
 // Run with: pnpm --filter @beatly/ui test -- PullUpSheet
 //
@@ -316,5 +316,25 @@ describe("PullUpSheet", () => {
     expect(screen.getByTestId("sheet-dim")).toHaveStyle({
       backgroundColor: color.overlay.backdrop,
     });
+  });
+
+  it("calls onClosed when a handle drag released short settles back, not when it commits", async () => {
+    const onClosed = jest.fn();
+    await setup({ onClosed });
+    let done: ((result: { finished: boolean }) => void) | undefined;
+    spring.mockImplementationOnce(
+      () =>
+        ({
+          start: (next?: (result: { finished: boolean }) => void) => {
+            done = next;
+          },
+        }) as unknown as Animated.CompositeAnimation,
+    );
+    await drag("sheet-handle-drag", -100, true);
+    expect(onClosed).not.toHaveBeenCalled();
+    done?.({ finished: true });
+    expect(onClosed).toHaveBeenCalledTimes(1);
+    await drag("sheet-handle-drag", -(height * motion.dragToClose.distanceShare + 1), true);
+    expect(onClosed).toHaveBeenCalledTimes(1);
   });
 });

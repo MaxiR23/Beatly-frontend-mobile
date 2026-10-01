@@ -9,6 +9,7 @@
 // - the capture gate (past the slop in its direction, not the other way, sideways or disabled)
 // - following the finger away from rest and the clamp at rest, the spring back to rest below the threshold and on termination
 // - the commit by distance and by flick, the position left where the finger left it, the gesture kept
+// - onSettle after the spring back of a released-short or taken-away drag (not when cut, not on a commit), right away under reduce motion
 // - reduce motion (no movement, no spring, still commits)
 //
 // Run with: pnpm --filter @beatly/ui test -- VerticalDrag
@@ -67,9 +68,10 @@ interface HarnessProps {
   enabled: boolean;
   reduceMotion: boolean;
   onCommit: () => void;
+  onSettle?: (() => void) | undefined;
 }
 
-function Harness({ direction, rest, enabled, reduceMotion, onCommit }: HarnessProps) {
+function Harness({ direction, rest, enabled, reduceMotion, onCommit, onSettle }: HarnessProps) {
   const [position] = useState(() => new Animated.Value(rest));
   return (
     <VerticalDrag
@@ -79,6 +81,7 @@ function Harness({ direction, rest, enabled, reduceMotion, onCommit }: HarnessPr
       enabled={enabled}
       reduceMotion={reduceMotion}
       onCommit={onCommit}
+      onSettle={onSettle}
       style={{ transform: [{ translateY: position }] }}
       testID="drag"
     >
@@ -92,6 +95,7 @@ async function setup(
   options: { enabled?: boolean; reduceMotion?: boolean } = {},
 ) {
   const onCommit = jest.fn();
+  const onSettle = jest.fn();
   const rest = direction === "down" ? 0 : 500;
   const element = (enabled: boolean, reduceMotion: boolean) => (
     <Harness
@@ -100,10 +104,11 @@ async function setup(
       enabled={enabled}
       reduceMotion={reduceMotion}
       onCommit={onCommit}
+      onSettle={onSettle}
     />
   );
   const view = await render(element(options.enabled ?? true, options.reduceMotion ?? false));
-  return { onCommit, view, element, rest };
+  return { onCommit, onSettle, view, element, rest };
 }
 
 // Moves by `distance` in the direction of the drag (`sign` -1 is up) and leaves the gesture ready to release.
@@ -119,6 +124,20 @@ const release = (sign: 1 | -1, distance: number, dt = 5000) =>
   act(() => {
     call("onResponderRelease", touch(300, 300 + sign * distance, 101 + dt, dt));
   });
+
+// Makes the next spring hold its completion callback so the test decides when and how it ends.
+function holdSpring() {
+  const held: { done?: ((result: { finished: boolean }) => void) | undefined } = {};
+  spring.mockImplementationOnce(
+    () =>
+      ({
+        start: (done?: (result: { finished: boolean }) => void) => {
+          held.done = done;
+        },
+      }) as unknown as Animated.CompositeAnimation,
+  );
+  return held;
+}
 
 const translate = (value: number) => ({ transform: [{ translateY: value }] });
 
@@ -212,21 +231,57 @@ describe.each([
     );
   });
 
+  it("calls onSettle when the spring back of a released-short drag finishes, not before or when cut", async () => {
+    const { onSettle } = await setup(direction);
+    const held = holdSpring();
+    await drag(sign, 100);
+    await release(sign, 100);
+    expect(onSettle).not.toHaveBeenCalled();
+    held.done?.({ finished: false });
+    expect(onSettle).not.toHaveBeenCalled();
+    held.done?.({ finished: true });
+    expect(onSettle).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls onSettle when the spring back of a taken-away gesture finishes", async () => {
+    const { onSettle } = await setup(direction);
+    const held = holdSpring();
+    await drag(sign, 100);
+    await act(() => {
+      call("onResponderTerminate", touch(300, 300 + sign * 100, 6000, 5000));
+    });
+    expect(onSettle).not.toHaveBeenCalled();
+    held.done?.({ finished: true });
+    expect(onSettle).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not call onSettle on a commit", async () => {
+    const { onCommit, onSettle } = await setup(direction);
+    const distance = height * motion.dragToClose.distanceShare + 1;
+    await drag(sign, distance);
+    await release(sign, distance);
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onSettle).not.toHaveBeenCalled();
+  });
+
   it("keeps the gesture once it has it", async () => {
     await setup(direction);
     expect(call("onResponderTerminationRequest", {})).toBe(false);
   });
 
   it("under reduce motion, stays still and still commits past the distance", async () => {
-    const { onCommit } = await setup(direction, { reduceMotion: true });
+    const { onCommit, onSettle } = await setup(direction, { reduceMotion: true });
     await drag(sign, 100);
     expect(screen.getByTestId("drag")).toHaveStyle(translate(rest));
+    expect(onSettle).not.toHaveBeenCalled();
     await release(sign, 100);
     expect(spring).not.toHaveBeenCalled();
     expect(onCommit).not.toHaveBeenCalled();
+    expect(onSettle).toHaveBeenCalledTimes(1);
     const distance = height * motion.dragToClose.distanceShare + 1;
     await drag(sign, distance);
     await release(sign, distance);
     expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onSettle).toHaveBeenCalledTimes(1);
   });
 });

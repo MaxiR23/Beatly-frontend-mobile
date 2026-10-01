@@ -1,4 +1,4 @@
-// INFO: content with a handle at its bottom and a full-screen sheet pulled up from it: a drag up on the handle or its press opens (onDragStart tells the caller a drag began, onClosed that a close animation ended), a drag down on the sheet's header (or its body at its top) closes; the content darkens toward overlay.backdrop and drops to motion.behindSheetScale with the sheet's position; the handle nudges once when asked; under reduce motion the sheet and the dim fade and nothing moves or scales. The caller passes the labels translated.
+// INFO: content with a handle at its bottom and a full-screen sheet pulled up from it: a drag up on the handle or its press opens (onDragStart tells the caller a drag began, onClosed that a close animation ended, or a drag up that was released short settled back closed), a drag down on the sheet's header (or its body at its top) closes; the content darkens toward overlay.backdrop and drops to motion.behindSheetScale with the sheet's position; the handle nudges once when asked; under reduce motion the sheet and the dim fade and nothing moves or scales. The caller passes the labels translated.
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Animated, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 
@@ -129,6 +129,7 @@ export function PullUpSheet({
           reduceMotion={reduceMotion}
           onCommit={onOpen}
           onDragStart={onDragStart}
+          onSettle={onClosed}
           style={{ paddingBottom: bottomInset }}
           testID={`${testID}-handle-drag`}
         >
