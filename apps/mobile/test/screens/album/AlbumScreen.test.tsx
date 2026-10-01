@@ -10,6 +10,7 @@
 // - one spacing token between the title block and the tracks
 // - the tracks with an unavailable one disabled, the empty tracks message, hidden empty carousels
 // - opening another album from a carousel, opening an artist from the artist names, an artist without an id as plain text, not available for invalid_request without retry
+// - starting a list registers the album as a recent and keeps playing when that fails
 // - the generic error with retry for upstream_error and a transport failure, back and its fallback, es
 //
 // Run with: pnpm --filter @beatly/mobile test -- AlbumScreen
@@ -18,7 +19,7 @@
 
 import type { Album, HttpOutcome } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import { fireEvent, render, screen } from "@testing-library/react-native";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { StyleSheet, type ViewStyle } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -225,6 +226,41 @@ describe("AlbumScreen", () => {
     expect(state.index).toBe(1);
     expect(state.source).toEqual({ kind: "album", id: "MPREb_1", name: "Test Album" });
     expect(state.current?.coverUrl).toBe("test://img/al1");
+  });
+
+  it("registers the album as a recent with its artists and cover when a track plays", async () => {
+    const ctx = await setup();
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: "First Song" }));
+    expect(ctx.registerRecent).toHaveBeenCalledWith({
+      entity_type: "album",
+      entity_id: "MPREb_1",
+      metadata: {
+        title: "Test Album",
+        subtitle: "Test Artist",
+        thumbnail_url: "test://img/al1",
+      },
+    });
+    const current = ctx.playback.getState().current;
+    expect(current?.album).toBe("Test Album");
+    expect(current?.albumId).toBe("MPREb_1");
+  });
+
+  it("keeps playing when the recent fails to register", async () => {
+    const ctx = await setup({
+      registerRecent: () => Promise.resolve({ kind: "api_failure", reason: "upstream_error" }),
+    });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: "First Song" }));
+    await waitFor(() => {
+      expect(ctx.log.warn).toHaveBeenCalledWith("recents.register_failed", {
+        entityType: "album",
+        detail: "upstream_error",
+      });
+    });
+    expect(ctx.player.port.load).toHaveBeenCalled();
+    expect(ctx.playback.getState().current?.trackId).toBe("t1");
+    expect(screen.queryByText(en.common.error.generic)).toBeNull();
   });
 
   it("does not make the unavailable track a button", async () => {

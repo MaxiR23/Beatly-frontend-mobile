@@ -7,7 +7,7 @@
 //
 // What is covered:
 // - the index skipping the unplayable items before the tapped one, an unplayable tapped item
-// - a track of the up next or related routes mapped to a playable track, with its nulls kept
+// - a track of the up next or related routes mapped to a playable track, with its artist refs and album, and its nulls kept
 //
 // Run with: pnpm --filter @beatly/mobile test -- screens/player/queue
 //
@@ -25,7 +25,15 @@ const items = [
 ];
 const toPlayable = (item: { id: string; ok: boolean }): PlayableTrack | null =>
   item.ok
-    ? { trackId: item.id, title: item.id, artists: [], coverUrl: null, durationSeconds: null }
+    ? {
+        trackId: item.id,
+        title: item.id,
+        artists: [],
+        album: null,
+        albumId: null,
+        coverUrl: null,
+        durationSeconds: null,
+      }
     : null;
 
 describe("toQueue", () => {
@@ -62,7 +70,12 @@ describe("playableOf", () => {
     ).toEqual({
       trackId: "t1",
       title: "Song",
-      artists: ["Ann", "Bob"],
+      artists: [
+        { id: "a1", name: "Ann" },
+        { id: "a2", name: "Bob" },
+      ],
+      album: "Album",
+      albumId: "al1",
       coverUrl: "test://img/t1",
       durationSeconds: 200,
     });
@@ -79,6 +92,14 @@ describe("playableOf", () => {
         duration_seconds: null,
         thumbnail_url: null,
       }),
-    ).toEqual({ trackId: "t1", title: "Song", artists: [], coverUrl: null, durationSeconds: null });
+    ).toEqual({
+      trackId: "t1",
+      title: "Song",
+      artists: [],
+      album: null,
+      albumId: null,
+      coverUrl: null,
+      durationSeconds: null,
+    });
   });
 });

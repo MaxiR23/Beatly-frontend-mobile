@@ -189,7 +189,7 @@ export function PlayerScreen() {
                 {current.title}
               </Text>
               <Text tone="secondary" numberOfLines={1}>
-                {current.artists.join(t("artistSeparator"))}
+                {current.artists.map((artist) => artist.name).join(t("artistSeparator"))}
               </Text>
             </View>
             {failed ? (

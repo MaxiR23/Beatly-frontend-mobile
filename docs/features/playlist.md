@@ -53,16 +53,19 @@ The back button is labeled `playlist:back`.
 
 ## Data
 
-| Route                              | Paginated   | Cache-Control       | Reasons listed                                                                          | Branches on                          |
-| ---------------------------------- | ----------- | ------------------- | --------------------------------------------------------------------------------------- | ------------------------------------ |
-| `GET /playlists/{id}`              | no          | `private, no-cache` | `playlist_not_found`, `invalid_request`, `unauthorized`, `upstream_*`                   | `playlist_not_found`                 |
-| `GET /playlists/{id}/tracks`       | yes, cursor | `private, no-cache` | `playlist_not_found`, `invalid_request`, `invalid_cursor`, `unauthorized`, `upstream_*` | `playlist_not_found`                 |
-| `GET /playlists/liked`             | no          | `private, no-cache` | `unauthorized`, `upstream_*`                                                            | none (generic error)                 |
-| `GET /playlists/liked/tracks`      | yes, cursor | `private, no-cache` | `invalid_request`, `invalid_cursor`, `unauthorized`, `upstream_*`                       | none; `invalid_cursor` by the helper |
-| `GET /public/genre-playlists/{id}` | no          | `no-store`          | `playlist_not_found`, `invalid_request`, `upstream_*`                                   | `playlist_not_found`                 |
+| Route                              | Paginated   | Cache-Control       | Reasons listed                                                                          | Branches on                                    |
+| ---------------------------------- | ----------- | ------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `GET /playlists/{id}`              | no          | `private, no-cache` | `playlist_not_found`, `invalid_request`, `unauthorized`, `upstream_*`                   | `playlist_not_found`                           |
+| `GET /playlists/{id}/tracks`       | yes, cursor | `private, no-cache` | `playlist_not_found`, `invalid_request`, `invalid_cursor`, `unauthorized`, `upstream_*` | `playlist_not_found`                           |
+| `GET /playlists/liked`             | no          | `private, no-cache` | `unauthorized`, `upstream_*`                                                            | none (generic error)                           |
+| `GET /playlists/liked/tracks`      | yes, cursor | `private, no-cache` | `invalid_request`, `invalid_cursor`, `unauthorized`, `upstream_*`                       | none; `invalid_cursor` by the helper           |
+| `GET /public/genre-playlists/{id}` | no          | `no-store`          | `playlist_not_found`, `invalid_request`, `upstream_*`                                   | `playlist_not_found`                           |
+| `POST /recents`                    | no          | `private, no-cache` | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                 | none; a failure is logged and nothing is drawn |
 
 `GET /public/genre-playlists/{id}` carries the header and the tracks of a genre
 playlist, so the paged tracks query never runs for it.
+
+Starting a list from a track registers the playlist with `POST /recents`, and a failure never stops the music.
 
 A failed later tracks page replaces the whole screen with the error and retry, as
 Home and Library do; it does not keep the loaded tracks with an inline error.

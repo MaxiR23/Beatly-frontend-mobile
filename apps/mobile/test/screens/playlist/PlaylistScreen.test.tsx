@@ -9,6 +9,7 @@
 // - the header of an own (its mosaic), a liked and a genre playlist: cover, title, creator, description, meta line
 // - the tracks, not pressable, no more button, infinite scroll for own and liked, a genre playlist's tracks from its header
 // - the empty message under the header, not found from the header or the tracks, the generic error with retry
+// - starting a list registers an own, a liked and a genre playlist as a recent with its kind
 // - the skeleton, back and its fallback, es
 //
 // Run with: pnpm --filter @beatly/mobile test -- PlaylistScreen
@@ -221,7 +222,55 @@ describe("PlaylistScreen", () => {
     expect(state.queue.map((t) => t.trackId)).toEqual(["t1", "t2"]);
     expect(state.index).toBe(1);
     expect(state.source).toEqual({ kind: "playlist", id: "p1", name: "Road trip" });
-    expect(state.current?.artists).toEqual(["Test Artist", "Guest"]);
+    expect(state.current?.artists).toEqual([
+      { id: "ar1", name: "Test Artist" },
+      { id: null, name: "Guest" },
+    ]);
+  });
+
+  it("registers an own playlist as a recent with its username and first thumbnail", async () => {
+    const ctx = await setup({ listPlaylistTracks: tracksOf(two) });
+    await screen.findByText("maxi_23");
+    await fireEvent.press(screen.getByRole("button", { name: "First Song" }));
+    expect(ctx.registerRecent).toHaveBeenCalledWith({
+      entity_type: "playlist",
+      entity_id: "p1",
+      metadata: {
+        title: "Road trip",
+        subtitle: "maxi_23",
+        thumbnail_url: "test://img/1",
+        kind: "user",
+      },
+    });
+  });
+
+  it("registers a genre playlist as a recent with Beatly as its subtitle", async () => {
+    mockParams = { id: "gp1", source: "genre" };
+    const ctx = await setup({
+      getGenrePlaylist: detail({ ...publicGenrePlaylistFixture, tracks: two }),
+    });
+    await fireEvent.press(await screen.findByRole("button", { name: "First Song" }));
+    expect(ctx.registerRecent).toHaveBeenCalledWith({
+      entity_type: "playlist",
+      entity_id: "gp1",
+      metadata: {
+        title: "Pop hits",
+        subtitle: "Beatly",
+        thumbnail_url: "test://img/1",
+        kind: "genre",
+      },
+    });
+  });
+
+  it("registers liked as a recent with its translated title and no subtitle or cover", async () => {
+    mockParams = { id: "liked", source: "liked" };
+    const ctx = await setup({ listLikedTracks: tracksOf(two) });
+    await fireEvent.press(await screen.findByRole("button", { name: "First Song" }));
+    expect(ctx.registerRecent).toHaveBeenCalledWith({
+      entity_type: "playlist",
+      entity_id: "liked",
+      metadata: { title: en.playlist.liked, subtitle: null, thumbnail_url: null, kind: "liked" },
+    });
   });
 
   it("draws no more button, only back and the rows", async () => {

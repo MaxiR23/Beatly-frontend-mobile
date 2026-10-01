@@ -171,7 +171,9 @@ export function SearchScreen() {
       const queue = toQueue(songs, tapped, (song) => ({
         trackId: song.track_id,
         title: song.title,
-        artists: song.artists.map((a) => a.name),
+        artists: song.artists,
+        album: song.album,
+        albumId: song.album_id,
         coverUrl: song.thumbnail_url,
         durationSeconds: song.duration_seconds,
       }));

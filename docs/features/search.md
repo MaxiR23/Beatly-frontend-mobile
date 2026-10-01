@@ -54,6 +54,8 @@ search field uses `search:placeholder` and `search:clear`; row buttons use `sear
 | -------------------- | ------------------------------------------------------ | ----------------------------------------------------------------- | ----------------------------------------------------------------------- | -------------------------------- |
 | `GET /search?q=text` | no (`artist` and two whole lists, no `limit`/`cursor`) | `max-age` of the seconds left, at most 3600; `no-store` on errors | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout` | none; all draw the generic error |
 
+Playing a song registers no recent; its play is registered by the player (`player.md`).
+
 Nothing found is `ok: true` with `artist: null`, `songs: []` and `albums: []`: an expected empty
 state, never a retry. The query is debounced by `SEARCH_DEBOUNCE_MS` (300 ms) and the request runs
 only for a non-empty trimmed text.

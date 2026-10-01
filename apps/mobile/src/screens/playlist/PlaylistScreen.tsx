@@ -1,4 +1,4 @@
-// INFO: a playlist, own, liked or genre by its source param: the detail base with its cover, title, creator, description, meta line and tracks paged by infinite scroll for own and liked; a genre playlist's header and tracks come in one request; unavailable for playlist_not_found.
+// INFO: a playlist, own, liked or genre by its source param: the detail base with its cover, title, creator, description, meta line and tracks paged by infinite scroll for own and liked; a genre playlist's header and tracks come in one request; unavailable for playlist_not_found; starting a list registers it as a recent.
 import { profileName } from "@beatly/core";
 import { color, layout, radius, spacing } from "@beatly/ui";
 import {
@@ -19,6 +19,7 @@ import { useT } from "../../adapters/i18n.ts";
 import { OutcomeError } from "../../queries/outcomeError.ts";
 import { usePlaylistHeader, usePlaylistTracks } from "../../queries/usePlaylist.ts";
 import { useProfile } from "../../queries/useProfile.ts";
+import { useRegisterRecent } from "../../queries/useRecents.ts";
 import { useDominantColor } from "../detail/useDominantColor.ts";
 import { playlistMeta } from "./playlistMeta.ts";
 import { playlistSource } from "./playlistSource.ts";
@@ -41,6 +42,7 @@ export function PlaylistScreen() {
   const insets = useSafeAreaInsets();
   const tabBarClearance = useTabBarClearance();
   const playback = usePlaybackActions();
+  const registerRecent = useRegisterRecent();
   const { id = "", source } = useLocalSearchParams<{ id?: string; source?: string }>();
   const kind = playlistSource(source);
   const header = usePlaylistHeader(kind, id);
@@ -124,12 +126,27 @@ export function PlaylistScreen() {
       const queue = toQueue(list, tapped, (track) => ({
         trackId: track.track_id,
         title: track.title,
-        artists: track.artists.map((a) => a.name),
+        artists: track.artists,
+        album: track.album,
+        albumId: track.album_id,
         coverUrl: track.thumbnail_url,
         durationSeconds: track.duration_seconds,
       }));
       if (queue !== null) {
         void playback.playList(queue.tracks, queue.index, { kind: "playlist", id, name: title });
+        let subtitle: string | null = null;
+        if (data.source === "user") subtitle = owner;
+        else if (data.source === "genre") subtitle = tc("brand");
+        registerRecent.mutate({
+          entity_type: "playlist",
+          entity_id: data.playlist.id,
+          metadata: {
+            title,
+            subtitle,
+            thumbnail_url: cover.urls[0] ?? null,
+            kind: data.source,
+          },
+        });
       }
     };
 

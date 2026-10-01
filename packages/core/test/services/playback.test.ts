@@ -7,6 +7,7 @@
 //
 // What is covered:
 // - with data, expected empty (an empty or out-of-range start), the typed resolution failure and the player error
+// - the listen identity: bumped on every track start, repeat-one replay and list end, kept by a seek
 // - toggle, next, previous with its restart rule, skipTo, seek, shuffle on and off, repeat one, ended at the end of the list, a stale resolution, stop
 // - Not applicable: ok:false reasons, because the controller does not call the API
 //
@@ -28,7 +29,9 @@ import { createFakeStreams } from "../fakes/streams.ts";
 const track = (id: string): PlayableTrack => ({
   trackId: id,
   title: `Song ${id}`,
-  artists: ["Artist"],
+  artists: [{ id: "ar1", name: "Artist" }],
+  album: "Album",
+  albumId: "a1",
   coverUrl: null,
   durationSeconds: 200,
 });
@@ -438,5 +441,67 @@ describe("state", () => {
     expect(state.index).toBe(-1);
     expect(state.shuffle).toBe(true);
     expect(player.calls.at(-1)).toEqual({ type: "unload" });
+  });
+});
+
+describe("listen", () => {
+  it("starts a new listen on every track start", async () => {
+    const { controller, streams } = setup();
+    expect(controller.getState().listen).toBe(0);
+    await controller.playList(list, 0, source);
+    const seen = [controller.getState().listen];
+    await controller.next();
+    seen.push(controller.getState().listen);
+    await controller.skipTo(0);
+    seen.push(controller.getState().listen);
+    streams.answer("t1", { kind: "failure", cause: "timeout" });
+    await controller.skipTo(0);
+    streams.answer("t1", { kind: "resolved", url: "test://audio/t1" });
+    await controller.retry();
+    seen.push(controller.getState().listen);
+    expect(seen[0]).toBeGreaterThan(0);
+    expect(seen[1]).toBeGreaterThan(seen[0] ?? 0);
+    expect(seen[2]).toBeGreaterThan(seen[1] ?? 0);
+    expect(seen[3]).toBeGreaterThan(seen[2] ?? 0);
+  });
+
+  it("starts a new listen when repeat one replays the track", async () => {
+    const { controller, player } = setup();
+    await controller.playList(list, 0, source);
+    const before = controller.getState();
+    controller.setRepeatOne(true);
+    player.emit({ type: "ended" });
+    await flush();
+    const after = controller.getState();
+    expect(after.listen).toBeGreaterThan(before.listen);
+    expect(after.current).toBe(before.current);
+  });
+
+  it("keeps the listen on a seek and on previous's restart", async () => {
+    const { controller, player } = setup();
+    await controller.playList(list, 1, source);
+    const before = controller.getState().listen;
+    player.advance(PREVIOUS_RESTARTS_AFTER_SECONDS + 1);
+    await controller.seek(100);
+    await controller.previous();
+    expect(controller.getState().current?.trackId).toBe("t2");
+    expect(controller.getState().listen).toBe(before);
+  });
+
+  it("starts a new listen when the list ends", async () => {
+    const { controller, player } = setup();
+    await controller.playList(list, 2, source);
+    const before = controller.getState().listen;
+    player.emit({ type: "ended" });
+    await flush();
+    expect(controller.getState().status).toBe("paused");
+    expect(controller.getState().listen).toBeGreaterThan(before);
+  });
+
+  it("is idle with listen 0 after stop", async () => {
+    const { controller } = setup();
+    await controller.playList(list, 0, source);
+    controller.stop();
+    expect(controller.getState().listen).toBe(0);
   });
 });

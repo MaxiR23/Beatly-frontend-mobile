@@ -45,7 +45,12 @@ const metrics = {
 const track = (id: string): PlayableTrack => ({
   trackId: id,
   title: `Song ${id}`,
-  artists: ["Ann", "Bob"],
+  artists: [
+    { id: "ar1", name: "Ann" },
+    { id: "ar2", name: "Bob" },
+  ],
+  album: "Album",
+  albumId: "a1",
   coverUrl: null,
   durationSeconds: 200,
 });

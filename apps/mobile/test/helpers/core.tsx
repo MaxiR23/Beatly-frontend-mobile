@@ -7,7 +7,7 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, and the page builder)
+// (the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, and the page builder)
 //
 import type {
   ActivityService,
@@ -455,6 +455,8 @@ export function makeCore(
     auth?: MockAuth;
     getMyProfile?: ProfileService["getMyProfile"];
     listRecents?: ActivityService["listRecents"];
+    logPlay?: ActivityService["logPlay"];
+    registerRecent?: ActivityService["registerRecent"];
     listPlaylists?: PlaylistsService["listPlaylists"];
     createPlaylist?: PlaylistsService["createPlaylist"];
     listLibrary?: LibraryService["listLibrary"];
@@ -482,6 +484,19 @@ export function makeCore(
   );
   const listRecents = jest.fn<ActivityService["listRecents"]>(
     options.listRecents ?? (() => Promise.resolve(pageOf<RecentEntity>([]))),
+  );
+  const logPlay = jest.fn<ActivityService["logPlay"]>(
+    options.logPlay ??
+      (() =>
+        Promise.resolve({
+          kind: "success",
+          data: { track_id: "t1", played_at: "2026-01-01T00:00:00Z" },
+          maxAgeSeconds: 0,
+        })),
+  );
+  const registerRecent = jest.fn<ActivityService["registerRecent"]>(
+    options.registerRecent ??
+      (() => Promise.resolve({ kind: "success", data: recentFixture, maxAgeSeconds: 0 })),
   );
   const listPlaylists = jest.fn<PlaylistsService["listPlaylists"]>(
     options.listPlaylists ?? (() => Promise.resolve(pageOf<PlaylistListItem>([]))),
@@ -561,7 +576,7 @@ export function makeCore(
     log,
   });
   const core: Core = {
-    activity: { listRecents },
+    activity: { listRecents, logPlay, registerRecent },
     album: { getAlbum },
     artists: { getArtist },
     auth,
@@ -590,6 +605,8 @@ export function makeCore(
     log,
     getMyProfile,
     listRecents,
+    logPlay,
+    registerRecent,
     listPlaylists,
     createPlaylist,
     listLibrary,

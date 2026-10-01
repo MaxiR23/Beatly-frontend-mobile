@@ -22,6 +22,7 @@ import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 export function HomeScreen() {
   const t = useT("home");
   const tc = useT("common");
+  const tp = useT("playlist");
   const router = useRouter();
   const tabBarClearance = useTabBarClearance();
   const recents = useRecents();
@@ -44,7 +45,11 @@ export function HomeScreen() {
     const kind = recent.metadata.kind;
     return {
       key: `${recent.entity_type}:${recent.entity_id}`,
-      title: recent.metadata.title ?? undefined,
+      // The liked title is an identifier, not a display string: it follows the language.
+      title:
+        recent.entity_type === "playlist" && kind === "liked"
+          ? tp("liked")
+          : (recent.metadata.title ?? undefined),
       subtitle: recentLine(recent),
       urls: recent.metadata.thumbnail_url ? [recent.metadata.thumbnail_url] : [],
       shape: recent.entity_type === "artist" ? "round" : "square",

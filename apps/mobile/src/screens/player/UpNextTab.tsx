@@ -91,7 +91,7 @@ export function UpNextTab({ trackId, onAtTopChange }: UpNextTabProps) {
           shape="square"
           urls={item.track.coverUrl === null ? [] : [item.track.coverUrl]}
           title={item.track.title}
-          subtitle={item.track.artists.join(t("artistSeparator"))}
+          subtitle={item.track.artists.map((artist) => artist.name).join(t("artistSeparator"))}
           onPress={() => {
             press(item);
           }}

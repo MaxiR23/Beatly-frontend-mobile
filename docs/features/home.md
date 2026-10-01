@@ -63,6 +63,8 @@ holds the log out button (`common:account.logout`); a failed log out draws
 | `GET /recents`    | single page of at most 30, never a cursor | `private, no-cache` | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                   | none; all draw the generic error                                                      |
 | `GET /profile/me` | no                                        | `private, no-cache` | `profile_not_found`                                                                       | none; feeds the avatar and the own playlists' subtitle                                |
 
+Starting a list in an album, an artist or a playlist registers it with `POST /recents` and invalidates `recents`, so the shelf refetches and shows it first. The stored metadata: album title, its artists as subtitle, its cover; artist name, no subtitle, its image; playlist title, the owner's username or display name for an own playlist, `Beatly` for a genre playlist and none for liked, its first cover, and its `kind`. The Home draws a liked recent's title from i18n (`playlist:liked`) and ignores the stored one, so a language change is reflected.
+
 Creating a playlist from the library invalidates `playlists/mine`, so the shelf
 shows it the next time Home renders.
 
