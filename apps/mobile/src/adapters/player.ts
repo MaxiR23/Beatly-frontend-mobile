@@ -4,7 +4,8 @@ import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
 import type { AudioPlayer, AudioStatus } from "expo-audio";
 
 // How often the engine reports its position, in milliseconds.
-const UPDATE_INTERVAL_MS = 250;
+// Synced lyrics switch on a tick, so the tick bounds how late a line lights up.
+const UPDATE_INTERVAL_MS = 100;
 
 function toEvents(status: AudioStatus): PlayerEvent[] {
   if (status.error !== null) return [{ type: "error", message: status.error }];
