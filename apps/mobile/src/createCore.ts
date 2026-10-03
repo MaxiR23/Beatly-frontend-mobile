@@ -6,6 +6,7 @@ import {
   createGenresService,
   createHttpClient,
   createLibraryService,
+  createLikesService,
   createListeningCounter,
   createPlaybackController,
   createPlaylistsService,
@@ -16,6 +17,7 @@ import {
   createSheetNudgeService,
   createStreamResolver,
   createTracksService,
+  migrate,
 } from "@beatly/core";
 import type {
   ActivityService,
@@ -24,6 +26,7 @@ import type {
   AuthPort,
   GenresService,
   LibraryService,
+  LikesService,
   LogPort,
   PlaybackController,
   PlaylistsService,
@@ -39,6 +42,7 @@ import { Platform } from "react-native";
 
 import { createAuthAdapter } from "./adapters/auth.ts";
 import { createConfigAdapter } from "./adapters/config.ts";
+import { createDbAdapter } from "./adapters/db.ts";
 import { createHttpAdapter } from "./adapters/http.ts";
 import { createLogAdapter } from "./adapters/log.ts";
 import { createPlayerAdapter } from "./adapters/player.ts";
@@ -52,6 +56,7 @@ export interface Core {
   readonly auth: AuthPort;
   readonly genres: GenresService;
   readonly library: LibraryService;
+  readonly likes: LikesService;
   readonly log: LogPort;
   readonly playback: PlaybackController;
   readonly playlists: PlaylistsService;
@@ -73,6 +78,8 @@ export function createCore(): Core {
   });
   const http = createHttpAdapter();
   const storage = createStorageAdapter();
+  const db = createDbAdapter();
+  const migrated = migrate(db, log); // applied once, at app start
   const client = createHttpClient({
     http,
     auth,
@@ -100,6 +107,7 @@ export function createCore(): Core {
     auth,
     genres: createGenresService(client),
     library: createLibraryService(client),
+    likes: createLikesService({ client, db, log, migrated }),
     log,
     playback,
     playlists: createPlaylistsService(client),

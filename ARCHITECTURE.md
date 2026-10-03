@@ -70,6 +70,7 @@ in-memory fake in `packages/core/test/fakes/`.
 | `config`  | the public build-time values core needs: the stream endpoint, client name and version         | `adapters/config.ts`  | the build-time env, read in `src/env.ts`      | an object literal                        |
 | `log`     | `debug`, `info`, `warn`, `error` with structured fields; `debug` writes only in dev builds    | `adapters/log.ts`     | `console`, the only file allowed to           | an array                                 |
 | `storage` | get / set / delete small key-value data (recent searches, the stream identifier, preferences) | `adapters/storage.ts` | async storage                                 | a `Map`                                  |
+| `db`      | run a statement, read rows, run work in a transaction                                         | `adapters/db.ts`      | `expo-sqlite`                                 | `node:sqlite` in memory, real migrations |
 
 The six public build-time values are read in `apps/mobile/src/env.ts`.
 `createCore()` passes the API base URL, auth URL and anon key to the
@@ -84,6 +85,11 @@ headless because a play must count whichever screen is open, or none; a
 screen that mounts and unmounts would lose or double the count. It is the
 first `core` service that runs without a screen or a hook, and a failure is
 only logged.
+
+The local database's migrations also run once at start, from `createCore()`,
+and the likes mirror is synced by `SessionProvider` (at start with a stored
+session, on sign in and on every return to the foreground) and cleared on
+sign out, so it works with no screen involved (ADR 022).
 
 `adapters/i18n.ts` wraps `i18next` and `expo-localization`. It has no
 port because `core` never translates.

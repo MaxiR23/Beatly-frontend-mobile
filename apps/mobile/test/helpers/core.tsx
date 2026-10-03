@@ -7,7 +7,7 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, and the page builder)
+// (the likes mirror, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, and the page builder)
 //
 import type {
   ActivityService,
@@ -23,6 +23,7 @@ import type {
   LibraryEntry,
   LikedPlaylist,
   LibraryService,
+  LikesService,
   LogPort,
   PageResult,
   Playlist,
@@ -460,6 +461,8 @@ export function makeCore(
     listPlaylists?: PlaylistsService["listPlaylists"];
     createPlaylist?: PlaylistsService["createPlaylist"];
     listLibrary?: LibraryService["listLibrary"];
+    sync?: LikesService["sync"];
+    clear?: LikesService["clear"];
     listGenres?: GenresService["listGenres"];
     listGenrePlaylists?: GenresService["listGenrePlaylists"];
     listGenreCategories?: GenresService["listGenreCategories"];
@@ -564,6 +567,25 @@ export function makeCore(
     options.getRelated ??
       (() => Promise.resolve({ kind: "success", data: relatedFixture, maxAgeSeconds: 0 })),
   );
+  let confirmedListener: () => void = () => undefined;
+  const likes = {
+    isLiked: jest.fn<LikesService["isLiked"]>(() => false),
+    subscribe: jest.fn<LikesService["subscribe"]>(() => () => undefined),
+    onConfirmed: jest.fn<LikesService["onConfirmed"]>((listener) => {
+      confirmedListener = listener;
+      return () => undefined;
+    }),
+    setLiked: jest.fn<LikesService["setLiked"]>(() => Promise.resolve({ kind: "confirmed" })),
+    sync: jest.fn<LikesService["sync"]>(
+      options.sync ?? (() => Promise.resolve({ kind: "success" })),
+    ),
+    clear: jest.fn<LikesService["clear"]>(
+      options.clear ?? (() => Promise.resolve({ kind: "success" })),
+    ),
+  };
+  const emitLikeConfirmed = () => {
+    confirmedListener();
+  };
   const storage = options.storage ?? memoryStorage();
   const log = makeLog();
   const player = makePlayer();
@@ -582,6 +604,7 @@ export function makeCore(
     auth,
     genres: { listGenres, listGenrePlaylists, listGenreCategories },
     library: { listLibrary },
+    likes,
     log,
     playback,
     playlists: {
@@ -610,6 +633,8 @@ export function makeCore(
     listPlaylists,
     createPlaylist,
     listLibrary,
+    likes,
+    emitLikeConfirmed,
     listGenres,
     listGenrePlaylists,
     listGenreCategories,

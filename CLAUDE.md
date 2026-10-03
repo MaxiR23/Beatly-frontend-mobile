@@ -99,7 +99,7 @@ Dependencies point one way: `apps/mobile` depends on `ui` and `core`;
 enforces the boundaries; nobody relies on discipline.
 
 Ports are interfaces in `packages/core/src/ports/`: `http`, `auth`,
-`player`, `config`, `log`, `storage`. Each one has exactly one adapter
+`player`, `config`, `log`, `storage`, `db`. Each one has exactly one adapter
 in `apps/mobile/src/adapters/` and an in-memory fake for tests. A
 service receives its ports; it never imports a library. `createCore()`
 wires the adapters once, at app start.
@@ -152,14 +152,15 @@ that needs it opens a backend issue instead of computing it here.
       app/                  expo-router routes, thin files that render a screen
       src/screens/          one folder per screen
       src/queries/          TanStack Query hooks over core services
-      src/adapters/         one file per external library: http, auth, player, config, log, storage, i18n
+      src/adapters/         one file per external library: http, auth, player, config, log, storage, db, i18n
       src/i18n/es/ en/      one namespace per screen, key parity enforced by a test
       src/providers/        thin React providers over core
       src/auth/             pure helpers of the auth adapter (no library import)
       test/                 mirrors src/
     packages/core/
-      src/ports/            the six interfaces
+      src/ports/            the seven interfaces
       src/http/             the single HTTP client and the paginated helper
+      src/db/               the local database's migrations
       src/domain/           zod schemas and the types inferred from them
       src/services/         use cases, one file per API domain
       test/                 mirrors src/; fakes under test/fakes/

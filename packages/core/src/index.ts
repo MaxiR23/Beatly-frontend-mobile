@@ -1,4 +1,4 @@
-// INFO: public entry of @beatly/core: ports, the envelope, the HTTP client, the paginated helper, the services, the playback controller, the listening counter and the stream resolver.
+// INFO: public entry of @beatly/core: ports, the envelope, the HTTP client, the paginated helper, the services, the playback controller, the listening counter, the stream resolver, the local database and its migrations, and the likes mirror.
 export type {
   AuthChange,
   AuthFailure,
@@ -13,6 +13,7 @@ export type {
 } from "./ports/auth.ts";
 export type { HttpMethod, HttpPort, HttpRequest, HttpResponse } from "./ports/http.ts";
 export type { ConfigPort } from "./ports/config.ts";
+export type { DbExecutor, DbPort, SqlValue } from "./ports/db.ts";
 export type { LogFields, LogPort } from "./ports/log.ts";
 export type { PlayerEvent, PlayerPort } from "./ports/player.ts";
 export {
@@ -153,3 +154,14 @@ export {
   PLAY_AFTER_SECONDS,
   createListeningCounter,
 } from "./services/listening.ts";
+export { MIGRATIONS, migrate } from "./db/migrations.ts";
+export type { MigrateOutcome, Migration } from "./db/migrations.ts";
+export { likeArtistSchema, likeSchema } from "./domain/like.ts";
+export type { Like } from "./domain/like.ts";
+export {
+  LIKE_RETRY_DELAYS_MS,
+  LIKE_SEND_DELAY_MS,
+  SYNC_OVERLAP_SECONDS,
+  createLikesService,
+} from "./services/likes.ts";
+export type { LikeInput, LikeOutcome, LikesService, LikesSyncOutcome } from "./services/likes.ts";

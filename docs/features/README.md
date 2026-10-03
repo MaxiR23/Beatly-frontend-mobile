@@ -15,3 +15,4 @@ One file per screen; every file follows `_template.md`.
 | `library.md`  | the library tab and the create-playlist sheet |
 | `player.md`   | the mini player and the player                |
 | `tabs.md`     | the tab navigator                             |
+| `likes.md`    | the likes mirror (no screen)                  |
