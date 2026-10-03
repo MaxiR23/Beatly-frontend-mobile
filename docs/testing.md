@@ -146,6 +146,7 @@ a device, not even a sandbox.
 - `player`: an in-memory player with a manual clock, so "30 seconds
   played" is a method call, not a wait.
 - `config`, `log`, `storage`: an object literal, an array, a `Map`.
+- `db`: `node:sqlite`'s in-memory database, with the real migrations applied, so a test asserts rows with plain SQL.
 
 Query hooks are tested with a fresh `QueryClient` per test and the
 `http` fake underneath, asserting the states the hook exposes. Screens,

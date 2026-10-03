@@ -19,6 +19,9 @@ export const playlistQueryKey = (source: PlaylistSource, id: string) =>
 export const playlistTracksQueryKey = (source: PlaylistSource, id: string) =>
   ["playlist", source, id, "tracks"] as const;
 
+// The prefix of the liked playlist's header and tracks, invalidated when a like is confirmed.
+export const likedPlaylistQueriesKey = ["playlist", "liked"] as const;
+
 export function usePlaylistHeader(source: PlaylistSource, id: string) {
   const { playlists, publicShare } = useCore();
   return useQuery({

@@ -180,3 +180,6 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
 - `021-stream-resolution-in-the-client-behind-a-config-port.md` — why the
   client resolves a track's stream URL itself, behind a `config` port with
   three public values, instead of receiving it from the backend.
+- `022-local-database-with-append-only-migrations.md` — why the app keeps a
+  local SQLite database behind a `db` port, and why its migrations are
+  numbered, append-only and never edited.
