@@ -279,3 +279,12 @@ describe("SearchScreen frame", () => {
     expect(mockPush).toHaveBeenCalledWith({ pathname: "/album/[id]", params: { id: "al1" } });
   });
 });
+
+describe("SearchScreen track menu", () => {
+  it("draws a more button on each song row", async () => {
+    await setup();
+    await fireEvent.changeText(input(), "test");
+    await screen.findByText("Test Song");
+    expect(screen.getAllByRole("button", { name: en.trackMenu.more })).toHaveLength(1);
+  });
+});

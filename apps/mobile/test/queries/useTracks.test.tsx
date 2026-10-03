@@ -3,7 +3,7 @@
 // Tests for the track query hooks.
 //
 // Tested:
-// - useUpNext, useLyrics, useRelated
+// - useUpNext, useLyrics, useRelated, useCredits
 //
 // What is covered:
 // - the data unwrapped from the outcome, cache time from Cache-Control, one cache entry per track
@@ -22,8 +22,9 @@ import type { ReactNode } from "react";
 import type { Core } from "../../src/createCore.ts";
 import { OutcomeError } from "../../src/queries/outcomeError.ts";
 import { createQueryClient } from "../../src/queries/queryClient.ts";
-import { useLyrics, useRelated, useUpNext } from "../../src/queries/useTracks.ts";
+import { useCredits, useLyrics, useRelated, useUpNext } from "../../src/queries/useTracks.ts";
 import {
+  creditsFixture,
   lyricsFixture,
   makeAuth,
   makeCore,
@@ -66,6 +67,7 @@ const cases = [
   { name: "useUpNext", leaf: "upnext", hook: useUpNext, data: upNextFixture },
   { name: "useLyrics", leaf: "lyrics", hook: useLyrics, data: lyricsFixture },
   { name: "useRelated", leaf: "related", hook: useRelated, data: relatedFixture },
+  { name: "useCredits", leaf: "credits", hook: useCredits, data: creditsFixture },
 ] as const;
 
 describe.each(cases)("$name", ({ leaf, hook, data }) => {

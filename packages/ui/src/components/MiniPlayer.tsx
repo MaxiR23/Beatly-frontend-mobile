@@ -1,4 +1,4 @@
-// INFO: the mini player pill: a round cover, a title and a subtitle line, play or pause and next; tinted, with no progress line, or bare inside a surface the system draws (the iOS 26+ tab accessory); tapping the body opens the player.
+// INFO: the mini player pill: a round cover, a title that scrolls when it does not fit and a subtitle line, play or pause and next; tinted, with no progress line, or bare inside a surface the system draws (the iOS 26+ tab accessory); tapping the body opens the player.
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { motion } from "../tokens/motion.ts";
@@ -6,6 +6,7 @@ import { layout, spacing } from "../tokens/spacing.ts";
 import { Cover } from "./Cover.tsx";
 import { GlassSurface } from "./GlassSurface.tsx";
 import { IconButton } from "./IconButton.tsx";
+import { Marquee } from "./Marquee.tsx";
 import { Text } from "./Text.tsx";
 
 interface MiniPlayerProps {
@@ -16,6 +17,7 @@ interface MiniPlayerProps {
   tint: string | null;
   surface?: "glass" | "bare";
   playing: boolean;
+  reduceMotion: boolean;
   busy: boolean;
   labels: { open: string; play: string; pause: string; next: string };
   onOpen: () => void;
@@ -31,6 +33,7 @@ export function MiniPlayer({
   tint,
   surface = "glass",
   playing,
+  reduceMotion,
   busy,
   labels,
   onOpen,
@@ -47,9 +50,7 @@ export function MiniPlayer({
       >
         <Cover urls={coverUrl === null ? [] : [coverUrl]} shape="round" size={layout.rowCover} />
         <View style={styles.text}>
-          <Text variant="rowTitle" numberOfLines={1}>
-            {title}
-          </Text>
+          <Marquee text={title} variant="rowTitle" reduceMotion={reduceMotion} />
           <Text variant="meta" tone={failed ? "error" : "secondary"} numberOfLines={1}>
             {subtitle}
           </Text>

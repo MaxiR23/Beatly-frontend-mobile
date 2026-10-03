@@ -1,4 +1,5 @@
-// INFO: a list row, pressable when given onPress: a cover at the start, a title and an optional secondary line; regular for songs, medium for the library, large for an artist; an icon replaces the images with an accent tile; an unavailable row draws its texts disabled.
+// INFO: a list row, pressable when given onPress: a cover at the start, a title and an optional secondary line; regular for songs, medium for the library, large for an artist; an icon replaces the images with an accent tile; an unavailable row draws its texts disabled; a trailing element sits after the pressable body, outside it.
+import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { motion } from "../tokens/motion.ts";
@@ -16,6 +17,8 @@ interface MediaRowProps {
   icon?: IconName | undefined;
   available?: boolean;
   onPress?: (() => void) | undefined;
+  // A control at the end of the row, a sibling of the pressable body so both are reachable.
+  trailing?: ReactNode;
   testID?: string;
 }
 
@@ -28,6 +31,7 @@ export function MediaRow({
   icon,
   available = true,
   onPress,
+  trailing,
   testID,
 }: MediaRowProps) {
   const large = size === "large";
@@ -54,6 +58,31 @@ export function MediaRow({
   );
 
   const state = available ? undefined : { disabled: true };
+
+  if (trailing !== undefined) {
+    const body =
+      onPress === undefined ? (
+        <View style={styles.body} accessibilityState={state}>
+          {content}
+        </View>
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={title}
+          accessibilityState={state}
+          onPress={onPress}
+          style={({ pressed }) => [styles.body, pressed && styles.pressed]}
+        >
+          {content}
+        </Pressable>
+      );
+    return (
+      <View style={[styles.split, medium ? styles.rowMedium : undefined]} testID={testID}>
+        {body}
+        {trailing}
+      </View>
+    );
+  }
 
   if (onPress === undefined) {
     return (
@@ -94,6 +123,19 @@ const styles = StyleSheet.create({
     gap: layout.gap,
   },
   rowMedium: { paddingVertical: spacing.xs },
+  split: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+    paddingRight: layout.gutter,
+  },
+  body: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingLeft: layout.gutter,
+    gap: layout.gap,
+  },
   pressed: { opacity: motion.pressOpacity },
   text: { flex: 1, gap: spacing.xxs },
 });

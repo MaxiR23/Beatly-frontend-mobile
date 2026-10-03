@@ -32,6 +32,7 @@ async function draw(over: Partial<ComponentProps<typeof MiniPlayer>> = {}) {
       coverUrl={null}
       tint={null}
       playing={false}
+      reduceMotion={false}
       busy={false}
       labels={labels}
       {...handlers}

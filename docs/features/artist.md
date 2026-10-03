@@ -6,7 +6,7 @@ An artist's popular songs, albums, singles and EPs, and similar artists, on the 
 
 Show an artist: a full-width image with the name over it, its popular songs, its albums, its
 singles and EPs, and similar artists. Albums and singles push the album; a similar artist pushes
-another artist in the same tab. Pressing a popular song with a `track_id` plays the popular songs from it (`player.md`); a song without one is not pressable. There are no action buttons.
+another artist in the same tab. Pressing a popular song with a `track_id` plays the popular songs from it (`player.md`); a song without one is not pressable and has no menu. Every playable popular song ends with a more button that opens the track menu (`track-menu.md`).
 
 ## Layout
 

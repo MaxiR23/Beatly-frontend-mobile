@@ -1,4 +1,4 @@
-// INFO: the related tab of the player sheet, from GET /tracks/{id}/related: the songs (a press plays them from it), the artists and the albums (a press opens them); an empty section is hidden and three empty lists draw the empty state.
+// INFO: the related tab of the player sheet, from GET /tracks/{id}/related: the songs (a press plays them from it), the artists and the albums (a press opens them); an empty section is hidden and three empty lists draw the empty state; every song row ends with the track menu button.
 import type { AlbumRef, RelatedArtist } from "@beatly/core";
 import { layout, spacing } from "@beatly/ui";
 import {
@@ -15,6 +15,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 
 import { useT } from "../../adapters/i18n.ts";
 import { useRelated } from "../../queries/useTracks.ts";
+import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
 import { playableOf } from "./queue.ts";
 import { usePlayback, usePlaybackActions } from "./usePlayback.ts";
 
@@ -99,6 +100,7 @@ export function RelatedTab({ trackId, onAtTopChange, onOpenAlbum, onOpenArtist }
               urls={urlsOf(song.thumbnail_url)}
               title={song.title}
               subtitle={song.artists.map((a) => a.name).join(t("artistSeparator"))}
+              trailing={<TrackMenuButton track={playable[position] ?? playableOf(song)} />}
               onPress={() => {
                 if (current !== null) {
                   void playback.playList(playable, position, {

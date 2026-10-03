@@ -42,6 +42,7 @@ export type { ProfileReason, ProfileService } from "./services/profile.ts";
 export {
   likedPlaylistSchema,
   playlistDetailSchema,
+  ownedPlaylistIdsSchema,
   playlistListItemSchema,
   playlistSchema,
   playlistTrackSchema,
@@ -52,13 +53,19 @@ export type {
   PlaylistDetail,
   PlaylistListItem,
   PlaylistTrack,
+  OwnedPlaylistIds,
 } from "./domain/playlist.ts";
 export { publicGenrePlaylistSchema } from "./domain/public.ts";
 export type { PublicGenrePlaylist } from "./domain/public.ts";
 export { createPublicService } from "./services/public.ts";
 export type { PublicService } from "./services/public.ts";
-export { createPlaylistsService } from "./services/playlists.ts";
-export type { CreatePlaylistInput, PlaylistsService } from "./services/playlists.ts";
+export { addTrackInputOf, createPlaylistsService } from "./services/playlists.ts";
+export type {
+  AddTrackInput,
+  AddTrackResult,
+  CreatePlaylistInput,
+  PlaylistsService,
+} from "./services/playlists.ts";
 export { libraryEntryKindSchema, libraryEntrySchema } from "./domain/library.ts";
 export type { LibraryEntry } from "./domain/library.ts";
 export { createLibraryService } from "./services/library.ts";
@@ -126,6 +133,8 @@ export type {
 export { STREAM_CONTAINERS, chooseStreamFormat, createStreamResolver } from "./services/streams.ts";
 export type { ChosenStreamFormat, StreamFormat, StreamPlatform } from "./services/streams.ts";
 export {
+  creditSectionSchema,
+  trackCreditsSchema,
   lyricsLineSchema,
   lyricsSchema,
   trackLyricsSchema,
@@ -136,6 +145,8 @@ export {
 export type {
   LyricsLine,
   Lyrics,
+  TrackCredits,
+  CreditSection,
   TrackLyrics,
   TrackRef,
   TrackRelated,
@@ -163,5 +174,6 @@ export {
   LIKE_SEND_DELAY_MS,
   SYNC_OVERLAP_SECONDS,
   createLikesService,
+  likeInputOf,
 } from "./services/likes.ts";
 export type { LikeInput, LikeOutcome, LikesService, LikesSyncOutcome } from "./services/likes.ts";

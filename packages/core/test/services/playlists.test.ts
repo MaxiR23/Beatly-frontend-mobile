@@ -25,9 +25,14 @@
 // - listLikedTracks returns the first page and an empty first page as a success
 // - listLikedTracks fails with a timeout, network or schema outcome
 // - listLikedTracks sends the cursor and drops a stale cursor on invalid_cursor
+// - listPlaylistsWithTrack returns the ids of the playlists that hold a track, or [] when none
+// - addTrackToPlaylist posts the whole body, counts track_already_in_playlist as added and surfaces other reasons
+// - createPlaylistWithTrack creates then adds, and stops after a failed create
+// - removeTrackFromPlaylist deletes the track, also when it was not there
+// - addTrackInputOf maps a playable track and returns null when it lacks a field
 //
 // What is covered:
-// - Happy path, expected empty state, api failure, transport failure, pagination, creation, detail and tracks
+// - Happy path, expected empty state, api failure, transport failure, pagination, creation, detail, tracks, membership, add and remove
 //
 // Run with: pnpm --filter @beatly/core test -- playlists
 //
@@ -36,7 +41,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createHttpClient, DEFAULT_TIMEOUT_MS } from "../../src/http/client.ts";
-import { createPlaylistsService } from "../../src/services/playlists.ts";
+import {
+  addTrackInputOf,
+  createPlaylistsService,
+  type AddTrackInput,
+} from "../../src/services/playlists.ts";
+import type { PlayableTrack } from "../../src/services/playback.ts";
 import { createFakeAuth } from "../fakes/auth.ts";
 import { createFakeHttp, never, type Handler } from "../fakes/http.ts";
 import { createFakeLog } from "../fakes/log.ts";
@@ -562,5 +572,326 @@ describe("listLikedTracks", () => {
     const outcome = await service.listLikedTracks("stale");
     expect(http.requests).toHaveLength(2);
     expect(outcome.kind === "success" && outcome.data.restartedFromFirstPage).toBe(true);
+  });
+});
+
+function setupRoutes(handlers: Record<string, Handler>) {
+  const http = createFakeHttp(handlers, BASE_URL);
+  const client = createHttpClient({
+    http: http.port,
+    auth: createFakeAuth().port,
+    log: createFakeLog().port,
+    baseUrl: BASE_URL,
+  });
+  return { service: createPlaylistsService(client), http };
+}
+
+const failureOf = (status: number, reason: string) => () => ({
+  status,
+  body: { ok: false, reason },
+});
+
+const addInput: AddTrackInput = {
+  track_id: "t 1",
+  title: "Song",
+  artists: [{ id: "ar1", name: "Artist" }],
+  album: "Album",
+  album_id: "al1",
+  thumbnail_url: "test://img/t1",
+  duration_seconds: 200,
+};
+const addedTrack = {
+  track_id: "t 1",
+  title: "Song",
+  artists: [{ id: "ar1", name: "Artist" }],
+  album: "Album",
+  album_id: "al1",
+  duration_seconds: 200,
+  thumbnail_url: "test://img/t1",
+  position: 3,
+};
+
+describe("listPlaylistsWithTrack", () => {
+  const route = "GET /playlists/owned-with-track/t%201";
+
+  it("returns the ids of the caller's playlists that hold the track", async () => {
+    const { service, http } = setupRoutes({
+      [route]: () => ({
+        headers: { "cache-control": "private, no-cache" },
+        body: { ok: true, data: { playlist_ids: ["p1", "p2"] } },
+      }),
+    });
+    expect(await service.listPlaylistsWithTrack("t 1")).toEqual({
+      kind: "success",
+      data: { playlist_ids: ["p1", "p2"] },
+      maxAgeSeconds: 0,
+    });
+    expect(http.requests[0]?.url).toBe("test://api/playlists/owned-with-track/t%201");
+  });
+
+  it("returns playlist_ids [] as a success when the track is in none", async () => {
+    const { service } = setupRoutes({
+      [route]: () => ({ body: { ok: true, data: { playlist_ids: [] } } }),
+    });
+    expect(await service.listPlaylistsWithTrack("t 1")).toEqual({
+      kind: "success",
+      data: { playlist_ids: [] },
+      maxAgeSeconds: 0,
+    });
+  });
+
+  it("surfaces upstream_error as an api failure", async () => {
+    const { service } = setupRoutes({ [route]: failureOf(502, "upstream_error") });
+    expect(await service.listPlaylistsWithTrack("t 1")).toEqual({
+      kind: "api_failure",
+      reason: "upstream_error",
+    });
+  });
+
+  it("fails with a timeout outcome when the API does not answer", async () => {
+    vi.useFakeTimers();
+    const { service } = setupRoutes({ [route]: never });
+    const pending = service.listPlaylistsWithTrack("t 1");
+    await vi.advanceTimersByTimeAsync(DEFAULT_TIMEOUT_MS + 1);
+    expect(await pending).toEqual({ kind: "transport_failure", cause: "timeout" });
+  });
+
+  it("fails with a network outcome when the request cannot be sent", async () => {
+    const { service } = setupRoutes({ [route]: () => Promise.reject(new Error("offline")) });
+    expect(await service.listPlaylistsWithTrack("t 1")).toEqual({
+      kind: "transport_failure",
+      cause: "network",
+    });
+  });
+
+  it("fails with a schema outcome when playlist_ids is null", async () => {
+    const { service } = setupRoutes({
+      [route]: () => ({ body: { ok: true, data: { playlist_ids: null } } }),
+    });
+    expect(await service.listPlaylistsWithTrack("t 1")).toEqual({
+      kind: "transport_failure",
+      cause: "schema",
+    });
+  });
+});
+
+describe("addTrackToPlaylist", () => {
+  const route = "POST /playlists/p%201/tracks";
+
+  it("posts the whole body and returns alreadyThere false", async () => {
+    const { service, http } = setupRoutes({
+      [route]: () => ({ status: 201, body: { ok: true, data: addedTrack } }),
+    });
+    expect(await service.addTrackToPlaylist("p 1", addInput)).toEqual({
+      kind: "success",
+      data: { alreadyThere: false },
+      maxAgeSeconds: 0,
+    });
+    expect(http.requests[0]?.method).toBe("POST");
+    expect(http.requests[0]?.url).toBe("test://api/playlists/p%201/tracks");
+    expect(JSON.parse(http.requests[0]?.body ?? "null")).toEqual(addInput);
+  });
+
+  it("treats track_already_in_playlist as added", async () => {
+    const { service } = setupRoutes({ [route]: failureOf(409, "track_already_in_playlist") });
+    expect(await service.addTrackToPlaylist("p 1", addInput)).toEqual({
+      kind: "success",
+      data: { alreadyThere: true },
+      maxAgeSeconds: 0,
+    });
+  });
+
+  it("surfaces playlist_not_found as an api failure", async () => {
+    const { service } = setupRoutes({ [route]: failureOf(404, "playlist_not_found") });
+    expect(await service.addTrackToPlaylist("p 1", addInput)).toEqual({
+      kind: "api_failure",
+      reason: "playlist_not_found",
+    });
+  });
+
+  it("fails with a timeout outcome when the API does not answer", async () => {
+    vi.useFakeTimers();
+    const { service } = setupRoutes({ [route]: never });
+    const pending = service.addTrackToPlaylist("p 1", addInput);
+    await vi.advanceTimersByTimeAsync(DEFAULT_TIMEOUT_MS + 1);
+    expect(await pending).toEqual({ kind: "transport_failure", cause: "timeout" });
+  });
+
+  it("fails with a network outcome when the request cannot be sent", async () => {
+    const { service } = setupRoutes({ [route]: () => Promise.reject(new Error("offline")) });
+    expect(await service.addTrackToPlaylist("p 1", addInput)).toEqual({
+      kind: "transport_failure",
+      cause: "network",
+    });
+  });
+
+  it("fails with a schema outcome when the response has no position", async () => {
+    const { service } = setupRoutes({
+      [route]: () => ({ body: { ok: true, data: { ...addedTrack, position: undefined } } }),
+    });
+    expect(await service.addTrackToPlaylist("p 1", addInput)).toEqual({
+      kind: "transport_failure",
+      cause: "schema",
+    });
+  });
+});
+
+describe("createPlaylistWithTrack", () => {
+  it("creates the playlist, then adds the track to it", async () => {
+    const { service, http } = setupRoutes({
+      "POST /playlists": () => ({ status: 201, body: { ok: true, data: created } }),
+      "POST /playlists/p9/tracks": () => ({ status: 201, body: { ok: true, data: addedTrack } }),
+    });
+    expect(await service.createPlaylistWithTrack("New one", addInput)).toEqual({
+      kind: "success",
+      data: { playlist: created },
+      maxAgeSeconds: 0,
+    });
+    expect(http.requests.map((r) => `${r.method} ${r.url}`)).toEqual([
+      "POST test://api/playlists",
+      "POST test://api/playlists/p9/tracks",
+    ]);
+    expect(JSON.parse(http.requests[0]?.body ?? "null")).toEqual({
+      title: "New one",
+      is_public: false,
+    });
+  });
+
+  it("returns invalid_request from the create and sends no add", async () => {
+    const { service, http } = setupRoutes({
+      "POST /playlists": failureOf(422, "invalid_request"),
+    });
+    expect(await service.createPlaylistWithTrack("", addInput)).toEqual({
+      kind: "api_failure",
+      reason: "invalid_request",
+    });
+    expect(http.requests).toHaveLength(1);
+  });
+
+  it("returns the add's failure after the playlist was created", async () => {
+    const { service, http } = setupRoutes({
+      "POST /playlists": () => ({ status: 201, body: { ok: true, data: created } }),
+      "POST /playlists/p9/tracks": failureOf(502, "upstream_error"),
+    });
+    expect(await service.createPlaylistWithTrack("New one", addInput)).toEqual({
+      kind: "api_failure",
+      reason: "upstream_error",
+    });
+    expect(http.requests).toHaveLength(2);
+  });
+
+  it("fails with a timeout outcome on the create", async () => {
+    vi.useFakeTimers();
+    const { service } = setupRoutes({ "POST /playlists": never });
+    const pending = service.createPlaylistWithTrack("New one", addInput);
+    await vi.advanceTimersByTimeAsync(DEFAULT_TIMEOUT_MS + 1);
+    expect(await pending).toEqual({ kind: "transport_failure", cause: "timeout" });
+  });
+
+  it("fails with a network outcome on the add", async () => {
+    const { service } = setupRoutes({
+      "POST /playlists": () => ({ status: 201, body: { ok: true, data: created } }),
+      "POST /playlists/p9/tracks": () => Promise.reject(new Error("offline")),
+    });
+    expect(await service.createPlaylistWithTrack("New one", addInput)).toEqual({
+      kind: "transport_failure",
+      cause: "network",
+    });
+  });
+});
+
+describe("removeTrackFromPlaylist", () => {
+  const route = "DELETE /playlists/p%201/tracks/t%201";
+
+  it("deletes the track and succeeds with data null", async () => {
+    const { service, http } = setupRoutes({
+      [route]: () => ({ body: { ok: true, data: null } }),
+    });
+    expect(await service.removeTrackFromPlaylist("p 1", "t 1")).toEqual({
+      kind: "success",
+      data: null,
+      maxAgeSeconds: 0,
+    });
+    expect(http.requests[0]?.method).toBe("DELETE");
+    expect(http.requests[0]?.url).toBe("test://api/playlists/p%201/tracks/t%201");
+  });
+
+  it("succeeds the same way when the track is not in the playlist", async () => {
+    const { service } = setupRoutes({
+      [route]: () => ({ body: { ok: true, data: null } }),
+    });
+    const outcome = await service.removeTrackFromPlaylist("p 1", "t 1");
+    expect(outcome.kind).toBe("success");
+  });
+
+  it("surfaces playlist_not_found as an api failure", async () => {
+    const { service } = setupRoutes({ [route]: failureOf(404, "playlist_not_found") });
+    expect(await service.removeTrackFromPlaylist("p 1", "t 1")).toEqual({
+      kind: "api_failure",
+      reason: "playlist_not_found",
+    });
+  });
+
+  it("fails with a timeout outcome when the API does not answer", async () => {
+    vi.useFakeTimers();
+    const { service } = setupRoutes({ [route]: never });
+    const pending = service.removeTrackFromPlaylist("p 1", "t 1");
+    await vi.advanceTimersByTimeAsync(DEFAULT_TIMEOUT_MS + 1);
+    expect(await pending).toEqual({ kind: "transport_failure", cause: "timeout" });
+  });
+
+  it("fails with a network outcome when the request cannot be sent", async () => {
+    const { service } = setupRoutes({ [route]: () => Promise.reject(new Error("offline")) });
+    expect(await service.removeTrackFromPlaylist("p 1", "t 1")).toEqual({
+      kind: "transport_failure",
+      cause: "network",
+    });
+  });
+
+  it("fails with a schema outcome when data is an object", async () => {
+    const { service } = setupRoutes({
+      [route]: () => ({ body: { ok: true, data: { removed: true } } }),
+    });
+    expect(await service.removeTrackFromPlaylist("p 1", "t 1")).toEqual({
+      kind: "transport_failure",
+      cause: "schema",
+    });
+  });
+});
+
+describe("addTrackInputOf", () => {
+  const playable: PlayableTrack = {
+    trackId: "t1",
+    title: "Song",
+    artists: [
+      { id: null, name: "Guest" },
+      { id: "ar1", name: "Artist" },
+    ],
+    album: "Album",
+    albumId: "al1",
+    coverUrl: "test://img/t1",
+    durationSeconds: 200,
+  };
+
+  it("maps a full track and drops the artists without an id", () => {
+    expect(addTrackInputOf(playable)).toEqual({
+      track_id: "t1",
+      title: "Song",
+      artists: [{ id: "ar1", name: "Artist" }],
+      album: "Album",
+      album_id: "al1",
+      thumbnail_url: "test://img/t1",
+      duration_seconds: 200,
+    });
+  });
+
+  it.each([
+    ["album", { album: null }],
+    ["album id", { albumId: null }],
+    ["cover", { coverUrl: null }],
+    ["duration", { durationSeconds: null }],
+    ["artist with an id", { artists: [{ id: null, name: "Guest" }] }],
+  ])("returns null without %s", (_name, patch) => {
+    expect(addTrackInputOf({ ...playable, ...patch })).toBeNull();
   });
 });

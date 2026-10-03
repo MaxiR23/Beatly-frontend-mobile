@@ -8,7 +8,7 @@ Show a playlist: its cover, title, creator, description, meta line and tracks.
 There are three kinds, chosen by the `source` param of the route: `user` (an own
 playlist), `liked` (the liked songs) and `genre` (a curated playlist). Own and liked
 tracks load with infinite scroll; a genre playlist loads whole with its header, in one request. Pressing a track plays the loaded tracks from it, with the playlist as the
-source (`player.md`). Track actions, editing and sharing are later issues, so there is no more button.
+source (`player.md`). Every track ends with a more button that opens the track menu (`track-menu.md`); in an own playlist the menu also offers Remove from this playlist, which refreshes the header and the tracks, and the liked and genre playlists never offer it. Editing and sharing are later issues.
 
 ## Layout
 

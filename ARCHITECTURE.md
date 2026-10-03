@@ -101,8 +101,8 @@ The list grows by one row per adapter, in the same PR as the adapter,
 and the library's name is added to the adapter-only list in
 `eslint.config.js` in that same PR. The exception is a library that draws UI:
 it has a single importer in `packages/ui` (`Icon.tsx`, `GlassSurface.tsx`,
-`GradientFill.tsx`),
-enforced the same way in `eslint.config.js`; see ADR 017.
+`GradientFill.tsx`, `NativeMenu.tsx`),
+enforced the same way in `eslint.config.js`; see ADR 017 and ADR 023.
 
 ## How a screen gets data
 
@@ -155,6 +155,7 @@ actually had.
 | The global `fetch` appears in one file                                | Six copies of `authFetch`, none reading `{ok, reason}`, each with its own redirect policy.                                       |
 | Workspaces are imported by package name                               | A relative path into another workspace's `src` bypasses `exports` and the rules above.                                           |
 | No `console.*` outside the log adapter                                | 93 direct calls with no way to silence or ship them.                                                                             |
+| An import cycle fails lint                                            | A real require cycle (`TrackMenuHost` and `TrackMenuSheet`) got past the gate; the legacy app also had one (ADR 024).            |
 | No `any`, explicit or cast                                            | 311 in the legacy, all from untyped responses. A schema at the edge makes them unnecessary.                                      |
 | No `useMemo` / `useCallback` / `memo` without a justifying comment    | The React Compiler memoizes. A manual one hides a data-flow problem; a justified one documents the compiler's limit.             |
 

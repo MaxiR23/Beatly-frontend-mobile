@@ -1,6 +1,6 @@
-// INFO: the search tab: recent queries kept on the device while the field is empty, and the top artist, songs and albums of GET /search once it has text.
+// INFO: the search tab: recent queries kept on the device while the field is empty, and the top artist, songs (each with a menu button) and albums of GET /search once it has text.
 import type { CarouselItem } from "@beatly/ui/native";
-import type { SearchAlbum, SearchArtistRef, SearchSong } from "@beatly/core";
+import type { PlayableTrack, SearchAlbum, SearchArtistRef, SearchSong } from "@beatly/core";
 import { color, layout, spacing } from "@beatly/ui";
 import {
   Carousel,
@@ -32,8 +32,21 @@ import { useDebouncedValue } from "./useDebouncedValue.ts";
 import { toQueue } from "../player/queue.ts";
 import { usePlaybackActions } from "../player/usePlayback.ts";
 import { useTabBarClearance } from "../player/useTabBarClearance.ts";
+import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
+import { TrackMenuHost } from "../trackMenu/TrackMenuHost.tsx";
 
 export const SEARCH_DEBOUNCE_MS = 300;
+
+// The song as playback and the menu see it.
+const toPlayable = (song: SearchSong): PlayableTrack => ({
+  trackId: song.track_id,
+  title: song.title,
+  artists: song.artists,
+  album: song.album,
+  albumId: song.album_id,
+  coverUrl: song.thumbnail_url,
+  durationSeconds: song.duration_seconds,
+});
 
 export function SearchScreen() {
   const t = useT("search");
@@ -168,15 +181,7 @@ export function SearchScreen() {
   } else {
     const { artist, songs, albums } = results.data;
     const playSong = (tapped: number) => {
-      const queue = toQueue(songs, tapped, (song) => ({
-        trackId: song.track_id,
-        title: song.title,
-        artists: song.artists,
-        album: song.album,
-        albumId: song.album_id,
-        coverUrl: song.thumbnail_url,
-        durationSeconds: song.duration_seconds,
-      }));
+      const queue = toQueue(songs, tapped, toPlayable);
       if (queue !== null) {
         void playback.playList(queue.tracks, queue.index, {
           kind: "search",
@@ -219,6 +224,7 @@ export function SearchScreen() {
                 onPress={() => {
                   playSong(index);
                 }}
+                trailing={<TrackMenuButton track={toPlayable(song)} />}
               />
             ))}
           </View>
@@ -240,26 +246,36 @@ export function SearchScreen() {
     ) : null;
 
   return (
-    <SafeAreaView testID="search" edges={["top"]} style={styles.screen}>
-      <View style={styles.header}>
-        <Text variant="title">{t("title")}</Text>
-        <AccountButton />
-      </View>
-      <View style={styles.bar}>
-        <SearchBar
-          value={text}
-          onChangeText={setText}
-          placeholder={t("placeholder")}
-          accessibilityLabel={t("title")}
-          clearLabel={t("clear")}
-          onSubmit={() => {
-            if (trimmed !== "") add.mutate(trimmed);
-          }}
-        />
-      </View>
-      {mutationFailed}
-      {body}
-    </SafeAreaView>
+    <TrackMenuHost
+      onOpenArtist={(artistId) => {
+        router.push({ pathname: "/artist/[id]", params: { id: artistId } });
+      }}
+      onOpenAlbum={(albumId) => {
+        router.push({ pathname: "/album/[id]", params: { id: albumId } });
+      }}
+      bottomInset={tabBarClearance}
+    >
+      <SafeAreaView testID="search" edges={["top"]} style={styles.screen}>
+        <View style={styles.header}>
+          <Text variant="title">{t("title")}</Text>
+          <AccountButton />
+        </View>
+        <View style={styles.bar}>
+          <SearchBar
+            value={text}
+            onChangeText={setText}
+            placeholder={t("placeholder")}
+            accessibilityLabel={t("title")}
+            clearLabel={t("clear")}
+            onSubmit={() => {
+              if (trimmed !== "") add.mutate(trimmed);
+            }}
+          />
+        </View>
+        {mutationFailed}
+        {body}
+      </SafeAreaView>
+    </TrackMenuHost>
   );
 }
 

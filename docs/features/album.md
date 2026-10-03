@@ -7,7 +7,7 @@ An album's tracks and its related albums, on the detail screen base (which has a
 Show an album: its cover, title, artists, meta line and tracks, and the albums
 that are other versions of it or recommended with it. Opening another album
 pushes a new album in the same tab. Pressing an available track plays the album from it
-(`player.md`); an unavailable track is not pressable. Track actions are a later issue.
+(`player.md`); an unavailable track is not pressable. Every playable track ends with a more button that opens the track menu (`track-menu.md`); an unavailable track has none.
 
 ## Layout
 

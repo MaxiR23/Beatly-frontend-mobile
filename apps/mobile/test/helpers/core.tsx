@@ -7,11 +7,12 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the likes mirror, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, and the page builder)
+// (the stateful likes mirror, credits, membership, add, create-with-track and remove fakes, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, and the page builder)
 //
 import type {
   ActivityService,
   Album,
+  AddTrackResult,
   AlbumService,
   Artist,
   ArtistsService,
@@ -22,6 +23,7 @@ import type {
   HttpOutcome,
   LibraryEntry,
   LikedPlaylist,
+  LikeOutcome,
   LibraryService,
   LikesService,
   LogPort,
@@ -42,6 +44,7 @@ import type {
   SearchService,
   StoragePort,
   StreamResolver,
+  TrackCredits,
   TrackLyrics,
   TrackRelated,
   TracksService,
@@ -355,6 +358,22 @@ export const relatedFixture: TrackRelated = {
   ],
 };
 
+export const creditsFixture: TrackCredits = {
+  performed_by: { localized_title: "Performed by", names: ["Test Artist"] },
+  written_by: { localized_title: "Written by", names: ["Writer One", "Writer Two"] },
+  produced_by: null,
+  music_metadata_provided_by: null,
+  other_sections: [{ localized_title: "Mixed by", names: ["Mixer"] }],
+};
+
+export const emptyCreditsFixture: TrackCredits = {
+  performed_by: null,
+  written_by: null,
+  produced_by: null,
+  music_metadata_provided_by: null,
+  other_sections: [],
+};
+
 export function memoryStorage(initial: Record<string, string> = {}): StoragePort {
   const values = new Map<string, string>(Object.entries(initial));
   return {
@@ -477,6 +496,14 @@ export function makeCore(
     getUpNext?: TracksService["getUpNext"];
     getLyrics?: TracksService["getLyrics"];
     getRelated?: TracksService["getRelated"];
+    getCredits?: TracksService["getCredits"];
+    listPlaylistsWithTrack?: PlaylistsService["listPlaylistsWithTrack"];
+    addTrackToPlaylist?: PlaylistsService["addTrackToPlaylist"];
+    createPlaylistWithTrack?: PlaylistsService["createPlaylistWithTrack"];
+    removeTrackFromPlaylist?: PlaylistsService["removeTrackFromPlaylist"];
+    // What setLiked answers after it flipped the mirror, as the real service does before the network.
+    likeOutcome?: () => Promise<LikeOutcome>;
+    likedIds?: readonly string[];
     storage?: StoragePort;
     resolve?: StreamResolver["resolve"];
   } = {},
@@ -567,15 +594,60 @@ export function makeCore(
     options.getRelated ??
       (() => Promise.resolve({ kind: "success", data: relatedFixture, maxAgeSeconds: 0 })),
   );
+  const getCredits = jest.fn<TracksService["getCredits"]>(
+    options.getCredits ??
+      (() => Promise.resolve({ kind: "success", data: creditsFixture, maxAgeSeconds: 0 })),
+  );
+  const listPlaylistsWithTrack = jest.fn<PlaylistsService["listPlaylistsWithTrack"]>(
+    options.listPlaylistsWithTrack ??
+      (() => Promise.resolve({ kind: "success", data: { playlist_ids: [] }, maxAgeSeconds: 0 })),
+  );
+  const alreadyAdded: AddTrackResult = { alreadyThere: false };
+  const addTrackToPlaylist = jest.fn<PlaylistsService["addTrackToPlaylist"]>(
+    options.addTrackToPlaylist ??
+      (() => Promise.resolve({ kind: "success", data: alreadyAdded, maxAgeSeconds: 0 })),
+  );
+  const createPlaylistWithTrack = jest.fn<PlaylistsService["createPlaylistWithTrack"]>(
+    options.createPlaylistWithTrack ??
+      (() =>
+        Promise.resolve({
+          kind: "success",
+          data: { playlist: createdPlaylistFixture },
+          maxAgeSeconds: 0,
+        })),
+  );
+  const removeTrackFromPlaylist = jest.fn<PlaylistsService["removeTrackFromPlaylist"]>(
+    options.removeTrackFromPlaylist ??
+      (() => Promise.resolve({ kind: "success", data: null, maxAgeSeconds: 0 })),
+  );
+  // The mirror: a set of liked ids and its listeners, so a toggle re-renders the hearts as the real one does.
+  const liked = new Set<string>(options.likedIds ?? []);
+  const likeListeners = new Set<() => void>();
+  const notifyLikes = () => {
+    likeListeners.forEach((listener) => {
+      listener();
+    });
+  };
+  const confirmedOutcome: LikeOutcome = { kind: "confirmed" };
   let confirmedListener: () => void = () => undefined;
   const likes = {
-    isLiked: jest.fn<LikesService["isLiked"]>(() => false),
-    subscribe: jest.fn<LikesService["subscribe"]>(() => () => undefined),
+    isLiked: jest.fn<LikesService["isLiked"]>((trackId) => liked.has(trackId)),
+    subscribe: jest.fn<LikesService["subscribe"]>((listener) => {
+      likeListeners.add(listener);
+      return () => {
+        likeListeners.delete(listener);
+      };
+    }),
     onConfirmed: jest.fn<LikesService["onConfirmed"]>((listener) => {
       confirmedListener = listener;
       return () => undefined;
     }),
-    setLiked: jest.fn<LikesService["setLiked"]>(() => Promise.resolve({ kind: "confirmed" })),
+    setLiked: jest.fn<LikesService["setLiked"]>((track, value) => {
+      if (value) liked.add(track.track_id);
+      else liked.delete(track.track_id);
+      notifyLikes();
+      return options.likeOutcome?.() ?? Promise.resolve(confirmedOutcome);
+    }),
     sync: jest.fn<LikesService["sync"]>(
       options.sync ?? (() => Promise.resolve({ kind: "success" })),
     ),
@@ -614,13 +686,17 @@ export function makeCore(
       listPlaylistTracks,
       getLikedPlaylist,
       listLikedTracks,
+      listPlaylistsWithTrack,
+      addTrackToPlaylist,
+      createPlaylistWithTrack,
+      removeTrackFromPlaylist,
     },
     profile: { getMyProfile },
     publicShare: { getGenrePlaylist },
     recentSearches: createRecentSearchesService({ storage, log }),
     search: { search },
     sheetNudge: createSheetNudgeService({ storage, log }),
-    tracks: { getUpNext, getLyrics, getRelated },
+    tracks: { getUpNext, getLyrics, getRelated, getCredits },
   };
   return {
     core,
@@ -649,6 +725,11 @@ export function makeCore(
     getUpNext,
     getLyrics,
     getRelated,
+    getCredits,
+    listPlaylistsWithTrack,
+    addTrackToPlaylist,
+    createPlaylistWithTrack,
+    removeTrackFromPlaylist,
     storage,
     playback,
     player,

@@ -5,7 +5,11 @@ const testTimeout = 15000;
 
 export default {
   preset: "jest-expo",
-  setupFiles: ["<rootDir>/test/setup/glass.ts", "<rootDir>/test/setup/queryNotify.ts"],
+  setupFiles: [
+    "<rootDir>/test/setup/glass.ts",
+    "<rootDir>/test/setup/nativeMenu.ts",
+    "<rootDir>/test/setup/queryNotify.ts",
+  ],
   transformIgnorePatterns: [
     "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|lucide-react-native))",
     "/node_modules/react-native-reanimated/plugin/",

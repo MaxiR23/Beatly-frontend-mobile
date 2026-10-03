@@ -6,6 +6,7 @@
 // - getUpNext returns the tracks with the requested one first
 // - getLyrics returns synced or plain lyrics, or null
 // - getRelated returns the songs, artists and albums
+// - getCredits returns the typed sections and the other sections, or all of them empty
 // - Encodes the track id in the path
 // - Returns an empty tracks list, lyrics null and three empty lists as a success
 // - Surfaces track_not_found, upstream_error and upstream_timeout as api failures
@@ -13,7 +14,7 @@
 //
 // What is covered:
 // - Happy path, expected empty state, api failure, transport failure
-// - Not applicable: cursor and invalid_cursor, because the three routes are not paginated
+// - Not applicable: cursor and invalid_cursor, because the four routes are not paginated
 //
 // Run with: pnpm --filter @beatly/core test -- tracks
 //
@@ -94,6 +95,7 @@ const routes = {
   upNext: "GET /tracks/t1/upnext",
   lyrics: "GET /tracks/t1/lyrics",
   related: "GET /tracks/t1/related",
+  credits: "GET /tracks/t1/credits",
 } as const;
 
 describe("getUpNext", () => {
@@ -305,5 +307,76 @@ describe("getRelated", () => {
     const broken = { ...related, artists: [{ name: "Justice", thumbnail_url: null }] };
     const { service } = setup(() => ({ body: { ok: true, data: broken } }), route);
     expect(await service.getRelated("t1")).toEqual({ kind: "transport_failure", cause: "schema" });
+  });
+});
+
+describe("getCredits", () => {
+  const route = routes.credits;
+  const section = (title: string, names: string[]) => ({ localized_title: title, names });
+  const credits = {
+    performed_by: section("Performed by", ["Daft Punk"]),
+    written_by: section("Written by", ["Thomas Bangalter", "Guy-Manuel de Homem-Christo"]),
+    produced_by: null,
+    music_metadata_provided_by: section("Music metadata by", ["Label"]),
+    other_sections: [section("Mixed by", ["Mixer"])],
+  };
+
+  it("returns the typed sections and the other sections with the max-age", async () => {
+    const { service, http } = setup(
+      () => ({ headers: { "cache-control": "max-age=86400" }, body: { ok: true, data: credits } }),
+      route,
+    );
+    expect(await service.getCredits("t1")).toEqual({
+      kind: "success",
+      data: credits,
+      maxAgeSeconds: 86400,
+    });
+    expect(http.requests[0]?.url).toBe("test://api/tracks/t1/credits");
+  });
+
+  it("returns the four sections null and other_sections [] as a success", async () => {
+    const empty = {
+      performed_by: null,
+      written_by: null,
+      produced_by: null,
+      music_metadata_provided_by: null,
+      other_sections: [],
+    };
+    const { service } = setup(() => ({ body: { ok: true, data: empty } }), route);
+    expect(await service.getCredits("t1")).toEqual({
+      kind: "success",
+      data: empty,
+      maxAgeSeconds: 0,
+    });
+  });
+
+  it("surfaces track_not_found as an api failure", async () => {
+    const { service } = setup(failure(404, "track_not_found"), route);
+    expect(await service.getCredits("t1")).toEqual({
+      kind: "api_failure",
+      reason: "track_not_found",
+    });
+  });
+
+  it("fails with a timeout outcome when the API does not answer", async () => {
+    vi.useFakeTimers();
+    const { service } = setup(never, route);
+    const pending = service.getCredits("t1");
+    await vi.advanceTimersByTimeAsync(DEFAULT_TIMEOUT_MS + 1);
+    expect(await pending).toEqual({ kind: "transport_failure", cause: "timeout" });
+  });
+
+  it("fails with a network outcome when the request cannot be sent", async () => {
+    const { service } = setup(() => Promise.reject(new Error("offline")), route);
+    expect(await service.getCredits("t1")).toEqual({
+      kind: "transport_failure",
+      cause: "network",
+    });
+  });
+
+  it("fails with a schema outcome when other_sections is null", async () => {
+    const broken = { ...credits, other_sections: null };
+    const { service } = setup(() => ({ body: { ok: true, data: broken } }), route);
+    expect(await service.getCredits("t1")).toEqual({ kind: "transport_failure", cause: "schema" });
   });
 });

@@ -4,6 +4,10 @@ packages:
 
 allowBuilds:
   lefthook: true
+  # Its postinstall is only a fallback: the native binding comes prebuilt
+  # through its optional @unrs/resolver-binding-* dependencies, so no build
+  # script has to run.
+  unrs-resolver: false
 
 # The conflict is inside Expo SDK 57: react-native-reanimated 4.7 requires
 # react-native-worklets 0.13, while expo-modules-core 57 declares it accepts

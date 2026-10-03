@@ -10,6 +10,7 @@ import { fetchPage, type PageResult } from "../http/paginated.ts";
 import type { DbExecutor, DbPort, SqlValue } from "../ports/db.ts";
 import type { LogPort } from "../ports/log.ts";
 import type { PlayArtist } from "./activity.ts";
+import type { PlayableTrack } from "./playback.ts";
 import type { StorageFailure } from "./recentSearches.ts";
 
 // The settle window: a like and an unlike inside it become one request.
@@ -27,6 +28,31 @@ export interface LikeInput {
   readonly album_id: string;
   readonly thumbnail_url: string;
   readonly duration_seconds: number | null;
+}
+
+// The body POST /likes requires, or null when the track lacks a field of it; the duration is optional.
+export function likeInputOf(track: PlayableTrack): LikeInput | null {
+  const artists: PlayArtist[] = [];
+  for (const artist of track.artists) {
+    if (artist.id !== null) artists.push({ id: artist.id, name: artist.name });
+  }
+  if (
+    track.album === null ||
+    track.albumId === null ||
+    track.coverUrl === null ||
+    artists.length === 0
+  ) {
+    return null;
+  }
+  return {
+    track_id: track.trackId,
+    title: track.title,
+    artists,
+    album: track.album,
+    album_id: track.albumId,
+    thumbnail_url: track.coverUrl,
+    duration_seconds: track.durationSeconds,
+  };
 }
 
 export type LikeOutcome =

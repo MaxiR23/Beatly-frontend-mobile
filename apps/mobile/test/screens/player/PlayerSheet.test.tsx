@@ -13,6 +13,7 @@
 // - up next: the rest of the queue then the suggestions without the current track, a press jumping in the queue or playing the suggestions, loading, error with retry, expected empty
 // - lyrics: the playing line following the progress and centered, a press seeking, plain lyrics, null lyrics, loading, error with retry
 // - related: songs, artists and albums, an empty section hidden, three empty lists, a song playing, an album or artist opening in the current tab, loading, error with retry
+// - a more button on each up next and related row
 // - es
 //
 // Run with: pnpm --filter @beatly/mobile test -- PlayerSheet
@@ -579,5 +580,25 @@ describe("related", () => {
     expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
     await fireEvent.press(screen.getByRole("button", { name: en.common.retry }));
     expect(ctx.getRelated).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("the track menu in the sheet rows", () => {
+  const more = () => screen.getAllByRole("button", { name: en.trackMenu.more });
+
+  it("draws a more button on each up next row", async () => {
+    await setup();
+    await openSheet();
+    await screen.findByText("Up u2");
+    // The two queued songs and the two suggestions; the header's is hidden behind the open sheet.
+    expect(more()).toHaveLength(4);
+  });
+
+  it("draws a more button on each related song", async () => {
+    await setup();
+    await openSheet();
+    await selectTab(en.player.sheet.tabs.related);
+    await screen.findByText("Up r1");
+    expect(more()).toHaveLength(1);
   });
 });

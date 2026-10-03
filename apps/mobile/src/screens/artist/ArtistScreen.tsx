@@ -1,5 +1,5 @@
-// INFO: an artist: the detail base with a full-width image hero and the name over it, then popular songs, albums, singles and EPs and similar artists, each hidden when empty; unavailable for an invalid id; starting a list registers it as a recent.
-import type { AlbumRef } from "@beatly/core";
+// INFO: an artist: the detail base with a full-width image hero and the name over it, then popular songs, albums, singles and EPs and similar artists, each hidden when empty, every playable popular song with a menu button; unavailable for an invalid id; starting a list registers it as a recent.
+import type { AlbumRef, Artist, PlayableTrack } from "@beatly/core";
 import { layout, spacing } from "@beatly/ui";
 import {
   Carousel,
@@ -21,8 +21,26 @@ import { singleMeta } from "./singleMeta.ts";
 import { toQueue } from "../player/queue.ts";
 import { usePlaybackActions } from "../player/usePlayback.ts";
 import { useTabBarClearance } from "../player/useTabBarClearance.ts";
+import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
+import { TrackMenuHost } from "../trackMenu/TrackMenuHost.tsx";
 
 const urlsOf = (url: string | null): string[] => (url === null ? [] : [url]);
+
+type ArtistSong = Artist["songs"][number];
+
+// The song as playback and the menu see it: null when it has no track id.
+function toPlayable(artist: Artist, song: ArtistSong): PlayableTrack | null {
+  if (song.track_id === null) return null;
+  return {
+    trackId: song.track_id,
+    title: song.title,
+    artists: song.artists.length > 0 ? song.artists : [{ id: artist.id, name: artist.name }],
+    album: song.album,
+    albumId: song.album_id,
+    coverUrl: song.thumbnail_url,
+    durationSeconds: song.duration_seconds,
+  };
+}
 
 export function ArtistScreen() {
   const t = useT("artist");
@@ -41,8 +59,11 @@ export function ArtistScreen() {
     else router.replace("/");
   }
 
-  const openAlbum = (albumId: string) => () => {
+  const openAlbumId = (albumId: string) => {
     router.push({ pathname: "/album/[id]", params: { id: albumId } });
+  };
+  const openAlbum = (albumId: string) => () => {
+    openAlbumId(albumId);
   };
 
   const albumItem = (ref: AlbumRef): CarouselItem => ({
@@ -74,19 +95,7 @@ export function ArtistScreen() {
   } else {
     const data = artist.data;
     const playSong = (tapped: number) => {
-      const queue = toQueue(data.songs, tapped, (song) =>
-        song.track_id === null
-          ? null
-          : {
-              trackId: song.track_id,
-              title: song.title,
-              artists: song.artists.length > 0 ? song.artists : [{ id: data.id, name: data.name }],
-              album: song.album,
-              albumId: song.album_id,
-              coverUrl: song.thumbnail_url,
-              durationSeconds: song.duration_seconds,
-            },
-      );
+      const queue = toQueue(data.songs, tapped, (song) => toPlayable(data, song));
       if (queue !== null) {
         void playback.playList(queue.tracks, queue.index, {
           kind: "artist",
@@ -113,23 +122,27 @@ export function ArtistScreen() {
               <View style={styles.sectionHeader}>
                 <Text variant="section">{t("popular")}</Text>
               </View>
-              {data.songs.map((song, index) => (
-                <MediaRow
-                  key={`${String(index)}:${song.track_id ?? song.title}`}
-                  shape="square"
-                  urls={urlsOf(song.thumbnail_url)}
-                  title={song.title}
-                  subtitle={song.album ?? undefined}
-                  available={song.track_id !== null}
-                  onPress={
-                    song.track_id === null
-                      ? undefined
-                      : () => {
-                          playSong(index);
-                        }
-                  }
-                />
-              ))}
+              {data.songs.map((song, index) => {
+                const playable = toPlayable(data, song);
+                return (
+                  <MediaRow
+                    key={`${String(index)}:${song.track_id ?? song.title}`}
+                    shape="square"
+                    urls={urlsOf(song.thumbnail_url)}
+                    title={song.title}
+                    subtitle={song.album ?? undefined}
+                    available={song.track_id !== null}
+                    trailing={playable !== null ? <TrackMenuButton track={playable} /> : undefined}
+                    onPress={
+                      song.track_id === null
+                        ? undefined
+                        : () => {
+                            playSong(index);
+                          }
+                    }
+                  />
+                );
+              })}
             </View>
           ) : null}
           {data.albums.length > 0 ? (
@@ -174,14 +187,22 @@ export function ArtistScreen() {
   }
 
   return (
-    <DetailScreen
-      testID="artist"
-      body={body}
-      backLabel={t("back")}
-      onBack={goBack}
-      topInset={insets.top}
+    <TrackMenuHost
+      onOpenArtist={(artistId) => {
+        router.push({ pathname: "/artist/[id]", params: { id: artistId } });
+      }}
+      onOpenAlbum={openAlbumId}
       bottomInset={tabBarClearance}
-    />
+    >
+      <DetailScreen
+        testID="artist"
+        body={body}
+        backLabel={t("back")}
+        onBack={goBack}
+        topInset={insets.top}
+        bottomInset={tabBarClearance}
+      />
+    </TrackMenuHost>
   );
 }
 

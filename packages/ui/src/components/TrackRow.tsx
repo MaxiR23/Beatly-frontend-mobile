@@ -1,6 +1,7 @@
 // INFO: a track row, pressable when given onPress: a leading number in a fixed column, a
 // one-line title and an optional one-line artists line; an unavailable
-// track draws both texts disabled.
+// track draws both texts disabled; a trailing element sits after the pressable body, outside it.
+import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { motion } from "../tokens/motion.ts";
@@ -13,10 +14,20 @@ interface TrackRowProps {
   subtitle?: string | undefined;
   available: boolean;
   onPress?: (() => void) | undefined;
+  // A control at the end of the row, a sibling of the pressable body so both are reachable.
+  trailing?: ReactNode;
   testID?: string;
 }
 
-export function TrackRow({ number, title, subtitle, available, onPress, testID }: TrackRowProps) {
+export function TrackRow({
+  number,
+  title,
+  subtitle,
+  available,
+  onPress,
+  trailing,
+  testID,
+}: TrackRowProps) {
   const content = (
     <>
       <View style={styles.number}>
@@ -36,6 +47,31 @@ export function TrackRow({ number, title, subtitle, available, onPress, testID }
       </View>
     </>
   );
+
+  if (trailing !== undefined) {
+    const body =
+      onPress === undefined ? (
+        <View style={styles.body} accessibilityState={{ disabled: !available }}>
+          {content}
+        </View>
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={title}
+          accessibilityState={{ disabled: !available }}
+          onPress={onPress}
+          style={({ pressed }) => [styles.body, pressed && styles.pressed]}
+        >
+          {content}
+        </Pressable>
+      );
+    return (
+      <View style={styles.split} testID={testID}>
+        {body}
+        {trailing}
+      </View>
+    );
+  }
 
   if (onPress === undefined) {
     return (
@@ -65,6 +101,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: layout.gutter,
     paddingVertical: spacing.sm,
+    gap: layout.gap,
+  },
+  split: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+    paddingRight: layout.gutter,
+  },
+  body: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingLeft: layout.gutter,
     gap: layout.gap,
   },
   pressed: { opacity: motion.pressOpacity },
