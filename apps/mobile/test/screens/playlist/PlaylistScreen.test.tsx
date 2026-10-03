@@ -7,9 +7,10 @@
 //
 // What is covered:
 // - the header of an own (its mosaic), a liked and a genre playlist: cover, title, creator, description, meta line
-// - the tracks, not pressable, no more button, infinite scroll for own and liked, a genre playlist's tracks from its header
+// - the tracks, each with a more button, infinite scroll for own and liked, a genre playlist's tracks from its header
 // - the empty message under the header, not found from the header or the tracks, the generic error with retry
 // - starting a list registers an own, a liked and a genre playlist as a recent with its kind
+// - the track menu: remove from an own playlist calls the service and refetches the tracks, none for the liked and genre playlists
 // - the skeleton, back and its fallback, es
 //
 // Run with: pnpm --filter @beatly/mobile test -- PlaylistScreen
@@ -18,7 +19,7 @@
 
 import type { HttpOutcome, PageResult, PlaylistTrack } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import { fireEvent, render, screen } from "@testing-library/react-native";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
@@ -273,11 +274,14 @@ describe("PlaylistScreen", () => {
     });
   });
 
-  it("draws no more button, only back and the rows", async () => {
+  it("draws back, the rows and one more button per row", async () => {
     await setup({ listPlaylistTracks: tracksOf(two) });
     await screen.findByText("First Song");
     const names = screen.getAllByRole("button").map((b) => b.props.accessibilityLabel as unknown);
-    expect(new Set(names)).toEqual(new Set([en.playlist.back, "First Song", "Second Song"]));
+    expect(new Set(names)).toEqual(
+      new Set([en.playlist.back, "First Song", "Second Song", en.trackMenu.more]),
+    );
+    expect(names.filter((name) => name === en.trackMenu.more)).toHaveLength(2);
   });
 
   it("loads the next page of an own playlist at the end of the list", async () => {
@@ -395,5 +399,49 @@ describe("PlaylistScreen", () => {
     expect((await screen.findAllByText(es.playlist.liked)).length).toBeGreaterThan(0);
     expect(screen.getByText("3 canciones · 10 min")).toBeTruthy();
     expect(screen.getByText(es.playlist.empty)).toBeTruthy();
+  });
+});
+
+describe("PlaylistScreen track menu", () => {
+  const more = () => {
+    const [first] = screen.getAllByRole("button", { name: en.trackMenu.more });
+    if (first === undefined) throw new Error("no more button");
+    return first;
+  };
+
+  it("an own playlist's menu offers remove, which calls removeTrackFromPlaylist and refetches the tracks", async () => {
+    const ctx = await setup({ listPlaylistTracks: tracksOf(two) });
+    await screen.findByText("First Song");
+    const before = ctx.listPlaylistTracks.mock.calls.length;
+    await fireEvent.press(more());
+    await fireEvent.press(
+      screen.getByRole("button", { name: en.trackMenu.items.removeFromPlaylist }),
+    );
+    expect(ctx.removeTrackFromPlaylist).toHaveBeenCalledWith("p1", "t1");
+    await waitFor(() => {
+      expect(ctx.listPlaylistTracks.mock.calls.length).toBeGreaterThan(before);
+    });
+  });
+
+  it("the liked and genre menus do not offer remove", async () => {
+    mockParams = { id: "liked", source: "liked" };
+    await setup({ listLikedTracks: tracksOf(two) });
+    await screen.findByText("First Song");
+    await fireEvent.press(more());
+    expect(screen.getByRole("button", { name: en.trackMenu.items.credits })).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: en.trackMenu.items.removeFromPlaylist }),
+    ).toBeNull();
+  });
+
+  it("a genre playlist's menu does not offer remove", async () => {
+    mockParams = { id: "gp1", source: "genre" };
+    await setup({ getGenrePlaylist: detail({ ...publicGenrePlaylistFixture, tracks: two }) });
+    await screen.findByText("First Song");
+    await fireEvent.press(more());
+    expect(screen.getByRole("button", { name: en.trackMenu.items.credits })).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: en.trackMenu.items.removeFromPlaylist }),
+    ).toBeNull();
   });
 });

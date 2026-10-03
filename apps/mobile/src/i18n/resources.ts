@@ -14,6 +14,7 @@ import enPlaylist from "./en/playlist.json";
 import enSearch from "./en/search.json";
 import enSignUp from "./en/signUp.json";
 import enTabs from "./en/tabs.json";
+import enTrackMenu from "./en/trackMenu.json";
 import esAlbum from "./es/album.json";
 import esArtist from "./es/artist.json";
 import esAuthCallback from "./es/authCallback.json";
@@ -28,6 +29,7 @@ import esPlaylist from "./es/playlist.json";
 import esSearch from "./es/search.json";
 import esSignUp from "./es/signUp.json";
 import esTabs from "./es/tabs.json";
+import esTrackMenu from "./es/trackMenu.json";
 
 export const resources = {
   es: {
@@ -45,6 +47,7 @@ export const resources = {
     playlist: esPlaylist,
     search: esSearch,
     tabs: esTabs,
+    trackMenu: esTrackMenu,
   },
   en: {
     common: enCommon,
@@ -61,6 +64,7 @@ export const resources = {
     playlist: enPlaylist,
     search: enSearch,
     tabs: enTabs,
+    trackMenu: enTrackMenu,
   },
 } as const;
 

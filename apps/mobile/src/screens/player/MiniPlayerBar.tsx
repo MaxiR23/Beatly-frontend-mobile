@@ -1,10 +1,11 @@
-// INFO: the mini player over the playback state: nothing while no track is loaded, otherwise the pill with the track, its error line on a failure, play or pause, next, and a tap that opens the player; it draws bare when the system provides the surface (the iOS 26+ accessory); it holds no state of its own.
+// INFO: the mini player over the playback state: nothing while no track is loaded, otherwise the pill with the track (its title scrolls unless reduce motion is on), its error line on a failure, play or pause, next, and a tap that opens the player; it draws bare when the system provides the surface (the iOS 26+ accessory); it holds no state of its own.
 import { MiniPlayer } from "@beatly/ui/native";
 import { useRouter } from "expo-router";
 
 import { useT } from "../../adapters/i18n.ts";
 import { useDominantColor } from "../detail/useDominantColor.ts";
 import { usePlayback, usePlaybackActions } from "./usePlayback.ts";
+import { useReduceMotion } from "./useReduceMotion.ts";
 
 export function MiniPlayerBar({ surface = "glass" }: { surface?: "glass" | "bare" }) {
   const t = useT("player");
@@ -13,6 +14,7 @@ export function MiniPlayerBar({ surface = "glass" }: { surface?: "glass" | "bare
   const current = usePlayback((state) => state.current);
   const status = usePlayback((state) => state.status);
   const tint = useDominantColor(current?.coverUrl ?? null);
+  const reduceMotion = useReduceMotion();
 
   if (current === null) return null;
   const failed = status === "failed";
@@ -30,6 +32,7 @@ export function MiniPlayerBar({ surface = "glass" }: { surface?: "glass" | "bare
       tint={tint}
       surface={surface}
       playing={status === "playing"}
+      reduceMotion={reduceMotion}
       busy={status === "loading"}
       labels={{ open: t("open"), play: t("play"), pause: t("pause"), next: t("next") }}
       onOpen={() => {

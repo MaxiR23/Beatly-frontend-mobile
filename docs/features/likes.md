@@ -1,12 +1,13 @@
 # Likes mirror
 
-The local copy of the caller's likes, kept in the device database; it has no screen yet.
+The local copy of the caller's likes, kept in the device database; its screens are the heart of the player and the track menu's Like item (`track-menu.md`).
 
 ## Purpose
 
 Answer "is this track liked?" instantly and offline, and keep a like made
-without network until the backend confirms it. The heart and the track menu that
-draw it come in a later issue.
+without network until the backend confirms it. The heart in the player and the
+track menu's Like and Remove from Liked items draw it, and only for a track that carries
+what `POST /likes` requires (`likeInputOf`: title, an artist with an id, album, album id and cover).
 
 ## Local data
 
@@ -69,7 +70,13 @@ watermark are deleted, and a sweep in flight stops writing.
 
 ## States
 
-None drawn in this issue; the heart and the track menu come next.
+| State   | What is drawn                                                                                                              | i18n keys                |
+| ------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| Liked   | the heart filled (the player), Remove from Liked (the menu)                                                                | `trackMenu:items.unlike` |
+| Unliked | the heart outlined, Like                                                                                                   | `trackMenu:items.like`   |
+| Failed  | a floating notice for a `rejected` or `storage_failure` outcome; a `pending` one shows nothing, the service sends it again | `common:error.generic`   |
+
+The heart reads `useIsLiked`, which follows the mirror, so it flips at once and is not held by the network; the mirror reverts on a rejection. No screen branches on a `reason`.
 
 ## Checked by hand
 

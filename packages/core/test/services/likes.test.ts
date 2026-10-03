@@ -14,6 +14,7 @@
 // - a pending row is not overwritten by a synced one, nor a newer row by an older one; a row with deleted_at is stored as not liked
 // - the mirror answers without network, clear empties it and the watermark, and a sync in flight does not refill it
 // - a database failure and a migration failure return a storage failure
+// - likeInputOf maps a playable track and returns null when it lacks a field, keeping a null duration
 //
 // What is covered:
 // - Happy path, expected empty state (sync; DELETE's null data), api failure, transport failure, against real SQLite (node:sqlite, in memory)
@@ -30,10 +31,12 @@ import { migrate, type MigrateOutcome } from "../../src/db/migrations.ts";
 import { createHttpClient, DEFAULT_TIMEOUT_MS } from "../../src/http/client.ts";
 import {
   createLikesService,
+  likeInputOf,
   LIKE_RETRY_DELAYS_MS,
   LIKE_SEND_DELAY_MS,
   type LikeInput,
 } from "../../src/services/likes.ts";
+import type { PlayableTrack } from "../../src/services/playback.ts";
 import { createFakeAuth } from "../fakes/auth.ts";
 import { createFakeDb, type FakeDb } from "../fakes/db.ts";
 import { createFakeHttp, never, type FakeResponse, type Handler } from "../fakes/http.ts";
@@ -683,5 +686,45 @@ describe("storage failures", () => {
     expect(await service.setLiked(track, true)).toEqual(failed);
     expect(await service.clear()).toEqual(failed);
     expect(http.requests).toHaveLength(0);
+  });
+});
+
+describe("likeInputOf", () => {
+  const playable: PlayableTrack = {
+    trackId: "t1",
+    title: "Song",
+    artists: [
+      { id: null, name: "Guest" },
+      { id: "ar1", name: "Artist" },
+    ],
+    album: "Album",
+    albumId: "al1",
+    coverUrl: "test://img/t1",
+    durationSeconds: 200,
+  };
+
+  it("maps a full track and drops the artists without an id", () => {
+    expect(likeInputOf(playable)).toEqual({
+      track_id: "t1",
+      title: "Song",
+      artists: [{ id: "ar1", name: "Artist" }],
+      album: "Album",
+      album_id: "al1",
+      thumbnail_url: "test://img/t1",
+      duration_seconds: 200,
+    });
+  });
+
+  it("keeps a null duration", () => {
+    expect(likeInputOf({ ...playable, durationSeconds: null })?.duration_seconds).toBeNull();
+  });
+
+  it.each([
+    ["album", { album: null }],
+    ["album id", { albumId: null }],
+    ["cover", { coverUrl: null }],
+    ["artist with an id", { artists: [{ id: null, name: "Guest" }] }],
+  ])("returns null without %s", (_name, patch) => {
+    expect(likeInputOf({ ...playable, ...patch })).toBeNull();
   });
 });

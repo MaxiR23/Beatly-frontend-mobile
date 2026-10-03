@@ -1,6 +1,6 @@
-// INFO: the player's up next, lyrics and related sheet over PullUpSheet: the song row that closes it, play or pause, the three options and the selected tab's body, mounted from the moment the sheet starts opening (a drag on the handle or open) until its close ends, so it is drawn while the sheet moves and each tab loads only once shown; nudges the handle the first openings.
+// INFO: the player's up next, lyrics and related sheet over PullUpSheet: the song row (its title scrolls when it does not fit) that closes it, play or pause, the three options and the selected tab's body, mounted from the moment the sheet starts opening (a drag on the handle or open) until its close ends, so it is drawn while the sheet moves and each tab loads only once shown; nudges the handle the first openings.
 import { layout, spacing } from "@beatly/ui";
-import { Cover, IconButton, PullUpSheet, SegmentedControl, Text } from "@beatly/ui/native";
+import { Cover, IconButton, Marquee, PullUpSheet, SegmentedControl, Text } from "@beatly/ui/native";
 import { useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -70,9 +70,7 @@ export function PlayerSheet({
             size={layout.rowCoverMedium}
           />
           <View style={styles.titles}>
-            <Text variant="title" numberOfLines={1}>
-              {current.title}
-            </Text>
+            <Marquee text={current.title} variant="title" reduceMotion={reduceMotion} />
             <Text tone="secondary" numberOfLines={1}>
               {current.artists.map((artist) => artist.name).join(t("artistSeparator"))}
             </Text>

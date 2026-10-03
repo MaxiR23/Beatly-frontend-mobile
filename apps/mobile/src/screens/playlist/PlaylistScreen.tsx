@@ -1,5 +1,5 @@
-// INFO: a playlist, own, liked or genre by its source param: the detail base with its cover, title, creator, description, meta line and tracks paged by infinite scroll for own and liked; a genre playlist's header and tracks come in one request; unavailable for playlist_not_found; starting a list registers it as a recent.
-import { profileName } from "@beatly/core";
+// INFO: a playlist, own, liked or genre by its source param: the detail base with its cover, title, creator, description, meta line and tracks paged by infinite scroll for own and liked; a genre playlist's header and tracks come in one request; unavailable for playlist_not_found; every track has a menu button, with remove from this playlist inside an own playlist; starting a list registers it as a recent.
+import { profileName, type PlayableTrack, type PlaylistTrack } from "@beatly/core";
 import { color, layout, radius, spacing } from "@beatly/ui";
 import {
   Avatar,
@@ -26,6 +26,19 @@ import { playlistSource } from "./playlistSource.ts";
 import { toQueue } from "../player/queue.ts";
 import { usePlaybackActions } from "../player/usePlayback.ts";
 import { useTabBarClearance } from "../player/useTabBarClearance.ts";
+import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
+import { TrackMenuHost } from "../trackMenu/TrackMenuHost.tsx";
+
+// The track as playback and the menu see it.
+const toPlayable = (track: PlaylistTrack): PlayableTrack => ({
+  trackId: track.track_id,
+  title: track.title,
+  artists: track.artists,
+  album: track.album,
+  albumId: track.album_id,
+  coverUrl: track.thumbnail_url,
+  durationSeconds: track.duration_seconds,
+});
 
 function isNotFound(error: unknown): boolean {
   return (
@@ -123,15 +136,7 @@ export function PlaylistScreen() {
     }
 
     const play = (tapped: number) => {
-      const queue = toQueue(list, tapped, (track) => ({
-        trackId: track.track_id,
-        title: track.title,
-        artists: track.artists,
-        album: track.album,
-        albumId: track.album_id,
-        coverUrl: track.thumbnail_url,
-        durationSeconds: track.duration_seconds,
-      }));
+      const queue = toQueue(list, tapped, toPlayable);
       if (queue !== null) {
         void playback.playList(queue.tracks, queue.index, { kind: "playlist", id, name: title });
         let subtitle: string | null = null;
@@ -167,6 +172,7 @@ export function PlaylistScreen() {
           onPress={() => {
             play(position);
           }}
+          trailing={<TrackMenuButton track={toPlayable(track)} />}
         />
       ),
     }));
@@ -215,14 +221,25 @@ export function PlaylistScreen() {
   }
 
   return (
-    <DetailScreen
-      testID="playlist"
-      body={body}
-      backLabel={t("back")}
-      onBack={goBack}
-      topInset={insets.top}
+    <TrackMenuHost
+      ownPlaylistId={kind === "user" ? id : null}
+      onOpenArtist={(artistId) => {
+        router.push({ pathname: "/artist/[id]", params: { id: artistId } });
+      }}
+      onOpenAlbum={(albumId) => {
+        router.push({ pathname: "/album/[id]", params: { id: albumId } });
+      }}
       bottomInset={tabBarClearance}
-    />
+    >
+      <DetailScreen
+        testID="playlist"
+        body={body}
+        backLabel={t("back")}
+        onBack={goBack}
+        topInset={insets.top}
+        bottomInset={tabBarClearance}
+      />
+    </TrackMenuHost>
   );
 }
 

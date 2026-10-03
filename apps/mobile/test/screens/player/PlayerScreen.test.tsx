@@ -12,6 +12,7 @@
 // - the empty state, the resolution failure with retry, loading, close and its fallback, es
 // - the platform split of the close button, the drag down closing, the scroll gate of the drag
 // - the cover shrinking while paused and springing back, reduce motion keeping the cover and the player still
+// - the heart outlined, filled at once on a tap, filled for a liked track, hidden for a track that cannot be liked, the error notice for a rejected like, the more button in the header
 //
 // Run with: pnpm --filter @beatly/mobile test -- PlayerScreen
 //
@@ -20,7 +21,7 @@
 import type { PlayableTrack, PlaybackSource } from "@beatly/core";
 import { color, icon, layout, motion, radius, spacing } from "@beatly/ui";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import { act, fireEvent, render, screen } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import {
   AccessibilityInfo,
   Animated,
@@ -437,5 +438,74 @@ describe("PlayerScreen", () => {
     await start(ctx);
     expect(screen.getByText(es.player.playingFrom)).toBeTruthy();
     expect(screen.getByRole("button", { name: es.player.shuffle })).toBeTruthy();
+  });
+});
+
+describe("the heart and the more button", () => {
+  const withCover = track("1", "test://img/1");
+  const heart = (name: string) => screen.queryByRole("button", { name });
+  const startWith = (ctx: Ctx, playable: PlayableTrack) =>
+    act(async () => {
+      await ctx.playback.playList([playable], 0, album);
+    });
+
+  it("draws the heart outlined, and filled after a tap without waiting for the network", async () => {
+    let release: () => void = () => undefined;
+    const ctx = await setup({
+      likeOutcome: () =>
+        new Promise((resolve) => {
+          release = () => {
+            resolve({ kind: "confirmed" });
+          };
+        }),
+    });
+    await startWith(ctx, withCover);
+    expect(heart(en.trackMenu.items.like)).toBeTruthy();
+    expect(
+      stateFlag(screen.getByRole("button", { name: en.trackMenu.items.like }), "selected"),
+    ).toBe(false);
+    await fireEvent.press(screen.getByRole("button", { name: en.trackMenu.items.like }));
+    expect(ctx.likes.setLiked).toHaveBeenCalledWith(
+      expect.objectContaining({ track_id: "1" }),
+      true,
+    );
+    // The service has not answered yet: the mirror alone flipped the heart.
+    expect(heart(en.trackMenu.items.unlike)).toBeTruthy();
+    expect(heart(en.trackMenu.items.like)).toBeNull();
+    await act(() => {
+      release();
+    });
+  });
+
+  it("draws the heart filled for a liked track", async () => {
+    const ctx = await setup({ likedIds: ["1"] });
+    await startWith(ctx, withCover);
+    expect(heart(en.trackMenu.items.unlike)).toBeTruthy();
+    expect(
+      stateFlag(screen.getByRole("button", { name: en.trackMenu.items.unlike }), "selected"),
+    ).toBe(true);
+  });
+
+  it("hides the heart for a track without album or cover", async () => {
+    const ctx = await setup();
+    await startWith(ctx, { ...withCover, album: null, albumId: null, coverUrl: null });
+    expect(heart(en.trackMenu.items.like)).toBeNull();
+    expect(heart(en.trackMenu.items.unlike)).toBeNull();
+  });
+
+  it("shows the error notice when the like is rejected", async () => {
+    const ctx = await setup({
+      likeOutcome: () => Promise.resolve({ kind: "rejected", reason: "invalid_request" }),
+    });
+    await startWith(ctx, withCover);
+    await fireEvent.press(screen.getByRole("button", { name: en.trackMenu.items.like }));
+    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+  });
+
+  it("draws the more button in the header", async () => {
+    const ctx = await setup();
+    await startWith(ctx, withCover);
+    const header = within(screen.getByTestId("player-header"));
+    expect(header.getByRole("button", { name: en.trackMenu.more })).toBeTruthy();
   });
 });

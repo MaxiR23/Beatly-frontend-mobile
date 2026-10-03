@@ -116,10 +116,10 @@ scroll.
   `layout.seekThumb` tall bar with a vertical `hitSlop` up to `layout.controlHeight`, the times `spacing.sm` below in
   `typography.meta` and `color.text.secondary`.
 - Player screen: `spacing.xl` sides; a `layout.controlHeight` header with the chevron-down close (`icon.size.lg`), "Playing from" in
-  `typography.label` / `color.text.secondary` over the source in `typography.rowTitle`; a wash from the dominant color to
+  `typography.label` / `color.text.secondary` over the source in `typography.rowTitle`, and the track menu's more button at its end; a wash from the dominant color to
   `color.surface.base` by the middle of the screen (three stops); `spacing.xl` below, a square cover as wide as the
-  content, `radius.md`, `shadow.cover`; `spacing.xxl` below, `typography.title` and `typography.body` in
-  `color.text.secondary`; `spacing.xl` below, the seek bar; `spacing.lg` below, the controls spread across the width:
+  content, `radius.md`, `shadow.cover`; `spacing.xxl` below, a row with `layout.gap`: the titles (`typography.title` in a `Marquee`, `typography.body` in
+  `color.text.secondary`) and the heart `IconButton` (`icon.size.lg`, filled and `color.text.primary` when liked, `color.text.secondary` otherwise); `spacing.xl` below, the seek bar; `spacing.lg` below, the controls spread across the width:
   shuffle and repeat at `icon.size.md` (`color.text.secondary`, `color.text.primary` on), previous and next filled at
   `icon.size.xl`, and play or pause in a `layout.playButton` circle in `color.accent.primary` with a `color.text.inverse`
   glyph. The column scrolls when it does not fit. Dragged down it follows the finger and closes past `motion.dragToClose.distanceShare` of the window height or above `motion.dragToClose.velocity`, springing back with `motion.spring` otherwise; the cover drops to `motion.pausedScale` while paused. Under reduce motion nothing moves or scales and the route fades. iOS has no close button.
@@ -134,6 +134,15 @@ scroll.
   then a `SegmentedControl` (options of `layout.chipHeight` on `color.overlay.subtle`, the selected one on `color.overlay.muted`
   in `color.text.primary`). Rows are `MediaRow`s; synced lyrics are `typography.title` lines, `color.text.primary` for the playing
   one and `color.text.tertiary` for the others. Under reduce motion the sheet and the dim fade and nothing moves or scales.
+
+## Track menu
+
+- More button: an `IconButton` `ellipsis` (`layout.controlHeight`, `icon.size.lg`) at the end of a row, outside the pressable body of `MediaRow` and `TrackRow` (their `trailing` slot).
+- `ActionRow`: `layout.controlHeight` tall, `spacing.sm` vertical padding, `layout.gap` between the icon (`icon.size.md`) and the label (`typography.body`), `color.text.primary`, or `color.status.error` when destructive; pressed `motion.pressOpacity`.
+- `Notice`: `spacing.sm` between the glyph (`icon.size.md`, `color.status.success` or `color.status.error`) and the line (`typography.meta`, `color.text.primary`); floating, it sits on a `GlassSurface` `bar`, `layout.gutter` from the sides and `spacing.md` above the bottom inset, for `motion.duration.notice`.
+- `Marquee`: one line of any `typography` role that scrolls to its end and back, resting `motion.marquee.pause` at each end at `motion.marquee.speed`, only when it does not fit; under reduce motion it is a static line with a tail ellipsis.
+- `NativeMenu`: the iOS system menu behind the more button (ADR 023): `icon.size.lg` ellipsis in `color.text.primary` in a `layout.controlHeight` square; SF Symbols for its items, the destructive one in the system red.
+- Sheets (picker, credits): the `Sheet` shrinks to the room left and scrolls its list; `topInset` keeps it below the status bar; `typography.subtitle` title, `spacing.md` to `spacing.lg` gaps, rows as `MediaRow` (`size="medium"`).
 
 ## Radius (`radius`)
 
@@ -179,16 +188,19 @@ Roles, not raw sizes. Every role uses the platform's system font (no
 | Base transition                                                                                                                               | `motion.duration.base`                   |
 | Slow transition                                                                                                                               | `motion.duration.slow`                   |
 | Shimmer loop (skeleton)                                                                                                                       | `motion.duration.shimmer`                |
+| How long a brief notice stays                                                                                                                 | `motion.duration.notice`                 |
 | The one spring (the player cover's pause scale, a drag that springs back, the sheet opening and closing, the handle settling after its nudge) | `motion.spring` (`damping`, `stiffness`) |
 | Opacity of a pressed control                                                                                                                  | `motion.pressOpacity`                    |
 | Scale the player cover drops to while paused                                                                                                  | `motion.pausedScale`                     |
 | Scale the player drops to behind the open sheet                                                                                               | `motion.behindSheetScale`                |
+| Points per second a title that does not fit scrolls (`Marquee`)                                                                               | `motion.marquee.speed`                   |
+| Rest, in ms, at each end of a `Marquee` scroll                                                                                                | `motion.marquee.pause`                   |
 | Points the sheet handle rises when it nudges                                                                                                  | `motion.handleNudge`                     |
 | Travel, in points, before a vertical drag is taken (the player's close, the sheet's open and close)                                           | `motion.dragToClose.slop`                |
 | Share of the window height a released vertical drag must pass to commit                                                                       | `motion.dragToClose.distanceShare`       |
 | Speed, in points per millisecond, that commits a vertical drag on release                                                                     | `motion.dragToClose.velocity`            |
 
-`VerticalDrag` (the one vertical drag), `DragToClose` and `PullUpSheet` over it, and `PauseScale` in `@beatly/ui/native` are the only animated components. They use React Native's `Animated` with the native driver and `PanResponder`, and take `reduceMotion` from the app.
+`VerticalDrag` (the one vertical drag), `DragToClose` and `PullUpSheet` over it, `PauseScale` and `Marquee` in `@beatly/ui/native` are the only animated components. They use React Native's `Animated` with the native driver and `PanResponder`, and take `reduceMotion` from the app.
 
 ## Icons (`icon`)
 

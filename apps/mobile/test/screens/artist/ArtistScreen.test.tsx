@@ -7,7 +7,7 @@
 //
 // What is covered:
 // - the skeleton, the request for the route's artist, the name over the full-width image hero
-// - the four sections with their titles, a song without track_id dimmed, no action button and no pressable song
+// - the four sections with their titles, a song without track_id dimmed, a more button and no pressable song
 // - the year under an album, the kind and year under a single, each empty section hidden, only the hero when all are empty
 // - starting the popular songs registers the artist as a recent
 // - opening an album from the albums and singles carousels and a similar artist
@@ -129,7 +129,7 @@ describe("ArtistScreen", () => {
     expect(stateFlag(hidden.parent?.parent ?? hidden, "disabled")).toBe(true);
   });
 
-  it("draws no action buttons and a pressable song only when it has a track id", async () => {
+  it("draws a more button and a pressable song only when it has a track id", async () => {
     await setup();
     await screen.findByTestId("artist-popular");
     const names = screen.getAllByRole("button").map((b) => b.props.accessibilityLabel as unknown);
@@ -141,8 +141,10 @@ describe("ArtistScreen", () => {
         "A Single",
         "An EP",
         "Similar Artist",
+        en.trackMenu.more,
       ]),
     );
+    expect(names.filter((name) => name === en.trackMenu.more)).toHaveLength(1);
   });
 
   it("starts the popular songs from the pressed one with the artist source", async () => {

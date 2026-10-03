@@ -183,3 +183,9 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
 - `022-local-database-with-append-only-migrations.md` — why the app keeps a
   local SQLite database behind a `db` port, and why its migrations are
   numbered, append-only and never edited.
+- `023-native-track-menu-behind-a-single-ui-importer.md` — why the iOS track
+  menu is `@expo/ui`'s system menu behind one `packages/ui` importer, with a
+  sheet where the native module is missing.
+- `024-import-cycles-fail-lint-with-import-x.md` — why an import cycle fails
+  `pnpm lint` through `eslint-plugin-import-x`, despite ADR 010's no-plugin
+  rule, and why relative side-effect imports are banned.

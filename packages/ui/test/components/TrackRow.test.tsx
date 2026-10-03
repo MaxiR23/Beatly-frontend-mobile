@@ -8,6 +8,7 @@
 // What is covered:
 // - the number, title and artists drawn, an unavailable track marked as disabled
 // - a button named by the title with onPress, no button role without it
+// - a trailing element drawn outside the pressable body
 //
 // Run with: pnpm --filter @beatly/ui test -- TrackRow
 //
@@ -15,6 +16,8 @@
 
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react-native";
+
+import { Pressable } from "react-native";
 
 import { TrackRow } from "../../src/components/TrackRow.tsx";
 import { color } from "../../src/tokens/color.ts";
@@ -44,5 +47,26 @@ describe("TrackRow", () => {
   it("has no button role without onPress", async () => {
     await render(<TrackRow number={1} title="Song" available />);
     expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("renders the trailing element outside the pressable body", async () => {
+    const onPress = jest.fn();
+    const onMore = jest.fn();
+    await render(
+      <TrackRow
+        number={1}
+        title="Song"
+        available
+        onPress={onPress}
+        trailing={
+          <Pressable accessibilityRole="button" accessibilityLabel="More" onPress={onMore} />
+        }
+      />,
+    );
+    await fireEvent.press(screen.getByRole("button", { name: "More" }));
+    expect(onMore).toHaveBeenCalledTimes(1);
+    expect(onPress).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByRole("button", { name: "Song" }));
+    expect(onPress).toHaveBeenCalledTimes(1);
   });
 });

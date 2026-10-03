@@ -11,6 +11,7 @@
 // - the tracks with an unavailable one disabled, the empty tracks message, hidden empty carousels
 // - opening another album from a carousel, opening an artist from the artist names, an artist without an id as plain text, not available for invalid_request without retry
 // - starting a list registers the album as a recent and keeps playing when that fails
+// - a more button on each playable track and none on an unavailable one
 // - the generic error with retry for upstream_error and a transport failure, back and its fallback, es
 //
 // Run with: pnpm --filter @beatly/mobile test -- AlbumScreen
@@ -293,5 +294,13 @@ describe("AlbumScreen", () => {
     await setup();
     expect(await screen.findByText("Álbum · 2013 · 13 canciones · 1 h 14 min")).toBeTruthy();
     expect(screen.getByText(es.album.otherVersions)).toBeTruthy();
+  });
+});
+
+describe("AlbumScreen track menu", () => {
+  it("draws a more button on each playable row and none on an unavailable one", async () => {
+    await setup();
+    await screen.findByText("First Song");
+    expect(screen.getAllByRole("button", { name: en.trackMenu.more })).toHaveLength(1);
   });
 });

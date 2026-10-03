@@ -1,5 +1,7 @@
 # 010. Import boundaries enforced by ESLint
 
+Amended by ADR 024: import cycles are checked with a plugin.
+
 Why the package boundaries of `002` are lint rules in the gate, and why
 they are written with ESLint's own `no-restricted-*` rules instead of a
 boundaries plugin.

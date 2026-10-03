@@ -10,19 +10,18 @@ has the seek bar, previous, play or pause, next, shuffle and repeat one. A handl
 the player pulls up a sheet with three tabs: Up next (the rest of the queue, then suggestions), Lyrics (synced lyrics
 follow the song and a line tap seeks) and Related (songs, artists, albums). A tap on a row of the rest of the queue jumps
 inside the current queue, keeping its order, shuffle and source; a tap on a suggestion or a related song plays that list
-from it, under the source "Songs like <the current title>". Foreground playback only: background, the lock screen, likes
-and track actions are later issues.
+from it, under the source "Songs like <the current title>". The player has a heart beside the title (shown only for a track that can be liked) and a more button in the header that opens the track menu (`track-menu.md`); every up next and related song row has the same button. A title that does not fit scrolls (a marquee). Foreground playback only: background and the lock screen are later issues.
 
 ## Layout
 
 - Mini player: `GlassSurface` `bar` tinted with the cover's dominant color, a round `Cover` of `layout.rowCover`,
-  the title in `typography.rowTitle` and the artists in `typography.meta`, play or pause and next as `IconButton`s.
+  the title in `typography.rowTitle` (scrolling with `Marquee` unless reduce motion is on) and the artists in `typography.meta`, play or pause and next as `IconButton`s.
   No progress line. `spacing.md` above the floating tab bar.
 - Player screen: `spacing.xl` sides; a `layout.controlHeight` header with the chevron-down close (`icon.size.lg`), "Playing from" in
-  `typography.label` / `color.text.secondary` over the source in `typography.rowTitle`; a wash from the dominant color to
+  `typography.label` / `color.text.secondary` over the source in `typography.rowTitle`, and the more button at its end; a wash from the dominant color to
   `color.surface.base` by the middle of the screen (three stops); `spacing.xl` below, a square cover as wide as the
-  content, `radius.md`, `shadow.cover`; `spacing.xxl` below, `typography.title` and `typography.body` in
-  `color.text.secondary`; `spacing.xl` below, the seek bar; `spacing.lg` below, the controls spread across the width:
+  content, `radius.md`, `shadow.cover`; `spacing.xxl` below, a row with `layout.gap`: the titles (`typography.title`, scrolling with `Marquee` when it does not fit, and `typography.body` in
+  `color.text.secondary`) and the heart `IconButton` (`icon.size.lg`, filled and selected when liked); `spacing.xl` below, the seek bar; `spacing.lg` below, the controls spread across the width:
   shuffle and repeat at `icon.size.md` (`color.text.secondary`, `color.text.primary` on), previous and next filled at
   `icon.size.xl`, and play or pause in a `layout.playButton` circle in `color.accent.primary` with a `color.text.inverse`
   glyph. The column scrolls when it does not fit. Dragged down it follows the finger and closes past `motion.dragToClose.distanceShare` of the window height or above `motion.dragToClose.velocity`, springing back with `motion.spring` otherwise; the cover drops to `motion.pausedScale` while paused. Under reduce motion nothing moves or scales and the route fades. iOS has no close button.
@@ -54,7 +53,7 @@ and track actions are later issues.
 | Expected empty   | player: `EmptyState` with the close button; mini player: not drawn                             | `player:empty`                                                                 |
 | Error with retry | mini player: the error line; player: `ErrorState` in place of the seek bar and controls, retry | `player:error.unplayable`, `common:retry`                                      |
 
-The with-data row also draws a track source as `player:trackSource`. The sheet's three tabs each draw their own four states:
+A failed like draws a floating `Notice` with `common:error.generic` above the bottom inset for `motion.duration.notice`. The with-data row also draws a track source as `player:trackSource`. The sheet's three tabs each draw their own four states:
 
 | Tab     | Loading                                    | With data                                                           | Expected empty              | Error with retry                                                                 |
 | ------- | ------------------------------------------ | ------------------------------------------------------------------- | --------------------------- | -------------------------------------------------------------------------------- |
@@ -84,14 +83,14 @@ loaded pages.
 
 `/player`, a see-through modal (`transparentModal`) above the tabs that slides up, opened from the mini player. A downward drag from the header, or from the column at its top, closes it; a short one springs back. Close pops, or replaces with `/`. Under reduce motion the route fades in and out and the drag does not move the player. With the sheet open, Android back and the VoiceOver escape close the sheet first, with its reverse motion, and the player stays; a second back or escape closes the player.
 
-An artist or an album of Related closes the player and pushes `/artist/[id]` or `/album/[id]` in the current tab.
+An artist or an album of Related, or Go to artist and Go to album of the track menu, closes the player and pushes `/artist/[id]` or `/album/[id]` in the current tab.
 
 ## i18n namespace
 
-`player` and `common`.
+`player`, `trackMenu` (the heart's labels and the menu) and `common`.
 
 ## Checked by hand
 
 Audible playback, seek, pause and advance on a device with the three stream values set in `.env`; a track that keeps playing, or fails with the error state and a retry, after switching between Wi-Fi and cellular; the first play on a fresh install (no stored identifier) and after clearing the app's data; duration on fragmented MP4; the silent switch;
 pause when the app goes to the background; the iOS 26+ bottom accessory (the mini player inside the system capsule, never over the tab bar, in regular and inline placement); the player layout at 375 x 667 (scrolls) and on a large phone (does not); the dominant-color tint
-(neutral in Expo Go); the modal presentation; the drag's feel on iOS and Android (tabs visible behind the player, the native dismissal continuing from the finger, the spring back); a drag from the column at its top where it fits, and on 375 x 667 where it scrolls (Android may hand it to the scroll, the header must still close); a seek drag that never closes; a transport button press that still works; reduce motion on iOS and Android (the player fades, the drag does not move it, the cover does not scale); VoiceOver's escape gesture closing the player on iOS; screenshots of the three sheet tabs on iOS and Android; the feel of the drag up, the spring open and back, the dim and the scale tracking the finger, and the drag down from the header and from a list at its top; the nudge on a fresh install (three openings nudge, the fourth does not); synced lyrics staying centered as a real song plays, including long wrapped lines; an artist or album of Related landing in the current tab from each of the four tabs, including the iOS 26+ native tabs; reduce motion on the sheet (it fades, nothing moves or scales, no nudge); VoiceOver and TalkBack announcing the handle as "Up next, lyrics and related" while the player behind is not read with the sheet open; the pause scale's feel and no flicker between tracks; screenshots on iOS and Android.
+(neutral in Expo Go); the modal presentation; the drag's feel on iOS and Android (tabs visible behind the player, the native dismissal continuing from the finger, the spring back); a drag from the column at its top where it fits, and on 375 x 667 where it scrolls (Android may hand it to the scroll, the header must still close); a seek drag that never closes; a transport button press that still works; reduce motion on iOS and Android (the player fades, the drag does not move it, the cover does not scale); VoiceOver's escape gesture closing the player on iOS; screenshots of the three sheet tabs on iOS and Android; the feel of the drag up, the spring open and back, the dim and the scale tracking the finger, and the drag down from the header and from a list at its top; the nudge on a fresh install (three openings nudge, the fourth does not); synced lyrics staying centered as a real song plays, including long wrapped lines; an artist or album of Related landing in the current tab from each of the four tabs, including the iOS 26+ native tabs; reduce motion on the sheet (it fades, nothing moves or scales, no nudge); VoiceOver and TalkBack announcing the handle as "Up next, lyrics and related" while the player behind is not read with the sheet open; the pause scale's feel and no flicker between tracks; the heart and the more button, the title marquee (and its ellipsis under reduce motion), a sheet opened from inside the player route, and screenshots on iOS and Android.

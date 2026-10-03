@@ -62,6 +62,7 @@ const styles = StyleSheet.create({
   },
   sheet: {
     alignSelf: "stretch",
+    flexShrink: 1,
     borderRadius: radius.lg,
     padding: spacing.xl,
     gap: spacing.lg,

@@ -1,13 +1,16 @@
 // INFO: ESLint flat config. Besides the usual TypeScript rules it encodes
 // the import boundaries of ARCHITECTURE.md: what core may not import,
 // what ui may not import, and which libraries may only be imported from
-// their adapter in apps/mobile. Three libraries have a single importer inside
+// their adapter in apps/mobile. Four libraries have a single importer inside
 // packages/ui instead: lucide-react-native (Icon.tsx), expo-glass-effect
-// (GlassSurface.tsx) and react-native-svg (GradientFill.tsx). A boundary is a rule here, not a habit.
+// (GlassSurface.tsx), react-native-svg (GradientFill.tsx) and @expo/ui
+// (NativeMenu.tsx). A boundary is a rule here, not a habit.
 
 import js from "@eslint/js";
 import comments from "@eslint-community/eslint-plugin-eslint-comments/configs";
 import prettier from "eslint-config-prettier";
+import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
+import { importX } from "eslint-plugin-import-x";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
@@ -67,6 +70,14 @@ const svgLibraryOnlyInGradientFill = {
     "Gradients are drawn with GradientFill inside packages/ui; packages/ui/src/components/GradientFill.tsx is the only importer of react-native-svg.",
 };
 
+// Native menus are drawn with NativeMenu of packages/ui; its file is the only
+// importer of the Expo UI library.
+const nativeMenuLibraryOnlyInNativeMenu = {
+  group: ["@expo/ui", "@expo/ui/*"],
+  message:
+    "Native menus are drawn with NativeMenu of @beatly/ui/native; packages/ui/src/components/NativeMenu.tsx is the only importer of @expo/ui.",
+};
+
 // A workspace is imported by its package name, never by a relative path
 // that crosses into another workspace's src.
 const crossWorkspacePaths = [
@@ -105,7 +116,7 @@ const restricted = (patterns, message, extra = []) => ({
   ],
 });
 
-const memoization = {
+const restrictedSyntax = {
   "no-restricted-syntax": [
     "error",
     {
@@ -117,6 +128,11 @@ const memoization = {
       selector: "CallExpression[callee.property.name=/^(useMemo|useCallback|memo)$/]",
       message:
         "The React Compiler memoizes. A manual useMemo/useCallback/memo needs an eslint-disable-next-line with a description saying why the compiler is not enough.",
+    },
+    {
+      selector: "ImportDeclaration[specifiers.length=0][source.value=/^\\./]",
+      message:
+        "A relative side-effect import (import './x.ts') is invisible to import-x/no-cycle, which skips imports without specifiers. Import a name from the file instead.",
     },
   ],
 };
@@ -155,6 +171,7 @@ export default tseslint.config(
       },
     },
     rules: {
+      ...restrictedSyntax,
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/consistent-type-imports": "error",
       "@eslint-community/eslint-comments/require-description": "error",
@@ -176,6 +193,21 @@ export default tseslint.config(
     },
   },
 
+  // An import cycle through a named, default or namespace import fails lint in
+  // every workspace; a relative side-effect import, which the plugin cannot see,
+  // is banned by restrictedSyntax. The TypeScript resolver resolves the .ts and
+  // .tsx extension imports the repo uses, and the extensions setting makes the
+  // plugin read those files: it skips any other extension.
+  {
+    files: ["**/*.{ts,tsx}"],
+    plugins: { "import-x": importX },
+    settings: {
+      "import-x/extensions": [".ts", ".tsx"],
+      "import-x/resolver-next": [createTypeScriptImportResolver()],
+    },
+    rules: { "import-x/no-cycle": "error" },
+  },
+
   // packages/core: no platform, no other workspace.
   {
     files: ["packages/core/**/*.ts"],
@@ -191,7 +223,6 @@ export default tseslint.config(
   {
     files: ["packages/ui/**/*.{ts,tsx}"],
     rules: {
-      ...memoization,
       ...restricted(
         [
           "@beatly/mobile",
@@ -201,7 +232,7 @@ export default tseslint.config(
           ...crossWorkspacePaths,
         ],
         "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
-        [iconLibraryOnlyInIcon, svgLibraryOnlyInGradientFill],
+        [iconLibraryOnlyInIcon, svgLibraryOnlyInGradientFill, nativeMenuLibraryOnlyInNativeMenu],
       ),
     },
   },
@@ -212,7 +243,6 @@ export default tseslint.config(
   {
     files: ["packages/ui/src/components/Icon.tsx"],
     rules: {
-      ...memoization,
       ...restricted(
         [
           "@beatly/mobile",
@@ -222,7 +252,7 @@ export default tseslint.config(
           ...crossWorkspacePaths,
         ],
         "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
-        [svgLibraryOnlyInGradientFill],
+        [svgLibraryOnlyInGradientFill, nativeMenuLibraryOnlyInNativeMenu],
       ),
     },
   },
@@ -233,13 +263,13 @@ export default tseslint.config(
   {
     files: ["packages/ui/src/components/GlassSurface.tsx"],
     rules: {
-      ...memoization,
       ...restricted(
         ["@beatly/mobile", "@tanstack/*", ...adapterOnlyLibraries, ...crossWorkspacePaths],
         "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
         [
           iconLibraryOnlyInIcon,
           svgLibraryOnlyInGradientFill,
+          nativeMenuLibraryOnlyInNativeMenu,
           {
             group: ["expo-*", "!expo-glass-effect"],
             message:
@@ -255,7 +285,6 @@ export default tseslint.config(
   {
     files: ["packages/ui/src/components/GradientFill.tsx"],
     rules: {
-      ...memoization,
       ...restricted(
         [
           "@beatly/mobile",
@@ -265,7 +294,26 @@ export default tseslint.config(
           ...crossWorkspacePaths,
         ],
         "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
-        [iconLibraryOnlyInIcon],
+        [iconLibraryOnlyInIcon, nativeMenuLibraryOnlyInNativeMenu],
+      ),
+    },
+  },
+
+  // The NativeMenu component is the one file allowed to import the Expo UI
+  // library. Same shape as the Icon block.
+  {
+    files: ["packages/ui/src/components/NativeMenu.tsx"],
+    rules: {
+      ...restricted(
+        [
+          "@beatly/mobile",
+          "expo-*",
+          "@tanstack/*",
+          ...adapterOnlyLibraries,
+          ...crossWorkspacePaths,
+        ],
+        "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
+        [iconLibraryOnlyInIcon, svgLibraryOnlyInGradientFill],
       ),
     },
   },
@@ -289,11 +337,15 @@ export default tseslint.config(
     files: ["apps/mobile/**/*.{ts,tsx}"],
     ignores: ["apps/mobile/src/adapters/**"],
     rules: {
-      ...memoization,
       ...restricted(
         [...adapterOnlyLibraries, ...crossWorkspacePaths],
         "This library is imported only by its adapter under apps/mobile/src/adapters/. Everything else goes through the port.",
-        [iconLibraryOnlyInIcon, glassLibraryOnlyInGlassSurface, svgLibraryOnlyInGradientFill],
+        [
+          iconLibraryOnlyInIcon,
+          glassLibraryOnlyInGlassSurface,
+          svgLibraryOnlyInGradientFill,
+          nativeMenuLibraryOnlyInNativeMenu,
+        ],
       ),
     },
   },

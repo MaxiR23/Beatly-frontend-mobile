@@ -6,7 +6,7 @@ The search tab: recent queries kept on the device, and the top artist, songs and
 
 Find music by text. While the field is empty the user sees their recent queries and can run,
 remove or clear them. With text, the screen shows the top artist, the songs and the albums the
-API returns. An album card opens the album; pressing a song plays the songs from it with a `search` source named by the query (`player.md`).
+API returns. An album card opens the album; pressing a song plays the songs from it with a `search` source named by the query (`player.md`). Every song row ends with a more button that opens the track menu (`track-menu.md`).
 
 ## Layout
 

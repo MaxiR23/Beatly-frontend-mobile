@@ -1,4 +1,4 @@
-// INFO: the up next tab of the player sheet: the rest of the queue (a press jumps inside it), then the suggestions of GET /tracks/{id}/upnext without the first track, which is the current one (a press plays the suggestions from it); the rest of the queue is local, so it is drawn while the suggestions load or fail.
+// INFO: the up next tab of the player sheet: the rest of the queue (a press jumps inside it), then the suggestions of GET /tracks/{id}/upnext without the first track, which is the current one (a press plays the suggestions from it); the rest of the queue is local, so it is drawn while the suggestions load or fail; every row ends with the track menu button.
 import type { PlayableTrack } from "@beatly/core";
 import { EmptyState, ErrorState, LoadingState, MediaRow } from "@beatly/ui/native";
 import { useEffect } from "react";
@@ -6,6 +6,7 @@ import { FlatList } from "react-native";
 
 import { useT } from "../../adapters/i18n.ts";
 import { useUpNext } from "../../queries/useTracks.ts";
+import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
 import { playableOf } from "./queue.ts";
 import { usePlayback, usePlaybackActions } from "./usePlayback.ts";
 
@@ -95,6 +96,7 @@ export function UpNextTab({ trackId, onAtTopChange }: UpNextTabProps) {
           onPress={() => {
             press(item);
           }}
+          trailing={<TrackMenuButton track={item.track} />}
         />
       )}
       testID="player-sheet-upnext"

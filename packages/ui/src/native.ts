@@ -43,6 +43,14 @@ export { MediaRow } from "./components/MediaRow.tsx";
 export { RecentRow } from "./components/RecentRow.tsx";
 export { DetailScreen, type DetailBody, type DetailRow } from "./components/DetailScreen.tsx";
 export { TrackRow } from "./components/TrackRow.tsx";
+export { Marquee } from "./components/Marquee.tsx";
+export { Notice } from "./components/Notice.tsx";
+export { ActionRow } from "./components/ActionRow.tsx";
+export {
+  NativeMenu,
+  isNativeMenuAvailable,
+  type NativeMenuItem,
+} from "./components/NativeMenu.tsx";
 export { MiniPlayer } from "./components/MiniPlayer.tsx";
 export { SeekBar } from "./components/SeekBar.tsx";
 export { VerticalDrag } from "./components/VerticalDrag.tsx";

@@ -1,5 +1,5 @@
-// INFO: an album: the detail base with its cover, title, artists, meta line, tracks and the carousels of other versions and recommended albums; unavailable for an invalid id; starting a list registers it as a recent.
-import type { AlbumRef, SearchArtistRef } from "@beatly/core";
+// INFO: an album: the detail base with its cover, title, artists, meta line, tracks and the carousels of other versions and recommended albums; unavailable for an invalid id; every playable track has a menu button; starting a list registers it as a recent.
+import type { Album, AlbumRef, PlayableTrack, SearchArtistRef } from "@beatly/core";
 import { layout, spacing } from "@beatly/ui";
 import {
   Carousel,
@@ -25,6 +25,25 @@ import { albumMeta } from "./albumMeta.ts";
 import { toQueue } from "../player/queue.ts";
 import { usePlaybackActions } from "../player/usePlayback.ts";
 import { useTabBarClearance } from "../player/useTabBarClearance.ts";
+import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
+import { TrackMenuHost } from "../trackMenu/TrackMenuHost.tsx";
+
+type AlbumTrack = Album["tracks"][number];
+
+// The track as playback and the menu see it: null when it cannot be played.
+function toPlayable(album: Album, track: AlbumTrack): PlayableTrack | null {
+  if (track.track_id === null || !track.is_available) return null;
+  return {
+    trackId: track.track_id,
+    title: track.title,
+    artists: track.artists.length > 0 ? track.artists : album.artists,
+    // The album being played fills what the track lacks.
+    album: album.title,
+    albumId: album.id,
+    coverUrl: album.thumbnail_url,
+    durationSeconds: track.duration_seconds,
+  };
+}
 
 export function AlbumScreen() {
   const t = useT("album");
@@ -78,20 +97,7 @@ export function AlbumScreen() {
   } else {
     const data = album.data;
     const playTrack = (tapped: number) => {
-      const queue = toQueue(data.tracks, tapped, (track) =>
-        track.track_id === null || !track.is_available
-          ? null
-          : {
-              trackId: track.track_id,
-              title: track.title,
-              artists: track.artists.length > 0 ? track.artists : data.artists,
-              // The album being played fills what the track lacks.
-              album: data.title,
-              albumId: data.id,
-              coverUrl: data.thumbnail_url,
-              durationSeconds: track.duration_seconds,
-            },
-      );
+      const queue = toQueue(data.tracks, tapped, (track) => toPlayable(data, track));
       if (queue !== null) {
         void playback.playList(queue.tracks, queue.index, {
           kind: "album",
@@ -147,22 +153,26 @@ export function AlbumScreen() {
             <EmptyState icon="music" message={t("empty")} />
           ) : (
             <View>
-              {data.tracks.map((track, index) => (
-                <TrackRow
-                  key={track.track_number}
-                  number={track.track_number}
-                  title={track.title}
-                  subtitle={track.artists.length > 0 ? artistNames(track.artists) : undefined}
-                  available={track.is_available}
-                  onPress={
-                    track.track_id !== null && track.is_available
-                      ? () => {
-                          playTrack(index);
-                        }
-                      : undefined
-                  }
-                />
-              ))}
+              {data.tracks.map((track, index) => {
+                const playable = toPlayable(data, track);
+                return (
+                  <TrackRow
+                    key={track.track_number}
+                    number={track.track_number}
+                    title={track.title}
+                    subtitle={track.artists.length > 0 ? artistNames(track.artists) : undefined}
+                    available={track.is_available}
+                    trailing={playable !== null ? <TrackMenuButton track={playable} /> : undefined}
+                    onPress={
+                      track.track_id !== null && track.is_available
+                        ? () => {
+                            playTrack(index);
+                          }
+                        : undefined
+                    }
+                  />
+                );
+              })}
             </View>
           )}
           {data.other_versions.length > 0 ? (
@@ -185,14 +195,24 @@ export function AlbumScreen() {
   }
 
   return (
-    <DetailScreen
-      testID="album"
-      body={body}
-      backLabel={t("back")}
-      onBack={goBack}
-      topInset={insets.top}
+    <TrackMenuHost
+      onOpenArtist={(artistId) => {
+        router.push({ pathname: "/artist/[id]", params: { id: artistId } });
+      }}
+      onOpenAlbum={(albumId) => {
+        router.push({ pathname: "/album/[id]", params: { id: albumId } });
+      }}
       bottomInset={tabBarClearance}
-    />
+    >
+      <DetailScreen
+        testID="album"
+        body={body}
+        backLabel={t("back")}
+        onBack={goBack}
+        topInset={insets.top}
+        bottomInset={tabBarClearance}
+      />
+    </TrackMenuHost>
   );
 }
 

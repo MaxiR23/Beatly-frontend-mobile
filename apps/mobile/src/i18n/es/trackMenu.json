@@ -1,0 +1,28 @@
+{
+  "more": "Más opciones",
+  "close": "Cerrar",
+  "items": {
+    "like": "Me gusta",
+    "unlike": "Quitar de tus me gusta",
+    "addToPlaylist": "Agregar a una playlist",
+    "goToArtist": "Ir al artista",
+    "goToAlbum": "Ir al álbum",
+    "credits": "Ver créditos",
+    "removeFromPlaylist": "Quitar de esta playlist"
+  },
+  "picker": {
+    "title": "Agregar a una playlist",
+    "newPlaylist": "Nueva playlist",
+    "name": "Nombre",
+    "nameTooLong": "Usa {{max}} caracteres o menos",
+    "create": "Crear",
+    "cancel": "Cancelar",
+    "inPlaylist": "Ya está en esta playlist",
+    "empty": "Todavía no tienes playlists.",
+    "added": "Agregada a {{title}}"
+  },
+  "credits": {
+    "title": "Créditos",
+    "empty": "Créditos no disponibles"
+  }
+}

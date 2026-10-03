@@ -1,4 +1,5 @@
-// INFO: the player: dragged down from its header, or from its column at the top, it closes (springs back if released early); the cover shrinks while paused; iOS has no close button, Android does; reduce motion keeps the player and the cover still; a handle at the bottom opens the up next, lyrics and related sheet, and the drag to close is off while it is open, and the system back and the accessibility escape close the sheet first, then the player; close (chevron down, Android only) and the source in a control-height header, then a scrolling column: the full-width cover, the title and artists, the seek bar and the controls row (shuffle, previous, play or pause, next, repeat one); loading spins the play button, a failure draws the error with retry in place of the controls, nothing loaded draws the empty state.
+// INFO: the player: dragged down from its header, or from its column at the top, it closes (springs back if released early); the cover shrinks while paused; iOS has no close button, Android does; reduce motion keeps the player and the cover still; a handle at the bottom opens the up next, lyrics and related sheet, and the drag to close is off while it is open, and the system back and the accessibility escape close the sheet first, then the player; close (chevron down, Android only), the source and the track's menu button in a control-height header, then a scrolling column: the full-width cover, the title (scrolls when it does not fit) and artists with the heart beside them when the track can be liked, the seek bar and the controls row (shuffle, previous, play or pause, next, repeat one); loading spins the play button, a failure draws the error with retry in place of the controls, nothing loaded draws the empty state.
+import { likeInputOf, type PlayableTrack } from "@beatly/core";
 import { color, layout, spacing } from "@beatly/ui";
 import {
   Cover,
@@ -7,6 +8,7 @@ import {
   ErrorState,
   GradientFill,
   IconButton,
+  Marquee,
   PauseScale,
   SeekBar,
   Text,
@@ -25,10 +27,42 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
 import { useDominantColor } from "../detail/useDominantColor.ts";
+import { useIsLiked } from "../../queries/useLikes.ts";
 import { formatDuration } from "../search/formatDuration.ts";
+import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
+import { useTrackMenu } from "../trackMenu/trackMenuContext.ts";
+import { TrackMenuHost } from "../trackMenu/TrackMenuHost.tsx";
 import { PlayerSheet } from "./PlayerSheet.tsx";
 import { usePlayback, usePlaybackActions } from "./usePlayback.ts";
 import { useReduceMotion } from "./useReduceMotion.ts";
+
+function PlayerTitles({ track, reduceMotion }: { track: PlayableTrack; reduceMotion: boolean }) {
+  const t = useT("player");
+  const tm = useT("trackMenu");
+  const { toggleLike } = useTrackMenu();
+  const liked = useIsLiked(track.trackId);
+  return (
+    <View style={styles.titleRow} testID="player-titles">
+      <View style={styles.titles}>
+        <Marquee text={track.title} variant="title" reduceMotion={reduceMotion} />
+        <Text tone="secondary" numberOfLines={1}>
+          {track.artists.map((artist) => artist.name).join(t("artistSeparator"))}
+        </Text>
+      </View>
+      {likeInputOf(track) !== null ? (
+        <IconButton
+          icon="heart"
+          filled={liked}
+          selected={liked}
+          accessibilityLabel={liked ? tm("items.unlike") : tm("items.like")}
+          onPress={() => {
+            void toggleLike(track);
+          }}
+        />
+      ) : null}
+    </View>
+  );
+}
 
 export function PlayerScreen() {
   const t = useT("player");
@@ -120,161 +154,164 @@ export function PlayerScreen() {
       reduceMotion={reduceMotion}
       testID="player-drag"
     >
-      <PlayerSheet
-        open={sheetOpen}
-        onOpen={() => {
-          setSheetOpen(true);
-        }}
-        onClose={() => {
-          setSheetOpen(false);
-        }}
-        reduceMotion={reduceMotion}
-        wash={wash}
-        onOpenAlbum={(id) => {
-          openInTab("/album/[id]", id);
-        }}
+      <TrackMenuHost
         onOpenArtist={(id) => {
           openInTab("/artist/[id]", id);
         }}
+        onOpenAlbum={(id) => {
+          openInTab("/album/[id]", id);
+        }}
+        bottomInset={insets.bottom}
       >
-        <View style={styles.root} testID="player">
-          {wash === null ? null : (
-            <View style={StyleSheet.absoluteFill} testID="player-wash">
-              <GradientFill
-                direction="vertical"
-                colors={[wash, color.surface.base, color.surface.base]}
-              />
-            </View>
-          )}
-          <View style={top}>
-            <View style={styles.header} testID="player-header">
-              {leading}
-              <View style={styles.source}>
-                <Text variant="label" tone="secondary" align="center" numberOfLines={1}>
-                  {t("playingFrom")}
-                </Text>
-                <Text variant="rowTitle" align="center" numberOfLines={1}>
-                  {sourceName}
-                </Text>
-              </View>
-              <View style={styles.balance} />
-            </View>
-          </View>
-          <ScrollView
-            bounces={false}
-            style={styles.scroll}
-            contentContainerStyle={[styles.content, bottom]}
-            onScroll={(event) => {
-              setAtTop(event.nativeEvent.contentOffset.y <= 0);
-            }}
-            testID="player-content"
-          >
-            <View style={styles.cover} testID="player-cover">
-              <PauseScale
-                paused={status === "paused"}
-                reduceMotion={reduceMotion}
-                testID="player-cover-scale"
-              >
-                <Cover
-                  urls={current.coverUrl === null ? [] : [current.coverUrl]}
-                  shape="square"
-                  corner="md"
-                  size={coverSize}
-                  elevated
-                />
-              </PauseScale>
-            </View>
-            <View style={styles.titles} testID="player-titles">
-              <Text variant="title" numberOfLines={1}>
-                {current.title}
-              </Text>
-              <Text tone="secondary" numberOfLines={1}>
-                {current.artists.map((artist) => artist.name).join(t("artistSeparator"))}
-              </Text>
-            </View>
-            {failed ? (
-              <View style={styles.below}>
-                <ErrorState
-                  message={t("error.unplayable")}
-                  retryLabel={tc("retry")}
-                  onRetry={() => {
-                    void playback.retry();
-                  }}
+        <PlayerSheet
+          open={sheetOpen}
+          onOpen={() => {
+            setSheetOpen(true);
+          }}
+          onClose={() => {
+            setSheetOpen(false);
+          }}
+          reduceMotion={reduceMotion}
+          wash={wash}
+          onOpenAlbum={(id) => {
+            openInTab("/album/[id]", id);
+          }}
+          onOpenArtist={(id) => {
+            openInTab("/artist/[id]", id);
+          }}
+        >
+          <View style={styles.root} testID="player">
+            {wash === null ? null : (
+              <View style={StyleSheet.absoluteFill} testID="player-wash">
+                <GradientFill
+                  direction="vertical"
+                  colors={[wash, color.surface.base, color.surface.base]}
                 />
               </View>
-            ) : (
-              <>
-                {hasSeek ? (
-                  <View style={styles.below} testID="player-seek">
-                    <SeekBar
-                      positionSeconds={state.positionSeconds}
-                      durationSeconds={duration}
-                      elapsedLabel={formatDuration(state.positionSeconds)}
-                      remainingLabel={t("remaining", {
-                        time: formatDuration(duration - state.positionSeconds),
-                      })}
-                      accessibilityLabel={t("seek")}
-                      onSeek={(seconds) => {
-                        void playback.seek(seconds);
-                      }}
-                    />
-                  </View>
-                ) : null}
-                <View
-                  style={[styles.controls, hasSeek ? styles.afterSeek : styles.below]}
-                  testID="player-controls"
+            )}
+            <View style={top}>
+              <View style={styles.header} testID="player-header">
+                {leading}
+                <View style={styles.source}>
+                  <Text variant="label" tone="secondary" align="center" numberOfLines={1}>
+                    {t("playingFrom")}
+                  </Text>
+                  <Text variant="rowTitle" align="center" numberOfLines={1}>
+                    {sourceName}
+                  </Text>
+                </View>
+                <TrackMenuButton track={current} />
+              </View>
+            </View>
+            <ScrollView
+              bounces={false}
+              style={styles.scroll}
+              contentContainerStyle={[styles.content, bottom]}
+              onScroll={(event) => {
+                setAtTop(event.nativeEvent.contentOffset.y <= 0);
+              }}
+              testID="player-content"
+            >
+              <View style={styles.cover} testID="player-cover">
+                <PauseScale
+                  paused={status === "paused"}
+                  reduceMotion={reduceMotion}
+                  testID="player-cover-scale"
                 >
-                  <IconButton
-                    icon="shuffle"
-                    iconSize="md"
-                    accessibilityLabel={t("shuffle")}
-                    selected={state.shuffle}
-                    onPress={() => {
-                      playback.setShuffle(!state.shuffle);
-                    }}
+                  <Cover
+                    urls={current.coverUrl === null ? [] : [current.coverUrl]}
+                    shape="square"
+                    corner="md"
+                    size={coverSize}
+                    elevated
                   />
-                  <IconButton
-                    icon="skipBack"
-                    iconSize="xl"
-                    filled
-                    accessibilityLabel={t("previous")}
-                    onPress={() => {
-                      void playback.previous();
-                    }}
-                  />
-                  <IconButton
-                    variant="primary"
-                    icon={status === "playing" ? "pause" : "play"}
-                    accessibilityLabel={status === "playing" ? t("pause") : t("play")}
-                    busy={status === "loading"}
-                    onPress={() => {
-                      void playback.toggle();
-                    }}
-                  />
-                  <IconButton
-                    icon="skipForward"
-                    iconSize="xl"
-                    filled
-                    accessibilityLabel={t("next")}
-                    onPress={() => {
-                      void playback.next();
-                    }}
-                  />
-                  <IconButton
-                    icon="repeat1"
-                    iconSize="md"
-                    accessibilityLabel={t("repeatOne")}
-                    selected={state.repeatOne}
-                    onPress={() => {
-                      playback.setRepeatOne(!state.repeatOne);
+                </PauseScale>
+              </View>
+              <PlayerTitles track={current} reduceMotion={reduceMotion} />
+              {failed ? (
+                <View style={styles.below}>
+                  <ErrorState
+                    message={t("error.unplayable")}
+                    retryLabel={tc("retry")}
+                    onRetry={() => {
+                      void playback.retry();
                     }}
                   />
                 </View>
-              </>
-            )}
-          </ScrollView>
-        </View>
-      </PlayerSheet>
+              ) : (
+                <>
+                  {hasSeek ? (
+                    <View style={styles.below} testID="player-seek">
+                      <SeekBar
+                        positionSeconds={state.positionSeconds}
+                        durationSeconds={duration}
+                        elapsedLabel={formatDuration(state.positionSeconds)}
+                        remainingLabel={t("remaining", {
+                          time: formatDuration(duration - state.positionSeconds),
+                        })}
+                        accessibilityLabel={t("seek")}
+                        onSeek={(seconds) => {
+                          void playback.seek(seconds);
+                        }}
+                      />
+                    </View>
+                  ) : null}
+                  <View
+                    style={[styles.controls, hasSeek ? styles.afterSeek : styles.below]}
+                    testID="player-controls"
+                  >
+                    <IconButton
+                      icon="shuffle"
+                      iconSize="md"
+                      accessibilityLabel={t("shuffle")}
+                      selected={state.shuffle}
+                      onPress={() => {
+                        playback.setShuffle(!state.shuffle);
+                      }}
+                    />
+                    <IconButton
+                      icon="skipBack"
+                      iconSize="xl"
+                      filled
+                      accessibilityLabel={t("previous")}
+                      onPress={() => {
+                        void playback.previous();
+                      }}
+                    />
+                    <IconButton
+                      variant="primary"
+                      icon={status === "playing" ? "pause" : "play"}
+                      accessibilityLabel={status === "playing" ? t("pause") : t("play")}
+                      busy={status === "loading"}
+                      onPress={() => {
+                        void playback.toggle();
+                      }}
+                    />
+                    <IconButton
+                      icon="skipForward"
+                      iconSize="xl"
+                      filled
+                      accessibilityLabel={t("next")}
+                      onPress={() => {
+                        void playback.next();
+                      }}
+                    />
+                    <IconButton
+                      icon="repeat1"
+                      iconSize="md"
+                      accessibilityLabel={t("repeatOne")}
+                      selected={state.repeatOne}
+                      onPress={() => {
+                        playback.setRepeatOne(!state.repeatOne);
+                      }}
+                    />
+                  </View>
+                </>
+              )}
+            </ScrollView>
+          </View>
+        </PlayerSheet>
+      </TrackMenuHost>
     </DragToClose>
   );
 }
@@ -293,7 +330,13 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingHorizontal: spacing.xl },
   cover: { marginTop: spacing.xl },
-  titles: { marginTop: spacing.xxl, gap: spacing.xs },
+  titleRow: {
+    marginTop: spacing.xxl,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: layout.gap,
+  },
+  titles: { flex: 1, gap: spacing.xs },
   below: { marginTop: spacing.xl },
   controls: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   afterSeek: { marginTop: spacing.lg },
