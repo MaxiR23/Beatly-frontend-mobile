@@ -9,5 +9,6 @@
     "ep": "EP"
   },
   "metaSeparator": " · ",
-  "notAvailable": "This artist is not available."
+  "notAvailable": "This artist is not available.",
+  "trackUnavailable": "{{title}}, not available"
 }

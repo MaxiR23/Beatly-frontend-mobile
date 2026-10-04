@@ -10,5 +10,6 @@
   "otherVersions": "Otras versiones",
   "recommended": "Recomendados",
   "empty": "Este álbum no tiene canciones disponibles.",
-  "notAvailable": "Este álbum no está disponible."
+  "notAvailable": "Este álbum no está disponible.",
+  "trackUnavailable": "{{title}}, no disponible"
 }

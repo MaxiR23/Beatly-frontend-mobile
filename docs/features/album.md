@@ -7,7 +7,7 @@ An album's tracks and its related albums, on the detail screen base (which has a
 Show an album: its cover, title, artists, meta line and tracks, and the albums
 that are other versions of it or recommended with it. Opening another album
 pushes a new album in the same tab. Pressing an available track plays the album from it
-(`player.md`); an unavailable track is not pressable. Every playable track ends with a more button that opens the track menu (`track-menu.md`); an unavailable track has none.
+(`player.md`); a track without a `track_id` or with `is_available: false` is unavailable: not pressable, announced as `album:trackUnavailable`, and never enters the queue, so next, previous and shuffle skip it. Every playable track ends with a more button that opens the track menu (`track-menu.md`); an unavailable track has none.
 
 ## Layout
 
@@ -24,8 +24,8 @@ the body:
   and the duration in hours and minutes, each omitted when the API sends none.
 - Tracks: one `TrackRow` per track in API order, keyed by `track_number`. The
   number in a `layout.trackNumber` column, the title in `typography.rowTitle`, the
-  artists in `typography.meta`. An unavailable track draws in
-  `color.text.disabled`.
+  artists in `typography.meta`. An unavailable track (no `track_id`, or `is_available: false`) draws in
+  `color.text.disabled` and is announced as one element by `album:trackUnavailable`.
 - Carousels: other versions and recommended albums, each hidden when empty. A
   card is `layout.carouselCard` wide with a `radius.sm` cover; its subtitle is the
   artists, or the year when there are none.
@@ -44,13 +44,13 @@ the body:
 
 The floating back button is drawn in every state.
 
-| State            | What is drawn                                                                                  | i18n keys                                                                                                               |
-| ---------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Loading          | `DetailSkeleton`, static                                                                       | `common:loading`                                                                                                        |
-| With data        | the hero, title, info, tracks and the carousels; the song count with plural forms              | `album:kind`, `album:songs`, `album:durationMinutes`, `album:durationHours`, `album:otherVersions`, `album:recommended` |
-| Expected empty   | `EmptyState` in the tracks section when `tracks` is `[]`; the rest of the album is still drawn | `album:empty`                                                                                                           |
-| Error with retry | `ErrorState`; retry refetches                                                                  | `common:error.generic`, `common:retry`                                                                                  |
-| Unavailable      | `EmptyState` with no action, for `invalid_request`                                             | `album:notAvailable`                                                                                                    |
+| State            | What is drawn                                                                                  | i18n keys                                                                                                                                         |
+| ---------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Loading          | `DetailSkeleton`, static                                                                       | `common:loading`                                                                                                                                  |
+| With data        | the hero, title, info, tracks and the carousels; the song count with plural forms              | `album:kind`, `album:songs`, `album:durationMinutes`, `album:durationHours`, `album:otherVersions`, `album:recommended`, `album:trackUnavailable` |
+| Expected empty   | `EmptyState` in the tracks section when `tracks` is `[]`; the rest of the album is still drawn | `album:empty`                                                                                                                                     |
+| Error with retry | `ErrorState`; retry refetches                                                                  | `common:error.generic`, `common:retry`                                                                                                            |
+| Unavailable      | `EmptyState` with no action, for `invalid_request`                                             | `album:notAvailable`                                                                                                                              |
 
 The back button is labeled `album:back`.
 

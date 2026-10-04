@@ -12,6 +12,7 @@
 // - opening another album from a carousel, opening an artist from the artist names, an artist without an id as plain text, not available for invalid_request without retry
 // - starting a list registers the album as a recent and keeps playing when that fails
 // - a more button on each playable track and none on an unavailable one
+// - an unavailable track (no track id, or is_available false) dimmed, not a button, without menu and announced; next, previous and shuffle never reach it
 // - the generic error with retry for upstream_error and a transport failure, back and its fallback, es
 //
 // Run with: pnpm --filter @beatly/mobile test -- AlbumScreen
@@ -20,11 +21,11 @@
 
 import type { Album, HttpOutcome } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { StyleSheet, type ViewStyle } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { spacing } from "@beatly/ui";
+import { color, spacing } from "@beatly/ui";
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { AlbumScreen } from "../../../src/screens/album/AlbumScreen.tsx";
@@ -269,6 +270,71 @@ describe("AlbumScreen", () => {
     await screen.findByText("First Song");
     expect(screen.getByRole("button", { name: "First Song" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Hidden Song" })).toBeNull();
+  });
+
+  it("dims, disables and announces a track without an id or marked unavailable", async () => {
+    const base = { artists: [], duration_seconds: 100 };
+    const ctx = await setup({
+      getAlbum: albumOf({
+        ...albumFixture,
+        tracks: [
+          ...albumFixture.tracks,
+          { ...base, track_id: "t3", title: "Locked Song", is_available: false, track_number: 3 },
+          { ...base, track_id: null, title: "Idless Song", is_available: true, track_number: 4 },
+        ],
+      }),
+    });
+    await screen.findByText("First Song");
+    for (const name of ["Hidden Song", "Locked Song", "Idless Song"]) {
+      expect(screen.getByText(name)).toHaveStyle({ color: color.text.disabled });
+      expect(screen.queryByRole("button", { name })).toBeNull();
+      expect(
+        screen.getByLabelText(en.album.trackUnavailable.replace("{{title}}", name)),
+      ).toBeTruthy();
+    }
+    expect(screen.getAllByRole("button", { name: en.trackMenu.more })).toHaveLength(1);
+    expect(ctx.playback.getState().queue).toEqual([]);
+  });
+
+  it("never reaches an unavailable track with next, previous or shuffle", async () => {
+    const base = { artists: [], duration_seconds: 100 };
+    const ctx = await setup({
+      getAlbum: albumOf({
+        ...albumFixture,
+        tracks: [
+          { ...base, track_id: "t1", title: "First Song", is_available: true, track_number: 1 },
+          { ...base, track_id: null, title: "Hidden Song", is_available: false, track_number: 2 },
+          { ...base, track_id: "t3", title: "Locked Song", is_available: false, track_number: 3 },
+          { ...base, track_id: "t4", title: "Fourth Song", is_available: true, track_number: 4 },
+          { ...base, track_id: "t5", title: "Fifth Song", is_available: true, track_number: 5 },
+        ],
+      }),
+    });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: "First Song" }));
+    expect(ctx.playback.getState().queue.map((t) => t.trackId)).toEqual(["t1", "t4", "t5"]);
+    await act(async () => {
+      await ctx.playback.next();
+    });
+    expect(ctx.playback.getState().current?.trackId).toBe("t4");
+    await act(async () => {
+      await ctx.playback.next();
+    });
+    expect(ctx.playback.getState().current?.trackId).toBe("t5");
+    await act(async () => {
+      await ctx.playback.next();
+    });
+    expect(ctx.playback.getState().current?.trackId).toBe("t5");
+    await act(async () => {
+      await ctx.playback.previous();
+    });
+    expect(ctx.playback.getState().current?.trackId).toBe("t4");
+    await act(() => {
+      ctx.playback.setShuffle(true);
+    });
+    expect(new Set(ctx.playback.getState().queue.map((t) => t.trackId))).toEqual(
+      new Set(["t1", "t4", "t5"]),
+    );
   });
 
   it("draws the generic error for a transport failure", async () => {
