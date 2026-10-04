@@ -2,11 +2,11 @@
 import { z } from "zod";
 
 import type { MigrateOutcome } from "../db/migrations.ts";
-import { likeArtistSchema, likeSchema, type Like } from "../domain/like.ts";
+import { likeArtistSchema, likeSchema, likesCheckpointSchema, type Like } from "../domain/like.ts";
 import type { ApiReason } from "../domain/envelope.ts";
 import type { HttpClient } from "../http/client.ts";
 import type { ApiFailure, HttpOutcome, TransportFailure } from "../http/outcome.ts";
-import { fetchPage, type PageResult } from "../http/paginated.ts";
+import { fetchPageWith, type PageResult } from "../http/paginated.ts";
 import type { DbExecutor, DbPort, SqlValue } from "../ports/db.ts";
 import type { LogPort } from "../ports/log.ts";
 import type { PlayArtist } from "./activity.ts";
@@ -17,8 +17,6 @@ import type { StorageFailure } from "./recentSearches.ts";
 export const LIKE_SEND_DELAY_MS = 500;
 // The waits before each retry of a transient failure: three retries, growing.
 export const LIKE_RETRY_DELAYS_MS: readonly number[] = [1000, 2000, 4000];
-// A sweep starts this far before the newest update of the previous one (likes.md).
-export const SYNC_OVERLAP_SECONDS = 60;
 
 export interface LikeInput {
   readonly track_id: string;
@@ -155,8 +153,6 @@ ON CONFLICT(track_id) DO UPDATE SET
 // Read through a function: another call sets the flag during the awaits, which flow analysis cannot see.
 const isDirty = (worker: Worker): boolean => worker.dirty;
 
-const FULL_READ_WATERMARK = "1970-01-01T00:00:00Z";
-
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 function parseRows<T>(schema: z.ZodType<T>, rows: unknown): T {
@@ -182,17 +178,6 @@ async function readRow(executor: DbExecutor, trackId: string): Promise<Row | nul
   return first === undefined ? null : toRow(first);
 }
 
-// Postgres sends microseconds; Date.parse beyond milliseconds is not portable across engines.
-function toMs(raw: string): number {
-  return Date.parse(raw.replace(/(\.\d{3})\d+/, "$1"));
-}
-
-function sinceFor(raw: string): string | null {
-  const ms = toMs(raw);
-  if (Number.isNaN(ms)) return null;
-  return new Date(ms - SYNC_OVERLAP_SECONDS * 1000).toISOString();
-}
-
 export function createLikesService(deps: {
   client: HttpClient;
   db: DbPort;
@@ -204,6 +189,8 @@ export function createLikesService(deps: {
   let generation = 0;
   let likedIds = new Set<string>();
   let syncing: Promise<LikesSyncOutcome> | null = null;
+  // Ids the backend accepted a write for while a full read runs: that read cannot know them, so its cleanup keeps them.
+  let acceptedDuringRead: Set<string> | null = null;
   const workers = new Map<string, Worker>();
   const listeners = new Set<() => void>();
   const confirmedListeners = new Set<() => void>();
@@ -298,6 +285,7 @@ export function createLikesService(deps: {
           ),
         );
         if (!saved.ok) return saved.failure;
+        acceptedDuringRead?.add(row.track_id);
         notify(confirmedListeners);
         return { kind: "confirmed" };
       }
@@ -391,53 +379,74 @@ export function createLikesService(deps: {
       return parseRows(z.array(z.object({ since: z.string() })), rows)[0]?.since ?? null;
     });
     if (!read.ok) return read.failure;
-    const stored = read.value;
-    const since = stored === null ? null : sinceFor(stored);
+    // The server's checkpoint, or the watermark an older version stored, sent as is (likes.md, Checkpoint).
+    const since = read.value;
 
     let cursor: string | null = null;
-    let newest: { raw: string; ms: number } | null = null;
-    let sawItems = false;
-    if (stored !== null && since !== null) newest = { raw: stored, ms: toMs(stored) };
+    // Ids a full read returned; the rows it did not return are swept once the whole read finished.
+    let seen = new Set<string>();
+    const accepted = new Set<string>();
+    acceptedDuringRead = since === null ? accepted : null;
 
     for (;;) {
-      const outcome: HttpOutcome<PageResult<Like>> = await fetchPage(client, {
-        path: since === null ? "/likes" : "/likes/sync",
-        item: likeSchema,
-        cursor,
-        ...(since === null ? {} : { query: { since } }),
-      });
+      const outcome: HttpOutcome<PageResult<Like> & { readonly checkpoint: string }> =
+        await fetchPageWith(
+          client,
+          {
+            path: since === null ? "/likes" : "/likes/sync",
+            item: likeSchema,
+            cursor,
+            ...(since === null ? {} : { query: { since } }),
+          },
+          likesCheckpointSchema,
+        );
       if (outcome.kind !== "success") return outcome;
       // Signed out meanwhile: the previous user's likes must not refill the mirror.
       if (gen !== generation) return { kind: "success" };
 
       const { items, page }: PageResult<Like> = outcome.data;
+      if (since === null) {
+        if (outcome.data.restartedFromFirstPage) seen = new Set();
+        for (const item of items) seen.add(item.track_id);
+      }
       if (items.length > 0) {
         const saved = await upsertPage(items);
         if (!saved.ok) return saved.failure;
-        sawItems = true;
-        for (const item of items) {
-          const ms = toMs(item.updated_at);
-          if (!Number.isNaN(ms) && (newest === null || ms > newest.ms)) {
-            newest = { raw: item.updated_at, ms };
-          }
-        }
       }
-      if (!page.has_more || page.next_cursor === null) break;
-      cursor = page.next_cursor;
-    }
+      if (page.has_more && page.next_cursor !== null) {
+        cursor = page.next_cursor;
+        continue;
+      }
 
-    // The watermark moves only when a whole sweep finished. A full read never delivers an unlike, so
-    // it stores the epoch: the next sync asks /likes/sync from the start and sees every deletion once.
-    const mark =
-      since === null ? FULL_READ_WATERMARK : sawItems && newest !== null ? newest.raw : null;
-    if (mark !== null && gen === generation) {
-      const written = await attempt("write", () =>
-        db.run(
-          "INSERT INTO sync_state (name, since) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET since = excluded.since",
-          [WATERMARK, mark],
-        ),
-      );
-      if (!written.ok) return written.failure;
+      // Only a whole read moves the watermark (the server's checkpoint, unchanged) and, for a full
+      // read, which never returns an unlike, drops the confirmed rows it did not return; pending rows and writes accepted during the read stay.
+      if (gen === generation) {
+        const mark = outcome.data.checkpoint;
+        const fullRead = since === null;
+        const written = await attempt("write", () =>
+          db.transaction(async (tx) => {
+            if (fullRead) {
+              const confirmed = parseRows(
+                z.array(z.object({ track_id: z.string() })),
+                await tx.all("SELECT track_id FROM likes WHERE pending = 0"),
+              );
+              for (const row of confirmed) {
+                if (!seen.has(row.track_id) && !accepted.has(row.track_id)) {
+                  await tx.run("DELETE FROM likes WHERE track_id = ? AND pending = 0", [
+                    row.track_id,
+                  ]);
+                }
+              }
+            }
+            await tx.run(
+              "INSERT INTO sync_state (name, since) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET since = excluded.since",
+              [WATERMARK, mark],
+            );
+          }),
+        );
+        if (!written.ok) return written.failure;
+      }
+      break;
     }
     const reloaded = await refresh();
     if (!reloaded.ok) return reloaded.failure;

@@ -1,4 +1,4 @@
-// INFO: the item of GET /likes and GET /likes/sync and the data of POST /likes; deleted_at is null on GET /likes and set on an unliked row of GET /likes/sync; duration_seconds can be null.
+// INFO: the item of GET /likes and GET /likes/sync and the data of POST /likes; deleted_at is null on GET /likes and set on an unliked row of GET /likes/sync; duration_seconds can be null; both lists also carry the checkpoint.
 import { z } from "zod";
 
 export const likeArtistSchema = z.object({ id: z.string(), name: z.string() });
@@ -17,3 +17,6 @@ export const likeSchema = z.object({
   deleted_at: z.string().nullable(),
 });
 export type Like = z.infer<typeof likeSchema>;
+
+// The server's sync point on every page of GET /likes and GET /likes/sync, sent back unchanged as `since`.
+export const likesCheckpointSchema = z.object({ checkpoint: z.string() });

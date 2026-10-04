@@ -19,6 +19,11 @@ page, flagged as `restartedFromFirstPage` on the page result.
 - `useInfiniteList` drops the pages that come before a `restartedFromFirstPage`
   page, in `select`, so the list shows the restarted first page onward and never
   mixes pages from two cursors.
+- `fetchPageWith` (`packages/core/src/http/paginated.ts`) lets a route validate
+  and return fields beside `items` and `page` that the server fixes on the first
+  page of a read (the likes `checkpoint`). It shares `fetchPage`'s cursor echo
+  and `invalid_cursor` restart, so no route hand-rolls a cursor loop; `fetchPage`
+  keeps its signature.
 - Rejected for the cache time: the first page's max-age (a later, shorter page
   would be served stale) and the last page's (the same problem in reverse).
 - Rejected for the restart: resetting the query (it drops the list to loading

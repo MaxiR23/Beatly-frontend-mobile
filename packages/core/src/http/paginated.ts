@@ -1,4 +1,4 @@
-// INFO: the shared paginated helper: fetches a page, echoes the opaque cursor, and restarts from the first page on invalid_cursor.
+// INFO: the shared paginated helper: fetches a page, echoes the opaque cursor, restarts from the first page on invalid_cursor, and returns the fields a route fixes on the first page of a read.
 import type { z } from "zod";
 
 import { paginatedSchema, type PageBlock } from "../domain/envelope.ts";
@@ -21,14 +21,16 @@ export interface FetchPageOptions<T> {
   readonly query?: QueryParams;
 }
 
-export async function fetchPage<T>(
+async function fetchPageOf<T, D extends { items: T[]; page: PageBlock }>(
   client: HttpClient,
   options: FetchPageOptions<T>,
-): Promise<HttpOutcome<PageResult<T>>> {
+  schema: z.ZodType<D>,
+): Promise<HttpOutcome<D & { readonly restartedFromFirstPage: boolean }>> {
   const cursor = options.cursor ?? null;
-  const schema = paginatedSchema(options.item);
 
-  async function get(withCursor: string | null): Promise<HttpOutcome<PageResult<T>>> {
+  async function get(
+    withCursor: string | null,
+  ): Promise<HttpOutcome<D & { readonly restartedFromFirstPage: boolean }>> {
     const outcome = await client.request({
       path: options.path,
       query: {
@@ -43,8 +45,7 @@ export async function fetchPage<T>(
       kind: "success",
       maxAgeSeconds: outcome.maxAgeSeconds,
       data: {
-        items: outcome.data.items,
-        page: outcome.data.page,
+        ...outcome.data,
         restartedFromFirstPage: withCursor === null && cursor !== null,
       },
     };
@@ -55,4 +56,20 @@ export async function fetchPage<T>(
     return get(null);
   }
   return first;
+}
+
+export function fetchPage<T>(
+  client: HttpClient,
+  options: FetchPageOptions<T>,
+): Promise<HttpOutcome<PageResult<T>>> {
+  return fetchPageOf(client, options, paginatedSchema(options.item));
+}
+
+// For a route whose data carries fields beside items and page, fixed on the first page of a read.
+export function fetchPageWith<T, X extends object>(
+  client: HttpClient,
+  options: FetchPageOptions<T>,
+  extra: z.ZodType<X>,
+): Promise<HttpOutcome<PageResult<T> & X>> {
+  return fetchPageOf(client, options, paginatedSchema(options.item).and(extra));
 }

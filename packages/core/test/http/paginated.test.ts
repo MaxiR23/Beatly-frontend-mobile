@@ -5,6 +5,7 @@
 // Tested:
 // - fetchPage: first page, empty page, api failure, schema failure
 // - fetchPage: second page with a cursor, invalid_cursor restart, limit
+// - fetchPageWith: the fields beside items and page on a first page and on an empty one, schema failure when one is missing, invalid_cursor restart
 //
 // What is covered:
 // - the page shape of conventions.md and the cursor echo
@@ -17,7 +18,7 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
 import { createHttpClient } from "../../src/http/client.ts";
-import { fetchPage } from "../../src/http/paginated.ts";
+import { fetchPage, fetchPageWith } from "../../src/http/paginated.ts";
 import { createFakeAuth } from "../fakes/auth.ts";
 import { createFakeHttp, type Handler } from "../fakes/http.ts";
 import { createFakeLog } from "../fakes/log.ts";
@@ -153,5 +154,60 @@ describe("fetchPage", () => {
     await fetchPage(client, { path: "/items", item, limit: 20 });
     expect(http.requests[0]?.url).not.toContain("limit");
     expect(http.requests[1]?.url).toContain("limit=20");
+  });
+});
+
+describe("fetchPageWith", () => {
+  const extra = z.object({ checkpoint: z.string() });
+  const withCheckpoint = (cp: string, items: unknown[] = [{ id: 1 }]) => ({
+    ok: true,
+    data: {
+      items,
+      page: { limit: 2, next_cursor: null, has_more: false, total: items.length },
+      checkpoint: cp,
+      ignored: true,
+    },
+  });
+
+  it("returns the fields beside items and page on the first page", async () => {
+    const { client } = setup({ "GET /items": () => ({ body: withCheckpoint("cp1") }) });
+    expect(await fetchPageWith(client, { path: "/items", item }, extra)).toEqual({
+      kind: "success",
+      maxAgeSeconds: 0,
+      data: {
+        items: [{ id: 1 }],
+        page: { limit: 2, next_cursor: null, has_more: false, total: 1 },
+        checkpoint: "cp1",
+        restartedFromFirstPage: false,
+      },
+    });
+  });
+
+  it("returns them on an empty first page", async () => {
+    const { client } = setup({ "GET /items": () => ({ body: withCheckpoint("cp0", []) }) });
+    const outcome = await fetchPageWith(client, { path: "/items", item }, extra);
+    expect(outcome.kind === "success" && outcome.data.items).toEqual([]);
+    expect(outcome.kind === "success" && outcome.data.checkpoint).toBe("cp0");
+  });
+
+  it("fails with a schema outcome when the field is missing", async () => {
+    const { client } = setup({ "GET /items": () => ({ body: firstPage }) });
+    expect(await fetchPageWith(client, { path: "/items", item }, extra)).toEqual({
+      kind: "transport_failure",
+      cause: "schema",
+    });
+  });
+
+  it("returns the restarted first page with its fields on invalid_cursor", async () => {
+    const { client, http } = setup({
+      "GET /items": (req) =>
+        req.query.cursor === undefined
+          ? { body: withCheckpoint("cp-new") }
+          : { status: 422, body: { ok: false, reason: "invalid_cursor" } },
+    });
+    const outcome = await fetchPageWith(client, { path: "/items", item, cursor: "old" }, extra);
+    expect(http.requests).toHaveLength(2);
+    expect(outcome.kind === "success" && outcome.data.checkpoint).toBe("cp-new");
+    expect(outcome.kind === "success" && outcome.data.restartedFromFirstPage).toBe(true);
   });
 });
