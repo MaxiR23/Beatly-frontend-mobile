@@ -4,6 +4,7 @@
 //
 // Tested:
 // - search returns the top artist, songs and albums for a query
+// - Parses albums with or without playlist_id, dropping it when present
 // - Keeps an artist without an image, an artist reference without an id and an album without year or cover
 // - Returns a null artist and empty lists as a success when nothing matches
 // - Surfaces upstream_error and upstream_timeout as api failures
@@ -25,6 +26,13 @@ import { createFakeHttp, never, type Handler } from "../fakes/http.ts";
 import { createFakeLog } from "../fakes/log.ts";
 
 const BASE_URL = "test://api";
+const albumFields = {
+  id: "al1",
+  title: "Random Access Memories",
+  artists: [{ id: "ar1", name: "Daft Punk" }],
+  year: "2013",
+  thumbnail_url: "test://img/al1",
+};
 const data = {
   artist: { id: "ar1", name: "Daft Punk", thumbnail_url: "test://img/ar1" },
   songs: [
@@ -38,17 +46,10 @@ const data = {
       thumbnail_url: "test://img/t1",
     },
   ],
-  albums: [
-    {
-      id: "al1",
-      playlist_id: "pl1",
-      title: "Random Access Memories",
-      artists: [{ id: "ar1", name: "Daft Punk" }],
-      year: "2013",
-      thumbnail_url: "test://img/al1",
-    },
-  ],
+  albums: [albumFields],
 };
+// The body the backend sends today: the same albums, with the playlist_id the client drops.
+const body = { ...data, albums: [{ ...albumFields, playlist_id: "pl1" }] };
 
 function setup(handler: Handler) {
   const http = createFakeHttp({ "GET /search": handler }, BASE_URL);
@@ -69,7 +70,7 @@ describe("search", () => {
   it("returns the top artist, songs and albums for a query", async () => {
     const { service, http } = setup(() => ({
       headers: { "cache-control": "max-age=3600" },
-      body: { ok: true, data },
+      body: { ok: true, data: body },
     }));
     expect(await service.search("daft punk")).toEqual({
       kind: "success",
@@ -80,6 +81,15 @@ describe("search", () => {
     expect(http.requests[0]?.method).toBe("GET");
     expect(http.requests[0]?.url).toBe("test://api/search?q=daft%20punk");
     expect(http.requests[0]?.headers.authorization).toBe("Bearer test-token");
+  });
+
+  it("parses an album that carries no playlist_id", async () => {
+    const { service } = setup(() => ({ body: { ok: true, data } }));
+    expect(await service.search("daft punk")).toEqual({
+      kind: "success",
+      data,
+      maxAgeSeconds: 0,
+    });
   });
 
   it("keeps an artist without an image, an artist reference without an id and an album without year or cover", async () => {

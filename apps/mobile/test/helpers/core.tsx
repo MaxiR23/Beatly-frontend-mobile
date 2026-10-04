@@ -217,7 +217,6 @@ export const searchResultFixture: SearchResult = {
   albums: [
     {
       id: "al1",
-      playlist_id: "pl1",
       title: "Test Album",
       artists: [{ id: "ar1", name: "Test Artist" }],
       year: "2024",
