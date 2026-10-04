@@ -1,4 +1,4 @@
-// INFO: the schemas of GET /search; artists is [] and never null, an artist reference id is nullable, artist is null when nothing matches, and its thumbnail_url is nullable.
+// INFO: the schemas of GET /search; artists is [] and never null, an artist reference id is nullable, artist is null when nothing matches, and its thumbnail_url is nullable; an album's playlist_id is not read, the provider leaves it out of some albums.
 import { z } from "zod";
 
 export const searchArtistRefSchema = z.object({ id: z.string().nullable(), name: z.string() });
@@ -24,7 +24,6 @@ export type SearchSong = z.infer<typeof searchSongSchema>;
 
 export const searchAlbumSchema = z.object({
   id: z.string(),
-  playlist_id: z.string(),
   title: z.string(),
   artists: z.array(searchArtistRefSchema),
   year: z.string().nullable(),
