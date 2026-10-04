@@ -1,4 +1,4 @@
-// INFO: an album: the detail base with its cover, title, artists, meta line, tracks and the carousels of other versions and recommended albums; unavailable for an invalid id; every playable track has a menu button; starting a list registers it as a recent.
+// INFO: an album: the detail base with its cover, title, artists, meta line, tracks and the carousels of other versions and recommended albums; unavailable for an invalid id; every playable track has a menu button; a track without a track id or marked unavailable is dimmed, unpressable, without menu, and announced as not available; starting a list registers it as a recent.
 import type { Album, AlbumRef, PlayableTrack, SearchArtistRef } from "@beatly/core";
 import { layout, spacing } from "@beatly/ui";
 import {
@@ -161,10 +161,11 @@ export function AlbumScreen() {
                     number={track.track_number}
                     title={track.title}
                     subtitle={track.artists.length > 0 ? artistNames(track.artists) : undefined}
-                    available={track.is_available}
+                    available={playable !== null}
+                    unavailableLabel={t("trackUnavailable", { title: track.title })}
                     trailing={playable !== null ? <TrackMenuButton track={playable} /> : undefined}
                     onPress={
-                      track.track_id !== null && track.is_available
+                      playable !== null
                         ? () => {
                             playTrack(index);
                           }

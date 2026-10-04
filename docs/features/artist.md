@@ -6,7 +6,7 @@ An artist's popular songs, albums, singles and EPs, and similar artists, on the 
 
 Show an artist: a full-width image with the name over it, its popular songs, its albums, its
 singles and EPs, and similar artists. Albums and singles push the album; a similar artist pushes
-another artist in the same tab. Pressing a popular song with a `track_id` plays the popular songs from it (`player.md`); a song without one is not pressable and has no menu. Every playable popular song ends with a more button that opens the track menu (`track-menu.md`).
+another artist in the same tab. Pressing a popular song with a `track_id` plays the popular songs from it (`player.md`); a song without one is unavailable: not pressable, without menu, announced as `artist:trackUnavailable`, and never enters the queue, so next, previous and shuffle skip it. Every playable popular song ends with a more button that opens the track menu (`track-menu.md`).
 
 ## Layout
 
@@ -33,13 +33,13 @@ Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), excep
 
 The floating back button is drawn in every state.
 
-| State            | What is drawn                                                                                           | i18n keys                                                                                                     |
-| ---------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Loading          | `DetailSkeleton` image variant (full-width hero block, title bar at its bottom left, then rows), static | `common:loading`                                                                                              |
-| With data        | the image hero and the four sections                                                                    | `artist:popular`, `artist:albums`, `artist:singles`, `artist:similar`, `artist:kind.single`, `artist:kind.ep` |
-| Expected empty   | each empty list hides its section; all four empty draw the hero and the name only                       |                                                                                                               |
-| Error with retry | `ErrorState`; retry refetches                                                                           | `common:error.generic`, `common:retry`                                                                        |
-| Unavailable      | `EmptyState` with no action, for `invalid_request`                                                      | `artist:notAvailable`                                                                                         |
+| State            | What is drawn                                                                                           | i18n keys                                                                                                                                |
+| ---------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Loading          | `DetailSkeleton` image variant (full-width hero block, title bar at its bottom left, then rows), static | `common:loading`                                                                                                                         |
+| With data        | the image hero and the four sections                                                                    | `artist:popular`, `artist:albums`, `artist:singles`, `artist:similar`, `artist:kind.single`, `artist:kind.ep`, `artist:trackUnavailable` |
+| Expected empty   | each empty list hides its section; all four empty draw the hero and the name only                       |                                                                                                                                          |
+| Error with retry | `ErrorState`; retry refetches                                                                           | `common:error.generic`, `common:retry`                                                                                                   |
+| Unavailable      | `EmptyState` with no action, for `invalid_request`                                                      | `artist:notAvailable`                                                                                                                    |
 
 The back button is labeled `artist:back`.
 

@@ -9,6 +9,7 @@
 // - the skeleton, the request for the route's artist, the name over the full-width image hero
 // - the four sections with their titles, a song without track_id dimmed, a more button and no pressable song
 // - the year under an album, the kind and year under a single, each empty section hidden, only the hero when all are empty
+// - a song without track_id announced as not available; next, previous and shuffle never reach it
 // - starting the popular songs registers the artist as a recent
 // - opening an album from the albums and singles carousels and a similar artist
 // - not available for invalid_request without retry, the generic error with retry for upstream_error and upstream_timeout and a transport failure
@@ -20,9 +21,10 @@
 
 import type { Artist, HttpOutcome } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import { fireEvent, render, screen, within } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { color } from "@beatly/ui";
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { ArtistScreen } from "../../../src/screens/artist/ArtistScreen.tsx";
@@ -127,6 +129,42 @@ describe("ArtistScreen", () => {
     expect(stateFlag(popular.parent?.parent ?? popular, "disabled")).not.toBe(true);
     const hidden = screen.getByText("Hidden Song");
     expect(stateFlag(hidden.parent?.parent ?? hidden, "disabled")).toBe(true);
+    expect(hidden).toHaveStyle({ color: color.text.disabled });
+    expect(
+      screen.getByLabelText(en.artist.trackUnavailable.replace("{{title}}", "Hidden Song")),
+    ).toBeTruthy();
+  });
+
+  it("never reaches a song without a track id with next, previous or shuffle", async () => {
+    const [first, hidden] = artistFixture.songs;
+    if (first === undefined || hidden === undefined) throw new Error("fixture songs");
+    const ctx = await setup({
+      getArtist: () =>
+        Promise.resolve<HttpOutcome<Artist>>({
+          kind: "success",
+          data: {
+            ...artistFixture,
+            songs: [first, hidden, { ...first, track_id: "t2", title: "Second Song" }],
+          },
+          maxAgeSeconds: 0,
+        }),
+    });
+    await fireEvent.press(await screen.findByRole("button", { name: "Popular Song" }));
+    expect(ctx.playback.getState().queue.map((t) => t.trackId)).toEqual(["t1", "t2"]);
+    await act(async () => {
+      await ctx.playback.next();
+    });
+    expect(ctx.playback.getState().current?.trackId).toBe("t2");
+    await act(async () => {
+      await ctx.playback.previous();
+    });
+    expect(ctx.playback.getState().current?.trackId).toBe("t1");
+    await act(() => {
+      ctx.playback.setShuffle(true);
+    });
+    expect(new Set(ctx.playback.getState().queue.map((t) => t.trackId))).toEqual(
+      new Set(["t1", "t2"]),
+    );
   });
 
   it("draws a more button and a pressable song only when it has a track id", async () => {

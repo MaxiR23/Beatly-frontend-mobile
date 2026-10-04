@@ -102,7 +102,11 @@ scroll.
 - Track row: `TrackRow`, a `meta` number in a `layout.trackNumber` column, the
   title in `typography.rowTitle` and the artists in `typography.meta`;
   unavailable uses `color.text.disabled`. `MediaRow` with `available={false}` draws its title
-  and meta in `color.text.disabled` the same way.
+  and meta in `color.text.disabled` the same way. An unavailable row is never pressable and is one
+  element announced by the caller's `unavailableLabel`. Only the album and artist lists can carry
+  an unavailable track: the contract makes playlist, search, up next and related tracks always
+  playable (a null `track_id` there is a schema failure, drawn as the generic error), so those
+  lists do not pass `available`.
 
 ## Player
 

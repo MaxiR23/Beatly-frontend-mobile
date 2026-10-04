@@ -1,4 +1,4 @@
-// INFO: a list row, pressable when given onPress: a cover at the start, a title and an optional secondary line; regular for songs, medium for the library, large for an artist; an icon replaces the images with an accent tile; an unavailable row draws its texts disabled; a trailing element sits after the pressable body, outside it.
+// INFO: a list row, pressable when given onPress: a cover at the start, a title and an optional secondary line; regular for songs, medium for the library, large for an artist; an icon replaces the images with an accent tile; an unavailable row draws its texts disabled, is never pressable and is one element announced by its unavailable label; a trailing element sits after the pressable body, outside it.
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -17,6 +17,8 @@ interface MediaRowProps {
   icon?: IconName | undefined;
   available?: boolean;
   onPress?: (() => void) | undefined;
+  // Read by a screen reader in place of the texts when the row is unavailable; the caller translates it.
+  unavailableLabel?: string | undefined;
   // A control at the end of the row, a sibling of the pressable body so both are reachable.
   trailing?: ReactNode;
   testID?: string;
@@ -30,10 +32,12 @@ export function MediaRow({
   size = "regular",
   icon,
   available = true,
-  onPress,
+  onPress: onPressProp,
+  unavailableLabel,
   trailing,
   testID,
 }: MediaRowProps) {
+  const onPress = available ? onPressProp : undefined;
   const large = size === "large";
   const medium = size === "medium";
   const coverSize = large ? layout.rowCoverLarge : medium ? layout.rowCoverMedium : layout.rowCover;
@@ -57,19 +61,24 @@ export function MediaRow({
     </>
   );
 
-  const state = available ? undefined : { disabled: true };
+  const still = available
+    ? {}
+    : {
+        accessible: true,
+        accessibilityLabel: unavailableLabel ?? title,
+        accessibilityState: { disabled: true },
+      };
 
   if (trailing !== undefined) {
     const body =
       onPress === undefined ? (
-        <View style={styles.body} accessibilityState={state}>
+        <View style={styles.body} {...still}>
           {content}
         </View>
       ) : (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={title}
-          accessibilityState={state}
           onPress={onPress}
           style={({ pressed }) => [styles.body, pressed && styles.pressed]}
         >
@@ -86,11 +95,7 @@ export function MediaRow({
 
   if (onPress === undefined) {
     return (
-      <View
-        style={[styles.row, medium ? styles.rowMedium : undefined]}
-        accessibilityState={state}
-        testID={testID}
-      >
+      <View style={[styles.row, medium ? styles.rowMedium : undefined]} {...still} testID={testID}>
         {content}
       </View>
     );
@@ -100,7 +105,6 @@ export function MediaRow({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={title}
-      accessibilityState={state}
       onPress={onPress}
       style={({ pressed }) => [
         styles.row,

@@ -9,6 +9,7 @@
 // - the number, title and artists drawn, an unavailable track marked as disabled
 // - a button named by the title with onPress, no button role without it
 // - a trailing element drawn outside the pressable body
+// - an unavailable row never a button, announced as one element by its label (or the title), its trailing control still pressable
 //
 // Run with: pnpm --filter @beatly/ui test -- TrackRow
 //
@@ -68,5 +69,49 @@ describe("TrackRow", () => {
     expect(onPress).not.toHaveBeenCalled();
     await fireEvent.press(screen.getByRole("button", { name: "Song" }));
     expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it("never makes an unavailable row a button, even with onPress", async () => {
+    await render(<TrackRow number={4} title="Hidden" available={false} onPress={jest.fn()} />);
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("announces an unavailable row as one element by its unavailable label", async () => {
+    await render(
+      <TrackRow
+        number={4}
+        title="Hidden"
+        available={false}
+        unavailableLabel="Hidden, not available"
+        testID="row"
+      />,
+    );
+    expect(screen.getByLabelText("Hidden, not available")).toBeTruthy();
+    const row = screen.getByTestId("row");
+    expect(row.props.accessible).toBe(true);
+    expect(row.props.accessibilityState).toEqual({ disabled: true });
+  });
+
+  it("falls back to the title without an unavailable label", async () => {
+    await render(<TrackRow number={4} title="Hidden" available={false} />);
+    expect(screen.getByLabelText("Hidden")).toBeTruthy();
+  });
+
+  it("keeps the trailing control pressable on an unavailable row whose body is not a button", async () => {
+    const onMore = jest.fn();
+    await render(
+      <TrackRow
+        number={4}
+        title="Hidden"
+        available={false}
+        onPress={jest.fn()}
+        trailing={
+          <Pressable accessibilityRole="button" accessibilityLabel="More" onPress={onMore} />
+        }
+      />,
+    );
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+    await fireEvent.press(screen.getByRole("button", { name: "More" }));
+    expect(onMore).toHaveBeenCalledTimes(1);
   });
 });

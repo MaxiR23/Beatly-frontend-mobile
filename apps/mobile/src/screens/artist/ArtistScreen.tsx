@@ -1,4 +1,4 @@
-// INFO: an artist: the detail base with a full-width image hero and the name over it, then popular songs, albums, singles and EPs and similar artists, each hidden when empty, every playable popular song with a menu button; unavailable for an invalid id; starting a list registers it as a recent.
+// INFO: an artist: the detail base with a full-width image hero and the name over it, then popular songs, albums, singles and EPs and similar artists, each hidden when empty, every playable popular song with a menu button, a song without a track id dimmed, unpressable, without menu, and announced as not available; unavailable for an invalid id; starting a list registers it as a recent.
 import type { AlbumRef, Artist, PlayableTrack } from "@beatly/core";
 import { layout, spacing } from "@beatly/ui";
 import {
@@ -131,14 +131,15 @@ export function ArtistScreen() {
                     urls={urlsOf(song.thumbnail_url)}
                     title={song.title}
                     subtitle={song.album ?? undefined}
-                    available={song.track_id !== null}
+                    available={playable !== null}
+                    unavailableLabel={t("trackUnavailable", { title: song.title })}
                     trailing={playable !== null ? <TrackMenuButton track={playable} /> : undefined}
                     onPress={
-                      song.track_id === null
-                        ? undefined
-                        : () => {
+                      playable !== null
+                        ? () => {
                             playSong(index);
                           }
+                        : undefined
                     }
                   />
                 );
