@@ -3,8 +3,9 @@
 // Tests for the likes service.
 //
 // Tested:
-// - sync fills the mirror from every page of GET /likes the first time, and later brings only the changes from GET /likes/sync since the newest update minus 60 seconds
-// - sync leaves the mirror empty when there are no likes and changes nothing when nothing changed
+// - sync fills the mirror from every page of GET /likes the first time and stores the server checkpoint; later it sends the stored checkpoint unchanged as since to GET /likes/sync and stores the new one; a legacy watermark is sent as is once
+// - sync leaves the mirror empty when there are no likes and changes nothing when nothing changed, storing the checkpoint both times
+// - a full read replaces the confirmed rows and keeps the pending ones, an empty one included; a page without checkpoint is a schema failure that stores nothing
 // - sync restarts from since when a cursor is rejected, returns unauthorized and keeps the watermark
 // - sync fails with a timeout, network or schema outcome and keeps the mirror
 // - setLiked marks the like at once and confirms it with POST /likes; an unlike is confirmed with DELETE /likes/{track_id} on data null
@@ -43,6 +44,8 @@ import { createFakeHttp, never, type FakeResponse, type Handler } from "../fakes
 import { createFakeLog } from "../fakes/log.ts";
 
 const BASE_URL = "test://api";
+const CHECKPOINT = "2026-10-03T23:59:50.161553+00:00";
+const SYNC_CHECKPOINT = "2026-10-04T00:10:00.000001+00:00";
 
 const track: LikeInput = {
   track_id: "t1",
@@ -72,10 +75,15 @@ const ok = (data: unknown): FakeResponse => ({
   headers: { "cache-control": "private, no-cache" },
   body: { ok: true, data },
 });
-const page = (items: unknown[], extra: Record<string, unknown> = {}): FakeResponse =>
+const page = (
+  items: unknown[],
+  extra: Record<string, unknown> = {},
+  checkpoint: string = CHECKPOINT,
+): FakeResponse =>
   ok({
     items,
     page: { limit: 100, next_cursor: null, has_more: false, total: items.length, ...extra },
+    checkpoint,
   });
 const fail = (status: number, reason: string): FakeResponse => ({
   status,
@@ -183,35 +191,81 @@ describe("sync", () => {
     ]);
     expect(service.isLiked("t1")).toBe(true);
     expect(service.isLiked("t2")).toBe(true);
-    expect(watermark(db)).toBe("1970-01-01T00:00:00Z");
+    expect(watermark(db)).toBe(CHECKPOINT);
   });
 
-  it("brings only the changes from GET /likes/sync since the newest update minus 60 seconds", async () => {
+  it("sends the stored checkpoint unchanged as since and stores the new one", async () => {
+    const stored = "2026-01-01T00:10:00.123456+00:00";
+    const next = "2026-01-02T00:00:00.5+00:00";
+    let received: string | undefined;
     const { service, db, http } = await setup({
-      "GET /likes/sync": () =>
-        page([likeData("t1", { updated_at: "2026-01-01T00:20:00+00:00", deleted_at: "x" })]),
+      "GET /likes/sync": (req) => {
+        received = req.query.since;
+        return page(
+          [likeData("t1", { updated_at: "2026-01-01T00:20:00+00:00", deleted_at: "x" })],
+          {},
+          next,
+        );
+      },
     });
     seed(db, "t1");
     seed(db, "t2");
-    db.raw
-      .prepare("INSERT INTO sync_state (name, since) VALUES ('likes', ?)")
-      .run("2026-01-01T00:10:00.123456+00:00");
+    db.raw.prepare("INSERT INTO sync_state (name, since) VALUES ('likes', ?)").run(stored);
     expect(await service.sync()).toEqual({ kind: "success" });
     expect(http.requests).toHaveLength(1);
     expect(http.requests[0]?.url).toBe(
-      `${BASE_URL}/likes/sync?since=${encodeURIComponent("2026-01-01T00:09:00.123Z")}`,
+      `${BASE_URL}/likes/sync?since=${encodeURIComponent(stored)}`,
     );
+    expect(http.requests[0]?.url).toContain("%2B00%3A00");
+    expect(received).toBe(stored);
     expect(service.isLiked("t1")).toBe(false);
     expect(service.isLiked("t2")).toBe(true);
-    expect(watermark(db)).toBe("2026-01-01T00:20:00+00:00");
+    expect(watermark(db)).toBe(next);
+  });
+
+  it("sends a legacy watermark unchanged", async () => {
+    let received: string | undefined;
+    const { service, db } = await setup({
+      "GET /likes/sync": (req) => {
+        received = req.query.since;
+        return page([]);
+      },
+    });
+    db.raw
+      .prepare("INSERT INTO sync_state (name, since) VALUES ('likes', ?)")
+      .run("1970-01-01T00:00:00Z");
+    expect(await service.sync()).toEqual({ kind: "success" });
+    expect(received).toBe("1970-01-01T00:00:00Z");
+    expect(watermark(db)).toBe(CHECKPOINT);
   });
 
   it("leaves the mirror empty and succeeds when the caller has no likes", async () => {
     const { service, db } = await setup({ "GET /likes": () => page([]) });
     expect(await service.sync()).toEqual({ kind: "success" });
     expect(rows(db)).toEqual([]);
-    expect(watermark(db)).toBe("1970-01-01T00:00:00Z");
+    expect(watermark(db)).toBe(CHECKPOINT);
     expect(service.isLiked("t1")).toBe(false);
+  });
+
+  it("clears confirmed rows on an empty full read", async () => {
+    const { service, db } = await setup({ "GET /likes": () => page([]) });
+    seed(db, "t1");
+    expect(await service.sync()).toEqual({ kind: "success" });
+    expect(rows(db)).toEqual([]);
+    expect(service.isLiked("t1")).toBe(false);
+    expect(watermark(db)).toBe(CHECKPOINT);
+  });
+
+  it("returns a schema outcome and stores no watermark for a page without checkpoint", async () => {
+    const { service, db } = await setup({
+      "GET /likes": () =>
+        ok({
+          items: [],
+          page: { limit: 100, next_cursor: null, has_more: false, total: 0 },
+        }),
+    });
+    expect(await service.sync()).toEqual({ kind: "transport_failure", cause: "schema" });
+    expect(watermark(db)).toBeUndefined();
   });
 
   it("asks /likes/sync after an empty first read and a confirmed like, so an unlike elsewhere arrives", async () => {
@@ -220,7 +274,11 @@ describe("sync", () => {
       "GET /likes": () => page([]),
       "POST /likes": () => ok(likeData("t1", { updated_at: "2026-02-01T00:00:00+00:00" })),
       "GET /likes/sync": () =>
-        page([likeData("t1", { updated_at: "2026-03-01T00:00:00+00:00", deleted_at: "x" })]),
+        page(
+          [likeData("t1", { updated_at: "2026-03-01T00:00:00+00:00", deleted_at: "x" })],
+          {},
+          SYNC_CHECKPOINT,
+        ),
     });
     await service.sync();
     const liking = service.setLiked(track, true);
@@ -232,34 +290,84 @@ describe("sync", () => {
     expect(await syncing).toEqual({ kind: "success" });
     expect(paths(http).filter((path) => path.startsWith("GET"))).toEqual([
       "GET /likes",
-      `GET /likes/sync?since=${encodeURIComponent("1969-12-31T23:59:00.000Z")}`,
+      `GET /likes/sync?since=${encodeURIComponent(CHECKPOINT)}`,
     ]);
+    expect(http.requests.some((request) => request.url.includes("1970"))).toBe(false);
     expect(service.isLiked("t1")).toBe(false);
-    expect(watermark(db)).toBe("2026-03-01T00:00:00+00:00");
+    expect(watermark(db)).toBe(SYNC_CHECKPOINT);
   });
 
-  it("does not let a full read of another track hide an earlier unlike", async () => {
+  it("removes a confirmed row a full read does not return", async () => {
     const { service, db, http } = await setup({
       "GET /likes": () => page([likeData("t2", { updated_at: "2026-05-01T00:00:00+00:00" })]),
-      "GET /likes/sync": () =>
-        page([likeData("t1", { updated_at: "2026-01-02T00:00:00+00:00", deleted_at: "x" })]),
     });
     seed(db, "t1", { updated_at: "2026-01-01T00:00:00+00:00" });
     await service.sync();
-    await service.sync();
-    expect(paths(http)[1]).toContain("GET /likes/sync?since=");
+    expect(http.requests).toHaveLength(1);
     expect(service.isLiked("t1")).toBe(false);
     expect(service.isLiked("t2")).toBe(true);
+    expect(rows(db).map((row) => row.track_id)).toEqual(["t2"]);
   });
 
-  it("succeeds and changes nothing when nothing changed since the last sync", async () => {
+  it("keeps the confirmed rows and stores no checkpoint when a full read fails after its first page", async () => {
+    let calls = 0;
+    const { service, db } = await setup({
+      "GET /likes": () => {
+        calls += 1;
+        if (calls === 1) return page([likeData("t1")], { next_cursor: "c2", has_more: true });
+        return Promise.reject(new Error("offline"));
+      },
+    });
+    seed(db, "t1");
+    seed(db, "t2");
+    expect(await service.sync()).toEqual({ kind: "transport_failure", cause: "network" });
+    expect(rows(db).map((row) => row.track_id)).toEqual(["t1", "t2"]);
+    expect(watermark(db)).toBeUndefined();
+    expect(await service.sync()).toEqual({ kind: "transport_failure", cause: "network" });
+    expect(service.isLiked("t2")).toBe(true);
+    expect(watermark(db)).toBeUndefined();
+  });
+
+  it("keeps a like confirmed while a multi-page full read is in progress", async () => {
+    vi.useFakeTimers();
+    let release: (response: FakeResponse) => void = () => undefined;
+    const second = new Promise<FakeResponse>((resolve) => {
+      release = resolve;
+    });
+    let calls = 0;
+    const { service, db } = await setup({
+      "GET /likes": () => {
+        calls += 1;
+        if (calls === 1) return page([likeData("t2")], { next_cursor: "c2", has_more: true });
+        return second;
+      },
+      "POST /likes": () => ok(likeData("t1", { updated_at: "2026-02-01T00:00:00+00:00" })),
+    });
+    seed(db, "t3");
+    const syncing = service.sync();
+    await tick(0);
+    const liking = service.setLiked(track, true);
+    await tick(LIKE_SEND_DELAY_MS);
+    expect(await liking).toEqual({ kind: "confirmed" });
+    release(page([likeData("t4")]));
+    expect(await syncing).toEqual({ kind: "success" });
+    expect(
+      rows(db)
+        .map((row) => row.track_id)
+        .sort(),
+    ).toEqual(["t1", "t2", "t4"]);
+    expect(service.isLiked("t1")).toBe(true);
+    expect(service.isLiked("t3")).toBe(false);
+  });
+
+  it("stores the new checkpoint and changes no row when nothing changed", async () => {
     const { service, db } = await setup({ "GET /likes/sync": () => page([]) });
     seed(db, "t1");
     db.raw
       .prepare("INSERT INTO sync_state (name, since) VALUES ('likes', ?)")
       .run("2026-01-01T00:10:00Z");
     expect(await service.sync()).toEqual({ kind: "success" });
-    expect(watermark(db)).toBe("2026-01-01T00:10:00Z");
+    expect(watermark(db)).toBe(CHECKPOINT);
     expect(rows(db)).toHaveLength(1);
     expect(service.isLiked("t1")).toBe(true);
   });
@@ -269,9 +377,11 @@ describe("sync", () => {
     const { service, db, http } = await setup({
       "GET /likes/sync": () => {
         calls += 1;
-        if (calls === 1) return page([likeData("t1")], { next_cursor: "stale", has_more: true });
+        if (calls === 1) {
+          return page([likeData("t1")], { next_cursor: "stale", has_more: true }, "cp-old");
+        }
         if (calls === 2) return fail(422, "invalid_cursor");
-        return page([likeData("t1")]);
+        return page([likeData("t1")], {}, "cp-new");
       },
     });
     db.raw
@@ -280,8 +390,8 @@ describe("sync", () => {
     expect(await service.sync()).toEqual({ kind: "success" });
     expect(http.requests).toHaveLength(3);
     const last = http.requests[2]?.url ?? "";
-    expect(last).toContain("since=");
-    expect(last).not.toContain("cursor");
+    expect(last).toBe(`${BASE_URL}/likes/sync?since=${encodeURIComponent("2026-01-01T00:00:00Z")}`);
+    expect(watermark(db)).toBe("cp-new");
     expect(service.isLiked("t1")).toBe(true);
   });
 
@@ -336,10 +446,13 @@ describe("sync", () => {
 
   it("does not overwrite a newer row with an older one", async () => {
     const { service, db } = await setup({
-      "GET /likes": () =>
+      "GET /likes/sync": () =>
         page([likeData("t1", { updated_at: "2026-01-01T00:00:00Z", deleted_at: "x" })]),
     });
     seed(db, "t1", { updated_at: "2026-01-02T00:00:00Z" });
+    db.raw
+      .prepare("INSERT INTO sync_state (name, since) VALUES ('likes', ?)")
+      .run("2026-01-01T00:00:00Z");
     await service.sync();
     expect(rows(db).map((row) => row.liked)).toEqual([1]);
     expect(service.isLiked("t1")).toBe(true);
@@ -456,7 +569,8 @@ describe("setLiked", () => {
     let accept = false;
     const { service, db, http, log } = await setup({
       "POST /likes": () => (accept ? ok(likeData("t1")) : fail(504, "upstream_timeout")),
-      "GET /likes": () => page([]),
+      // Once the backend accepted the like, a full read returns it.
+      "GET /likes": () => page(accept ? [likeData("t1")] : []),
     });
     const result = service.setLiked(track, true);
     await tick(LIKE_SEND_DELAY_MS + LIKE_RETRY_DELAYS_MS.reduce((sum, wait) => sum + wait, 0));

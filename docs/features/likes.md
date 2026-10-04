@@ -18,18 +18,19 @@ Migration 1 (`packages/core/src/db/migrations.ts`) creates two tables.
   `updated_at` (the backend's, null for a row only changed locally), `pending`
   (0/1, not yet confirmed) and `confirmed_liked` (the last state the backend
   accepted, null if it never had the row).
-- `sync_state`: `name`, `since`. The `likes` row is the watermark of the last
-  completed sweep.
+- `sync_state`: `name`, `since`. The `likes` row is the server checkpoint of the
+  last completed read.
 
 ## Data
 
 | Route                    | Paginated | Use                                                           |
 | ------------------------ | --------- | ------------------------------------------------------------- |
 | `GET /likes`             | yes       | the first sync, every page                                    |
-| `GET /likes/sync?since=` | yes       | later syncs: the changes since the newest update, minus 60 s  |
+| `GET /likes/sync?since=` | yes       | later syncs: the changes since the stored checkpoint          |
 | `POST /likes`            | no        | confirms a like                                               |
 | `DELETE /likes/{id}`     | no        | confirms an unlike (the body is `ok: true` with `data: null`) |
 
+Both list routes return `data.checkpoint` on every page, the empty one included.
 All four send `Cache-Control: private, no-cache`; the mirror is the cache, so no
 query hook reads a cache time.
 
@@ -41,13 +42,21 @@ cursor is dropped and the sweep restarts from `since`. No screen branches on a
 reason yet, so none has an i18n key; a rejected write carries its `reason` for
 the screen that maps it.
 
-The watermark is written only when a whole sweep finished, so a failure in the
-middle repeats the sweep and a POST response cannot move it past changes made on
-another device. A full read (no watermark) never delivers an unlike, so after it
-finishes, even with zero items, the watermark is stored as
-`1970-01-01T00:00:00Z`: the next sync always uses `GET /likes/sync`, starting
-from the beginning once and seeing every deletion, and the watermark then moves
-to the newest `updated_at`. A pending row is never overwritten by a synced one, and an older
+Every read (`GET /likes` or `GET /likes/sync`) returns the server's
+`checkpoint`, the same value on every page of the read. When the whole read
+finished the mirror stores the last page's checkpoint, even with zero items, and
+sends it unchanged as `since` on the next sync (the `+` of the offset goes as
+`%2B`). The device computes no sync point and subtracts no overlap: the server
+already put the 60 seconds in the checkpoint. A failure in the middle repeats
+the read, and a POST response cannot move the checkpoint past changes made on
+another device. A watermark stored by an earlier version is sent once as is and
+replaced by the first checkpoint. A full read (no stored checkpoint) never
+returns an unlike, so once the whole read finished (in the same transaction that
+stores the checkpoint) it drops the confirmed rows it did not return and keeps
+the pending ones; a read that fails midway changes no row. A like (or unlike) the backend accepted
+while the full read was in progress is kept by that cleanup, since the read cannot
+know it.
+A pending row is never overwritten by a synced one, and an older
 version of a row never overwrites a newer one. A row with `deleted_at` is stored
 as not liked.
 
@@ -86,3 +95,4 @@ Needs the real native SQLite engine, the real API and a real app lifecycle:
 - A like made offline (airplane mode) stays pending and is confirmed after reconnecting and returning to the foreground.
 - Signing out and signing in with another account starts with an empty mirror and a full read.
 - The sync after the app returns from the background on iOS and Android.
+- After updating from a version that stored an older watermark, the first sync succeeds and the next one sends the server checkpoint.

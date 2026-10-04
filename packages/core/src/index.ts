@@ -172,7 +172,6 @@ export type { Like } from "./domain/like.ts";
 export {
   LIKE_RETRY_DELAYS_MS,
   LIKE_SEND_DELAY_MS,
-  SYNC_OVERLAP_SECONDS,
   createLikesService,
   likeInputOf,
 } from "./services/likes.ts";
