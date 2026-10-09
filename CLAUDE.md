@@ -39,7 +39,7 @@ legacy audit that drives the port lives in the old repo under
 - i18n in `es` and `en` from the first screen. Single dark theme,
   defined once in `packages/ui` tokens.
 - Tests: vitest in `core`; jest-expo only where React Native is
-  actually needed.
+  actually needed; `node --test` for the repo scripts, in `scripts/test/`.
 - Hooks with lefthook. Gate: `pnpm typecheck`, `pnpm lint`, `pnpm test`.
 
 ## Commands
@@ -50,7 +50,7 @@ legacy audit that drives the port lives in the old repo under
     pnpm gate                    typecheck, lint and test; what scripts/ship.sh runs
     pnpm typecheck               tsc across all workspaces
     pnpm lint                    eslint (with import boundaries) + prettier --check
-    pnpm test                    vitest in core, jest-expo in mobile
+    pnpm test                    vitest in core, jest-expo in mobile and ui, node --test in scripts/test
     pnpm --filter @beatly/core test -- <pattern>
     pnpm format                  to fix formatting
 
@@ -174,9 +174,13 @@ that needs it opens a backend issue instead of computing it here.
     docs/features/          one file per screen: endpoints it uses, states it draws
     scripts/                ship.sh: the mechanical half of shipping an issue
                             loop-path.sh: prints short or full from the changed files
-    .claude/settings.json   project permissions: the gate commands, pnpm
+                            gate-limit.mjs: PreToolUse hook that enforces the gate
+                            attempt limit of implement-issue
+    scripts/test/           node --test cases for the scripts
+    .claude/settings.json   project permissions and the gate-limit PreToolUse
+                            hook; permissions: the gate commands, pnpm
                             format, pnpm --filter, pnpm exec commitlint,
-                            the two scripts, read-only git (fetch, diff,
+                            the scripts, read-only git (fetch, diff,
                             status, log, ls-files), gh issue
                             view/create/edit, gh label list and gh pr
                             view/list allowed; any direct git push, gh pr
@@ -201,7 +205,7 @@ Tests and implementation ship in the same branch and the same PR.
 ## Workflow
 
 Work goes through the agent loop: the agents in `.claude/agents/`, the
-skills in `.claude/skills/` and two scripts under `scripts/`. The
+skills in `.claude/skills/` and the scripts under `scripts/`. The
 orchestrator runs in an Opus 5.5 session. It dispatches each stage by name
 with a one-line prompt (issue number, plan path, mode), does not read
 the agent definitions and does not implement.
@@ -230,8 +234,14 @@ no partial path: the script decides, not judgment.
 Gate: `pnpm gate` runs `pnpm typecheck && pnpm lint && pnpm test`.
 `implement-issue` runs it once, when the plan is implemented. If it
 fails, it fixes and reruns, at most three attempts, then stops and
-reports. `scripts/ship.sh` runs it again before every commit and every
-push. CI runs it too and is not skippable.
+reports. A PreToolUse hook, `scripts/gate-limit.mjs`, enforces the limit:
+inside `implement-issue` it blocks the fourth `pnpm gate` of a run, and
+the gate's parts at the root (`pnpm typecheck`, `pnpm lint`,
+`pnpm test`). Each pass is a new dispatch with its own count, never a
+continuation. Project hooks load from the `.claude/` of the directory
+where the session starts, so the loop's orchestrator session starts at
+the repo root. `scripts/ship.sh` runs the gate again before every commit
+and every push, without limit. CI runs it too and is not skippable.
 
 Review: one pass of `review-changes` over the diff against
 `origin/main` (`git diff origin/main...HEAD` plus what is still

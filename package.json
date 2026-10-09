@@ -14,7 +14,7 @@
     "typecheck": "pnpm -r run typecheck",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
-    "test": "pnpm -r --if-present run test"
+    "test": "pnpm -r --if-present run test && node --test \"scripts/test/*.test.mjs\""
   },
   "devDependencies": {
     "@commitlint/cli": "21.2.3",

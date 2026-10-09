@@ -95,8 +95,10 @@ Add those three lines after cloning. The four agents (`plan-issue`,
 skills (`create-issue`, `refine-issue`, `ship`) are the repo owner's
 tooling and the loop directory is scratch output; none of them belongs
 in the history or in a pull request. `.claude/settings.json`, the
-project's permission set for the loop, is versioned, and so are
-`scripts/ship.sh` and `scripts/loop-path.sh`, which the loop drives.
+project's permission set for the loop and the PreToolUse hook that
+limits the gate attempts, is versioned, and so are `scripts/ship.sh`,
+`scripts/loop-path.sh` and `scripts/gate-limit.mjs` (with its tests in
+`scripts/test/`), which the loop drives.
 `scripts/ship.sh` refuses to stage anything else under `.claude/`.
 
 ## CI
