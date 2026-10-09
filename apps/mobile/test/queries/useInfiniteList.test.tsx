@@ -7,6 +7,7 @@
 //
 // What is covered:
 // - pages flattened in order, loadMore, no next page, restart from the first page, disabled, OutcomeError
+// - loadAll: every page, no request without a next page, a failed page, a page already in flight, cancelled between pages
 //
 // Run with: pnpm --filter @beatly/mobile test -- useInfiniteList
 //
@@ -135,6 +136,83 @@ describe("useInfiniteList", () => {
     expect(error instanceof OutcomeError && error.outcome).toEqual({
       kind: "api_failure",
       reason: "upstream_error",
+    });
+  });
+
+  describe("loadAll", () => {
+    const threePages: Fetch = (cursor) =>
+      Promise.resolve(
+        cursor === null
+          ? pageOf([1, 2], { has_more: true, next_cursor: "c1" })
+          : cursor === "c1"
+            ? pageOf([3], { has_more: true, next_cursor: "c2" })
+            : pageOf([4]),
+      );
+
+    it("fetches every remaining page and returns the whole list", async () => {
+      const fetchPage = jest.fn<Fetch>(threePages);
+      const { result } = await mount(fetchPage);
+      let outcome: Awaited<ReturnType<typeof result.current.loadAll>> | undefined;
+      await act(async () => {
+        outcome = await result.current.loadAll();
+      });
+      expect(outcome).toEqual({ kind: "loaded", items: [1, 2, 3, 4] });
+      expect(fetchPage.mock.calls.map(([cursor]) => cursor)).toEqual([null, "c1", "c2"]);
+    });
+
+    it("returns the loaded list without a request when there is no next page", async () => {
+      const fetchPage = jest.fn<Fetch>(() => Promise.resolve(pageOf([1])));
+      const { result } = await mount(fetchPage);
+      let outcome: Awaited<ReturnType<typeof result.current.loadAll>> | undefined;
+      await act(async () => {
+        outcome = await result.current.loadAll();
+      });
+      expect(outcome).toEqual({ kind: "loaded", items: [1] });
+      expect(fetchPage).toHaveBeenCalledTimes(1);
+    });
+
+    it("reports failed and the query errors when a page fails", async () => {
+      const { result } = await mount((cursor) =>
+        Promise.resolve(
+          cursor === null
+            ? pageOf([1, 2], { has_more: true, next_cursor: "c1" })
+            : { kind: "api_failure", reason: "upstream_error" },
+        ),
+      );
+      let outcome: Awaited<ReturnType<typeof result.current.loadAll>> | undefined;
+      await act(async () => {
+        outcome = await result.current.loadAll();
+      });
+      expect(outcome).toEqual({ kind: "failed" });
+      await waitFor(() => {
+        expect(result.current.isError).toBe(true);
+      });
+    });
+
+    it("joins a page already in flight", async () => {
+      const fetchPage = jest.fn<Fetch>(threePages);
+      const { result } = await mount(fetchPage);
+      let outcome: Awaited<ReturnType<typeof result.current.loadAll>> | undefined;
+      await act(async () => {
+        result.current.loadMore();
+        outcome = await result.current.loadAll();
+      });
+      expect(outcome).toEqual({ kind: "loaded", items: [1, 2, 3, 4] });
+      expect(fetchPage.mock.calls.map(([cursor]) => cursor)).toEqual([null, "c1", "c2"]);
+    });
+
+    it("stops between pages and returns cancelled when the caller cancels", async () => {
+      const fetchPage = jest.fn<Fetch>(threePages);
+      const { result } = await mount(fetchPage);
+      let cancelled = false;
+      let outcome: Awaited<ReturnType<typeof result.current.loadAll>> | undefined;
+      await act(async () => {
+        const pending = result.current.loadAll(() => cancelled);
+        cancelled = true;
+        outcome = await pending;
+      });
+      expect(outcome).toEqual({ kind: "cancelled" });
+      expect(fetchPage.mock.calls.map(([cursor]) => cursor)).toEqual([null, "c1"]);
     });
   });
 });

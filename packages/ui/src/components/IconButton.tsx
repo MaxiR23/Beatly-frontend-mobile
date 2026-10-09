@@ -1,4 +1,4 @@
-// INFO: an icon-only square pressable with a control-height touch target; primary is the large accent play button, primaryCompact is the control-height accent circle, selected is a toggle's on and off tone, busy swaps the glyph for a spinner; an optional icon size and a filled glyph.
+// INFO: an icon-only square pressable with a control-height touch target; primary is the large accent play button, primaryCompact is the control-height accent circle, disabled greys it out and ignores presses, selected is a toggle's on and off tone, busy swaps the glyph for a spinner; an optional icon size and a filled glyph.
 import { ActivityIndicator, Pressable, StyleSheet } from "react-native";
 
 import { color } from "../tokens/color.ts";
@@ -17,6 +17,7 @@ interface IconButtonProps {
   // When defined the button is a toggle: primary tone when true, secondary when false.
   selected?: boolean;
   busy?: boolean;
+  disabled?: boolean;
   iconSize?: keyof typeof iconTokens.size;
   filled?: boolean;
 }
@@ -28,32 +29,41 @@ export function IconButton({
   variant = "plain",
   selected,
   busy,
+  disabled,
   iconSize,
   filled,
 }: IconButtonProps) {
   const primary = variant === "primary";
   const compact = variant === "primaryCompact";
+  const accent = primary || compact;
   const tone: Tone =
-    primary || compact
-      ? "inverse"
-      : selected === undefined
-        ? "primary"
-        : selected
+    disabled === true
+      ? "disabled"
+      : accent
+        ? "inverse"
+        : selected === undefined
           ? "primary"
-          : "secondary";
-  const state: { selected?: boolean; busy?: boolean } = {};
+          : selected
+            ? "primary"
+            : "secondary";
+  const state: { selected?: boolean; busy?: boolean; disabled?: boolean } = {};
   if (selected !== undefined) state.selected = selected;
   if (busy !== undefined) state.busy = busy;
+  if (disabled !== undefined) state.disabled = disabled;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={selected === undefined && busy === undefined ? undefined : state}
+      accessibilityState={
+        selected === undefined && busy === undefined && disabled === undefined ? undefined : state
+      }
+      disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
         styles.box,
         primary && styles.primary,
         compact && styles.compact,
+        accent && disabled === true && styles.inactive,
         pressed && styles.pressed,
       ]}
     >
@@ -80,5 +90,6 @@ const styles = StyleSheet.create({
     backgroundColor: color.accent.primary,
   },
   compact: { borderRadius: radius.full, backgroundColor: color.accent.primary },
+  inactive: { backgroundColor: color.surface.control },
   pressed: { opacity: motion.pressOpacity },
 });

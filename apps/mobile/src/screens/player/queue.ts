@@ -1,4 +1,4 @@
-// INFO: keeps the items that map to a playable track and finds the tapped one among them; maps a track of the up next or related routes to a playable track.
+// INFO: keeps the items that map to a playable track and finds the tapped one among them, or the first or a random one for a whole list; maps a track of the up next or related routes to a playable track.
 import type { PlayableTrack, TrackRef } from "@beatly/core";
 
 export function toQueue<T>(
@@ -15,6 +15,24 @@ export function toQueue<T>(
     tracks.push(playable);
   });
   return index === -1 ? null : { tracks, index };
+}
+
+// Every playable item in order; null when none. Starts at the first track or at a random one.
+export function wholeQueue<T>(
+  items: readonly T[],
+  toPlayable: (item: T) => PlayableTrack | null,
+  start: "first" | "random",
+  random: () => number = Math.random,
+): { tracks: PlayableTrack[]; index: number } | null {
+  const tracks: PlayableTrack[] = [];
+  for (const item of items) {
+    const playable = toPlayable(item);
+    if (playable !== null) tracks.push(playable);
+  }
+  if (tracks.length === 0) return null;
+  const index =
+    start === "first" ? 0 : Math.min(Math.floor(random() * tracks.length), tracks.length - 1);
+  return { tracks, index };
 }
 
 export function playableOf(ref: TrackRef): PlayableTrack {

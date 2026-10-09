@@ -11,6 +11,7 @@
 // - the year under an album, the kind and year under a single, each empty section hidden, only the hero when all are empty
 // - a song without track_id announced as not available; next, previous and shuffle never reach it
 // - starting the popular songs registers the artist as a recent
+// - the playing popular song's row marked with the now playing bars, never an unavailable song
 // - opening an album from the albums and singles carousels and a similar artist
 // - not available for invalid_request without retry, the generic error with retry for upstream_error and upstream_timeout and a transport failure
 // - back and its fallback, es
@@ -194,6 +195,26 @@ describe("ArtistScreen", () => {
     expect(state.queue.map((t) => t.trackId)).toEqual(["t1"]);
     expect(state.source).toEqual({ kind: "artist", id: "UCar1", name: "Test Artist" });
     expect(screen.queryByRole("button", { name: "Hidden Song" })).toBeNull();
+  });
+
+  it("marks the playing song", async () => {
+    const ctx = await setup();
+    await screen.findByTestId("artist-popular");
+    expect(screen.queryByTestId("now-playing-bars")).toBeNull();
+    await fireEvent.press(screen.getByRole("button", { name: "Popular Song" }));
+    await act(() => {
+      ctx.player.emit({
+        type: "progress",
+        playing: true,
+        buffering: false,
+        positionSeconds: 1,
+        durationSeconds: 100,
+      });
+    });
+    expect(
+      within(screen.getByRole("button", { name: "Popular Song" })).getByTestId("now-playing-bars"),
+    ).toBeTruthy();
+    expect(screen.getAllByTestId("now-playing-bars")).toHaveLength(1);
   });
 
   it("registers the artist as a recent with its image and no subtitle", async () => {

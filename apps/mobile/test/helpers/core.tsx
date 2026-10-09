@@ -7,7 +7,7 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the stateful likes mirror, credits, membership, add, create-with-track and remove fakes, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, and the page builder)
+// (the stateful likes mirror, credits, membership, add, create-with-track and remove fakes, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, library item, the saved read, add and remove, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, and the page builder)
 //
 import type {
   ActivityService,
@@ -22,6 +22,7 @@ import type {
   GenresService,
   HttpOutcome,
   LibraryEntry,
+  LibraryItem,
   LikedPlaylist,
   LikeOutcome,
   LibraryService,
@@ -177,6 +178,20 @@ export const savedPlaylistEntryFixture: LibraryEntry = {
   subtitle: null,
   source: "genre",
   thumbnail_urls: [],
+};
+
+export const libraryItemFixture: LibraryItem = {
+  kind: "album",
+  external_id: "MPREb_1",
+  title: "Test Album",
+  thumbnail_url: "test://img/al1",
+  artist: "Test Artist",
+  artist_id: "ar1",
+  album_id: "MPREb_1",
+  album_name: "Test Album",
+  source: "external",
+  added_at: "2026-02-01T00:00:00Z",
+  updated_at: "2026-02-01T00:00:00Z",
 };
 
 export const createdPlaylistFixture: Playlist = {
@@ -479,6 +494,9 @@ export function makeCore(
     listPlaylists?: PlaylistsService["listPlaylists"];
     createPlaylist?: PlaylistsService["createPlaylist"];
     listLibrary?: LibraryService["listLibrary"];
+    getSavedState?: LibraryService["getSavedState"];
+    saveItem?: LibraryService["saveItem"];
+    removeItem?: LibraryService["removeItem"];
     sync?: LikesService["sync"];
     clear?: LikesService["clear"];
     listGenres?: GenresService["listGenres"];
@@ -536,6 +554,18 @@ export function makeCore(
   );
   const listLibrary = jest.fn<LibraryService["listLibrary"]>(
     options.listLibrary ?? (() => Promise.resolve(pageOf<LibraryEntry>([likedEntryFixture]))),
+  );
+  const getSavedState = jest.fn<LibraryService["getSavedState"]>(
+    options.getSavedState ??
+      (() => Promise.resolve({ kind: "success", data: { saved: false }, maxAgeSeconds: 0 })),
+  );
+  const saveItem = jest.fn<LibraryService["saveItem"]>(
+    options.saveItem ??
+      (() => Promise.resolve({ kind: "success", data: libraryItemFixture, maxAgeSeconds: 0 })),
+  );
+  const removeItem = jest.fn<LibraryService["removeItem"]>(
+    options.removeItem ??
+      (() => Promise.resolve({ kind: "success", data: null, maxAgeSeconds: 0 })),
   );
   const listGenres = jest.fn<GenresService["listGenres"]>(
     options.listGenres ?? (() => Promise.resolve(pageOf<Genre>([]))),
@@ -674,7 +704,7 @@ export function makeCore(
     artists: { getArtist },
     auth,
     genres: { listGenres, listGenrePlaylists, listGenreCategories },
-    library: { listLibrary },
+    library: { listLibrary, getSavedState, saveItem, removeItem },
     likes,
     log,
     playback,
@@ -708,6 +738,9 @@ export function makeCore(
     listPlaylists,
     createPlaylist,
     listLibrary,
+    getSavedState,
+    saveItem,
+    removeItem,
     likes,
     emitLikeConfirmed,
     listGenres,

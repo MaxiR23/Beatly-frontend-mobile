@@ -8,7 +8,7 @@ Show a playlist: its cover, title, creator, description, meta line and tracks.
 There are three kinds, chosen by the `source` param of the route: `user` (an own
 playlist), `liked` (the liked songs) and `genre` (a curated playlist). Own and liked
 tracks load with infinite scroll; a genre playlist loads whole with its header, in one request. Pressing a track plays the loaded tracks from it, with the playlist as the
-source (`player.md`). Every track ends with a more button that opens the track menu (`track-menu.md`); in an own playlist the menu also offers Remove from this playlist, which refreshes the header and the tracks, and the liked and genre playlists never offer it. Editing and sharing are later issues.
+source (`player.md`). Every track ends with a more button that opens the track menu (`track-menu.md`); in an own playlist the menu also offers Remove from this playlist, which refreshes the header and the tracks, and the liked and genre playlists never offer it. A row under the header plays the whole playlist from its first track with shuffle off, or shuffled from a random track with shuffle on, and registers the recent like a track press; own and liked load every remaining page first, with the pressed button busy. A genre playlist can also be saved to the library; own and liked never can. Editing and sharing are later issues.
 
 ## Layout
 
@@ -27,6 +27,22 @@ the info block:
   - Description in `typography.body` and `color.text.secondary`, when there is one.
   - Meta line in `typography.meta` and `color.text.tertiary`: Private or Public (own
     only), the song count and the duration in hours and minutes.
+- Action row: `DetailActions` (`DESIGN.md`, "Detail screen base") between the info and the
+  tracks, `spacing.xl` below it (the info ends with the same gap): play and shuffle always,
+  both disabled when the loaded list is empty (playlist tracks are always playable); save only
+  on a genre playlist, disabled while its state loads or when reading it failed. While play or
+  shuffle loads the remaining pages of an own or liked playlist, the pressed button is busy and
+  both are disabled. The row is centered: shuffle, play (`PlayButton`) and, on a genre playlist,
+  save; no share, search or options button yet.
+- Play button: idle (the playlist is not the playback source) it is a pill with the play glyph and
+  `playlist:play`; pressing it plays the whole list from the first track, after loading every page of
+  an own or liked playlist (the pressed button shows the spinner meanwhile). While the stream loads it
+  is a circle with a spinner (a mid-track buffer shows it too); playing it is a circle with the pause
+  glyph, labelled `playlist:pause`, and pressing it pauses; paused it shows the play glyph and pressing
+  it resumes. Once the list has ended (paused on its last track) pressing it restarts the list from position 0 of the current play order: the first track with shuffle off, the first of the shuffled order with shuffle on. Under reduce motion neither the shrink nor the scale-in animate.
+- The row of every occurrence of the current track (whoever started it) draws the now playing bars
+  over its cover on a scrim, with no row background, and is announced as selected; the bars are frozen
+  while paused and static under reduce motion.
 - Tracks: one `MediaRow` `regular` per track (`layout.rowCover` cover), in API order.
   The bottom clears the floating tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
@@ -41,29 +57,36 @@ the info block:
 
 The floating back button is drawn in every state.
 
-| State            | What is drawn                                                         | i18n keys                                                                                                                                       |
-| ---------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Loading          | `DetailSkeleton`, static, while the header or the tracks load         | `common:loading`                                                                                                                                |
-| With data        | the hero, title, info and tracks; the song count with plural forms    | `playlist:liked`, `playlist:private`, `playlist:public`, `playlist:songs`, `playlist:durationMinutes`, `playlist:durationHours`, `common:brand` |
-| Expected empty   | `EmptyState` under the header when there are no tracks                | `playlist:empty`                                                                                                                                |
-| Error with retry | `ErrorState`; retry refetches only the query that failed              | `common:error.generic`, `common:retry`                                                                                                          |
-| Not found        | `EmptyState` with no action, for `playlist_not_found` on either query | `playlist:notFound`                                                                                                                             |
+| State            | What is drawn                                                         | i18n keys                                                                                                                                                                                                                                  |
+| ---------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Loading          | `DetailSkeleton`, static, while the header or the tracks load         | `common:loading`                                                                                                                                                                                                                           |
+| With data        | the hero, title, info and tracks; the song count with plural forms    | `playlist:liked`, `playlist:private`, `playlist:public`, `playlist:songs`, `playlist:durationMinutes`, `playlist:durationHours`, `common:brand`, `playlist:play`, `playlist:shuffle`, `playlist:save`, `playlist:unsave`, `playlist:pause` |
+| Expected empty   | `EmptyState` under the header when there are no tracks                | `playlist:empty`                                                                                                                                                                                                                           |
+| Error with retry | `ErrorState`; retry refetches only the query that failed              | `common:error.generic`, `common:retry`                                                                                                                                                                                                     |
+| Not found        | `EmptyState` with no action, for `playlist_not_found` on either query | `playlist:notFound`                                                                                                                                                                                                                        |
 
 The back button is labeled `playlist:back`.
 
 ## Data
 
-| Route                              | Paginated   | Cache-Control       | Reasons listed                                                                          | Branches on                                    |
-| ---------------------------------- | ----------- | ------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| `GET /playlists/{id}`              | no          | `private, no-cache` | `playlist_not_found`, `invalid_request`, `unauthorized`, `upstream_*`                   | `playlist_not_found`                           |
-| `GET /playlists/{id}/tracks`       | yes, cursor | `private, no-cache` | `playlist_not_found`, `invalid_request`, `invalid_cursor`, `unauthorized`, `upstream_*` | `playlist_not_found`                           |
-| `GET /playlists/liked`             | no          | `private, no-cache` | `unauthorized`, `upstream_*`                                                            | none (generic error)                           |
-| `GET /playlists/liked/tracks`      | yes, cursor | `private, no-cache` | `invalid_request`, `invalid_cursor`, `unauthorized`, `upstream_*`                       | none; `invalid_cursor` by the helper           |
-| `GET /public/genre-playlists/{id}` | no          | `no-store`          | `playlist_not_found`, `invalid_request`, `upstream_*`                                   | `playlist_not_found`                           |
-| `POST /recents`                    | no          | `private, no-cache` | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                 | none; a failure is logged and nothing is drawn |
+| Route                                  | Paginated   | Cache-Control       | Reasons listed                                                                                    | Branches on                                                                       |
+| -------------------------------------- | ----------- | ------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `GET /playlists/{id}`                  | no          | `private, no-cache` | `playlist_not_found`, `invalid_request`, `unauthorized`, `upstream_*`                             | `playlist_not_found`                                                              |
+| `GET /playlists/{id}/tracks`           | yes, cursor | `private, no-cache` | `playlist_not_found`, `invalid_request`, `invalid_cursor`, `unauthorized`, `upstream_*`           | `playlist_not_found`                                                              |
+| `GET /playlists/liked`                 | no          | `private, no-cache` | `unauthorized`, `upstream_*`                                                                      | none (generic error)                                                              |
+| `GET /playlists/liked/tracks`          | yes, cursor | `private, no-cache` | `invalid_request`, `invalid_cursor`, `unauthorized`, `upstream_*`                                 | none; `invalid_cursor` by the helper                                              |
+| `GET /public/genre-playlists/{id}`     | no          | `no-store`          | `playlist_not_found`, `invalid_request`, `upstream_*`                                             | `playlist_not_found`                                                              |
+| `GET /library/{kind}/{external_id}`    | no          | `private, no-cache` | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                           | none; a failure leaves save disabled (genre only)                                 |
+| `POST /library`                        | no          | `private, no-cache` | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                           | none; a failure rolls the save button back                                        |
+| `DELETE /library/{kind}/{external_id}` | no          | `private, no-cache` | `library_item_not_found`, `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout` | `library_item_not_found` leaves it not saved; anything else rolls the button back |
+| `POST /recents`                        | no          | `private, no-cache` | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                           | none; a failure is logged and nothing is drawn                                    |
 
 `GET /public/genre-playlists/{id}` carries the header and the tracks of a genre
 playlist, so the paged tracks query never runs for it.
+
+Play and shuffle of an own or liked playlist fetch every remaining page of `tracks` through the shared infinite-query hook (`loadAll`) before starting, so the queue holds the whole list in the API's order; a failed page puts the query in error and draws the whole-body error, and the start does not happen. Leaving the screen while the pages load cancels the start: nothing plays. A genre playlist already has every track. `GET /playlists/{id}/track-ids` is not used. Play sets shuffle off and shuffle sets it on before starting; a row press leaves the flag as it is.
+
+Save (genre only, never on own or liked) sends `{ kind: "playlist", source: "genre", external_id, title }` with `thumbnail_url` (the first cover url) when there is one, and no `artist`. The button flips at once and rolls back if the write fails.
 
 Starting a list from a track registers the playlist with `POST /recents`, and a failure never stops the music.
 
@@ -100,7 +123,7 @@ or replaces with `/` when there is nothing to go back to.
 
 ## Checked by hand
 
-Screenshots of the three kinds on iOS and Android; infinite scroll with a real
+Screenshots of the three kinds on iOS and Android; the action row centered on iOS and Android, the play pill shrinking to a circle and scaling in as pause, the now playing bars moving, freezing on pause and static under reduce motion; play and shuffle on a real own or liked playlist of more than 50 tracks; saving a genre playlist and finding it in the library; infinite scroll with a real
 gesture on a playlist of more than 50 tracks; real covers on an own playlist header; a playlist recent of each kind opening from
 Home; real covers, the dominant-color wash
 and the brand mark at `layout.creatorMark`; swipe-back per tab and the native tab

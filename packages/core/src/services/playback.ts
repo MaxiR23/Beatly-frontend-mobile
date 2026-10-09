@@ -245,9 +245,10 @@ export function createPlaybackController(deps: {
       } else if (state.status === "paused") {
         if (!loaded) {
           await restart();
+        } else if (endedGeneration === generation) {
+          // Playing after the list ended: it restarts from position 0 of the current play order.
+          await startAt(0);
         } else {
-          // Playing again after the list ended: the same track can end again.
-          endedGeneration = -1;
           player.play();
           update({ status: "playing" });
         }

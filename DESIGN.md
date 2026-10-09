@@ -29,7 +29,7 @@ value: the value lives once, in the token file.
 | Destructive/error state                                                                                                          | `color.status.error`                                                                         |
 | Success/confirmation state                                                                                                       | `color.status.success`                                                                       |
 | Sheet/modal backdrop                                                                                                             | `color.overlay.backdrop`                                                                     |
-| Scrim over an image (behind a control or text)                                                                                   | `color.overlay.onImage`                                                                      |
+| Scrim over an image (behind a control or text; the now playing scrim over a row cover)                                           | `color.overlay.onImage`                                                                      |
 | Subtle translucent fill (ghost button, translucent chip)                                                                         | `color.overlay.subtle`                                                                       |
 | Muted translucent fill (seek track, icon-button background)                                                                      | `color.overlay.muted`                                                                        |
 | Clear start of a fade into the base surface (the detail hero image); the see-through container of the player route               | `color.overlay.clear`                                                                        |
@@ -56,7 +56,9 @@ value: the value lives once, in the token file.
 | Width / height ratio of the full-width detail hero image                                                                                           | `layout.heroImageRatio`                                         |
 | Share of the window height the detail hero image may take at most                                                                                  | `layout.heroImageMaxHeightShare`                                |
 | Width of the track-number column in a track row                                                                                                    | `layout.trackNumber`                                            |
+| Width of one bar of the now playing indicator                                                                                                      | `layout.nowPlayingBarWidth`                                     |
 | Side of the large play or pause button of the player                                                                                               | `layout.playButton`                                             |
+| Side of the detail play button's circle and height of its idle pill                                                                                | `layout.playButtonMedium`                                       |
 | Height of the seek bar track / side of its thumb                                                                                                   | `layout.seekTrack` / `layout.seekThumb`                         |
 | Width / height of the sheet handle bar                                                                                                             | `layout.handleWidth` / `layout.handleHeight`                    |
 | Width of a detail skeleton placeholder bar (title, meta, row title, row meta), as a share of its row                                               | `layout.skeletonBar.title` / `.meta` / `.rowTitle` / `.rowMeta` |
@@ -91,6 +93,15 @@ scroll.
 - Creator line (playlist): a `layout.creatorMark` mark (avatar or brand mark on
   `color.accent.primary`, `radius.full`) with the name in `typography.rowTitle`, gap
   `spacing.sm`.
+- Action row: `DetailActions`, centered, `layout.gap` between the buttons, `layout.gutter` sides:
+  shuffle (`IconButton` plain), play (`PlayButton`), and save (`IconButton` plain, plus or check,
+  selected when saved) on albums and genre playlists. `PlayButton`: idle, a `layout.playButtonMedium`
+  tall pill in `color.accent.primary`, `spacing.xl` sides, the play glyph (`icon.size.lg`) and the
+  label in `typography.button` `color.text.inverse`, `spacing.sm` apart; loading, playing and paused,
+  a `layout.playButtonMedium` circle with a spinner, the pause glyph or the play glyph. Leaving idle
+  it shrinks to the circle in `motion.duration.fast`; becoming pause it scales in from
+  `motion.enterScale` in `motion.duration.fast`; under reduce motion neither. Disabled on
+  `color.surface.control` with the glyph in `color.text.disabled`.
 - Title: `typography.title` under the hero. The base reserves no space for an action
   row; the screen owns the gap below its own title block.
 - Floating back and more buttons: `GlassSurface` `circle` fixed over the hero, in
@@ -107,6 +118,11 @@ scroll.
   an unavailable track: the contract makes playlist, search, up next and related tracks always
   playable (a null `track_id` there is a schema failure, drawn as the generic error), so those
   lists do not pass `available`.
+- The current track's row: no background of its own, only `NowPlayingBars` (three
+  `layout.nowPlayingBarWidth` bars in `color.accent.primary`, `spacing.xxs` apart, `icon.size.sm`
+  tall, rising and falling to `motion.nowPlaying.minScale` over `motion.nowPlaying.durations`, frozen
+  while paused, at `motion.nowPlaying.staticScales` under reduce motion) in place of the number
+  (`TrackRow`) or centered over the cover on `color.overlay.onImage` (`MediaRow`).
 
 ## Player
 
@@ -197,6 +213,10 @@ Roles, not raw sizes. Every role uses the platform's system font (no
 | Opacity of a pressed control                                                                                                                  | `motion.pressOpacity`                    |
 | Scale the player cover drops to while paused                                                                                                  | `motion.pausedScale`                     |
 | Scale the player drops to behind the open sheet                                                                                               | `motion.behindSheetScale`                |
+| Scale a control starts from when it enters (the detail play button becoming pause)                                                            | `motion.enterScale`                      |
+| Lowest a now playing bar falls to, as a share of its height                                                                                   | `motion.nowPlaying.minScale`             |
+| Milliseconds each now playing bar takes to rise or to fall (different per bar)                                                                | `motion.nowPlaying.durations`            |
+| Each now playing bar's height while static under reduce motion                                                                                | `motion.nowPlaying.staticScales`         |
 | Points per second a title that does not fit scrolls (`Marquee`)                                                                               | `motion.marquee.speed`                   |
 | Rest, in ms, at each end of a `Marquee` scroll                                                                                                | `motion.marquee.pause`                   |
 | Points the sheet handle rises when it nudges                                                                                                  | `motion.handleNudge`                     |
@@ -204,7 +224,7 @@ Roles, not raw sizes. Every role uses the platform's system font (no
 | Share of the window height a released vertical drag must pass to commit                                                                       | `motion.dragToClose.distanceShare`       |
 | Speed, in points per millisecond, that commits a vertical drag on release                                                                     | `motion.dragToClose.velocity`            |
 
-`VerticalDrag` (the one vertical drag), `DragToClose` and `PullUpSheet` over it, `PauseScale` and `Marquee` in `@beatly/ui/native` are the only animated components. They use React Native's `Animated` with the native driver and `PanResponder`, and take `reduceMotion` from the app.
+`VerticalDrag` (the one vertical drag), `DragToClose` and `PullUpSheet` over it, `PauseScale`, `Marquee`, `NowPlayingBars` and `PlayButton` in `@beatly/ui/native` are the only animated components. They use React Native's `Animated` with the native driver (except the `PlayButton` pill's width, a layout property) and `PanResponder`, and take `reduceMotion` from the app.
 
 ## Icons (`icon`)
 

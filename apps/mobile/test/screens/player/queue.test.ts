@@ -3,10 +3,11 @@
 // Tests for the queue helper.
 //
 // Tested:
-// - toQueue, playableOf
+// - toQueue, wholeQueue, playableOf
 //
 // What is covered:
 // - the index skipping the unplayable items before the tapped one, an unplayable tapped item
+// - wholeQueue keeping the playable items in order, starting at the first or at a random one, null with none
 // - a track of the up next or related routes mapped to a playable track, with its artist refs and album, and its nulls kept
 //
 // Run with: pnpm --filter @beatly/mobile test -- screens/player/queue
@@ -16,7 +17,7 @@
 import type { PlayableTrack } from "@beatly/core";
 import { describe, expect, it } from "@jest/globals";
 
-import { playableOf, toQueue } from "../../../src/screens/player/queue.ts";
+import { playableOf, toQueue, wholeQueue } from "../../../src/screens/player/queue.ts";
 
 const items = [
   { id: "a", ok: true },
@@ -35,6 +36,24 @@ const toPlayable = (item: { id: string; ok: boolean }): PlayableTrack | null =>
         durationSeconds: null,
       }
     : null;
+
+describe("wholeQueue", () => {
+  it("starts at index 0 without the unplayable items", () => {
+    const queue = wholeQueue(items, toPlayable, "first");
+    expect(queue?.tracks.map((t) => t.trackId)).toEqual(["a", "c"]);
+    expect(queue?.index).toBe(0);
+  });
+
+  it("picks floor(random * n) among the playable items", () => {
+    expect(wholeQueue(items, toPlayable, "random", () => 0.99)?.index).toBe(1);
+    expect(wholeQueue(items, toPlayable, "random", () => 0)?.index).toBe(0);
+  });
+
+  it("returns null with no playable item", () => {
+    expect(wholeQueue([{ id: "b", ok: false }], toPlayable, "first")).toBeNull();
+    expect(wholeQueue([], toPlayable, "random")).toBeNull();
+  });
+});
 
 describe("toQueue", () => {
   it("drops the unplayable items and moves the index past the ones before the tapped", () => {

@@ -45,6 +45,9 @@ The tab bar differs between iOS 26+ (native tabs) and elsewhere (floating bar); 
 | Expected empty   | no recents: `EmptyState`; no results: `EmptyState` with the query       | `search:recent.empty`, `search:empty`                                                       |
 | Error with retry | `ErrorState`; retry reloads the recents or the search                   | `common:error.generic`, `common:retry`                                                      |
 
+The song row of the current track (whoever started it) draws the now playing bars over its cover on a
+scrim, with no row background; the bars are frozen while paused and static under reduce motion.
+
 A failed add, remove or clear shows an inline `common:error.generic` line above the recents. The
 search field uses `search:placeholder` and `search:clear`; row buttons use `search:recent.remove`.
 
@@ -89,4 +92,4 @@ result's `id`, inside the Search tab's stack; the top artist pushes `/artist/[id
 Recents surviving an app kill and relaunch on iOS and Android, the debounce feel and the
 keyboard's "search" return key, tapping a recent row with the keyboard open, the on-screen heights
 of the bar and rows, the artist image from the real API, album covers from the real API, the last row
-clearing the tab bar, and results in es and en on iOS 26+ and Android.
+clearing the tab bar, results in es and en on iOS 26+ and Android, and the now playing bars on a song row, moving, frozen on pause and static under reduce motion.

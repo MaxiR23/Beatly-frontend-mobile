@@ -1,4 +1,4 @@
-// INFO: an artist: the detail base with a full-width image hero and the name over it, then popular songs, albums, singles and EPs and similar artists, each hidden when empty, every playable popular song with a menu button, a song without a track id dimmed, unpressable, without menu, and announced as not available; unavailable for an invalid id; starting a list registers it as a recent.
+// INFO: an artist: the detail base with a full-width image hero and the name over it, then popular songs, albums, singles and EPs and similar artists, each hidden when empty, every playable popular song with a menu button, a song without a track id dimmed, unpressable, without menu, and announced as not available; unavailable for an invalid id; the current track's row is marked; starting a list registers it as a recent.
 import type { AlbumRef, Artist, PlayableTrack } from "@beatly/core";
 import { layout, spacing } from "@beatly/ui";
 import {
@@ -19,6 +19,7 @@ import { useArtist } from "../../queries/useArtist.ts";
 import { useRegisterRecent } from "../../queries/useRecents.ts";
 import { singleMeta } from "./singleMeta.ts";
 import { toQueue } from "../player/queue.ts";
+import { useNowPlaying } from "../player/useNowPlaying.ts";
 import { usePlaybackActions } from "../player/usePlayback.ts";
 import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
@@ -52,6 +53,7 @@ export function ArtistScreen() {
   const registerRecent = useRegisterRecent();
   const { id = "" } = useLocalSearchParams<{ id?: string }>();
   const artist = useArtist(id);
+  const nowPlaying = useNowPlaying();
 
   function goBack() {
     // A deep link has nothing to go back to, so it lands on home.
@@ -133,6 +135,8 @@ export function ArtistScreen() {
                     subtitle={song.album ?? undefined}
                     available={playable !== null}
                     unavailableLabel={t("trackUnavailable", { title: song.title })}
+                    nowPlaying={nowPlaying.of(playable?.trackId ?? null)}
+                    reduceMotion={nowPlaying.reduceMotion}
                     trailing={playable !== null ? <TrackMenuButton track={playable} /> : undefined}
                     onPress={
                       playable !== null

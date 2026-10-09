@@ -1,11 +1,12 @@
 // INFO: a track row, pressable when given onPress: a leading number in a fixed column, a
 // one-line title and an optional one-line artists line; an unavailable
-// track draws both texts disabled, is never pressable and is one element announced by its unavailable label; a trailing element sits after the pressable body, outside it.
+// track draws both texts disabled, is never pressable and is one element announced by its unavailable label; a trailing element sits after the pressable body, outside it; the current track draws the now playing bars in place of the number.
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { motion } from "../tokens/motion.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
+import { NowPlayingBars } from "./NowPlayingBars.tsx";
 import { Text } from "./Text.tsx";
 
 interface TrackRowProps {
@@ -18,6 +19,9 @@ interface TrackRowProps {
   unavailableLabel?: string | undefined;
   // A control at the end of the row, a sibling of the pressable body so both are reachable.
   trailing?: ReactNode;
+  // Draws the now playing bars; undefined for any other track.
+  nowPlaying?: "playing" | "paused" | undefined;
+  reduceMotion?: boolean;
   testID?: string;
 }
 
@@ -29,11 +33,15 @@ export function TrackRow({
   onPress: onPressProp,
   unavailableLabel,
   trailing,
+  nowPlaying,
+  reduceMotion = false,
   testID,
 }: TrackRowProps) {
   const onPress = available ? onPressProp : undefined;
+  const marked = available && nowPlaying !== undefined;
+  const state = marked ? { disabled: false, selected: true } : { disabled: !available };
   const still = available
-    ? { accessibilityState: { disabled: false } }
+    ? { accessibilityState: marked ? state : { disabled: false } }
     : {
         accessible: true,
         accessibilityLabel: unavailableLabel ?? title,
@@ -42,9 +50,17 @@ export function TrackRow({
   const content = (
     <>
       <View style={styles.number}>
-        <Text variant="meta" tone={available ? "tertiary" : "disabled"}>
-          {String(number)}
-        </Text>
+        {marked ? (
+          <NowPlayingBars
+            state={nowPlaying}
+            reduceMotion={reduceMotion}
+            testID="now-playing-bars"
+          />
+        ) : (
+          <Text variant="meta" tone={available ? "tertiary" : "disabled"}>
+            {String(number)}
+          </Text>
+        )}
       </View>
       <View style={styles.text}>
         <Text variant="rowTitle" tone={available ? "primary" : "disabled"} numberOfLines={1}>
@@ -69,7 +85,7 @@ export function TrackRow({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={title}
-          accessibilityState={{ disabled: !available }}
+          accessibilityState={state}
           onPress={onPress}
           style={({ pressed }) => [styles.body, pressed && styles.pressed]}
         >
@@ -77,7 +93,7 @@ export function TrackRow({
         </Pressable>
       );
     return (
-      <View style={styles.split} testID={testID}>
+      <View style={[styles.split]} testID={testID}>
         {body}
         {trailing}
       </View>
@@ -86,7 +102,7 @@ export function TrackRow({
 
   if (onPress === undefined) {
     return (
-      <View style={styles.row} {...still} testID={testID}>
+      <View style={[styles.row]} {...still} testID={testID}>
         {content}
       </View>
     );
@@ -96,7 +112,7 @@ export function TrackRow({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={title}
-      accessibilityState={{ disabled: !available }}
+      accessibilityState={state}
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
       testID={testID}

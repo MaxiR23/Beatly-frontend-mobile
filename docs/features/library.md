@@ -67,6 +67,11 @@ whole-body error, as on Home. Creating a playlist invalidates `library` and
 `playlists/mine`. The mutation stays pending (the Create button keeps spinning) until both have refetched, so the sheet closes with the new row already drawn. The request sends the trimmed title, `is_public`, and
 `description` only when it is not empty.
 
+Saved albums and genre playlists come from the save button of the album and playlist
+screens (`POST /library`, `DELETE /library/{kind}/{external_id}`). A save or a remove
+invalidates `library` and the saved states under it, so the row appears or disappears on the next
+library render.
+
 ## Navigation
 
 Route `/library`, the fourth tab. A saved album row (`kind: "album"`) pushes
