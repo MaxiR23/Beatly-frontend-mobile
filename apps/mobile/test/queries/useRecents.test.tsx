@@ -22,7 +22,7 @@ import type { ReactNode } from "react";
 
 import type { Core } from "../../src/createCore.ts";
 import { OutcomeError } from "../../src/queries/outcomeError.ts";
-import { createQueryClient } from "../../src/queries/queryClient.ts";
+import { createTestQueryClient } from "../helpers/queryClient.ts";
 import { useRecents, useRegisterRecent } from "../../src/queries/useRecents.ts";
 import { makeAuth, makeCore, makeLog, recentFixture, Wrapper } from "../helpers/core.tsx";
 
@@ -56,7 +56,7 @@ function setup(
   const log = makeLog();
   const client = createHttpClient({ http: { send }, auth, log, baseUrl: "test://api" });
   const core: Core = { ...makeCore().core, auth, log, activity: createActivityService(client) };
-  const queryClient = createQueryClient();
+  const queryClient = createTestQueryClient();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Wrapper core={core} client={queryClient}>
       {children}

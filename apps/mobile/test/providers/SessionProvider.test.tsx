@@ -19,7 +19,7 @@ import { act, render, screen } from "@testing-library/react-native";
 import { AppState, Text, type AppStateStatus } from "react-native";
 
 import { SessionProvider, useSession } from "../../src/providers/SessionProvider.tsx";
-import { createQueryClient } from "../../src/queries/queryClient.ts";
+import { createTestQueryClient } from "../helpers/queryClient.ts";
 import { makeAuth, makeCore, Wrapper } from "../helpers/core.tsx";
 
 function Probe() {
@@ -36,7 +36,7 @@ function setup(getStatus: () => Promise<AuthStatus>) {
     }),
   });
   const { core, emitLikeConfirmed, likes, log, playback, player } = makeCore({ auth });
-  const client = createQueryClient();
+  const client = createTestQueryClient();
   return {
     core,
     client,

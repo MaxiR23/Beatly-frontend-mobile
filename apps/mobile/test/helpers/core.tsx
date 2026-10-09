@@ -61,7 +61,7 @@ import type { ReactNode } from "react";
 
 import type { Core } from "../../src/createCore.ts";
 import { CoreProvider } from "../../src/providers/CoreProvider.tsx";
-import { createQueryClient } from "../../src/queries/queryClient.ts";
+import { createTestQueryClient } from "./queryClient.ts";
 
 export const profileFixture: Profile = {
   id: "00000000-0000-0000-0000-000000000001",
@@ -747,7 +747,9 @@ export function Wrapper({
 }) {
   return (
     <CoreProvider core={core}>
-      <QueryClientProvider client={client ?? createQueryClient()}>{children}</QueryClientProvider>
+      <QueryClientProvider client={client ?? createTestQueryClient()}>
+        {children}
+      </QueryClientProvider>
     </CoreProvider>
   );
 }

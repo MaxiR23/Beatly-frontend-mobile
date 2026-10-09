@@ -350,6 +350,37 @@ export default tseslint.config(
     },
   },
 
+  // apps/mobile tests build their QueryClient with createTestQueryClient()
+  // (gcTime: Infinity), never with the app's createQueryClient(): its 5 minute
+  // GC timer keeps Jest from exiting. The factory's own test and the helper
+  // are the exceptions. This block replaces the one above for these files, so
+  // it repeats the same restrictions.
+  {
+    files: ["apps/mobile/test/**/*.{ts,tsx}"],
+    ignores: [
+      "apps/mobile/test/queries/queryClient.test.ts",
+      "apps/mobile/test/helpers/queryClient.ts",
+    ],
+    rules: {
+      ...restricted(
+        [...adapterOnlyLibraries, ...crossWorkspacePaths],
+        "This library is imported only by its adapter under apps/mobile/src/adapters/. Everything else goes through the port.",
+        [
+          iconLibraryOnlyInIcon,
+          glassLibraryOnlyInGlassSurface,
+          svgLibraryOnlyInGradientFill,
+          nativeMenuLibraryOnlyInNativeMenu,
+          {
+            group: ["**/queries/queryClient", "**/queries/queryClient.ts"],
+            importNames: ["createQueryClient"],
+            message:
+              "Tests build their QueryClient with createTestQueryClient() from test/helpers/queryClient.ts (gcTime: Infinity). createQueryClient() leaves a GC timer open.",
+          },
+        ],
+      ),
+    },
+  },
+
   // The two files that are allowed what everything else is not.
   {
     files: ["apps/mobile/src/adapters/http.ts"],

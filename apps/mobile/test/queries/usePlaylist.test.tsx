@@ -29,7 +29,7 @@ import type { ReactNode } from "react";
 
 import type { Core } from "../../src/createCore.ts";
 import { OutcomeError } from "../../src/queries/outcomeError.ts";
-import { createQueryClient } from "../../src/queries/queryClient.ts";
+import { createTestQueryClient } from "../helpers/queryClient.ts";
 import {
   usePlaylistHeader,
   usePlaylistTracks,
@@ -88,7 +88,7 @@ function setup(headers: Record<string, string>, response?: { status: number; bod
     genres: createGenresService(client),
     publicShare: createPublicService(client),
   };
-  const queryClient = createQueryClient();
+  const queryClient = createTestQueryClient();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Wrapper core={core} client={queryClient}>
       {children}

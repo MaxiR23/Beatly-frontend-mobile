@@ -20,7 +20,7 @@ import { act, renderHook, waitFor } from "@testing-library/react-native";
 import type { ReactNode } from "react";
 
 import { OutcomeError } from "../../src/queries/outcomeError.ts";
-import { createQueryClient } from "../../src/queries/queryClient.ts";
+import { createTestQueryClient } from "../helpers/queryClient.ts";
 import {
   useAddRecentSearch,
   useClearRecentSearches,
@@ -31,7 +31,7 @@ import { makeCore, memoryStorage, Wrapper } from "../helpers/core.tsx";
 
 function setup(storage: StoragePort) {
   const { core } = makeCore({ storage });
-  const client = createQueryClient();
+  const client = createTestQueryClient();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Wrapper core={core} client={client}>
       {children}
