@@ -22,12 +22,12 @@
 // SEE: apps/mobile/src/screens/album/AlbumScreen.tsx
 
 import type { Album, HttpOutcome } from "@beatly/core";
-import { afterEach, describe, expect, it, jest } from "@jest/globals";
+import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
-import { StyleSheet, type ViewStyle } from "react-native";
+import { Animated, StyleSheet, type ViewStyle } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { color, spacing } from "@beatly/ui";
+import { color, motion, spacing } from "@beatly/ui";
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { AlbumScreen } from "../../../src/screens/album/AlbumScreen.tsx";
@@ -50,6 +50,25 @@ jest.mock("../../../src/adapters/imageColors.ts", () => ({
   getDominantColor: () => Promise.resolve({ kind: "unavailable" }),
   peekDominantColor: () => undefined,
 }));
+
+const instant = () =>
+  ({
+    start: (done?: (result: { finished: boolean }) => void) => {
+      done?.({ finished: true });
+    },
+    stop: () => undefined,
+  }) as unknown as Animated.CompositeAnimation;
+
+// Every play button animation of a test that starts a list runs instantly, so no real timer fires outside act.
+const realTiming = Animated.timing;
+const playButtonDurations: readonly number[] = Object.values(motion.playButton);
+beforeEach(() => {
+  jest
+    .spyOn(Animated, "timing")
+    .mockImplementation((value, config) =>
+      playButtonDurations.includes(config.duration ?? -1) ? instant() : realTiming(value, config),
+    );
+});
 
 afterEach(async () => {
   jest.restoreAllMocks();
@@ -503,6 +522,8 @@ describe("AlbumScreen action row", () => {
     await screen.findByText("First Song");
     const idle = screen.getByRole("button", { name: en.album.play });
     expect(within(idle).getByText(en.album.play)).toBeTruthy();
+    // The label fade and the shrink finish at once; the spinner comes after them.
+    jest.spyOn(Animated, "timing").mockImplementationOnce(instant).mockImplementationOnce(instant);
     await fireEvent.press(idle);
     const loading = screen.getByRole("button", { name: en.album.play });
     expect(stateFlag(loading, "busy")).toBe(true);

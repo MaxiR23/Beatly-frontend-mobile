@@ -1,13 +1,6 @@
-// INFO: the detail play button, with four states: idle is an accent pill with the play glyph and a label; loading, playing and paused are a circle with a spinner, the pause glyph or the play glyph. Leaving idle the pill always shrinks to the circle in motion.duration.fast, empty, and only when the shrink ends does it draw the spinner, the play glyph or the pause glyph, which scales in from motion.enterScale; a state change during the shrink waits for its end; under reduce motion neither animates. The button is always as wide as the idle pill, reserved by a hidden sizer, so what sits beside it never moves. Disabled greys it out and ignores presses; loading ignores them too.
-import { useLayoutEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Animated,
-  Pressable,
-  StyleSheet,
-  View,
-  type LayoutChangeEvent,
-} from "react-native";
+// INFO: the detail play button, with four states: idle is an accent pill layout.playButtonPill wide with the play glyph and a label; loading, playing and paused are a circle with a spinner, the pause glyph or the play glyph. Leaving idle the label fades in motion.playButton.labelFade, then the pill, holding the play glyph, shrinks to the circle in motion.playButton.shrink (ease in-out), whatever the state does meanwhile; only then does it draw the spinner, the play glyph or the pause glyph, which scales in from motion.enterScale in motion.playButton.scaleIn. Under reduce motion nothing animates. Disabled greys it out and ignores presses; loading ignores them too.
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ActivityIndicator, Animated, Easing, Pressable, StyleSheet, View } from "react-native";
 
 import { color } from "../tokens/color.ts";
 import { motion } from "../tokens/motion.ts";
@@ -40,11 +33,19 @@ export function PlayButton({
   onPress,
   testID,
 }: PlayButtonProps) {
-  const [width] = useState(() => new Animated.Value(layout.playButtonMedium));
+  const [width] = useState(
+    () => new Animated.Value(state === "idle" ? layout.playButtonPill : layout.playButtonMedium),
+  );
   const [scale] = useState(() => new Animated.Value(1));
-  const [shrinking, setShrinking] = useState(false);
+  const [labelOpacity] = useState(() => new Animated.Value(1));
+  const [phase, setPhase] = useState<"fade" | "shrink" | null>(null);
+  // The fade phase is set while rendering the state change, so the label is still drawn when the fade starts.
+  const [drawn, setDrawn] = useState<PlayButtonState>(state);
+  if (state !== drawn) {
+    setDrawn(state);
+    if (drawn === "idle" && !reduceMotion) setPhase("fade");
+  }
   const previous = useRef<PlayButtonState>(state);
-  const pillWidth = useRef<number | null>(null);
   const running = useRef<Animated.CompositeAnimation | null>(null);
 
   useLayoutEffect(() => {
@@ -52,7 +53,7 @@ export function PlayButton({
       scale.setValue(motion.enterScale);
       Animated.timing(scale, {
         toValue: 1,
-        duration: motion.duration.fast,
+        duration: motion.playButton.scaleIn,
         useNativeDriver: true,
       }).start();
     };
@@ -60,103 +61,106 @@ export function PlayButton({
     previous.current = state;
     if (state === "idle") {
       running.current?.stop();
-      return;
-    }
-    const measured = pillWidth.current;
-    if (before === "idle" && measured !== null && !reduceMotion) {
-      width.setValue(measured);
+      labelOpacity.setValue(1);
+      width.setValue(layout.playButtonPill);
       scale.setValue(1);
-      setShrinking(true);
-      const shrink = Animated.timing(width, {
-        toValue: layout.playButtonMedium,
-        duration: motion.duration.fast,
-        useNativeDriver: false,
+      return;
+    }
+    if (before === "idle" && !reduceMotion) {
+      width.setValue(layout.playButtonPill);
+      scale.setValue(1);
+      const fade = Animated.timing(labelOpacity, {
+        toValue: 0,
+        duration: motion.playButton.labelFade,
+        useNativeDriver: true,
       });
-      running.current = shrink;
-      shrink.start(({ finished }) => {
-        if (running.current === shrink) running.current = null;
-        setShrinking(false);
-        if (finished && previous.current === "playing") scaleIn();
+      running.current = fade;
+      fade.start(({ finished }) => {
+        if (running.current !== fade) return;
+        if (!finished) {
+          running.current = null;
+          setPhase(null);
+          return;
+        }
+        setPhase("shrink");
+        const shrink = Animated.timing(width, {
+          toValue: layout.playButtonMedium,
+          duration: motion.playButton.shrink,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        });
+        running.current = shrink;
+        shrink.start(({ finished: done }) => {
+          if (running.current === shrink) running.current = null;
+          setPhase(null);
+          if (done && previous.current === "playing") scaleIn();
+        });
       });
       return;
     }
-    // A change while the shrink runs keeps it going; the content and the scale-in wait for its end.
+    // A change while the chain runs keeps it going; the content and the scale-in wait for its end.
     if (running.current !== null) return;
     width.setValue(layout.playButtonMedium);
     if (state === "playing" && before !== "playing" && !reduceMotion) scaleIn();
     else scale.setValue(1);
-  }, [state, reduceMotion, width, scale]);
+  }, [state, reduceMotion, width, scale, labelOpacity]);
+
+  useEffect(
+    () => () => {
+      running.current?.stop();
+    },
+    [],
+  );
 
   const inactive = disabled || state === "loading";
   const tone: Tone = disabled ? "disabled" : "inverse";
-  const onSizerLayout = (event: LayoutChangeEvent) => {
-    pillWidth.current = event.nativeEvent.layout.width;
-  };
 
   return (
-    <View style={styles.column}>
-      <View
-        style={[styles.sizer, styles.pill]}
-        onLayout={onSizerLayout}
-        pointerEvents="none"
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        testID="play-button-sizer"
-      >
-        <Icon name="play" size="lg" tone="inverse" />
-        <Text variant="button" tone="inverse">
-          {playLabel}
-        </Text>
-      </View>
-      <View style={[StyleSheet.absoluteFill, styles.center]} pointerEvents="box-none">
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={state === "playing" ? pauseLabel : playLabel}
-          accessibilityState={{ disabled: inactive, busy: state === "loading" }}
-          disabled={inactive}
-          onPress={onPress}
-          style={({ pressed }) => pressed && styles.pressed}
-          testID={testID}
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={state === "playing" ? pauseLabel : playLabel}
+      accessibilityState={{ disabled: inactive, busy: state === "loading" }}
+      disabled={inactive}
+      onPress={onPress}
+      style={({ pressed }) => pressed && styles.pressed}
+      testID={testID}
+    >
+      <Animated.View style={{ transform: [{ scale }] }}>
+        <Animated.View
+          style={[styles.shape, disabled ? styles.inactive : styles.active, { width }]}
+          testID="play-button-pill"
         >
-          <Animated.View style={{ transform: [{ scale }] }}>
-            <Animated.View
-              style={[
-                styles.shape,
-                disabled ? styles.inactive : styles.active,
-                state === "idle" ? undefined : { width },
-              ]}
-              testID="play-button-pill"
-            >
-              {state === "idle" ? (
-                <View style={styles.pill}>
-                  <Icon name="play" size="lg" tone={tone} />
-                  <Text variant="button" tone={tone}>
-                    {playLabel}
-                  </Text>
-                </View>
-              ) : shrinking ? null : state === "loading" ? (
-                <ActivityIndicator color={toneColor[tone]} testID="play-button-busy" />
-              ) : state === "playing" ? (
-                <View testID="play-button-pause">
-                  <Icon name="pause" size="lg" tone={tone} />
-                </View>
-              ) : (
-                <View testID="play-button-play">
-                  <Icon name="play" size="lg" tone={tone} />
-                </View>
-              )}
-            </Animated.View>
-          </Animated.View>
-        </Pressable>
-      </View>
-    </View>
+          {state === "idle" || phase === "fade" ? (
+            <View style={styles.pill}>
+              <Icon name="play" size="lg" tone={tone} />
+              <Animated.View style={{ opacity: labelOpacity }} testID="play-button-label">
+                <Text variant="button" tone={tone}>
+                  {playLabel}
+                </Text>
+              </Animated.View>
+            </View>
+          ) : phase === "shrink" ? (
+            <View testID="play-button-shrink">
+              <Icon name="play" size="lg" tone={tone} />
+            </View>
+          ) : state === "loading" ? (
+            <ActivityIndicator color={toneColor[tone]} testID="play-button-busy" />
+          ) : state === "playing" ? (
+            <View testID="play-button-pause">
+              <Icon name="pause" size="lg" tone={tone} />
+            </View>
+          ) : (
+            <View testID="play-button-play">
+              <Icon name="play" size="lg" tone={tone} />
+            </View>
+          )}
+        </Animated.View>
+      </Animated.View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  column: { alignItems: "center", justifyContent: "center" },
-  center: { alignItems: "center", justifyContent: "center" },
-  sizer: { height: layout.playButtonMedium, opacity: motion.hiddenOpacity },
   shape: {
     height: layout.playButtonMedium,
     borderRadius: radius.full,
@@ -170,7 +174,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    paddingHorizontal: spacing.xl,
   },
   pressed: { opacity: motion.pressOpacity },
 });

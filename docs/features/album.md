@@ -23,14 +23,13 @@ the body:
   `typography.meta` and `color.text.tertiary`: the kind, the year, the song count
   and the duration in hours and minutes, each omitted when the API sends none.
 - Action row: `DetailActions` (`DESIGN.md`, "Detail screen base") between the info and the
-  tracks, in three slots with play in the exact center of the screen: shuffle, play (`PlayButton`) and save (plus, or check when saved), the side slots both `layout.controlHeight` wide and the center column always as wide as the play pill, so shuffle and save never move when it shrinks. No share,
+  tracks, a centered group `layout.actionGap` apart: shuffle, play (`PlayButton`) and save (plus, or check when saved), both side buttons `layout.controlHeight`; when the pill shrinks the group stays centered, so shuffle and save follow it toward the center. No share,
   search or options button yet. Play and shuffle are disabled when no track is playable; save is
   disabled while its state loads or when reading it failed.
 - Play button: idle (the album is not the playback source) it is a pill with the play glyph and
-  `album:play`; pressing it plays the album from its first playable track. Pressed, it shrinks to
-  the circle in `motion.duration.fast`, empty, and only then draws the spinner while the stream loads, or the pause glyph if it already plays (a mid-track buffer shows the spinner too); playing it is a
+  `album:play`; pressing it plays the album from its first playable track. Pressed, the label fades out (`motion.playButton.labelFade`), then the `layout.playButtonPill` pill, holding the play glyph, shrinks to the circle (`motion.playButton.shrink`, ease in-out), even when the start is instant, and only then draws the spinner while the stream loads, or the pause glyph, scaling in over `motion.playButton.scaleIn`, if it already plays (a mid-track buffer shows the spinner too); playing it is a
   circle with the pause glyph, labelled `album:pause`, and pressing it pauses; paused it shows the
-  play glyph and pressing it resumes. Once the list has ended (paused on its last track) pressing it restarts the list from position 0 of the current play order: the first track with shuffle off, the first of the shuffled order with shuffle on. Under reduce motion neither the shrink nor the scale-in animate.
+  play glyph and pressing it resumes. Once the list has ended (paused on its last track) pressing it restarts the list from position 0 of the current play order: the first track with shuffle off, the first of the shuffled order with shuffle on. Under reduce motion neither the fade, the shrink nor the scale-in animate.
 - Tracks: one `TrackRow` per track in API order, keyed by `track_number`. The
   number in a `layout.trackNumber` column, the title in `typography.rowTitle`, the
   artists in `typography.meta`. An unavailable track (no `track_id`, or `is_available: false`) draws in
@@ -97,7 +96,7 @@ Back pops the stack, or replaces with `/` when there is nothing to go back to.
 
 ## Checked by hand
 
-The action row centered on iOS and Android, the play pill shrinking to a circle and scaling in as pause, the now playing bars moving, freezing on pause and static under reduce motion, a mid-track buffer on a slow network; saving, closing and reopening the album and finding it on the library screen; screenshots of the album at the top and scrolled, on iOS and Android, with the
+The action row centered on iOS and Android, the label fading and the play pill shrinking to a circle with shuffle and save following it, then scaling in as pause, the now playing bars moving, freezing on pause and static under reduce motion, a mid-track buffer on a slow network; saving, closing and reopening the album and finding it on the library screen; screenshots of the album at the top and scrolled, on iOS and Android, with the
 floating buttons fixed over the hero; the native glass on iOS 26+; the real
 dominant color on a development build and the neutral fallback in Expo Go;
 swipe-back per tab; and the native tab bar on iOS 26+ with the renamed tab

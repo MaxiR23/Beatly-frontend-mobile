@@ -1,7 +1,7 @@
 // INFO: spacing tokens, a multiples-of-four scale, plus the layout
 // constants (gutter, gap, hitSlop, control height, and the carousel card,
 // avatar, creator mark, tab item, chip, genre bar, row cover, detail hero cover,
-// track-number column, now playing bar width, large and medium play button, seek bar and sheet handle sizes, and the skeleton bar widths).
+// track-number column, now playing bar width, large and medium play button, the detail play pill's width, the detail action row's gap, seek bar and sheet handle sizes, and the skeleton bar widths).
 export const spacing = {
   xxs: 2,
   xs: 4,
@@ -39,6 +39,10 @@ export const layout = {
   playButton: 72,
   // Side of the detail play button's circle and height of its idle pill.
   playButtonMedium: 56,
+  // Width of the detail play button's idle pill.
+  playButtonPill: 164,
+  // Gap between the buttons of the detail action row (shuffle, play and the side button).
+  actionGap: 20,
   // Height of the seek bar track, and the side of its thumb.
   seekTrack: 6,
   seekThumb: 14,

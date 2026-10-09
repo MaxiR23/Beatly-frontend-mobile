@@ -59,6 +59,8 @@ value: the value lives once, in the token file.
 | Width of one bar of the now playing indicator                                                                                                      | `layout.nowPlayingBarWidth`                                     |
 | Side of the large play or pause button of the player                                                                                               | `layout.playButton`                                             |
 | Side of the detail play button's circle and height of its idle pill                                                                                | `layout.playButtonMedium`                                       |
+| Width of the detail play button's idle pill                                                                                                        | `layout.playButtonPill`                                         |
+| Gap between the buttons of the detail action row (shuffle, play, the side button)                                                                  | `layout.actionGap`                                              |
 | Height of the seek bar track / side of its thumb                                                                                                   | `layout.seekTrack` / `layout.seekThumb`                         |
 | Width / height of the sheet handle bar                                                                                                             | `layout.handleWidth` / `layout.handleHeight`                    |
 | Width of a detail skeleton placeholder bar (title, meta, row title, row meta), as a share of its row                                               | `layout.skeletonBar.title` / `.meta` / `.rowTitle` / `.rowMeta` |
@@ -93,15 +95,15 @@ scroll.
 - Creator line (playlist): a `layout.creatorMark` mark (avatar or brand mark on
   `color.accent.primary`, `radius.full`) with the name in `typography.rowTitle`, gap
   `spacing.sm`.
-- Action row: `DetailActions`, three fixed columns with play in the exact center: the two side slots `layout.controlHeight` wide (the end one empty when there is nothing to hold) and the center column always the idle pill's width, reserved by a sizer at `motion.hiddenOpacity`, so no button moves when play changes state; `layout.gap` between them, `layout.gutter` sides:
+- Action row: `DetailActions`, `layout.gutter` sides. Centered (own, album, genre): a group centered with `layout.actionGap` between the buttons, so the side buttons follow the play pill as it shrinks:
   shuffle (`IconButton` plain), play (`PlayButton`), and save (`IconButton` plain, plus or check,
-  selected when saved) on albums and genre playlists and, on an own playlist only, the options button in the end slot (`IconButton` plain `ellipsis`, opening a sheet). `PlayButton`: idle, a `layout.playButtonMedium`
-  tall pill in `color.accent.primary`, `spacing.xl` sides, the play glyph (`icon.size.lg`) and the
+  selected when saved) on albums and genre playlists and, on an own playlist only, the options button after play (`IconButton` plain `ellipsis`, opening a sheet). `PlayButton`: idle, a `layout.playButtonPill` × `layout.playButtonMedium`
+  pill in `color.accent.primary`, the play glyph (`icon.size.lg`) and the
   label in `typography.button` `color.text.inverse`, `spacing.sm` apart; loading, playing and paused,
   a `layout.playButtonMedium` circle with a spinner, the pause glyph or the play glyph. Leaving idle
-  it always shrinks to the circle in `motion.duration.fast`, empty, and draws the spinner or glyph only when the shrink ends; becoming pause it scales in from
-  `motion.enterScale` in `motion.duration.fast`; under reduce motion neither. Disabled on
-  `color.surface.control` with the glyph in `color.text.disabled`.
+  the label fades in `motion.playButton.labelFade`, then the pill, holding the play glyph, shrinks to the circle in `motion.playButton.shrink` (`Easing.inOut(Easing.ease)`), and draws the spinner or glyph only when the shrink ends; becoming pause it scales in from
+  `motion.enterScale` in `motion.playButton.scaleIn`; under reduce motion none of them. Disabled on
+  `color.surface.control` with the glyph in `color.text.disabled`. Wide (liked): two `Button` pills with `fill`, `layout.controlHeight` tall and `layout.gap` apart, glyph (`icon.size.lg`) and label `spacing.sm` apart: play `primary` (pause glyph and label while the list plays, the spinner while it loads, no shrink) and shuffle `secondary` (`color.surface.control`).
 - Title: `typography.title` under the hero. The base reserves no space for an action
   row; the screen owns the gap below its own title block.
 - Floating back and more buttons: `GlassSurface` `circle` fixed over the hero, in
@@ -202,28 +204,28 @@ Roles, not raw sizes. Every role uses the platform's system font (no
 
 ## Motion (`motion`)
 
-| Role                                                                                                                                          | Token                                    |
-| --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| Fast transition                                                                                                                               | `motion.duration.fast`                   |
-| Base transition                                                                                                                               | `motion.duration.base`                   |
-| Slow transition                                                                                                                               | `motion.duration.slow`                   |
-| Shimmer loop (skeleton)                                                                                                                       | `motion.duration.shimmer`                |
-| How long a brief notice stays                                                                                                                 | `motion.duration.notice`                 |
-| The one spring (the player cover's pause scale, a drag that springs back, the sheet opening and closing, the handle settling after its nudge) | `motion.spring` (`damping`, `stiffness`) |
-| Opacity of a pressed control                                                                                                                  | `motion.pressOpacity`                    |
-| Opacity of a layout sizer (laid out, never seen)                                                                                              | `motion.hiddenOpacity`                   |
-| Scale the player cover drops to while paused                                                                                                  | `motion.pausedScale`                     |
-| Scale the player drops to behind the open sheet                                                                                               | `motion.behindSheetScale`                |
-| Scale a control starts from when it enters (the detail play button becoming pause)                                                            | `motion.enterScale`                      |
-| Lowest a now playing bar falls to, as a share of its height                                                                                   | `motion.nowPlaying.minScale`             |
-| Milliseconds each now playing bar takes to rise or to fall (different per bar)                                                                | `motion.nowPlaying.durations`            |
-| Each now playing bar's height while static under reduce motion                                                                                | `motion.nowPlaying.staticScales`         |
-| Points per second a title that does not fit scrolls (`Marquee`)                                                                               | `motion.marquee.speed`                   |
-| Rest, in ms, at each end of a `Marquee` scroll                                                                                                | `motion.marquee.pause`                   |
-| Points the sheet handle rises when it nudges                                                                                                  | `motion.handleNudge`                     |
-| Travel, in points, before a vertical drag is taken (the player's close, the sheet's open and close)                                           | `motion.dragToClose.slop`                |
-| Share of the window height a released vertical drag must pass to commit                                                                       | `motion.dragToClose.distanceShare`       |
-| Speed, in points per millisecond, that commits a vertical drag on release                                                                     | `motion.dragToClose.velocity`            |
+| Role                                                                                                                                          | Token                                                  |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Fast transition                                                                                                                               | `motion.duration.fast`                                 |
+| Base transition                                                                                                                               | `motion.duration.base`                                 |
+| Slow transition                                                                                                                               | `motion.duration.slow`                                 |
+| Shimmer loop (skeleton)                                                                                                                       | `motion.duration.shimmer`                              |
+| How long a brief notice stays                                                                                                                 | `motion.duration.notice`                               |
+| The one spring (the player cover's pause scale, a drag that springs back, the sheet opening and closing, the handle settling after its nudge) | `motion.spring` (`damping`, `stiffness`)               |
+| Opacity of a pressed control                                                                                                                  | `motion.pressOpacity`                                  |
+| Scale the player cover drops to while paused                                                                                                  | `motion.pausedScale`                                   |
+| Scale the player drops to behind the open sheet                                                                                               | `motion.behindSheetScale`                              |
+| Scale a control starts from when it enters (the detail play button becoming pause)                                                            | `motion.enterScale`                                    |
+| The detail play button's label fade, pill shrink and pause scale-in, in ms                                                                    | `motion.playButton.labelFade` / `.shrink` / `.scaleIn` |
+| Lowest a now playing bar falls to, as a share of its height                                                                                   | `motion.nowPlaying.minScale`                           |
+| Milliseconds each now playing bar takes to rise or to fall (different per bar)                                                                | `motion.nowPlaying.durations`                          |
+| Each now playing bar's height while static under reduce motion                                                                                | `motion.nowPlaying.staticScales`                       |
+| Points per second a title that does not fit scrolls (`Marquee`)                                                                               | `motion.marquee.speed`                                 |
+| Rest, in ms, at each end of a `Marquee` scroll                                                                                                | `motion.marquee.pause`                                 |
+| Points the sheet handle rises when it nudges                                                                                                  | `motion.handleNudge`                                   |
+| Travel, in points, before a vertical drag is taken (the player's close, the sheet's open and close)                                           | `motion.dragToClose.slop`                              |
+| Share of the window height a released vertical drag must pass to commit                                                                       | `motion.dragToClose.distanceShare`                     |
+| Speed, in points per millisecond, that commits a vertical drag on release                                                                     | `motion.dragToClose.velocity`                          |
 
 `VerticalDrag` (the one vertical drag), `DragToClose` and `PullUpSheet` over it, `PauseScale`, `Marquee`, `NowPlayingBars` and `PlayButton` in `@beatly/ui/native` are the only animated components. They use React Native's `Animated` with the native driver (except the `PlayButton` pill's width, a layout property) and `PanResponder`, and take `reduceMotion` from the app.
 

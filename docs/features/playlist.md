@@ -32,16 +32,17 @@ the info block:
   both disabled when the loaded list is empty (playlist tracks are always playable); save only
   on a genre playlist, disabled while its state loads or when reading it failed. While play or
   shuffle loads the remaining pages of an own or liked playlist, the pressed button is busy and
-  both are disabled. The row has three slots with play in the exact center of the screen:
-  shuffle, play (`PlayButton`), and an end slot as wide as shuffle's (`layout.controlHeight`) holding
-  save on a genre playlist, the options button on an own playlist (an `IconButton` `ellipsis` opening a
-  `Sheet` of `ActionRow`s on both platforms) with Edit playlist (`pencil`) and Delete playlist
-  (`trash`, destructive); never on liked, genre or albums; no share or search button yet. The options
-  open the sheet on iOS too, unlike the track menu's system menu (ADR 023): the iOS menu is anchored to
-  the button, and a playlist-wide action reads better as a sheet from the bottom. On the liked
-  playlist the end slot is empty, so play stays centered. The center column is always as wide as the
-  play pill, so shuffle and the end slot never move; when the pill shrinks to the circle the space
-  around it grows.
+  both are disabled. On an own and a genre playlist the row is a centered group, `layout.actionGap` apart: shuffle, play
+  (`PlayButton`), and a side button, `layout.controlHeight` like shuffle: save on a genre playlist, or
+  the options button on an own playlist (an `IconButton` `ellipsis` opening a `Sheet` of `ActionRow`s
+  on both platforms) with Edit playlist (`pencil`) and Delete playlist (`trash`, destructive); never
+  on liked, genre or albums; no share or search button yet. The options open the sheet on iOS too,
+  unlike the track menu's system menu (ADR 023): the iOS menu is anchored to the button, and a
+  playlist-wide action reads better as a sheet from the bottom. When the pill shrinks the group stays
+  centered, so shuffle and the side button follow it toward the center. On the liked playlist the row
+  is two `Button` pills of the same width filling the row between the gutters, `layout.controlHeight`
+  tall and `layout.gap` apart: play (`primary`, glyph and `playlist:play`) and shuffle (`secondary`,
+  glyph and `playlist:shuffle`).
 - Edit sheet: the `CreatePlaylistSheet` layout (`spacing.lg` form gap, two `field` buttons `spacing.md`
   apart) with the name and the description prefilled and no public switch. Save is disabled while
   nothing changed or the title is empty or over 200 characters, and sends only the changed fields.
@@ -50,12 +51,15 @@ the info block:
   `motion.duration.notice`; each failure restarts the timer).
 - Play button: idle (the playlist is not the playback source) it is a pill with the play glyph and
   `playlist:play`; pressing it plays the whole list from the first track, after loading every page of
-  an own or liked playlist (the pressed button shows the spinner meanwhile). Pressing it, the pill
-  first shrinks to the circle in `motion.duration.fast`, empty, and only then draws the spinner, or the
-  pause glyph if playback already started. While the stream loads it is a circle with a spinner (a
+  an own or liked playlist (the pressed button shows the spinner meanwhile). Pressing it, the label
+  fades out (`motion.playButton.labelFade`), then the `layout.playButtonPill` pill, holding the play
+  glyph, shrinks to the circle (`motion.playButton.shrink`, ease in-out), even when the start is
+  instant; only then does it draw the spinner, or the pause glyph, scaling in over
+  `motion.playButton.scaleIn`, if playback already started. While the stream loads it is a circle with a spinner (a
   mid-track buffer shows it too); playing it is a circle with the pause
   glyph, labelled `playlist:pause`, and pressing it pauses; paused it shows the play glyph and pressing
-  it resumes. Once the list has ended (paused on its last track) pressing it restarts the list from position 0 of the current play order: the first track with shuffle off, the first of the shuffled order with shuffle on. Under reduce motion neither the shrink nor the scale-in animate.
+  it resumes. Once the list has ended (paused on its last track) pressing it restarts the list from position 0 of the current play order: the first track with shuffle off, the first of the shuffled order with shuffle on. Under reduce motion neither the fade, the shrink nor the scale-in animate.
+  On the liked playlist the play pill never shrinks: it shows Play, the spinner while the pages and the stream load, the pause glyph with `playlist:pause` while the list plays, and Play again when paused.
 - The row of every occurrence of the current track (whoever started it) draws the now playing bars
   over its cover on a scrim, with no row background, and is announced as selected; the bars are frozen
   while paused and static under reduce motion.
@@ -147,7 +151,7 @@ or replaces with `/` when there is nothing to go back to.
 
 ## Checked by hand
 
-The options sheet on iOS and Android; the native confirmation on both platforms; a rename and a delete seen in Home and Library without reopening the app; deleting the playing playlist; screenshots of the three kinds on iOS and Android; play centered on own, liked, genre and an album in the pill and the circle; the pill shrinking fully before the spinner or pause, on an album (instant) and a long own playlist; a rename of the playing playlist shown as the player's source; the play pill shrinking to a circle and scaling in as pause, the now playing bars moving, freezing on pause and static under reduce motion; play and shuffle on a real own or liked playlist of more than 50 tracks; saving a genre playlist and finding it in the library; infinite scroll with a real
+The options sheet on iOS and Android; the native confirmation on both platforms; a rename and a delete seen in Home and Library without reopening the app; deleting the playing playlist; screenshots of the three kinds on iOS and Android; the label fade, then the eased shrink with shuffle and the side button following toward the center, on an own, a genre playlist and an album (instant start) and a long own playlist, before the spinner or pause; the liked playlist's two pills filling the row and the play pill's Play, spinner and Pause; a rename of the playing playlist shown as the player's source; the play pill shrinking to a circle and scaling in as pause, the now playing bars moving, freezing on pause and static under reduce motion; play and shuffle on a real own or liked playlist of more than 50 tracks; saving a genre playlist and finding it in the library; infinite scroll with a real
 gesture on a playlist of more than 50 tracks; real covers on an own playlist header; a playlist recent of each kind opening from
 Home; real covers, the dominant-color wash
 and the brand mark at `layout.creatorMark`; swipe-back per tab and the native tab

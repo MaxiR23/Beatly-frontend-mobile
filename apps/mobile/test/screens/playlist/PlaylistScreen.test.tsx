@@ -11,6 +11,7 @@
 // - the empty message under the header, not found from the header or the tracks, the generic error with retry
 // - starting a list registers an own, a liked and a genre playlist as a recent with its kind
 // - the track menu: remove from an own playlist calls the service and refetches the tracks, none for the liked and genre playlists
+// - the liked playlist's play and shuffle pills
 // - the action row: play and shuffle of the whole list (after loading every page for own and liked), busy until the pages load, a failed page drawing the error, leaving the screen cancelling the start, disabled when empty, registering the recent, turning shuffle off on play after another list was shuffled, the play button idle, loading, playing, pausing and resuming, every row of the playing track marked
 // - save only on a genre playlist: its state, its body, rolling back, disabled while loading or failing, none on own and liked
 // - the options button only on an own playlist, after play, opening the sheet; a saved rename shown as the player's source with the queue kept; the edit sheet prefilled, Save disabled unchanged or invalid, only changed fields, empty description as null, a failed save keeping the sheet and input, a saved edit closing it and redrawing the header; delete asking first, cancel doing nothing, confirm going back, a failed delete showing the notice and staying, playback untouched; no recent registered by an edit or a delete
@@ -21,10 +22,12 @@
 // SEE: apps/mobile/src/screens/playlist/PlaylistScreen.tsx
 
 import type { HttpOutcome, PageResult, PlaylistTrack } from "@beatly/core";
-import { afterEach, describe, expect, it, jest } from "@jest/globals";
+import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
-import { Alert } from "react-native";
+import { Alert, Animated } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+
+import { motion } from "@beatly/ui";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
@@ -55,6 +58,25 @@ jest.mock("../../../src/adapters/imageColors.ts", () => ({
   getDominantColor: () => Promise.resolve({ kind: "unavailable" }),
   peekDominantColor: () => undefined,
 }));
+
+const instant = () =>
+  ({
+    start: (done?: (result: { finished: boolean }) => void) => {
+      done?.({ finished: true });
+    },
+    stop: () => undefined,
+  }) as unknown as Animated.CompositeAnimation;
+
+// Every play button animation of a test that starts a list runs instantly, so no real timer fires outside act.
+const realTiming = Animated.timing;
+const playButtonDurations: readonly number[] = Object.values(motion.playButton);
+beforeEach(() => {
+  jest
+    .spyOn(Animated, "timing")
+    .mockImplementation((value, config) =>
+      playButtonDurations.includes(config.duration ?? -1) ? instant() : realTiming(value, config),
+    );
+});
 
 afterEach(async () => {
   jest.restoreAllMocks();
@@ -525,6 +547,39 @@ describe("PlaylistScreen action row", () => {
     expect(ctx.listLikedTracks).toHaveBeenCalledWith("c1");
   });
 
+  it("draws play then shuffle pills on the liked playlist", async () => {
+    mockParams = { id: "liked", source: "liked" };
+    await setup({ listLikedTracks: tracksOf(two) });
+    await screen.findByText("First Song");
+    const actions = within(screen.getByTestId("playlist-actions"));
+    expect(
+      actions.getAllByRole("button").map((b) => b.props.accessibilityLabel as unknown),
+    ).toEqual([en.playlist.play, en.playlist.shuffle]);
+    expect(
+      within(actions.getByRole("button", { name: en.playlist.play })).getByText(en.playlist.play),
+    ).toBeTruthy();
+  });
+
+  it("shows Pause on the liked play pill while the list plays", async () => {
+    mockParams = { id: "liked", source: "liked" };
+    const ctx = await setup({ listLikedTracks: tracksOf(two) });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.play }));
+    await waitFor(() => {
+      expect(ids(ctx)).toEqual(["t1", "t2"]);
+    });
+    await playingEvent(ctx);
+    const pause = screen.getByRole("button", { name: en.playlist.pause });
+    expect(within(pause).getByText(en.playlist.pause)).toBeTruthy();
+    await fireEvent.press(pause);
+    await waitFor(() => {
+      expect(ctx.playback.getState().status).toBe("paused");
+    });
+    expect(
+      within(screen.getByRole("button", { name: en.playlist.play })).getByText(en.playlist.play),
+    ).toBeTruthy();
+  });
+
   it("plays a genre playlist whole from its header", async () => {
     mockParams = { id: "gp1", source: "genre" };
     const ctx = await setup({
@@ -668,6 +723,8 @@ describe("PlaylistScreen action row", () => {
     await screen.findByText("First Song");
     const idle = screen.getByRole("button", { name: en.playlist.play });
     expect(within(idle).getByText(en.playlist.play)).toBeTruthy();
+    // The label fade and the shrink finish at once; the spinner comes after them.
+    jest.spyOn(Animated, "timing").mockImplementationOnce(instant).mockImplementationOnce(instant);
     await fireEvent.press(idle);
     expect(
       within(screen.getByRole("button", { name: en.playlist.play })).getByTestId(
