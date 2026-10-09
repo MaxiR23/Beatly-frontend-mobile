@@ -53,6 +53,21 @@ Flow for every feature, fix or non-trivial change in this repo.
      attempts, then stops and reports. In plan mode the report names a
      `plan-issue` addendum as the next stage; that one addendum per
      issue is implemented without a new owner approval (see Recovery).
+     The PreToolUse hook `scripts/gate-limit.mjs`, declared in
+     `.claude/settings.json`, enforces the limit: inside
+     `implement-issue` it blocks the fourth `pnpm gate` before it runs,
+     and also the gate's parts at the root (`pnpm typecheck`,
+     `pnpm lint`, `pnpm test`, with or without `run`). Commands scoped
+     to a workspace or a file (`pnpm --filter <pkg> test`,
+     `pnpm exec jest <path>`) and `pnpm format` stay allowed. The count
+     is per `agent_id`, kept under `.claude/loop/`, so every pass (plan
+     mode, the gate-recovery run, fix mode, issue mode) is a new
+     dispatch, never a continuation of an earlier one: a continuation
+     would keep the earlier count. Project hooks load from the
+     `.claude/` of the directory where the session starts, with no
+     fallback to parent folders, so the orchestrator session starts at
+     the repo root. The main session, `scripts/ship.sh` and CI are not
+     limited.
      `scripts/ship.sh` runs the gate again at steps 6 and 7.
 
 5. **Pick the path and review**

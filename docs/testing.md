@@ -4,7 +4,7 @@ Conventions for tests in this repo.
 
 ## Commands
 
-    pnpm test                                   run all tests, every workspace
+    pnpm test                                   run all tests, every workspace plus scripts/test
     pnpm --filter @beatly/core test             vitest, core only
     pnpm --filter @beatly/core test -- <pattern>
     pnpm --filter @beatly/core test --coverage  vitest with the v8 coverage report
@@ -19,7 +19,7 @@ not the flag, and runs the tests with no report.
 
 ## Runners
 
-Two runners, chosen by what the code imports, not by preference:
+Three runners, chosen by what the code imports, not by preference:
 
 - **vitest** in `packages/core`. Node, no React Native preset, no
   simulator. `core` imports neither `react` nor `react-native` nor
@@ -34,6 +34,10 @@ Two runners, chosen by what the code imports, not by preference:
   `@testing-library/react-native` is on 14.x with `test-renderer` 1.2
   (the React 19.2 line); `render`, `fireEvent`, `act` and
   `renderRouter` are async and are awaited.
+
+- **node --test** for the repo scripts under `scripts/`, with the
+  cases in `scripts/test/*.test.mjs` (plain Node, no dependencies). The
+  root `pnpm test` runs it after the workspaces.
 
 ## File location
 
