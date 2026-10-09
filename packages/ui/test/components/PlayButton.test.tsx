@@ -136,6 +136,7 @@ describe("PlayButton", () => {
   it("shrinks from the measured pill width to the circle when it leaves idle", async () => {
     const view = await render(element("idle"));
     await measure();
+    hold();
     await view.rerender(element("loading"));
     expect(timing).toHaveBeenCalledWith(
       expect.anything(),
@@ -150,6 +151,7 @@ describe("PlayButton", () => {
   it("scales in from enterScale when it starts playing", async () => {
     const view = await render(element("loading"));
     timing.mockClear();
+    hold();
     await view.rerender(element("playing"));
     expect(timing).toHaveBeenCalledWith(
       expect.anything(),
