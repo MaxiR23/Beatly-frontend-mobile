@@ -1,5 +1,6 @@
 // INFO: labeled text input on the card surface, 48 high, with an optional
-// error and an optional eye button that shows and hides a secure entry.
+// error, an optional multiline mode at text area height, and an optional eye
+// button that shows and hides a secure entry.
 import { useState } from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
@@ -18,6 +19,7 @@ interface InputProps {
   placeholder?: string;
   error?: string;
   secureTextEntry?: boolean;
+  multiline?: boolean;
   reveal?: { show: string; hide: string };
   keyboardType?: "default" | "email-address";
   autoCapitalize?: "none" | "sentences" | "words";
@@ -31,6 +33,7 @@ export function Input({
   placeholder,
   error,
   secureTextEntry,
+  multiline,
   reveal,
   keyboardType,
   autoCapitalize,
@@ -45,7 +48,11 @@ export function Input({
         {label}
       </Text>
       <View
-        style={[styles.field, { borderColor: error ? color.status.error : color.surface.border }]}
+        style={[
+          styles.field,
+          multiline ? styles.fieldMultiline : undefined,
+          { borderColor: error ? color.status.error : color.surface.border },
+        ]}
       >
         <TextInput
           accessibilityLabel={label}
@@ -56,10 +63,11 @@ export function Input({
           onChangeText={onChangeText}
           placeholder={placeholder}
           secureTextEntry={secure}
+          multiline={multiline}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
           autoComplete={autoComplete}
-          style={styles.input}
+          style={[styles.input, multiline ? styles.inputMultiline : undefined]}
         />
         {reveal ? (
           <Pressable
@@ -94,6 +102,7 @@ const styles = StyleSheet.create({
     borderWidth: border.width,
     borderRadius: radius.md,
   },
+  fieldMultiline: { alignItems: "stretch", minHeight: layout.textAreaHeight },
   input: {
     ...typography.body,
     flex: 1,
@@ -101,6 +110,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
   },
+  inputMultiline: { textAlignVertical: "top" },
   reveal: {
     alignSelf: "stretch",
     width: layout.controlHeight,

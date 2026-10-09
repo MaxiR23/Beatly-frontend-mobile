@@ -7,10 +7,12 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the stateful likes mirror, credits, membership, add, create-with-track and remove fakes, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, library item, the saved read, add and remove, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, and the page builder)
+// (the stateful likes mirror, credits, membership, add, create-with-track and remove fakes, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, library item, the saved read, add and remove, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, and the bug reports fixtures and fakes, and the page builder)
 //
 import type {
   ActivityService,
+  BugReport,
+  BugReportsService,
   Album,
   AddTrackResult,
   AlbumService,
@@ -79,6 +81,28 @@ export const recentFixture: RecentEntity = {
   entity_id: "a1",
   played_at: "2026-01-01T00:00:00Z",
   metadata: { title: "Recent album", subtitle: "Some artist", thumbnail_url: "test://img/r1" },
+};
+
+export const bugReportFixture: BugReport = {
+  id: "r1",
+  reporter_id: "u1",
+  category: "playback",
+  description: "The song stops after a minute",
+  entity_type: null,
+  entity_id: null,
+  status: "open",
+  created_at: "2026-10-01T10:00:00.123456+00:00",
+  updated_at: "2026-10-01T10:00:00.123456+00:00",
+};
+
+export const trackBugReportFixture: BugReport = {
+  ...bugReportFixture,
+  id: "r2",
+  category: "ui",
+  description: "The cover is cut",
+  entity_type: "track",
+  entity_id: "t1",
+  status: "closed",
 };
 
 export const playlistFixture: PlaylistListItem = {
@@ -491,6 +515,8 @@ export function makeCore(
     listRecents?: ActivityService["listRecents"];
     logPlay?: ActivityService["logPlay"];
     registerRecent?: ActivityService["registerRecent"];
+    createBugReport?: BugReportsService["createBugReport"];
+    listMyBugReports?: BugReportsService["listMyBugReports"];
     listPlaylists?: PlaylistsService["listPlaylists"];
     createPlaylist?: PlaylistsService["createPlaylist"];
     listLibrary?: LibraryService["listLibrary"];
@@ -546,6 +572,13 @@ export function makeCore(
   const registerRecent = jest.fn<ActivityService["registerRecent"]>(
     options.registerRecent ??
       (() => Promise.resolve({ kind: "success", data: recentFixture, maxAgeSeconds: 0 })),
+  );
+  const createBugReport = jest.fn<BugReportsService["createBugReport"]>(
+    options.createBugReport ??
+      (() => Promise.resolve({ kind: "success", data: bugReportFixture, maxAgeSeconds: 0 })),
+  );
+  const listMyBugReports = jest.fn<BugReportsService["listMyBugReports"]>(
+    options.listMyBugReports ?? (() => Promise.resolve(pageOf<BugReport>([]))),
   );
   const listPlaylists = jest.fn<PlaylistsService["listPlaylists"]>(
     options.listPlaylists ?? (() => Promise.resolve(pageOf<PlaylistListItem>([]))),
@@ -713,6 +746,7 @@ export function makeCore(
     album: { getAlbum },
     artists: { getArtist },
     auth,
+    bugReports: { createBugReport, listMyBugReports },
     genres: { listGenres, listGenrePlaylists, listGenreCategories },
     library: { listLibrary, getSavedState, saveItem, removeItem },
     likes,
@@ -747,6 +781,8 @@ export function makeCore(
     listRecents,
     logPlay,
     registerRecent,
+    createBugReport,
+    listMyBugReports,
     listPlaylists,
     createPlaylist,
     listLibrary,

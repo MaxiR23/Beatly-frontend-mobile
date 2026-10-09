@@ -1,0 +1,39 @@
+{
+  "form": {
+    "title": "Report a problem",
+    "about": "About: {{title}}",
+    "category": "Category",
+    "description": "Description",
+    "tooShort": "Write at least {{min}} characters",
+    "tooLong": "Use {{max}} characters or fewer",
+    "counter": "{{length}} / {{max}}",
+    "send": "Send",
+    "cancel": "Cancel",
+    "close": "Close",
+    "sent": "Thanks, your report was sent"
+  },
+  "categories": {
+    "playback": "Playback",
+    "loading": "Loading",
+    "ui": "Interface",
+    "crash": "Crash",
+    "other": "Other"
+  },
+  "list": {
+    "title": "My reports",
+    "close": "Close",
+    "empty": "You have not sent any reports yet.",
+    "metaSeparator": " · ",
+    "date": "{{date, datetime}}",
+    "entity": {
+      "track": "Track",
+      "album": "Album",
+      "artist": "Artist",
+      "playlist": "Playlist"
+    },
+    "status": {
+      "open": "Open",
+      "closed": "Closed"
+    }
+  }
+}

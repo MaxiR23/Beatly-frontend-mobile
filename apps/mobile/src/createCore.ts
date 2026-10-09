@@ -3,6 +3,7 @@ import {
   createActivityService,
   createAlbumService,
   createArtistsService,
+  createBugReportsService,
   createGenresService,
   createHttpClient,
   createLibraryService,
@@ -24,6 +25,7 @@ import type {
   AlbumService,
   ArtistsService,
   AuthPort,
+  BugReportsService,
   GenresService,
   LibraryService,
   LikesService,
@@ -54,6 +56,7 @@ export interface Core {
   readonly album: AlbumService;
   readonly artists: ArtistsService;
   readonly auth: AuthPort;
+  readonly bugReports: BugReportsService;
   readonly genres: GenresService;
   readonly library: LibraryService;
   readonly likes: LikesService;
@@ -105,6 +108,7 @@ export function createCore(): Core {
     album: createAlbumService(client),
     artists: createArtistsService(client),
     auth,
+    bugReports: createBugReportsService(client),
     genres: createGenresService(client),
     library: createLibraryService(client),
     likes: createLikesService({ client, db, log, migrated }),

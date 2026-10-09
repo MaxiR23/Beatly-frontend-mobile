@@ -1,5 +1,5 @@
 // INFO: spacing tokens, a multiples-of-four scale, plus the layout
-// constants (gutter, gap, hitSlop, control height, and the carousel card,
+// constants (gutter, gap, hitSlop, control height, text area height, and the carousel card,
 // avatar, creator mark, tab item, chip, genre bar, row cover, detail hero cover,
 // track-number column, now playing bar width, large and medium play button, the detail play pill's width, the detail action row's gap, seek bar and sheet handle sizes, and the skeleton bar widths).
 export const spacing = {
@@ -17,6 +17,8 @@ export const layout = {
   gap: 12,
   hitSlop: 8,
   controlHeight: 48,
+  // Minimum height of a multiline form field.
+  textAreaHeight: 120,
   carouselCard: 140,
   avatar: 36,
   creatorMark: 24,

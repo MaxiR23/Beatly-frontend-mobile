@@ -8,6 +8,7 @@
 // What is covered:
 // - With reveal, the entry starts hidden, the eye shows it and hides it again, and its label follows the state
 // - Without reveal there is no eye button and secureTextEntry passes through
+// - multiline passes through to the text entry
 //
 // Run with: pnpm --filter @beatly/ui test -- Input
 //
@@ -42,5 +43,15 @@ describe("Input", () => {
     await render(<Input label="Password" value="x" onChangeText={jest.fn()} secureTextEntry />);
     expect(screen.queryByRole("button")).toBeNull();
     expect(screen.getByLabelText("Password").props.secureTextEntry).toBe(true);
+  });
+
+  it("passes multiline through to the text entry", async () => {
+    await render(<Input label="Description" value="x" onChangeText={jest.fn()} multiline />);
+    expect(screen.getByLabelText("Description").props.multiline).toBe(true);
+  });
+
+  it("is single line without the prop", async () => {
+    await render(<Input label="Description" value="x" onChangeText={jest.fn()} />);
+    expect(screen.getByLabelText("Description").props.multiline).toBeFalsy();
   });
 });

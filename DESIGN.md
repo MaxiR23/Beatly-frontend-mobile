@@ -43,6 +43,7 @@ value: the value lives once, in the token file.
 | Gap between items in a list/row                                                                                                                    | `layout.gap`                                                    |
 | Minimum touch target padding (`hitSlop`)                                                                                                           | `layout.hitSlop`                                                |
 | Height of a form control (input, form button) or a floating tab bar item, the height of the player header row, and side of its square touch target | `layout.controlHeight`                                          |
+| Minimum height of a multiline form field                                                                                                           | `layout.textAreaHeight`                                         |
 | Width of a carousel card and side of its cover                                                                                                     | `layout.carouselCard`                                           |
 | Side of the header account avatar                                                                                                                  | `layout.avatar`                                                 |
 | Side of the leading mark (avatar or brand mark) in a detail creator line                                                                           | `layout.creatorMark`                                            |
@@ -165,6 +166,12 @@ scroll.
 - `Marquee`: one line of any `typography` role that scrolls to its end and back, resting `motion.marquee.pause` at each end at `motion.marquee.speed`, only when it does not fit; under reduce motion it is a static line with a tail ellipsis.
 - `NativeMenu`: the iOS system menu behind the more button (ADR 023): `icon.size.lg` ellipsis in `color.text.primary` in a `layout.controlHeight` square; SF Symbols for its items, the destructive one in the system red.
 - Sheets (picker, credits): the `Sheet` shrinks to the room left and scrolls its list; `topInset` keeps it below the status bar; `typography.subtitle` title, `spacing.md` to `spacing.lg` gaps, rows as `MediaRow` (`size="medium"`).
+
+## Bug reports
+
+- `Badge`: a read-only status pill, `typography.label` text on `color.overlay.subtle`, `radius.sm`, `spacing.sm` horizontal and `spacing.xxs` vertical padding; open in `color.text.primary`, closed in `color.text.tertiary`.
+- Form: a multiline `Input` at `layout.textAreaHeight` minimum, the category `Chip`s wrapping `spacing.sm` apart, `spacing.lg` between the form's parts.
+- Report row: a `MediaRow` with the `flag` tile and the `Badge` trailing.
 
 ## Radius (`radius`)
 
