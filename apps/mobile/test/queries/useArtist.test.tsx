@@ -20,7 +20,7 @@ import type { ReactNode } from "react";
 
 import type { Core } from "../../src/createCore.ts";
 import { OutcomeError } from "../../src/queries/outcomeError.ts";
-import { createQueryClient } from "../../src/queries/queryClient.ts";
+import { createTestQueryClient } from "../helpers/queryClient.ts";
 import { useArtist } from "../../src/queries/useArtist.ts";
 import { artistFixture, makeAuth, makeCore, makeLog, Wrapper } from "../helpers/core.tsx";
 
@@ -40,7 +40,7 @@ function setup(headers: Record<string, string>, response?: { status: number; bod
   const log = makeLog();
   const client = createHttpClient({ http: { send }, auth, log, baseUrl: "test://api" });
   const core: Core = { ...makeCore().core, auth, log, artists: createArtistsService(client) };
-  const queryClient = createQueryClient();
+  const queryClient = createTestQueryClient();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Wrapper core={core} client={queryClient}>
       {children}

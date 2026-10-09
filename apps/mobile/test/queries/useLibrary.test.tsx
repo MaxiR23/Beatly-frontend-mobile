@@ -19,7 +19,7 @@ import { renderHook, waitFor } from "@testing-library/react-native";
 import type { ReactNode } from "react";
 
 import type { Core } from "../../src/createCore.ts";
-import { createQueryClient } from "../../src/queries/queryClient.ts";
+import { createTestQueryClient } from "../helpers/queryClient.ts";
 import { useLibrary } from "../../src/queries/useLibrary.ts";
 import { makeAuth, makeCore, makeLog, ownPlaylistEntryFixture, Wrapper } from "../helpers/core.tsx";
 
@@ -41,7 +41,7 @@ function setup(headers: Record<string, string>) {
   const log = makeLog();
   const client = createHttpClient({ http: { send }, auth, log, baseUrl: "test://api" });
   const core: Core = { ...makeCore().core, auth, log, library: createLibraryService(client) };
-  const queryClient = createQueryClient();
+  const queryClient = createTestQueryClient();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Wrapper core={core} client={queryClient}>
       {children}

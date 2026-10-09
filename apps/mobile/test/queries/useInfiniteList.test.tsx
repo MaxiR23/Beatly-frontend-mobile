@@ -19,14 +19,14 @@ import { act, renderHook, waitFor } from "@testing-library/react-native";
 import type { ReactNode } from "react";
 
 import { OutcomeError } from "../../src/queries/outcomeError.ts";
-import { createQueryClient } from "../../src/queries/queryClient.ts";
+import { createTestQueryClient } from "../helpers/queryClient.ts";
 import { useInfiniteList } from "../../src/queries/useInfiniteList.ts";
 import { pageOf } from "../helpers/core.tsx";
 
 type Fetch = (cursor: string | null) => Promise<HttpOutcome<PageResult<number>>>;
 
 async function mount(fetchPage: Fetch, enabled?: boolean) {
-  const queryClient = createQueryClient();
+  const queryClient = createTestQueryClient();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );

@@ -153,6 +153,17 @@ Query hooks are tested with a fresh `QueryClient` per test and the
 when tested, render with the same providers and assert what is drawn
 for each state, not how the service was called.
 
+Every `apps/mobile` test builds its `QueryClient` with
+`createTestQueryClient()` from `apps/mobile/test/helpers/queryClient.ts`,
+and nowhere else. It wraps the app's `createQueryClient()` and sets
+`gcTime: Infinity` for queries and mutations, so no garbage collection
+timer stays open and keeps Jest from exiting. Only
+`test/queries/queryClient.test.ts`, which tests the factory itself,
+calls `createQueryClient()`. ESLint enforces it: a
+`no-restricted-imports` rule in `eslint.config.js` rejects importing
+`createQueryClient` from `src/queries/queryClient.ts` in any
+`apps/mobile/test` file except those two.
+
 The `apps/mobile` tests set TanStack Query's notify scheduler globally:
 `apps/mobile/test/setup/queryNotify.ts`, loaded by the jest
 `setupFiles`, calls `notifyManager.setScheduler(queueMicrotask)`. By

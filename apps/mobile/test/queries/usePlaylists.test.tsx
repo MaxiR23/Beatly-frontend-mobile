@@ -26,7 +26,7 @@ import type { ReactNode } from "react";
 
 import type { Core } from "../../src/createCore.ts";
 import { OutcomeError } from "../../src/queries/outcomeError.ts";
-import { createQueryClient } from "../../src/queries/queryClient.ts";
+import { createTestQueryClient } from "../helpers/queryClient.ts";
 import { useLibrary } from "../../src/queries/useLibrary.ts";
 import {
   useAddToPlaylist,
@@ -66,7 +66,7 @@ function setup(headers: Record<string, string>) {
   const log = makeLog();
   const client = createHttpClient({ http: { send }, auth, log, baseUrl: "test://api" });
   const core: Core = { ...makeCore().core, auth, log, playlists: createPlaylistsService(client) };
-  const queryClient = createQueryClient();
+  const queryClient = createTestQueryClient();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Wrapper core={core} client={queryClient}>
       {children}
@@ -197,7 +197,7 @@ describe("usePlaylistsWithTrack", () => {
       log,
       playlists: createPlaylistsService(client),
     };
-    const queryClient = createQueryClient();
+    const queryClient = createTestQueryClient();
     const wrapper = ({ children }: { children: ReactNode }) => (
       <Wrapper core={core} client={queryClient}>
         {children}
@@ -253,7 +253,7 @@ describe("the playlist write mutations", () => {
 
   function mount(options: Parameters<typeof makeCore>[0] = {}) {
     const ctx = makeCore(options);
-    const queryClient = createQueryClient();
+    const queryClient = createTestQueryClient();
     const invalidate = jest.spyOn(queryClient, "invalidateQueries");
     const wrapper = ({ children }: { children: ReactNode }) => (
       <Wrapper core={ctx.core} client={queryClient}>

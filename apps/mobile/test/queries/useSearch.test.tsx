@@ -20,7 +20,7 @@ import type { ReactNode } from "react";
 
 import type { Core } from "../../src/createCore.ts";
 import { OutcomeError } from "../../src/queries/outcomeError.ts";
-import { createQueryClient } from "../../src/queries/queryClient.ts";
+import { createTestQueryClient } from "../helpers/queryClient.ts";
 import { useSearch } from "../../src/queries/useSearch.ts";
 import { makeAuth, makeCore, makeLog, searchResultFixture, Wrapper } from "../helpers/core.tsx";
 
@@ -40,7 +40,7 @@ function setup(headers: Record<string, string>, response?: { status: number; bod
   const log = makeLog();
   const client = createHttpClient({ http: { send }, auth, log, baseUrl: "test://api" });
   const core: Core = { ...makeCore().core, auth, log, search: createSearchService(client) };
-  const queryClient = createQueryClient();
+  const queryClient = createTestQueryClient();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Wrapper core={core} client={queryClient}>
       {children}

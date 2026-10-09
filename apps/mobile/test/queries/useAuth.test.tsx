@@ -21,7 +21,7 @@ import { act, renderHook } from "@testing-library/react-native";
 import type { ReactNode } from "react";
 
 import { useSignOut } from "../../src/queries/useAuth.ts";
-import { createQueryClient } from "../../src/queries/queryClient.ts";
+import { createTestQueryClient } from "../helpers/queryClient.ts";
 import { recentSearchesQueryKey } from "../../src/queries/useRecentSearches.ts";
 import { makeCore, memoryStorage, Wrapper } from "../helpers/core.tsx";
 
@@ -29,7 +29,7 @@ const seeded = () => memoryStorage({ [RECENT_SEARCHES_KEY]: JSON.stringify(["b",
 
 function setup(storage = seeded()) {
   const ctx = makeCore({ storage });
-  const client = createQueryClient();
+  const client = createTestQueryClient();
   client.setQueryData(recentSearchesQueryKey, { kind: "success", data: ["b", "a"] });
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Wrapper core={ctx.core} client={client}>

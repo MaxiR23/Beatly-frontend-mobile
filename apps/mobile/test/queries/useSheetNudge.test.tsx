@@ -19,13 +19,13 @@ import { describe, expect, it } from "@jest/globals";
 import { renderHook, waitFor } from "@testing-library/react-native";
 import type { ReactNode } from "react";
 
-import { createQueryClient } from "../../src/queries/queryClient.ts";
+import { createTestQueryClient } from "../helpers/queryClient.ts";
 import { useSheetNudge } from "../../src/queries/useSheetNudge.ts";
 import { makeCore, memoryStorage, Wrapper } from "../helpers/core.tsx";
 
 function setup(storage: StoragePort) {
   const { core, log } = makeCore({ storage });
-  const client = createQueryClient();
+  const client = createTestQueryClient();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Wrapper core={core} client={client}>
       {children}
