@@ -29,10 +29,12 @@
 // - addTrackToPlaylist posts the whole body, counts track_already_in_playlist as added and surfaces other reasons
 // - createPlaylistWithTrack creates then adds, and stops after a failed create
 // - removeTrackFromPlaylist deletes the track, also when it was not there
+// - updatePlaylist patches only the given fields, clears the description with null, surfaces playlist_not_found and fails with a timeout, network or schema outcome
+// - deletePlaylist deletes the playlist, counts playlist_not_found as deleted, surfaces other reasons and fails with a timeout, network or schema outcome
 // - addTrackInputOf maps a playable track and returns null when it lacks a field
 //
 // What is covered:
-// - Happy path, expected empty state, api failure, transport failure, pagination, creation, detail, tracks, membership, add and remove
+// - Happy path, expected empty state, api failure, transport failure, pagination, creation, detail, tracks, membership, add, remove, edit and delete
 //
 // Run with: pnpm --filter @beatly/core test -- playlists
 //
@@ -853,6 +855,141 @@ describe("removeTrackFromPlaylist", () => {
       [route]: () => ({ body: { ok: true, data: { removed: true } } }),
     });
     expect(await service.removeTrackFromPlaylist("p 1", "t 1")).toEqual({
+      kind: "transport_failure",
+      cause: "schema",
+    });
+  });
+});
+
+describe("updatePlaylist", () => {
+  const route = "PATCH /playlists/p%201";
+  const updated = (description: string | null) => ({ ...created, description });
+
+  it("patches only the given title and returns the updated playlist", async () => {
+    const { service, http } = setupRoutes({
+      [route]: () => ({ body: { ok: true, data: updated("Fresh") } }),
+    });
+    expect(await service.updatePlaylist("p 1", { title: "New one" })).toEqual({
+      kind: "success",
+      data: created,
+      maxAgeSeconds: 0,
+    });
+    expect(http.requests[0]?.method).toBe("PATCH");
+    expect(http.requests[0]?.url).toBe("test://api/playlists/p%201");
+    expect(JSON.parse(String(http.requests[0]?.body))).toEqual({ title: "New one" });
+  });
+
+  it("sends description null to clear it and returns the playlist with a null description", async () => {
+    const { service, http } = setupRoutes({
+      [route]: () => ({ body: { ok: true, data: updated(null) } }),
+    });
+    expect(await service.updatePlaylist("p 1", { description: null })).toEqual({
+      kind: "success",
+      data: { ...created, description: null },
+      maxAgeSeconds: 0,
+    });
+    expect(JSON.parse(String(http.requests[0]?.body))).toEqual({ description: null });
+  });
+
+  it("surfaces playlist_not_found as an api failure", async () => {
+    const { service } = setupRoutes({ [route]: failureOf(404, "playlist_not_found") });
+    expect(await service.updatePlaylist("p 1", { title: "x" })).toEqual({
+      kind: "api_failure",
+      reason: "playlist_not_found",
+    });
+  });
+
+  it("surfaces invalid_request as an api failure", async () => {
+    const { service } = setupRoutes({ [route]: failureOf(422, "invalid_request") });
+    expect(await service.updatePlaylist("p 1", { title: "x" })).toEqual({
+      kind: "api_failure",
+      reason: "invalid_request",
+    });
+  });
+
+  it("fails with a timeout outcome when the API does not answer", async () => {
+    vi.useFakeTimers();
+    const { service } = setupRoutes({ [route]: never });
+    const pending = service.updatePlaylist("p 1", { title: "x" });
+    await vi.advanceTimersByTimeAsync(DEFAULT_TIMEOUT_MS + 1);
+    expect(await pending).toEqual({ kind: "transport_failure", cause: "timeout" });
+  });
+
+  it("fails with a network outcome when the request cannot be sent", async () => {
+    const { service } = setupRoutes({ [route]: () => Promise.reject(new Error("offline")) });
+    expect(await service.updatePlaylist("p 1", { title: "x" })).toEqual({
+      kind: "transport_failure",
+      cause: "network",
+    });
+  });
+
+  it("fails with a schema outcome when the updated playlist has no owner_id", async () => {
+    const withoutOwner: Record<string, unknown> = { ...created };
+    delete withoutOwner.owner_id;
+    const { service } = setupRoutes({
+      [route]: () => ({ body: { ok: true, data: withoutOwner } }),
+    });
+    expect(await service.updatePlaylist("p 1", { title: "x" })).toEqual({
+      kind: "transport_failure",
+      cause: "schema",
+    });
+  });
+});
+
+describe("deletePlaylist", () => {
+  const route = "DELETE /playlists/p%201";
+
+  it("deletes the playlist and succeeds with data null", async () => {
+    const { service, http } = setupRoutes({
+      [route]: () => ({ body: { ok: true, data: null } }),
+    });
+    expect(await service.deletePlaylist("p 1")).toEqual({
+      kind: "success",
+      data: null,
+      maxAgeSeconds: 0,
+    });
+    expect(http.requests[0]?.method).toBe("DELETE");
+    expect(http.requests[0]?.url).toBe("test://api/playlists/p%201");
+  });
+
+  it("counts playlist_not_found as deleted", async () => {
+    const { service } = setupRoutes({ [route]: failureOf(404, "playlist_not_found") });
+    expect(await service.deletePlaylist("p 1")).toEqual({
+      kind: "success",
+      data: null,
+      maxAgeSeconds: 0,
+    });
+  });
+
+  it("surfaces upstream_error as an api failure", async () => {
+    const { service } = setupRoutes({ [route]: failureOf(502, "upstream_error") });
+    expect(await service.deletePlaylist("p 1")).toEqual({
+      kind: "api_failure",
+      reason: "upstream_error",
+    });
+  });
+
+  it("fails with a timeout outcome when the API does not answer", async () => {
+    vi.useFakeTimers();
+    const { service } = setupRoutes({ [route]: never });
+    const pending = service.deletePlaylist("p 1");
+    await vi.advanceTimersByTimeAsync(DEFAULT_TIMEOUT_MS + 1);
+    expect(await pending).toEqual({ kind: "transport_failure", cause: "timeout" });
+  });
+
+  it("fails with a network outcome when the request cannot be sent", async () => {
+    const { service } = setupRoutes({ [route]: () => Promise.reject(new Error("offline")) });
+    expect(await service.deletePlaylist("p 1")).toEqual({
+      kind: "transport_failure",
+      cause: "network",
+    });
+  });
+
+  it("fails with a schema outcome when data is an object", async () => {
+    const { service } = setupRoutes({
+      [route]: () => ({ body: { ok: true, data: { deleted: true } } }),
+    });
+    expect(await service.deletePlaylist("p 1")).toEqual({
       kind: "transport_failure",
       cause: "schema",
     });

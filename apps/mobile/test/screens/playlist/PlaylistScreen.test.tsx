@@ -13,6 +13,7 @@
 // - the track menu: remove from an own playlist calls the service and refetches the tracks, none for the liked and genre playlists
 // - the action row: play and shuffle of the whole list (after loading every page for own and liked), busy until the pages load, a failed page drawing the error, leaving the screen cancelling the start, disabled when empty, registering the recent, turning shuffle off on play after another list was shuffled, the play button idle, loading, playing, pausing and resuming, every row of the playing track marked
 // - save only on a genre playlist: its state, its body, rolling back, disabled while loading or failing, none on own and liked
+// - the options button only on an own playlist, after play; the options sheet; the edit sheet prefilled, Save disabled unchanged or invalid, only changed fields, empty description as null, a failed save keeping the sheet and input, a saved edit closing it and redrawing the header; delete asking first, cancel doing nothing, confirm going back, a failed delete showing the notice and staying, playback untouched; no recent registered by an edit or a delete
 // - the skeleton, back and its fallback, es
 //
 // Run with: pnpm --filter @beatly/mobile test -- PlaylistScreen
@@ -22,6 +23,7 @@
 import type { HttpOutcome, PageResult, PlaylistTrack } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
+import { Alert } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
@@ -278,7 +280,7 @@ describe("PlaylistScreen", () => {
     });
   });
 
-  it("draws back, the rows and one more button per row", async () => {
+  it("draws back, the rows, the options button and one more button per row", async () => {
     await setup({ listPlaylistTracks: tracksOf(two) });
     await screen.findByText("First Song");
     const names = screen.getAllByRole("button").map((b) => b.props.accessibilityLabel as unknown);
@@ -290,6 +292,7 @@ describe("PlaylistScreen", () => {
         "First Song",
         "Second Song",
         en.trackMenu.more,
+        en.playlist.options.more,
       ]),
     );
     expect(names.filter((name) => name === en.trackMenu.more)).toHaveLength(2);
@@ -882,5 +885,218 @@ describe("PlaylistScreen save", () => {
       );
     });
     expect(screen.queryByText(en.common.error.generic)).toBeNull();
+  });
+});
+
+describe("PlaylistScreen own playlist options", () => {
+  const optionsButton = () => screen.getByRole("button", { name: en.playlist.options.more });
+  const openOptions = async () => {
+    await screen.findByText("First Song");
+    await fireEvent.press(optionsButton());
+  };
+  const openEdit = async () => {
+    await openOptions();
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.options.items.edit }));
+  };
+  const save = () => screen.getByRole("button", { name: en.playlist.edit.submit });
+  const nameField = () => screen.getByLabelText(en.playlist.edit.name);
+  const descriptionField = () => screen.getByLabelText(en.playlist.edit.description);
+
+  it("draws the options button after play on an own playlist", async () => {
+    await setup({ listPlaylistTracks: tracksOf(two) });
+    await screen.findByText("First Song");
+    const labels = within(screen.getByTestId("playlist-actions"))
+      .getAllByRole("button")
+      .map((button) => button.props.accessibilityLabel as unknown);
+    expect(labels).toEqual([en.playlist.shuffle, en.playlist.play, en.playlist.options.more]);
+  });
+
+  it("draws no options button on the liked or a genre playlist", async () => {
+    mockParams = { id: "liked", source: "liked" };
+    await setup({ listLikedTracks: tracksOf(two) });
+    await screen.findByText("First Song");
+    expect(screen.queryByRole("button", { name: en.playlist.options.more })).toBeNull();
+    await screen.unmount();
+    mockParams = { id: "gp1", source: "genre" };
+    await setup({ getGenrePlaylist: detail({ ...publicGenrePlaylistFixture, tracks: two }) });
+    await screen.findByText("First Song");
+    expect(screen.queryByRole("button", { name: en.playlist.options.more })).toBeNull();
+  });
+
+  it("opens the options sheet with edit and delete", async () => {
+    await setup({ listPlaylistTracks: tracksOf(two) });
+    await openOptions();
+    expect(screen.getByTestId("playlist-options-sheet")).toBeTruthy();
+    expect(screen.getByRole("button", { name: en.playlist.options.items.edit })).toBeTruthy();
+    expect(screen.getByRole("button", { name: en.playlist.options.items.delete })).toBeTruthy();
+  });
+
+  it("prefills the edit sheet and keeps Save disabled until something changes", async () => {
+    await setup({ listPlaylistTracks: tracksOf(two) });
+    await openEdit();
+    expect(nameField().props.value).toBe("Road trip");
+    expect(descriptionField().props.value).toBe("Windows down");
+    expect(stateFlag(save(), "disabled")).toBe(true);
+    await fireEvent.changeText(nameField(), "Road trip 2");
+    expect(stateFlag(save(), "disabled")).toBeFalsy();
+  });
+
+  it("disables Save and shows the length message for an empty or too long title", async () => {
+    await setup({ listPlaylistTracks: tracksOf(two) });
+    await openEdit();
+    await fireEvent.changeText(nameField(), "   ");
+    expect(stateFlag(save(), "disabled")).toBe(true);
+    await fireEvent.changeText(nameField(), "a".repeat(201));
+    expect(screen.getByText("Use 200 characters or fewer")).toBeTruthy();
+    expect(stateFlag(save(), "disabled")).toBe(true);
+  });
+
+  it("sends only the changed title", async () => {
+    const ctx = await setup({ listPlaylistTracks: tracksOf(two) });
+    await openEdit();
+    await fireEvent.changeText(nameField(), "  Renamed ");
+    await fireEvent.press(save());
+    await waitFor(() => {
+      expect(ctx.updatePlaylist).toHaveBeenCalledWith("p1", { title: "Renamed" });
+    });
+  });
+
+  it("sends an emptied description as null", async () => {
+    const ctx = await setup({ listPlaylistTracks: tracksOf(two) });
+    await openEdit();
+    await fireEvent.changeText(descriptionField(), "  ");
+    await fireEvent.press(save());
+    await waitFor(() => {
+      expect(ctx.updatePlaylist).toHaveBeenCalledWith("p1", { description: null });
+    });
+  });
+
+  it("keeps the sheet open with the error and the input when the save fails", async () => {
+    await setup({
+      listPlaylistTracks: tracksOf(two),
+      updatePlaylist: () => Promise.resolve(notFound),
+    });
+    await openEdit();
+    await fireEvent.changeText(nameField(), "Renamed");
+    await fireEvent.press(save());
+    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(nameField().props.value).toBe("Renamed");
+    expect(screen.getByRole("button", { name: en.playlist.edit.submit })).toBeTruthy();
+  });
+
+  it("closes the sheet and draws the new title after a save", async () => {
+    let reads = 0;
+    const ctx = await setup({
+      listPlaylistTracks: tracksOf(two),
+      getPlaylist: () => {
+        reads += 1;
+        return detail(
+          reads === 1 ? playlistDetailFixture : { ...playlistDetailFixture, title: "Renamed" },
+        )();
+      },
+    });
+    await openEdit();
+    await fireEvent.changeText(nameField(), "Renamed");
+    await fireEvent.press(save());
+    await waitFor(() => {
+      expect(screen.queryByLabelText(en.playlist.edit.name)).toBeNull();
+    });
+    expect((await screen.findAllByText("Renamed")).length).toBeGreaterThan(0);
+    expect(ctx.registerRecent).not.toHaveBeenCalled();
+  });
+
+  const confirmation = (alert: jest.SpiedFunction<typeof Alert.alert>) => {
+    const call = alert.mock.calls[0];
+    if (call === undefined) throw new Error("no confirmation");
+    const [title, , buttons] = call;
+    if (buttons === undefined) throw new Error("no buttons");
+    const find = (style: "cancel" | "destructive") => buttons.find((b) => b.style === style);
+    return { title, cancel: find("cancel"), confirm: find("destructive") };
+  };
+
+  const chooseDelete = async () => {
+    await openOptions();
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.options.items.delete }));
+  };
+
+  it("asks before deleting and does nothing on cancel", async () => {
+    const alert = jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
+    const ctx = await setup({ listPlaylistTracks: tracksOf(two) });
+    await chooseDelete();
+    const { title, cancel, confirm } = confirmation(alert);
+    expect(title).toBe("Delete “Road trip”?");
+    expect(confirm).toBeDefined();
+    cancel?.onPress?.();
+    expect(ctx.deletePlaylist).not.toHaveBeenCalled();
+    expect(mockBack).not.toHaveBeenCalled();
+  });
+
+  it("deletes and goes back on confirm", async () => {
+    const alert = jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
+    const ctx = await setup({ listPlaylistTracks: tracksOf(two) });
+    await chooseDelete();
+    await act(() => {
+      confirmation(alert).confirm?.onPress?.();
+    });
+    await waitFor(() => {
+      expect(mockBack).toHaveBeenCalled();
+    });
+    expect(ctx.deletePlaylist).toHaveBeenCalledWith("p1");
+    expect(ctx.registerRecent).not.toHaveBeenCalled();
+  });
+
+  it("replaces with / on confirm when there is nothing to go back to", async () => {
+    mockCanGoBack = false;
+    const alert = jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
+    await setup({ listPlaylistTracks: tracksOf(two) });
+    await chooseDelete();
+    await act(() => {
+      confirmation(alert).confirm?.onPress?.();
+    });
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith("/");
+    });
+  });
+
+  it("shows the error notice and stays when the delete fails", async () => {
+    const alert = jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
+    await setup({
+      listPlaylistTracks: tracksOf(two),
+      deletePlaylist: () => Promise.resolve(upstream),
+    });
+    await chooseDelete();
+    await act(() => {
+      confirmation(alert).confirm?.onPress?.();
+    });
+    const notice = await screen.findByTestId("playlist-notice");
+    expect(within(notice).getByText(en.common.error.generic)).toBeTruthy();
+    expect(mockBack).not.toHaveBeenCalled();
+  });
+
+  it("keeps playing the playlist's queue after deleting it", async () => {
+    const alert = jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
+    const ctx = await setup({ listPlaylistTracks: tracksOf(two) });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.play }));
+    await waitFor(() => {
+      expect(ctx.playback.getState().queue.length).toBe(2);
+    });
+    await playingEvent(ctx);
+    const before = ctx.playback.getState();
+    ctx.player.port.unload.mockClear();
+    ctx.player.port.pause.mockClear();
+    await chooseDelete();
+    await act(() => {
+      confirmation(alert).confirm?.onPress?.();
+    });
+    await waitFor(() => {
+      expect(mockBack).toHaveBeenCalled();
+    });
+    const after = ctx.playback.getState();
+    expect(after.queue).toBe(before.queue);
+    expect(after.source).toEqual(before.source);
+    expect(after.status).toBe(before.status);
+    expect(ctx.player.port.unload).not.toHaveBeenCalled();
+    expect(ctx.player.port.pause).not.toHaveBeenCalled();
   });
 });

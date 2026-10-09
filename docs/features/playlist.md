@@ -8,7 +8,7 @@ Show a playlist: its cover, title, creator, description, meta line and tracks.
 There are three kinds, chosen by the `source` param of the route: `user` (an own
 playlist), `liked` (the liked songs) and `genre` (a curated playlist). Own and liked
 tracks load with infinite scroll; a genre playlist loads whole with its header, in one request. Pressing a track plays the loaded tracks from it, with the playlist as the
-source (`player.md`). Every track ends with a more button that opens the track menu (`track-menu.md`); in an own playlist the menu also offers Remove from this playlist, which refreshes the header and the tracks, and the liked and genre playlists never offer it. A row under the header plays the whole playlist from its first track with shuffle off, or shuffled from a random track with shuffle on, and registers the recent like a track press; own and liked load every remaining page first, with the pressed button busy. A genre playlist can also be saved to the library; own and liked never can. Editing and sharing are later issues.
+source (`player.md`). Every track ends with a more button that opens the track menu (`track-menu.md`); in an own playlist the menu also offers Remove from this playlist, which refreshes the header and the tracks, and the liked and genre playlists never offer it. A row under the header plays the whole playlist from its first track with shuffle off, or shuffled from a random track with shuffle on, and registers the recent like a track press; own and liked load every remaining page first, with the pressed button busy. A genre playlist can also be saved to the library; own and liked never can. An own playlist's options button edits its title and description or deletes it; sharing and reordering are later issues.
 
 ## Layout
 
@@ -33,7 +33,16 @@ the info block:
   on a genre playlist, disabled while its state loads or when reading it failed. While play or
   shuffle loads the remaining pages of an own or liked playlist, the pressed button is busy and
   both are disabled. The row is centered: shuffle, play (`PlayButton`) and, on a genre playlist,
-  save; no share, search or options button yet.
+  save; on an own playlist only, an options button after play (`NativeMenu` on iOS where the native
+  module exists, an `IconButton` `ellipsis` opening a `Sheet` of `ActionRow`s elsewhere) with Edit
+  playlist (`pencil`) and Delete playlist (`trash`, destructive); never on liked, genre or albums; no
+  share or search button yet.
+- Edit sheet: the `CreatePlaylistSheet` layout (`spacing.lg` form gap, two `field` buttons `spacing.md`
+  apart) with the name and the description prefilled and no public switch. Save is disabled while
+  nothing changed or the title is empty or over 200 characters, and sends only the changed fields.
+- Delete: the native `Alert` (destructive Delete and Cancel) asks first. A failed delete shows the
+  floating error `Notice` (`layout.gutter` sides, `spacing.md` above the tab bar clearance, shown for
+  `motion.duration.notice`; each failure restarts the timer).
 - Play button: idle (the playlist is not the playback source) it is a pill with the play glyph and
   `playlist:play`; pressing it plays the whole list from the first track, after loading every page of
   an own or liked playlist (the pressed button shows the spinner meanwhile). While the stream loads it
@@ -57,13 +66,15 @@ the info block:
 
 The floating back button is drawn in every state.
 
-| State            | What is drawn                                                         | i18n keys                                                                                                                                                                                                                                  |
-| ---------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Loading          | `DetailSkeleton`, static, while the header or the tracks load         | `common:loading`                                                                                                                                                                                                                           |
-| With data        | the hero, title, info and tracks; the song count with plural forms    | `playlist:liked`, `playlist:private`, `playlist:public`, `playlist:songs`, `playlist:durationMinutes`, `playlist:durationHours`, `common:brand`, `playlist:play`, `playlist:shuffle`, `playlist:save`, `playlist:unsave`, `playlist:pause` |
-| Expected empty   | `EmptyState` under the header when there are no tracks                | `playlist:empty`                                                                                                                                                                                                                           |
-| Error with retry | `ErrorState`; retry refetches only the query that failed              | `common:error.generic`, `common:retry`                                                                                                                                                                                                     |
-| Not found        | `EmptyState` with no action, for `playlist_not_found` on either query | `playlist:notFound`                                                                                                                                                                                                                        |
+| State            | What is drawn                                                                                                 | i18n keys                                                                                                                                                                                                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Loading          | `DetailSkeleton`, static, while the header or the tracks load                                                 | `common:loading`                                                                                                                                                                                                                                                 |
+| With data        | the hero, title, info and tracks; the song count with plural forms                                            | `playlist:liked`, `playlist:private`, `playlist:public`, `playlist:songs`, `playlist:durationMinutes`, `playlist:durationHours`, `common:brand`, `playlist:play`, `playlist:shuffle`, `playlist:save`, `playlist:unsave`, `playlist:pause`, `playlist:options.*` |
+| Expected empty   | `EmptyState` under the header when there are no tracks                                                        | `playlist:empty`                                                                                                                                                                                                                                                 |
+| Error with retry | `ErrorState`; retry refetches only the query that failed                                                      | `common:error.generic`, `common:retry`                                                                                                                                                                                                                           |
+| Not found        | `EmptyState` with no action, for `playlist_not_found` on either query                                         | `playlist:notFound`                                                                                                                                                                                                                                              |
+| Edit sheet       | idle, invalid title with the inline message, busy save, failed save with the generic error and the input kept | `playlist:edit.*`, `common:error.generic`                                                                                                                                                                                                                        |
+| Delete           | the native confirmation; a failed delete draws the floating error notice and stays                            | `playlist:delete.*`, `common:error.generic`                                                                                                                                                                                                                      |
 
 The back button is labeled `playlist:back`.
 
@@ -79,6 +90,8 @@ The back button is labeled `playlist:back`.
 | `GET /library/{kind}/{external_id}`    | no          | `private, no-cache` | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                           | none; a failure leaves save disabled (genre only)                                 |
 | `POST /library`                        | no          | `private, no-cache` | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                           | none; a failure rolls the save button back                                        |
 | `DELETE /library/{kind}/{external_id}` | no          | `private, no-cache` | `library_item_not_found`, `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout` | `library_item_not_found` leaves it not saved; anything else rolls the button back |
+| `PATCH /playlists/{id}`                | no          | `private, no-cache` | `playlist_not_found`, `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`     | none; every failure is the generic error inline in the sheet                      |
+| `DELETE /playlists/{id}`               | no          | `private, no-cache` | `playlist_not_found`, `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`     | `playlist_not_found` counts as deleted; anything else is the floating error       |
 | `POST /recents`                        | no          | `private, no-cache` | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                           | none; a failure is logged and nothing is drawn                                    |
 
 `GET /public/genre-playlists/{id}` carries the header and the tracks of a genre
@@ -87,6 +100,10 @@ playlist, so the paged tracks query never runs for it.
 Play and shuffle of an own or liked playlist fetch every remaining page of `tracks` through the shared infinite-query hook (`loadAll`) before starting, so the queue holds the whole list in the API's order; a failed page puts the query in error and draws the whole-body error, and the start does not happen. Leaving the screen while the pages load cancels the start: nothing plays. A genre playlist already has every track. `GET /playlists/{id}/track-ids` is not used. Play sets shuffle off and shuffle sets it on before starting; a row press leaves the flag as it is.
 
 Save (genre only, never on own or liked) sends `{ kind: "playlist", source: "genre", external_id, title }` with `thumbnail_url` (the first cover url) when there is one, and no `artist`. The button flips at once and rolls back if the write fails.
+
+Edit sends only the changed fields (an emptied description as `null`) and refreshes the header, `library`, `playlists/mine` and `recents`. Delete counts `playlist_not_found` as deleted, goes back and refreshes `library`, `playlists/mine` and `recents`. Delete is confirmed with React Native's `Alert.alert`, not a `packages/ui` component, so its look is the OS's and not the tokens'. Delete does not refresh the deleted playlist's own queries (header and tracks), so the screen does not flash the unavailable state before it goes back. Neither registers a recent nor touches playback, so a deleted playlist that is the playback source keeps playing its queue.
+
+Home's recents follow both: a rename updates the title of the playlist's recents and a delete removes them, on the backend (`PATCH` and `DELETE /playlists/{id}` in `docs/api/playlists.md`), and the `recents` refresh after each makes Home show it without reopening the app.
 
 Starting a list from a track registers the playlist with `POST /recents`, and a failure never stops the music.
 
@@ -123,7 +140,7 @@ or replaces with `/` when there is nothing to go back to.
 
 ## Checked by hand
 
-Screenshots of the three kinds on iOS and Android; the action row centered on iOS and Android, the play pill shrinking to a circle and scaling in as pause, the now playing bars moving, freezing on pause and static under reduce motion; play and shuffle on a real own or liked playlist of more than 50 tracks; saving a genre playlist and finding it in the library; infinite scroll with a real
+The iOS system menu and the Android sheet of the options button; the native confirmation on both platforms; a rename and a delete seen in Home and Library without reopening the app; deleting the playing playlist; screenshots of the three kinds on iOS and Android; the action row centered on iOS and Android, the play pill shrinking to a circle and scaling in as pause, the now playing bars moving, freezing on pause and static under reduce motion; play and shuffle on a real own or liked playlist of more than 50 tracks; saving a genre playlist and finding it in the library; infinite scroll with a real
 gesture on a playlist of more than 50 tracks; real covers on an own playlist header; a playlist recent of each kind opening from
 Home; real covers, the dominant-color wash
 and the brand mark at `layout.creatorMark`; swipe-back per tab and the native tab

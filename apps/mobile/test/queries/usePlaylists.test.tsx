@@ -7,12 +7,14 @@
 // - useCreatePlaylist
 // - usePlaylistsWithTrack
 // - useAddToPlaylist, useRemoveFromPlaylist, useCreatePlaylistWithTrack
+// - useUpdatePlaylist, useDeletePlaylist
 //
 // What is covered:
 // - the first page unwrapped, cache time from Cache-Control
 // - creation refetching the library and the playlists, and a rejected creation surfacing its outcome
 // - the playlist ids that hold a track, cache time from Cache-Control
 // - add and remove invalidating the library, the playlists, that playlist and the membership; create-with-track refreshing them even when the add fails
+// - edit invalidating the library, the playlists, that playlist's header only and the recents; delete invalidating the library, the playlists and the recents but not the deleted playlist; neither refreshing anything when it fails
 //
 // Run with: pnpm --filter @beatly/mobile test -- usePlaylists
 //
@@ -32,9 +34,11 @@ import {
   useAddToPlaylist,
   useCreatePlaylist,
   useCreatePlaylistWithTrack,
+  useDeletePlaylist,
   usePlaylists,
   usePlaylistsWithTrack,
   useRemoveFromPlaylist,
+  useUpdatePlaylist,
 } from "../../src/queries/usePlaylists.ts";
 import {
   createdPlaylistFixture,
@@ -261,7 +265,7 @@ describe("the playlist write mutations", () => {
       </Wrapper>
     );
     const keys = () => invalidate.mock.calls.map((call) => call[0]?.queryKey);
-    return { ctx, wrapper, keys };
+    return { ctx, wrapper, keys, invalidate };
   }
 
   const refreshed = [
@@ -317,5 +321,62 @@ describe("the playlist write mutations", () => {
       ]),
     );
     expect(result.current.isError).toBe(true);
+  });
+
+  it("edit invalidates the library, the playlists, that playlist's header and the recents on success", async () => {
+    const { ctx, wrapper, invalidate } = mount();
+    const { result } = await renderHook(() => useUpdatePlaylist(), { wrapper });
+    await act(() => result.current.mutateAsync({ id: "p1", input: { title: "New" } }));
+    expect(ctx.updatePlaylist).toHaveBeenCalledWith("p1", { title: "New" });
+    const filters = invalidate.mock.calls.map((call) => call[0]);
+    expect(filters).toEqual(
+      expect.arrayContaining([
+        { queryKey: ["library"] },
+        { queryKey: ["playlists", "mine"] },
+        { queryKey: ["playlist", "user", "p1"], exact: true },
+        { queryKey: ["recents"] },
+      ]),
+    );
+    expect(ctx.registerRecent).not.toHaveBeenCalled();
+  });
+
+  it("edit refreshes nothing when it fails", async () => {
+    const { wrapper, keys } = mount({
+      updatePlaylist: () => Promise.resolve({ kind: "api_failure", reason: "upstream_error" }),
+    });
+    const { result } = await renderHook(() => useUpdatePlaylist(), { wrapper });
+    let error: unknown;
+    await act(async () => {
+      error = await result.current
+        .mutateAsync({ id: "p1", input: { title: "New" } })
+        .catch((caught: unknown) => caught);
+    });
+    expect(error).toBeInstanceOf(OutcomeError);
+    expect(keys()).toEqual([]);
+  });
+
+  it("delete invalidates the library, the playlists and the recents, not the deleted playlist", async () => {
+    const { ctx, wrapper, keys } = mount();
+    const { result } = await renderHook(() => useDeletePlaylist(), { wrapper });
+    await act(() => result.current.mutateAsync("p1"));
+    expect(ctx.deletePlaylist).toHaveBeenCalledWith("p1");
+    expect(keys()).toEqual(
+      expect.arrayContaining([["library"], ["playlists", "mine"], ["recents"]]),
+    );
+    expect(keys()).not.toContainEqual(["playlist", "user", "p1"]);
+    expect(ctx.registerRecent).not.toHaveBeenCalled();
+  });
+
+  it("delete refreshes nothing when it fails", async () => {
+    const { wrapper, keys } = mount({
+      deletePlaylist: () => Promise.resolve({ kind: "api_failure", reason: "upstream_error" }),
+    });
+    const { result } = await renderHook(() => useDeletePlaylist(), { wrapper });
+    let error: unknown;
+    await act(async () => {
+      error = await result.current.mutateAsync("p1").catch((caught: unknown) => caught);
+    });
+    expect(error).toBeInstanceOf(OutcomeError);
+    expect(keys()).toEqual([]);
   });
 });

@@ -34,6 +34,8 @@ const sfSymbol: Partial<Record<IconName, SFSymbol>> = {
   music: "music.note",
   info: "info.circle",
   x: "minus.circle",
+  pencil: "pencil",
+  trash: "trash",
 };
 
 // The library evaluates its native module on import, which crashes where the module is not built in (Expo Go), so it is checked before use.

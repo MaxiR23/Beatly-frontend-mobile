@@ -19,6 +19,7 @@ import {
   Mail,
   Music,
   Pause,
+  Pencil,
   Play,
   Plus,
   Repeat1,
@@ -26,6 +27,7 @@ import {
   Shuffle,
   SkipBack,
   SkipForward,
+  Trash,
   User,
   X,
 } from "lucide-react-native";
@@ -51,6 +53,7 @@ const glyphs = {
   mail: Mail,
   music: Music,
   pause: Pause,
+  pencil: Pencil,
   play: Play,
   plus: Plus,
   repeat1: Repeat1,
@@ -58,6 +61,7 @@ const glyphs = {
   shuffle: Shuffle,
   skipBack: SkipBack,
   skipForward: SkipForward,
+  trash: Trash,
   user: User,
   x: X,
 } as const;

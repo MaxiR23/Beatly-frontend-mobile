@@ -1,24 +1,25 @@
-// INFO: a playlist, own, liked or genre by its source param: the detail base with its cover, title, creator, description, meta line and tracks paged by infinite scroll for own and liked; a genre playlist's header and tracks come in one request; unavailable for playlist_not_found; every track has a menu button, with remove from this playlist inside an own playlist; a row under the header plays the whole list from its first track or shuffled from a random one, loading every remaining page of an own or liked playlist first (leaving the screen before they arrive cancels the start), and a genre playlist can be saved to the library; the play button pauses and resumes the playlist while it is the playback source and the current track's rows are marked; starting a list registers it as a recent.
+// INFO: a playlist, own, liked or genre by its source param: the detail base with its cover, title, creator, description, meta line and tracks paged by infinite scroll for own and liked; a genre playlist's header and tracks come in one request; unavailable for playlist_not_found; every track has a menu button, with remove from this playlist inside an own playlist; a row under the header plays the whole list from its first track or shuffled from a random one, loading every remaining page of an own or liked playlist first (leaving the screen before they arrive cancels the start), and a genre playlist can be saved to the library; the play button pauses and resumes the playlist while it is the playback source and the current track's rows are marked; starting a list registers it as a recent; an own playlist's action row ends with an options button (system menu on iOS, a sheet elsewhere) to edit its title and description in a sheet or delete it after a native confirmation, which goes back; a failed delete shows the error notice and playback is never touched.
 import {
   genrePlaylistLibraryInputOf,
   profileName,
   type PlayableTrack,
   type PlaylistTrack,
 } from "@beatly/core";
-import { color, layout, radius, spacing } from "@beatly/ui";
+import { color, layout, motion, radius, spacing } from "@beatly/ui";
 import {
   Avatar,
   DetailActions,
   DetailScreen,
   EmptyState,
   MediaRow,
+  Notice,
   Text,
   type DetailBody,
   type DetailRow,
 } from "@beatly/ui/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Image, StyleSheet, View } from "react-native";
+import { Alert, Image, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import brandIcon from "../../../assets/brand-icon.png";
@@ -26,9 +27,14 @@ import { useT } from "../../adapters/i18n.ts";
 import { OutcomeError } from "../../queries/outcomeError.ts";
 import { usePlaylistHeader, usePlaylistTracks } from "../../queries/usePlaylist.ts";
 import { useLibrarySaved, useSetSaved } from "../../queries/useLibrary.ts";
+import { useDeletePlaylist } from "../../queries/usePlaylists.ts";
 import { useProfile } from "../../queries/useProfile.ts";
 import { useRegisterRecent } from "../../queries/useRecents.ts";
 import { useDominantColor } from "../detail/useDominantColor.ts";
+import { EditPlaylistSheet } from "./EditPlaylistSheet.tsx";
+import { PlaylistOptionsButton } from "./PlaylistOptionsButton.tsx";
+import { PlaylistOptionsSheet } from "./PlaylistOptionsSheet.tsx";
+import type { PlaylistOptionKey } from "./playlistOptions.ts";
 import { playlistMeta } from "./playlistMeta.ts";
 import { playlistSource } from "./playlistSource.ts";
 import { toQueue, wholeQueue } from "../player/queue.ts";
@@ -82,6 +88,18 @@ export function PlaylistScreen() {
       mounted.current = false;
     };
   }, []);
+  const [sheet, setSheet] = useState<"options" | "edit" | null>(null);
+  const [failed, setFailed] = useState<{ at: number } | null>(null);
+  const deletion = useDeletePlaylist();
+  useEffect(() => {
+    if (failed === null) return;
+    const timer = setTimeout(() => {
+      setFailed(null);
+    }, motion.duration.notice);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [failed]);
   const profile = useProfile();
   const owner = profile.data ? profileName(profile.data) : null;
 
@@ -104,6 +122,38 @@ export function PlaylistScreen() {
     if (router.canGoBack()) router.back();
     else router.replace("/");
   }
+
+  // Only an own playlist has options; before its header arrives both are no-ops.
+  const own = header.data?.source === "user" ? header.data.playlist : null;
+
+  const confirmDelete = () => {
+    if (own === null) return;
+    Alert.alert(t("delete.title", { title: own.title }), t("delete.message"), [
+      { text: t("delete.cancel"), style: "cancel" },
+      {
+        text: t("delete.confirm"),
+        style: "destructive",
+        onPress: () => {
+          if (deletion.isPending) return;
+          deletion.mutate(id, {
+            onSuccess: goBack,
+            onError: () => {
+              setFailed({ at: Date.now() });
+            },
+          });
+        },
+      },
+    ]);
+  };
+
+  const selectOption = (key: PlaylistOptionKey) => {
+    if (key === "edit") {
+      setSheet("edit");
+    } else {
+      setSheet(null);
+      confirmDelete();
+    }
+  };
 
   const notFound = isNotFound(header.error) || isNotFound(tracks.error);
 
@@ -278,6 +328,18 @@ export function PlaylistScreen() {
                 },
               }}
               disabled={list.length === 0}
+              {...(data.source === "user"
+                ? {
+                    options: (
+                      <PlaylistOptionsButton
+                        onSelect={selectOption}
+                        onOpenSheet={() => {
+                          setSheet("options");
+                        }}
+                      />
+                    ),
+                  }
+                : {})}
               {...(data.source === "genre"
                 ? {
                     save: {
@@ -325,6 +387,31 @@ export function PlaylistScreen() {
         topInset={insets.top}
         bottomInset={tabBarClearance}
       />
+      {sheet === "options" ? (
+        <PlaylistOptionsSheet
+          onSelect={selectOption}
+          onClose={() => {
+            setSheet(null);
+          }}
+        />
+      ) : null}
+      {sheet === "edit" && own !== null ? (
+        <EditPlaylistSheet
+          playlist={own}
+          onClose={() => {
+            setSheet(null);
+          }}
+        />
+      ) : null}
+      {failed !== null ? (
+        <View
+          pointerEvents="none"
+          style={[styles.notice, { bottom: tabBarClearance + spacing.md }]}
+          testID="playlist-notice"
+        >
+          <Notice floating tone="error" message={tc("error.generic")} />
+        </View>
+      ) : null}
     </TrackMenuHost>
   );
 }
@@ -333,6 +420,7 @@ const styles = StyleSheet.create({
   info: { paddingHorizontal: layout.gutter, paddingBottom: spacing.xl, gap: spacing.xs },
   actions: { paddingBottom: spacing.xl },
   creator: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  notice: { position: "absolute", left: layout.gutter, right: layout.gutter },
   brandMark: {
     width: layout.creatorMark,
     height: layout.creatorMark,

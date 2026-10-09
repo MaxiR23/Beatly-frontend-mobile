@@ -10,6 +10,7 @@
 // - a press on an idle play starts, on a playing or paused one toggles
 // - the start buttons disabled with no playable track, while pages load for either one, and play alone while its stream loads
 // - the presses, and a disabled save ignoring them
+// - the options node after play, and none without it, still pressable with no playable track
 //
 // Run with: pnpm --filter @beatly/ui test -- DetailActions
 //
@@ -17,6 +18,7 @@
 
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, within } from "@testing-library/react-native";
+import { Pressable } from "react-native";
 
 import { DetailActions } from "../../src/components/DetailActions.tsx";
 import { layout } from "../../src/tokens/spacing.ts";
@@ -152,5 +154,32 @@ describe("DetailActions", () => {
     await render(<DetailActions {...p} />);
     await fireEvent.press(screen.getByRole("button", { name: "Save" }));
     expect(p.save.onPress).not.toHaveBeenCalled();
+  });
+
+  it("draws the options node after play", async () => {
+    await render(
+      <DetailActions
+        {...propsWithoutSave({
+          options: <Pressable accessibilityRole="button" accessibilityLabel="Options" />,
+        })}
+      />,
+    );
+    expect(labels()).toEqual(["Shuffle", "Play", "Options"]);
+  });
+
+  it("keeps the options node enabled when there is no playable track", async () => {
+    const onPress = jest.fn();
+    await render(
+      <DetailActions
+        {...propsWithoutSave({
+          disabled: true,
+          options: (
+            <Pressable accessibilityRole="button" accessibilityLabel="Options" onPress={onPress} />
+          ),
+        })}
+      />,
+    );
+    await fireEvent.press(screen.getByRole("button", { name: "Options" }));
+    expect(onPress).toHaveBeenCalledTimes(1);
   });
 });

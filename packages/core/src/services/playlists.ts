@@ -1,4 +1,4 @@
-// INFO: the playlists service: the caller's own playlists, a page at a time, over the shared paginated helper, one playlist or the liked one with its tracks, the creation of a playlist, which playlists hold a track, adding a track to one (an already added track counts as added), creating one with a track, and removing a track.
+// INFO: the playlists service: the caller's own playlists, a page at a time, over the shared paginated helper, one playlist or the liked one with its tracks, the creation of a playlist, which playlists hold a track, adding a track to one (an already added track counts as added), creating one with a track, removing a track, renaming or describing one, and deleting one (an already deleted playlist counts as deleted).
 import { z } from "zod";
 
 import {
@@ -25,6 +25,12 @@ export interface CreatePlaylistInput {
   readonly title: string;
   readonly description?: string;
   readonly is_public: boolean;
+}
+
+// Only the keys present are written; description null clears it, a title is never null.
+export interface UpdatePlaylistInput {
+  readonly title?: string;
+  readonly description?: string | null;
 }
 
 export interface AddTrackInput {
@@ -82,6 +88,8 @@ export interface PlaylistsService {
     input: AddTrackInput,
   ): Promise<HttpOutcome<{ readonly playlist: Playlist }>>;
   removeTrackFromPlaylist(playlistId: string, trackId: string): Promise<HttpOutcome<null>>;
+  updatePlaylist(id: string, input: UpdatePlaylistInput): Promise<HttpOutcome<Playlist>>;
+  deletePlaylist(id: string): Promise<HttpOutcome<null>>;
   getPlaylist(id: string): Promise<HttpOutcome<PlaylistDetail>>;
   listPlaylistTracks(
     id: string,
@@ -118,6 +126,18 @@ export function createPlaylistsService(client: HttpClient): PlaylistsService {
     }
     return outcome;
   };
+  const deletePlaylist: PlaylistsService["deletePlaylist"] = async (id) => {
+    const outcome = await client.request({
+      method: "DELETE",
+      path: `/playlists/${encodeURIComponent(id)}`,
+      schema: z.null(),
+    });
+    if (outcome.kind === "api_failure" && outcome.reason === "playlist_not_found") {
+      // Already deleted: the state the user asked for.
+      return { kind: "success", data: null, maxAgeSeconds: 0 };
+    }
+    return outcome;
+  };
   return {
     listPlaylists: (cursor) =>
       fetchPage(client, { path: "/playlists", item: playlistListItemSchema, cursor }),
@@ -141,6 +161,14 @@ export function createPlaylistsService(client: HttpClient): PlaylistsService {
         path: `/playlists/${encodeURIComponent(playlistId)}/tracks/${encodeURIComponent(trackId)}`,
         schema: z.null(),
       }),
+    updatePlaylist: (id, input) =>
+      client.request({
+        method: "PATCH",
+        path: `/playlists/${encodeURIComponent(id)}`,
+        body: input,
+        schema: playlistSchema,
+      }),
+    deletePlaylist,
     getPlaylist: (id) =>
       client.request({
         path: `/playlists/${encodeURIComponent(id)}`,

@@ -1,4 +1,5 @@
-// INFO: the action row of a detail screen, centered: shuffle, the play button and an optional save toggle; the play button starts when idle and toggles when this list plays or is paused; while either start button loads the list's pages both are disabled, so a second start cannot race the first.
+// INFO: the action row of a detail screen, centered: shuffle, the play button, an optional save toggle and an optional options button after them; the play button starts when idle and toggles when this list plays or is paused; while either start button loads the list's pages both are disabled, so a second start cannot race the first.
+import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { layout } from "../tokens/spacing.ts";
@@ -21,6 +22,8 @@ interface DetailActionsProps {
   disabled: boolean;
   // Absent on own and liked playlists.
   save?: { label: string; saved: boolean; disabled: boolean; onPress: () => void };
+  // The own playlist's options button, drawn after play (and after save, which no own playlist has).
+  options?: ReactNode;
   reduceMotion: boolean;
   testID?: string;
 }
@@ -30,6 +33,7 @@ export function DetailActions({
   shuffle,
   disabled,
   save,
+  options,
   reduceMotion,
   testID,
 }: DetailActionsProps) {
@@ -61,6 +65,7 @@ export function DetailActions({
           onPress={save.onPress}
         />
       ) : null}
+      {options}
     </View>
   );
 }

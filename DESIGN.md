@@ -95,7 +95,7 @@ scroll.
   `spacing.sm`.
 - Action row: `DetailActions`, centered, `layout.gap` between the buttons, `layout.gutter` sides:
   shuffle (`IconButton` plain), play (`PlayButton`), and save (`IconButton` plain, plus or check,
-  selected when saved) on albums and genre playlists. `PlayButton`: idle, a `layout.playButtonMedium`
+  selected when saved) on albums and genre playlists and, on an own playlist only, the options button after play (`IconButton` plain `ellipsis`, or `NativeMenu` on iOS). `PlayButton`: idle, a `layout.playButtonMedium`
   tall pill in `color.accent.primary`, `spacing.xl` sides, the play glyph (`icon.size.lg`) and the
   label in `typography.button` `color.text.inverse`, `spacing.sm` apart; loading, playing and paused,
   a `layout.playButtonMedium` circle with a spinner, the pause glyph or the play glyph. Leaving idle

@@ -518,6 +518,8 @@ export function makeCore(
     addTrackToPlaylist?: PlaylistsService["addTrackToPlaylist"];
     createPlaylistWithTrack?: PlaylistsService["createPlaylistWithTrack"];
     removeTrackFromPlaylist?: PlaylistsService["removeTrackFromPlaylist"];
+    updatePlaylist?: PlaylistsService["updatePlaylist"];
+    deletePlaylist?: PlaylistsService["deletePlaylist"];
     // What setLiked answers after it flipped the mirror, as the real service does before the network.
     likeOutcome?: () => Promise<LikeOutcome>;
     likedIds?: readonly string[];
@@ -649,6 +651,14 @@ export function makeCore(
     options.removeTrackFromPlaylist ??
       (() => Promise.resolve({ kind: "success", data: null, maxAgeSeconds: 0 })),
   );
+  const updatePlaylist = jest.fn<PlaylistsService["updatePlaylist"]>(
+    options.updatePlaylist ??
+      (() => Promise.resolve({ kind: "success", data: createdPlaylistFixture, maxAgeSeconds: 0 })),
+  );
+  const deletePlaylist = jest.fn<PlaylistsService["deletePlaylist"]>(
+    options.deletePlaylist ??
+      (() => Promise.resolve({ kind: "success", data: null, maxAgeSeconds: 0 })),
+  );
   // The mirror: a set of liked ids and its listeners, so a toggle re-renders the hearts as the real one does.
   const liked = new Set<string>(options.likedIds ?? []);
   const likeListeners = new Set<() => void>();
@@ -719,6 +729,8 @@ export function makeCore(
       addTrackToPlaylist,
       createPlaylistWithTrack,
       removeTrackFromPlaylist,
+      updatePlaylist,
+      deletePlaylist,
     },
     profile: { getMyProfile },
     publicShare: { getGenrePlaylist },
@@ -762,6 +774,8 @@ export function makeCore(
     addTrackToPlaylist,
     createPlaylistWithTrack,
     removeTrackFromPlaylist,
+    updatePlaylist,
+    deletePlaylist,
     storage,
     playback,
     player,
