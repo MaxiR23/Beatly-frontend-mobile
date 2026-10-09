@@ -9,6 +9,7 @@
 // - the number, title and artists drawn, an unavailable track marked as disabled
 // - a button named by the title with onPress, no button role without it
 // - a trailing element drawn outside the pressable body
+// - the current track: bars in place of the number, no row background, selected state, paused and reduce motion passed on, nothing without nowPlaying or on an unavailable row
 // - an unavailable row never a button, announced as one element by its label (or the title), its trailing control still pressable
 //
 // Run with: pnpm --filter @beatly/ui test -- TrackRow
@@ -18,10 +19,11 @@
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react-native";
 
-import { Pressable } from "react-native";
+import { Animated, Pressable } from "react-native";
 
 import { TrackRow } from "../../src/components/TrackRow.tsx";
 import { color } from "../../src/tokens/color.ts";
+import { motion } from "../../src/tokens/motion.ts";
 
 describe("TrackRow", () => {
   it("draws the number, the title and the artists", async () => {
@@ -113,5 +115,73 @@ describe("TrackRow", () => {
     expect(screen.getAllByRole("button")).toHaveLength(1);
     await fireEvent.press(screen.getByRole("button", { name: "More" }));
     expect(onMore).toHaveBeenCalledTimes(1);
+  });
+
+  it("draws the bars in place of the number with no background on the row while playing", async () => {
+    await render(
+      <TrackRow
+        number={3}
+        title="Song"
+        available
+        nowPlaying="playing"
+        onPress={jest.fn()}
+        testID="row"
+      />,
+    );
+    expect(screen.getByTestId("now-playing-bars")).toBeTruthy();
+    expect(screen.queryByText("3")).toBeNull();
+    const row = screen.getByTestId("row");
+    expect(row).not.toHaveStyle({ backgroundColor: color.overlay.subtle });
+    expect(row.props.accessibilityState).toEqual({ disabled: false, selected: true });
+  });
+
+  it("does the same with a trailing control", async () => {
+    await render(
+      <TrackRow
+        number={3}
+        title="Song"
+        available
+        nowPlaying="paused"
+        onPress={jest.fn()}
+        trailing={<Pressable accessibilityRole="button" accessibilityLabel="More" />}
+        testID="row"
+      />,
+    );
+    expect(screen.getByTestId("now-playing-bars")).toBeTruthy();
+    expect(screen.queryByText("3")).toBeNull();
+    expect(screen.getByTestId("row")).not.toHaveStyle({ backgroundColor: color.overlay.subtle });
+    expect(screen.getByRole("button", { name: "Song" }).props.accessibilityState).toEqual({
+      disabled: false,
+      selected: true,
+    });
+  });
+
+  it("passes paused and reduce motion to the bars", async () => {
+    const loop = jest.spyOn(Animated, "loop");
+    loop.mockClear();
+    await render(<TrackRow number={3} title="Song" available nowPlaying="playing" reduceMotion />);
+    expect(loop).not.toHaveBeenCalled();
+    screen.getAllByTestId("now-playing-bar").forEach((bar, index) => {
+      expect(bar).toHaveStyle({
+        transform: [{ scaleY: motion.nowPlaying.staticScales[index] ?? 1 }],
+      });
+    });
+    loop.mockRestore();
+  });
+
+  it("draws no bars without nowPlaying", async () => {
+    await render(<TrackRow number={3} title="Song" available testID="row" />);
+    expect(screen.queryByTestId("now-playing-bars")).toBeNull();
+    expect(screen.getByText("3")).toBeTruthy();
+    expect(screen.getByTestId("row")).not.toHaveStyle({ backgroundColor: color.overlay.subtle });
+  });
+
+  it("ignores nowPlaying on an unavailable row", async () => {
+    await render(
+      <TrackRow number={3} title="Song" available={false} nowPlaying="playing" testID="row" />,
+    );
+    expect(screen.queryByTestId("now-playing-bars")).toBeNull();
+    expect(screen.getByText("3")).toBeTruthy();
+    expect(screen.getByTestId("row").props.accessibilityState).toEqual({ disabled: true });
   });
 });

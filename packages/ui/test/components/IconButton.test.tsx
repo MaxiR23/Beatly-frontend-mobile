@@ -6,7 +6,7 @@
 // - IconButton
 //
 // What is covered:
-// - the plain default, the primary variant box, the primaryCompact variant, the selected toggle states and their glyph tone, the busy indicator, the press
+// - the plain default, the primary variant box, the primaryCompact variant, the disabled state, the selected toggle states and their glyph tone, the busy indicator, the press
 // - the glyph size by default, by variant and by iconSize, and the filled glyph
 //
 // Run with: pnpm --filter @beatly/ui test -- IconButton
@@ -84,6 +84,32 @@ describe("IconButton", () => {
       width: icon.size.lg,
       stroke: color.text.inverse,
     });
+  });
+
+  it("draws the disabled state, its glyph in the disabled tone and ignores presses", async () => {
+    const onPress = jest.fn();
+    await render(<IconButton icon="x" accessibilityLabel="Close" disabled onPress={onPress} />);
+    const button = screen.getByRole("button", { name: "Close" });
+    expect(button.props.accessibilityState).toMatchObject({ disabled: true });
+    expect(glyphs(screen.toJSON())[0]?.props.stroke).toBe(color.text.disabled);
+    await fireEvent.press(button);
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
+  it("draws a disabled accent variant on the control surface", async () => {
+    await render(
+      <IconButton
+        icon="play"
+        accessibilityLabel="Play"
+        variant="primaryCompact"
+        disabled
+        onPress={jest.fn()}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Play" })).toHaveStyle({
+      backgroundColor: color.surface.control,
+    });
+    expect(glyphs(screen.toJSON())[0]?.props.stroke).toBe(color.text.disabled);
   });
 
   it("sets the selected state for a toggle, on and off", async () => {

@@ -8,6 +8,7 @@
 // What is covered:
 // - the title and subtitle in their tones, an unavailable row drawn disabled
 // - a trailing element drawn outside the pressable body
+// - the current track: bars in place of the number over the cover on a scrim, no row background, selected state, paused and reduce motion passed on, nothing without nowPlaying or on an unavailable row
 // - an unavailable row never a button, announced as one element by its label (or the title), its trailing control still pressable
 //
 // Run with: pnpm --filter @beatly/ui test -- MediaRow
@@ -17,10 +18,12 @@
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react-native";
 
-import { Pressable } from "react-native";
+import { Animated, Pressable } from "react-native";
 
 import { MediaRow } from "../../src/components/MediaRow.tsx";
 import { color } from "../../src/tokens/color.ts";
+import { motion } from "../../src/tokens/motion.ts";
+import { radius } from "../../src/tokens/radius.ts";
 
 describe("MediaRow", () => {
   it("draws the title and subtitle in their tones when available", async () => {
@@ -113,5 +116,81 @@ describe("MediaRow", () => {
     expect(screen.getAllByRole("button")).toHaveLength(1);
     await fireEvent.press(screen.getByRole("button", { name: "More" }));
     expect(onMore).toHaveBeenCalledTimes(1);
+  });
+
+  it("draws the bars over the cover with no background on the row while playing", async () => {
+    await render(
+      <MediaRow
+        title="Song"
+        urls={[]}
+        shape="square"
+        nowPlaying="playing"
+        onPress={jest.fn()}
+        testID="row"
+      />,
+    );
+    expect(screen.getByTestId("now-playing-bars")).toBeTruthy();
+    const row = screen.getByTestId("row");
+    expect(row).not.toHaveStyle({ backgroundColor: color.overlay.subtle });
+    expect(row.props.accessibilityState).toEqual({ selected: true });
+  });
+
+  it("draws the scrim over the cover in overlay.onImage, round for a round cover", async () => {
+    const view = await render(
+      <MediaRow title="Song" urls={[]} shape="square" nowPlaying="playing" />,
+    );
+    const scrim = screen.getByTestId("now-playing-bars").parent;
+    expect(scrim).toHaveStyle({ backgroundColor: color.overlay.onImage, borderRadius: radius.sm });
+    await view.rerender(<MediaRow title="Song" urls={[]} shape="round" nowPlaying="playing" />);
+    expect(screen.getByTestId("now-playing-bars").parent).toHaveStyle({
+      borderRadius: radius.full,
+    });
+  });
+
+  it("does the same with a trailing control", async () => {
+    await render(
+      <MediaRow
+        title="Song"
+        urls={[]}
+        shape="square"
+        nowPlaying="paused"
+        onPress={jest.fn()}
+        trailing={<Pressable accessibilityRole="button" accessibilityLabel="More" />}
+        testID="row"
+      />,
+    );
+    expect(screen.getByTestId("now-playing-bars")).toBeTruthy();
+    expect(screen.getByTestId("row")).not.toHaveStyle({ backgroundColor: color.overlay.subtle });
+    expect(screen.getByRole("button", { name: "Song" }).props.accessibilityState).toEqual({
+      selected: true,
+    });
+  });
+
+  it("passes paused and reduce motion to the bars", async () => {
+    const loop = jest.spyOn(Animated, "loop");
+    loop.mockClear();
+    await render(
+      <MediaRow title="Song" urls={[]} shape="square" nowPlaying="playing" reduceMotion />,
+    );
+    expect(loop).not.toHaveBeenCalled();
+    screen.getAllByTestId("now-playing-bar").forEach((bar, index) => {
+      expect(bar).toHaveStyle({
+        transform: [{ scaleY: motion.nowPlaying.staticScales[index] ?? 1 }],
+      });
+    });
+    loop.mockRestore();
+  });
+
+  it("draws no bars without nowPlaying", async () => {
+    await render(<MediaRow title="Song" urls={[]} shape="square" testID="row" />);
+    expect(screen.queryByTestId("now-playing-bars")).toBeNull();
+    expect(screen.getByTestId("row")).not.toHaveStyle({ backgroundColor: color.overlay.subtle });
+  });
+
+  it("ignores nowPlaying on an unavailable row", async () => {
+    await render(
+      <MediaRow title="Song" urls={[]} shape="square" available={false} nowPlaying="playing" />,
+    );
+    expect(screen.queryByTestId("now-playing-bars")).toBeNull();
   });
 });

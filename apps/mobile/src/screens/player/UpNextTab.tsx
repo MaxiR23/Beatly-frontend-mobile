@@ -1,4 +1,4 @@
-// INFO: the up next tab of the player sheet: the rest of the queue (a press jumps inside it), then the suggestions of GET /tracks/{id}/upnext without the first track, which is the current one (a press plays the suggestions from it); the rest of the queue is local, so it is drawn while the suggestions load or fail; every row ends with the track menu button.
+// INFO: the up next tab of the player sheet: the rest of the queue (a press jumps inside it), then the suggestions of GET /tracks/{id}/upnext without the first track, which is the current one (a press plays the suggestions from it); the rest of the queue is local, so it is drawn while the suggestions load or fail; every row ends with the track menu button; a row of the current track (a later repeat in the rest of the queue) is marked.
 import type { PlayableTrack } from "@beatly/core";
 import { EmptyState, ErrorState, LoadingState, MediaRow } from "@beatly/ui/native";
 import { useEffect } from "react";
@@ -8,6 +8,7 @@ import { useT } from "../../adapters/i18n.ts";
 import { useUpNext } from "../../queries/useTracks.ts";
 import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
 import { playableOf } from "./queue.ts";
+import { useNowPlaying } from "./useNowPlaying.ts";
 import { usePlayback, usePlaybackActions } from "./usePlayback.ts";
 
 interface UpNextTabProps {
@@ -26,6 +27,7 @@ export function UpNextTab({ trackId, onAtTopChange }: UpNextTabProps) {
   const t = useT("player");
   const tc = useT("common");
   const playback = usePlaybackActions();
+  const nowPlaying = useNowPlaying();
   const queue = usePlayback((s) => s.queue);
   const index = usePlayback((s) => s.index);
   const current = usePlayback((s) => s.current);
@@ -96,6 +98,8 @@ export function UpNextTab({ trackId, onAtTopChange }: UpNextTabProps) {
           onPress={() => {
             press(item);
           }}
+          nowPlaying={nowPlaying.of(item.track.trackId)}
+          reduceMotion={nowPlaying.reduceMotion}
           trailing={<TrackMenuButton track={item.track} />}
         />
       )}

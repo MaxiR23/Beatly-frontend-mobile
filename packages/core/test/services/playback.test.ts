@@ -403,6 +403,52 @@ describe("ended again after the list ended", () => {
   });
 });
 
+describe("play after the list ended", () => {
+  const endTheList = async (shuffle: boolean) => {
+    const ctx = setup(() => 0);
+    ctx.controller.setShuffle(shuffle);
+    await ctx.controller.playList(list, 1, source);
+    const last = ctx.controller.getState().queue.length - 1;
+    await ctx.controller.skipTo(last);
+    ctx.player.advance(5);
+    ctx.player.emit({ type: "ended" });
+    await flush();
+    return ctx;
+  };
+
+  it("restarts from the first track of the list order with shuffle off", async () => {
+    const { controller, player } = await endTheList(false);
+    expect(controller.getState().status).toBe("paused");
+    expect(controller.getState().current?.trackId).toBe("t3");
+    await controller.toggle();
+    const state = controller.getState();
+    expect(state.index).toBe(0);
+    expect(state.current?.trackId).toBe("t1");
+    expect(state.status).toBe("loading");
+    expect(loads(player.calls).at(-1)).toBe("test://audio/t1");
+  });
+
+  it("restarts from position 0 of the shuffled order with shuffle on", async () => {
+    const { controller } = await endTheList(true);
+    const first = controller.getState().queue[0];
+    expect(controller.getState().current?.trackId).not.toBe(first?.trackId);
+    await controller.toggle();
+    const state = controller.getState();
+    expect(state.index).toBe(0);
+    expect(state.current?.trackId).toBe(first?.trackId);
+    expect(state.queue[0]?.trackId).toBe(first?.trackId);
+  });
+
+  it("only resumes a pause while the list is still running", async () => {
+    const { controller } = setup();
+    await controller.playList(list, 1, source);
+    await controller.toggle();
+    await controller.toggle();
+    expect(controller.getState().index).toBe(1);
+    expect(controller.getState().status).toBe("playing");
+  });
+});
+
 describe("state", () => {
   it("returns the same snapshot until something changes and notifies subscribers", async () => {
     const { controller } = setup();

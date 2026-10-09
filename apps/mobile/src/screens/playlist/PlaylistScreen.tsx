@@ -1,8 +1,14 @@
-// INFO: a playlist, own, liked or genre by its source param: the detail base with its cover, title, creator, description, meta line and tracks paged by infinite scroll for own and liked; a genre playlist's header and tracks come in one request; unavailable for playlist_not_found; every track has a menu button, with remove from this playlist inside an own playlist; starting a list registers it as a recent.
-import { profileName, type PlayableTrack, type PlaylistTrack } from "@beatly/core";
+// INFO: a playlist, own, liked or genre by its source param: the detail base with its cover, title, creator, description, meta line and tracks paged by infinite scroll for own and liked; a genre playlist's header and tracks come in one request; unavailable for playlist_not_found; every track has a menu button, with remove from this playlist inside an own playlist; a row under the header plays the whole list from its first track or shuffled from a random one, loading every remaining page of an own or liked playlist first (leaving the screen before they arrive cancels the start), and a genre playlist can be saved to the library; the play button pauses and resumes the playlist while it is the playback source and the current track's rows are marked; starting a list registers it as a recent.
+import {
+  genrePlaylistLibraryInputOf,
+  profileName,
+  type PlayableTrack,
+  type PlaylistTrack,
+} from "@beatly/core";
 import { color, layout, radius, spacing } from "@beatly/ui";
 import {
   Avatar,
+  DetailActions,
   DetailScreen,
   EmptyState,
   MediaRow,
@@ -11,6 +17,7 @@ import {
   type DetailRow,
 } from "@beatly/ui/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import { Image, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -18,12 +25,14 @@ import brandIcon from "../../../assets/brand-icon.png";
 import { useT } from "../../adapters/i18n.ts";
 import { OutcomeError } from "../../queries/outcomeError.ts";
 import { usePlaylistHeader, usePlaylistTracks } from "../../queries/usePlaylist.ts";
+import { useLibrarySaved, useSetSaved } from "../../queries/useLibrary.ts";
 import { useProfile } from "../../queries/useProfile.ts";
 import { useRegisterRecent } from "../../queries/useRecents.ts";
 import { useDominantColor } from "../detail/useDominantColor.ts";
 import { playlistMeta } from "./playlistMeta.ts";
 import { playlistSource } from "./playlistSource.ts";
-import { toQueue } from "../player/queue.ts";
+import { toQueue, wholeQueue } from "../player/queue.ts";
+import { useListPlayback, useNowPlaying } from "../player/useNowPlaying.ts";
 import { usePlaybackActions } from "../player/usePlayback.ts";
 import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
@@ -60,6 +69,19 @@ export function PlaylistScreen() {
   const kind = playlistSource(source);
   const header = usePlaylistHeader(kind, id);
   const tracks = usePlaylistTracks(kind, id);
+  const saved = useLibrarySaved("playlist", id, kind === "genre");
+  const setSaved = useSetSaved("playlist", id);
+  const nowPlaying = useNowPlaying();
+  const listPlayback = useListPlayback("playlist", id);
+  const [starting, setStarting] = useState<"play" | "shuffle" | null>(null);
+  // Leaving the screen while the pages load cancels the start.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const profile = useProfile();
   const owner = profile.data ? profileName(profile.data) : null;
 
@@ -135,24 +157,40 @@ export function PlaylistScreen() {
       };
     }
 
-    const play = (tapped: number) => {
-      const queue = toQueue(list, tapped, toPlayable);
-      if (queue !== null) {
-        void playback.playList(queue.tracks, queue.index, { kind: "playlist", id, name: title });
-        let subtitle: string | null = null;
-        if (data.source === "user") subtitle = owner;
-        else if (data.source === "genre") subtitle = tc("brand");
-        registerRecent.mutate({
-          entity_type: "playlist",
-          entity_id: data.playlist.id,
-          metadata: {
-            title,
-            subtitle,
-            thumbnail_url: cover.urls[0] ?? null,
-            kind: data.source,
-          },
-        });
-      }
+    // A mode sets the shuffle flag first, because playList reads it on entry; a row tap leaves it alone.
+    const start = (
+      queue: { tracks: PlayableTrack[]; index: number } | null,
+      mode?: "play" | "shuffle",
+    ) => {
+      if (queue === null) return;
+      if (mode !== undefined) playback.setShuffle(mode === "shuffle");
+      void playback.playList(queue.tracks, queue.index, { kind: "playlist", id, name: title });
+      let subtitle: string | null = null;
+      if (data.source === "user") subtitle = owner;
+      else if (data.source === "genre") subtitle = tc("brand");
+      registerRecent.mutate({
+        entity_type: "playlist",
+        entity_id: data.playlist.id,
+        metadata: {
+          title,
+          subtitle,
+          thumbnail_url: cover.urls[0] ?? null,
+          kind: data.source,
+        },
+      });
+    };
+
+    // Own and liked lists page: the whole list is loaded first. A failed page puts the query in
+    // error, which draws the error body; a screen that went away starts nothing.
+    const startWhole = async (mode: "play" | "shuffle") => {
+      setStarting(mode);
+      const whole =
+        data.source === "genre"
+          ? ({ kind: "loaded", items: list } as const)
+          : await tracks.loadAll(() => !mounted.current);
+      if (mounted.current) setStarting(null);
+      if (whole.kind !== "loaded") return;
+      start(wholeQueue(whole.items, toPlayable, mode === "play" ? "first" : "random"), mode);
     };
 
     const rows: DetailRow[] = list.map((track, position) => ({
@@ -170,8 +208,10 @@ export function PlaylistScreen() {
           }
           urls={[track.thumbnail_url]}
           onPress={() => {
-            play(position);
+            start(toQueue(list, position, toPlayable));
           }}
+          nowPlaying={nowPlaying.of(track.track_id)}
+          reduceMotion={nowPlaying.reduceMotion}
           trailing={<TrackMenuButton track={toPlayable(track)} />}
         />
       ),
@@ -214,6 +254,52 @@ export function PlaylistScreen() {
               {playlistMeta(meta, t)}
             </Text>
           </View>
+          <View style={styles.actions}>
+            <DetailActions
+              testID="playlist-actions"
+              play={{
+                state: listPlayback,
+                label: t("play"),
+                pauseLabel: t("pause"),
+                busy: starting === "play",
+                onStart: () => {
+                  void startWhole("play");
+                },
+                onToggle: () => {
+                  void playback.toggle();
+                },
+              }}
+              reduceMotion={nowPlaying.reduceMotion}
+              shuffle={{
+                label: t("shuffle"),
+                busy: starting === "shuffle",
+                onPress: () => {
+                  void startWhole("shuffle");
+                },
+              }}
+              disabled={list.length === 0}
+              {...(data.source === "genre"
+                ? {
+                    save: {
+                      label: saved.data === true ? t("unsave") : t("save"),
+                      saved: saved.data === true,
+                      disabled: !saved.isSuccess,
+                      onPress: () => {
+                        if (setSaved.isPending) return;
+                        setSaved.mutate({
+                          saved: saved.data !== true,
+                          input: genrePlaylistLibraryInputOf(
+                            id,
+                            data.playlist.title,
+                            cover.urls[0] ?? null,
+                          ),
+                        });
+                      },
+                    },
+                  }
+                : {})}
+            />
+          </View>
           {list.length === 0 ? <EmptyState icon="music" message={t("empty")} /> : null}
         </>
       ),
@@ -245,6 +331,7 @@ export function PlaylistScreen() {
 
 const styles = StyleSheet.create({
   info: { paddingHorizontal: layout.gutter, paddingBottom: spacing.xl, gap: spacing.xs },
+  actions: { paddingBottom: spacing.xl },
   creator: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   brandMark: {
     width: layout.creatorMark,

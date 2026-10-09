@@ -7,6 +7,7 @@
 //
 // What is covered:
 // - recent queries: newest first, recorded on submit and kept after a remount, removed one by one and all, run from a row
+// - the current song's row marked with the now playing bars, even when another list started it
 // - results in order (artist, songs, albums), no results, the generic error with retry, loading, the debounce, clear
 // - the top artist image, and the placeholder when it has none
 // - an album result opens the album, the top artist opens the artist
@@ -19,7 +20,7 @@
 import { RECENT_SEARCHES_KEY } from "@beatly/core";
 import type { HttpOutcome, SearchResult, StoragePort } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
@@ -154,6 +155,40 @@ describe("SearchScreen results", () => {
     expect(state.current?.trackId).toBe("t1");
     expect(state.source).toEqual({ kind: "search", id: "test", name: "test" });
     expect(ctx.registerRecent).not.toHaveBeenCalled();
+  });
+
+  it("marks the playing song even when another list started it", async () => {
+    const ctx = makeCore();
+    await ctx.playback.playList(
+      [
+        {
+          trackId: "t1",
+          title: "Test Song",
+          artists: [],
+          album: null,
+          albumId: null,
+          coverUrl: null,
+          durationSeconds: 225,
+        },
+      ],
+      0,
+      { kind: "album", id: "al9", name: "Other" },
+    );
+    await render(tree(ctx));
+    await fireEvent.changeText(input(), "test");
+    await screen.findByText("Test Song");
+    await act(() => {
+      ctx.player.emit({
+        type: "progress",
+        playing: true,
+        buffering: false,
+        positionSeconds: 1,
+        durationSeconds: 225,
+      });
+    });
+    expect(
+      within(screen.getByRole("button", { name: "Test Song" })).getByTestId("now-playing-bars"),
+    ).toBeTruthy();
   });
 
   it("draws the top artist, then songs, then albums", async () => {

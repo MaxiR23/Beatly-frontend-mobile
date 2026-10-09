@@ -11,6 +11,8 @@
 // - the empty message under the header, not found from the header or the tracks, the generic error with retry
 // - starting a list registers an own, a liked and a genre playlist as a recent with its kind
 // - the track menu: remove from an own playlist calls the service and refetches the tracks, none for the liked and genre playlists
+// - the action row: play and shuffle of the whole list (after loading every page for own and liked), busy until the pages load, a failed page drawing the error, leaving the screen cancelling the start, disabled when empty, registering the recent, turning shuffle off on play after another list was shuffled, the play button idle, loading, playing, pausing and resuming, every row of the playing track marked
+// - save only on a genre playlist: its state, its body, rolling back, disabled while loading or failing, none on own and liked
 // - the skeleton, back and its fallback, es
 //
 // Run with: pnpm --filter @beatly/mobile test -- PlaylistScreen
@@ -19,7 +21,7 @@
 
 import type { HttpOutcome, PageResult, PlaylistTrack } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
@@ -33,6 +35,7 @@ import {
   playlistTrackFixture,
   profileFixture,
   publicGenrePlaylistFixture,
+  stateFlag,
   successOf,
   Wrapper,
 } from "../../helpers/core.tsx";
@@ -51,6 +54,7 @@ jest.mock("../../../src/adapters/imageColors.ts", () => ({
 }));
 
 afterEach(async () => {
+  jest.restoreAllMocks();
   mockBack.mockClear();
   mockReplace.mockClear();
   mockCanGoBack = true;
@@ -279,7 +283,14 @@ describe("PlaylistScreen", () => {
     await screen.findByText("First Song");
     const names = screen.getAllByRole("button").map((b) => b.props.accessibilityLabel as unknown);
     expect(new Set(names)).toEqual(
-      new Set([en.playlist.back, "First Song", "Second Song", en.trackMenu.more]),
+      new Set([
+        en.playlist.back,
+        en.playlist.play,
+        en.playlist.shuffle,
+        "First Song",
+        "Second Song",
+        en.trackMenu.more,
+      ]),
     );
     expect(names.filter((name) => name === en.trackMenu.more)).toHaveLength(2);
   });
@@ -399,6 +410,8 @@ describe("PlaylistScreen", () => {
     expect((await screen.findAllByText(es.playlist.liked)).length).toBeGreaterThan(0);
     expect(screen.getByText("3 canciones · 10 min")).toBeTruthy();
     expect(screen.getByText(es.playlist.empty)).toBeTruthy();
+    expect(screen.getByRole("button", { name: es.playlist.play })).toBeTruthy();
+    expect(screen.getByRole("button", { name: es.playlist.shuffle })).toBeTruthy();
   });
 });
 
@@ -443,5 +456,431 @@ describe("PlaylistScreen track menu", () => {
     expect(
       screen.queryByRole("button", { name: en.trackMenu.items.removeFromPlaylist }),
     ).toBeNull();
+  });
+});
+
+const third: PlaylistTrack = { ...first, track_id: "t3", title: "Third Song", position: 3 };
+const fourth: PlaylistTrack = { ...first, track_id: "t4", title: "Fourth Song", position: 4 };
+
+// The first page holds t1 and t2, the second t3 and t4.
+function twoPages(secondPage: () => Promise<HttpOutcome<PageResult<PlaylistTrack>>>) {
+  return (cursor: string | null) =>
+    cursor === null
+      ? Promise.resolve(pageOf(two, { has_more: true, next_cursor: "c1" }))
+      : secondPage();
+}
+const secondPageOk = () => Promise.resolve(pageOf([third, fourth]));
+const otherTrack = {
+  trackId: "x1",
+  title: "Other",
+  artists: [],
+  album: null,
+  albumId: null,
+  coverUrl: null,
+  durationSeconds: 1,
+};
+const playingEvent = (ctx: Awaited<ReturnType<typeof setup>>) =>
+  act(() => {
+    ctx.player.emit({
+      type: "progress",
+      playing: true,
+      buffering: false,
+      positionSeconds: 1,
+      durationSeconds: 100,
+    });
+  });
+const ids = (ctx: Awaited<ReturnType<typeof setup>>) =>
+  ctx.playback.getState().queue.map((t) => t.trackId);
+
+describe("PlaylistScreen action row", () => {
+  it("plays an own playlist whole after loading its remaining pages", async () => {
+    const ctx = await setup({
+      listPlaylistTracks: (_id, cursor) => twoPages(secondPageOk)(cursor),
+    });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.play }));
+    await waitFor(() => {
+      expect(ids(ctx)).toEqual(["t1", "t2", "t3", "t4"]);
+    });
+    expect(ctx.listPlaylistTracks).toHaveBeenCalledWith("p1", "c1");
+    const state = ctx.playback.getState();
+    expect(state.current?.trackId).toBe("t1");
+    expect(state.source).toEqual({ kind: "playlist", id: "p1", name: "Road trip" });
+  });
+
+  it("plays the liked playlist whole after loading its remaining pages", async () => {
+    mockParams = { id: "liked", source: "liked" };
+    const ctx = await setup({
+      listLikedTracks: (cursor) => twoPages(secondPageOk)(cursor),
+    });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.play }));
+    await waitFor(() => {
+      expect(ids(ctx)).toEqual(["t1", "t2", "t3", "t4"]);
+    });
+    expect(ctx.listLikedTracks).toHaveBeenCalledWith("c1");
+  });
+
+  it("plays a genre playlist whole from its header", async () => {
+    mockParams = { id: "gp1", source: "genre" };
+    const ctx = await setup({
+      getGenrePlaylist: detail({ ...publicGenrePlaylistFixture, tracks: [first, second, third] }),
+    });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.play }));
+    await waitFor(() => {
+      expect(ids(ctx)).toEqual(["t1", "t2", "t3"]);
+    });
+    expect(ctx.playback.getState().current?.trackId).toBe("t1");
+    expect(ctx.listPlaylistTracks).not.toHaveBeenCalled();
+  });
+
+  it("shuffles an own playlist whole from a random track after loading its pages", async () => {
+    jest.spyOn(Math, "random").mockReturnValue(0.99);
+    const ctx = await setup({
+      listPlaylistTracks: (_id, cursor) => twoPages(secondPageOk)(cursor),
+    });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.shuffle }));
+    await waitFor(() => {
+      expect(ctx.playback.getState().queue).toHaveLength(4);
+    });
+    const state = ctx.playback.getState();
+    expect(state.shuffle).toBe(true);
+    expect(state.current?.trackId).toBe("t4");
+    expect(new Set(ids(ctx))).toEqual(new Set(["t1", "t2", "t3", "t4"]));
+  });
+
+  it("shuffles the liked playlist from a random track", async () => {
+    jest.spyOn(Math, "random").mockReturnValue(0.99);
+    mockParams = { id: "liked", source: "liked" };
+    const ctx = await setup({ listLikedTracks: tracksOf(two) });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.shuffle }));
+    await waitFor(() => {
+      expect(ctx.playback.getState().current?.trackId).toBe("t2");
+    });
+    expect(ctx.playback.getState().shuffle).toBe(true);
+  });
+
+  it("shuffles a genre playlist from a random track", async () => {
+    jest.spyOn(Math, "random").mockReturnValue(0.99);
+    mockParams = { id: "gp1", source: "genre" };
+    const ctx = await setup({
+      getGenrePlaylist: detail({ ...publicGenrePlaylistFixture, tracks: [first, second, third] }),
+    });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.shuffle }));
+    await waitFor(() => {
+      expect(ctx.playback.getState().current?.trackId).toBe("t3");
+    });
+    expect(ctx.playback.getState().shuffle).toBe(true);
+  });
+
+  it("plays from the first track with shuffle off after another list was shuffled", async () => {
+    const ctx = makeCore({ listPlaylistTracks: tracksOf(two) });
+    ctx.playback.setShuffle(true);
+    await ctx.playback.playList([otherTrack], 0, { kind: "album", id: "other", name: "Other" });
+    await render(
+      <Wrapper core={ctx.core}>
+        <SafeAreaProvider initialMetrics={metrics}>
+          <PlaylistScreen />
+        </SafeAreaProvider>
+      </Wrapper>,
+    );
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.play }));
+    await waitFor(() => {
+      expect(ctx.playback.getState().source?.kind).toBe("playlist");
+    });
+    const state = ctx.playback.getState();
+    expect(state.shuffle).toBe(false);
+    expect(state.current?.trackId).toBe("t1");
+    expect(ids(ctx)).toEqual(["t1", "t2"]);
+  });
+
+  it("registers the playlist as a recent when play or shuffle starts it", async () => {
+    const ctx = await setup({ listPlaylistTracks: tracksOf(two) });
+    await screen.findByText("maxi_23");
+    const body = {
+      entity_type: "playlist",
+      entity_id: "p1",
+      metadata: {
+        title: "Road trip",
+        subtitle: "maxi_23",
+        thumbnail_url: "test://img/1",
+        kind: "user",
+      },
+    };
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.play }));
+    await waitFor(() => {
+      expect(ctx.registerRecent).toHaveBeenCalledTimes(1);
+    });
+    expect(ctx.registerRecent).toHaveBeenLastCalledWith(body);
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.shuffle }));
+    await waitFor(() => {
+      expect(ctx.registerRecent).toHaveBeenCalledTimes(2);
+    });
+    expect(ctx.registerRecent).toHaveBeenLastCalledWith(body);
+  });
+
+  it("shows the pressed button busy until every page loads", async () => {
+    let release: (outcome: HttpOutcome<PageResult<PlaylistTrack>>) => void = () => undefined;
+    const pending = new Promise<HttpOutcome<PageResult<PlaylistTrack>>>((resolve) => {
+      release = resolve;
+    });
+    const ctx = await setup({
+      listPlaylistTracks: (_id, cursor) => twoPages(() => pending)(cursor),
+    });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.play }));
+    await waitFor(() => {
+      expect(stateFlag(screen.getByRole("button", { name: en.playlist.play }), "busy")).toBe(true);
+    });
+    expect(stateFlag(screen.getByRole("button", { name: en.playlist.play }), "disabled")).toBe(
+      true,
+    );
+    expect(stateFlag(screen.getByRole("button", { name: en.playlist.shuffle }), "disabled")).toBe(
+      true,
+    );
+    expect(ctx.playback.getState().queue).toEqual([]);
+    await act(async () => {
+      release(pageOf([third, fourth]));
+      await pending;
+    });
+    await waitFor(() => {
+      expect(ids(ctx)).toEqual(["t1", "t2", "t3", "t4"]);
+    });
+    expect(stateFlag(screen.getByRole("button", { name: en.playlist.play }), "busy")).toBe(true);
+    await playingEvent(ctx);
+    expect(stateFlag(screen.getByRole("button", { name: en.playlist.pause }), "busy")).toBe(false);
+  });
+
+  it("goes idle, loading, playing, then pauses and resumes a genre playlist", async () => {
+    mockParams = { id: "gp1", source: "genre" };
+    const ctx = await setup({
+      getGenrePlaylist: detail({ ...publicGenrePlaylistFixture, tracks: two }),
+    });
+    await screen.findByText("First Song");
+    const idle = screen.getByRole("button", { name: en.playlist.play });
+    expect(within(idle).getByText(en.playlist.play)).toBeTruthy();
+    await fireEvent.press(idle);
+    expect(
+      within(screen.getByRole("button", { name: en.playlist.play })).getByTestId(
+        "play-button-busy",
+      ),
+    ).toBeTruthy();
+    await playingEvent(ctx);
+    const pause = screen.getByRole("button", { name: en.playlist.pause });
+    expect(within(pause).getByTestId("play-button-pause")).toBeTruthy();
+    await fireEvent.press(pause);
+    await waitFor(() => {
+      expect(ctx.playback.getState().status).toBe("paused");
+    });
+    expect(ctx.player.port.pause).toHaveBeenCalled();
+    ctx.player.port.play.mockClear();
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.play }));
+    await waitFor(() => {
+      expect(ctx.playback.getState().status).toBe("playing");
+    });
+    expect(ctx.player.port.play).toHaveBeenCalled();
+  });
+
+  it("loads every page, then plays, then pauses an own playlist", async () => {
+    const ctx = await setup({
+      listPlaylistTracks: (_id, cursor) => twoPages(secondPageOk)(cursor),
+    });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.play }));
+    await waitFor(() => {
+      expect(ids(ctx)).toEqual(["t1", "t2", "t3", "t4"]);
+    });
+    await playingEvent(ctx);
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.pause }));
+    await waitFor(() => {
+      expect(ctx.playback.getState().status).toBe("paused");
+    });
+    expect(ctx.player.port.pause).toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: en.playlist.play })).toBeTruthy();
+  });
+
+  it("marks every row of the playing track, a duplicate included", async () => {
+    const again: PlaylistTrack = { ...first, position: 3 };
+    const ctx = await setup({ listPlaylistTracks: tracksOf([first, second, again]) });
+    await screen.findByText("Second Song");
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.play }));
+    await waitFor(() => {
+      expect(ctx.playback.getState().current?.trackId).toBe("t1");
+    });
+    await playingEvent(ctx);
+    const rows = screen.getAllByTestId("playlist-track");
+    expect(rows).toHaveLength(3);
+    expect(rows.map((row) => within(row).queryByTestId("now-playing-bars") !== null)).toEqual([
+      true,
+      false,
+      true,
+    ]);
+  });
+
+  it("draws the whole-body error and starts nothing when a page fails", async () => {
+    const ctx = await setup({
+      listPlaylistTracks: (_id, cursor) =>
+        twoPages(() => Promise.resolve<HttpOutcome<PageResult<PlaylistTrack>>>(upstream))(cursor),
+    });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.play }));
+    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(screen.getByRole("button", { name: en.common.retry })).toBeTruthy();
+    expect(ctx.playback.getState().queue).toEqual([]);
+  });
+
+  it("starts nothing when the screen is left while the pages load", async () => {
+    let release: (outcome: HttpOutcome<PageResult<PlaylistTrack>>) => void = () => undefined;
+    const pending = new Promise<HttpOutcome<PageResult<PlaylistTrack>>>((resolve) => {
+      release = resolve;
+    });
+    const ctx = makeCore({
+      listPlaylistTracks: (_id, cursor) => twoPages(() => pending)(cursor),
+    });
+    const view = await render(
+      <Wrapper core={ctx.core}>
+        <SafeAreaProvider initialMetrics={metrics}>
+          <PlaylistScreen />
+        </SafeAreaProvider>
+      </Wrapper>,
+    );
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.play }));
+    await waitFor(() => {
+      expect(ctx.listPlaylistTracks).toHaveBeenCalledWith("p1", "c1");
+    });
+    await view.unmount();
+    await act(async () => {
+      release(pageOf([third, fourth]));
+      await pending;
+    });
+    expect(ctx.playback.getState().queue).toEqual([]);
+    expect(ctx.player.port.load).not.toHaveBeenCalled();
+    expect(ctx.registerRecent).not.toHaveBeenCalled();
+  });
+
+  it("disables play and shuffle for an empty playlist", async () => {
+    const ctx = await setup();
+    await screen.findByText(en.playlist.empty);
+    for (const name of [en.playlist.play, en.playlist.shuffle]) {
+      const button = screen.getByRole("button", { name });
+      expect(stateFlag(button, "disabled")).toBe(true);
+      await fireEvent.press(button);
+    }
+    expect(ctx.playback.getState().queue).toEqual([]);
+  });
+});
+
+describe("PlaylistScreen save", () => {
+  const savedState = (saved: boolean) => () =>
+    Promise.resolve<HttpOutcome<{ saved: boolean }>>({
+      kind: "success",
+      data: { saved },
+      maxAgeSeconds: 0,
+    });
+
+  it("draws no save button on an own or the liked playlist and never reads the state", async () => {
+    const own = await setup({ listPlaylistTracks: tracksOf(two) });
+    await screen.findByText("First Song");
+    expect(screen.queryByRole("button", { name: en.playlist.save })).toBeNull();
+    expect(screen.queryByRole("button", { name: en.playlist.unsave })).toBeNull();
+    expect(own.getSavedState).not.toHaveBeenCalled();
+  });
+
+  it("draws no save button on the liked playlist", async () => {
+    mockParams = { id: "liked", source: "liked" };
+    const ctx = await setup({ listLikedTracks: tracksOf(two) });
+    await screen.findByText("First Song");
+    expect(screen.queryByRole("button", { name: en.playlist.save })).toBeNull();
+    expect(screen.queryByRole("button", { name: en.playlist.unsave })).toBeNull();
+    expect(ctx.getSavedState).not.toHaveBeenCalled();
+  });
+
+  it("draws a saved genre playlist as saved", async () => {
+    mockParams = { id: "gp1", source: "genre" };
+    const ctx = await setup({ getSavedState: savedState(true) });
+    const button = await screen.findByRole("button", { name: en.playlist.unsave });
+    expect(stateFlag(button, "selected")).toBe(true);
+    expect(ctx.getSavedState).toHaveBeenCalledWith("playlist", "gp1");
+  });
+
+  it("saves a genre playlist with its body", async () => {
+    mockParams = { id: "gp1", source: "genre" };
+    const ctx = await setup({
+      getSavedState: jest
+        .fn<() => ReturnType<ReturnType<typeof savedState>>>()
+        .mockImplementationOnce(savedState(false))
+        .mockImplementation(savedState(true)),
+    });
+    await fireEvent.press(await screen.findByRole("button", { name: en.playlist.save }));
+    expect(ctx.saveItem).toHaveBeenCalledWith({
+      kind: "playlist",
+      source: "genre",
+      external_id: "gp1",
+      title: "Pop hits",
+      thumbnail_url: "test://img/1",
+    });
+    expect(await screen.findByRole("button", { name: en.playlist.unsave })).toBeTruthy();
+  });
+
+  it("removes a saved genre playlist", async () => {
+    mockParams = { id: "gp1", source: "genre" };
+    const ctx = await setup({
+      getSavedState: jest
+        .fn<() => ReturnType<ReturnType<typeof savedState>>>()
+        .mockImplementationOnce(savedState(true))
+        .mockImplementation(savedState(false)),
+    });
+    await fireEvent.press(await screen.findByRole("button", { name: en.playlist.unsave }));
+    expect(ctx.removeItem).toHaveBeenCalledWith("playlist", "gp1");
+    expect(await screen.findByRole("button", { name: en.playlist.save })).toBeTruthy();
+  });
+
+  it("rolls the save button back when the save fails", async () => {
+    mockParams = { id: "gp1", source: "genre" };
+    // The refetch after the failure never answers, so the label returns by the rollback alone.
+    const ctx = await setup({
+      getSavedState: jest
+        .fn<() => ReturnType<ReturnType<typeof savedState>>>()
+        .mockImplementationOnce(savedState(false))
+        .mockImplementation(() => new Promise(() => undefined)),
+      saveItem: () => Promise.resolve({ kind: "api_failure", reason: "upstream_error" }),
+    });
+    await fireEvent.press(await screen.findByRole("button", { name: en.playlist.save }));
+    await waitFor(() => {
+      expect(ctx.log.warn).toHaveBeenCalledWith("library.save_failed", {
+        kind: "playlist",
+        detail: "upstream_error",
+      });
+    });
+    expect(await screen.findByRole("button", { name: en.playlist.save })).toBeTruthy();
+  });
+
+  it("disables save while its state loads", async () => {
+    mockParams = { id: "gp1", source: "genre" };
+    await setup({ getSavedState: () => new Promise(() => undefined) });
+    await screen.findByTestId("playlist-info");
+    expect(stateFlag(screen.getByRole("button", { name: en.playlist.save }), "disabled")).toBe(
+      true,
+    );
+  });
+
+  it("disables save and draws the rest when its state fails", async () => {
+    mockParams = { id: "gp1", source: "genre" };
+    await setup({
+      getSavedState: () => Promise.resolve({ kind: "api_failure", reason: "upstream_error" }),
+    });
+    await screen.findByTestId("playlist-info");
+    await waitFor(() => {
+      expect(stateFlag(screen.getByRole("button", { name: en.playlist.save }), "disabled")).toBe(
+        true,
+      );
+    });
+    expect(screen.queryByText(en.common.error.generic)).toBeNull();
   });
 });

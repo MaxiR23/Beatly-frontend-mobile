@@ -11,5 +11,10 @@
   "recommended": "Recomendados",
   "empty": "Este álbum no tiene canciones disponibles.",
   "notAvailable": "Este álbum no está disponible.",
-  "trackUnavailable": "{{title}}, no disponible"
+  "trackUnavailable": "{{title}}, no disponible",
+  "play": "Reproducir",
+  "pause": "Pausar",
+  "shuffle": "Aleatorio",
+  "save": "Guardar en la biblioteca",
+  "unsave": "Quitar de la biblioteca"
 }

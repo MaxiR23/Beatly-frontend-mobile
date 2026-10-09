@@ -1,4 +1,4 @@
-// INFO: the search tab: recent queries kept on the device while the field is empty, and the top artist, songs (each with a menu button) and albums of GET /search once it has text.
+// INFO: the search tab: recent queries kept on the device while the field is empty, and the top artist, songs (each with a menu button) and albums of GET /search once it has text; the current track's song row is marked.
 import type { CarouselItem } from "@beatly/ui/native";
 import type { PlayableTrack, SearchAlbum, SearchArtistRef, SearchSong } from "@beatly/core";
 import { color, layout, spacing } from "@beatly/ui";
@@ -30,6 +30,7 @@ import { AccountButton } from "../account/AccountButton.tsx";
 import { formatDuration } from "./formatDuration.ts";
 import { useDebouncedValue } from "./useDebouncedValue.ts";
 import { toQueue } from "../player/queue.ts";
+import { useNowPlaying } from "../player/useNowPlaying.ts";
 import { usePlaybackActions } from "../player/usePlayback.ts";
 import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
@@ -54,6 +55,7 @@ export function SearchScreen() {
   const router = useRouter();
   const tabBarClearance = useTabBarClearance();
   const playback = usePlaybackActions();
+  const nowPlaying = useNowPlaying();
   const [text, setText] = useState("");
   const trimmed = text.trim();
   const debounced = useDebouncedValue(trimmed, SEARCH_DEBOUNCE_MS);
@@ -221,6 +223,8 @@ export function SearchScreen() {
                 urls={[song.thumbnail_url]}
                 title={song.title}
                 subtitle={songMeta(song)}
+                nowPlaying={nowPlaying.of(song.track_id)}
+                reduceMotion={nowPlaying.reduceMotion}
                 onPress={() => {
                   playSong(index);
                 }}

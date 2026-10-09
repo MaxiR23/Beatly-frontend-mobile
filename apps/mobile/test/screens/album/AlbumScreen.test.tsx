@@ -13,6 +13,8 @@
 // - starting a list registers the album as a recent and keeps playing when that fails
 // - a more button on each playable track and none on an unavailable one
 // - an unavailable track (no track id, or is_available false) dimmed, not a button, without menu and announced; next, previous and shuffle never reach it
+// - the action row: the play button idle, loading, playing, pausing and resuming, idle while another list plays, the playing track's row marked; play from the first playable track with the whole album, shuffle from a random one, play after shuffle, both registering the recent, disabled with no playable track
+// - save: the saved state, saving with its body, removing, rolling back, library_item_not_found, disabled while loading or failing
 // - the generic error with retry for upstream_error and a transport failure, back and its fallback, es
 //
 // Run with: pnpm --filter @beatly/mobile test -- AlbumScreen
@@ -21,7 +23,7 @@
 
 import type { Album, HttpOutcome } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { StyleSheet, type ViewStyle } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -50,6 +52,7 @@ jest.mock("../../../src/adapters/imageColors.ts", () => ({
 }));
 
 afterEach(async () => {
+  jest.restoreAllMocks();
   mockPush.mockClear();
   mockBack.mockClear();
   mockReplace.mockClear();
@@ -368,5 +371,332 @@ describe("AlbumScreen track menu", () => {
     await setup();
     await screen.findByText("First Song");
     expect(screen.getAllByRole("button", { name: en.trackMenu.more })).toHaveLength(1);
+  });
+});
+
+const base = { artists: [], duration_seconds: 100 };
+const bigAlbum: Album = {
+  ...albumFixture,
+  tracks: [
+    { ...base, track_id: "t1", title: "First Song", is_available: true, track_number: 1 },
+    { ...base, track_id: null, title: "Hidden Song", is_available: false, track_number: 2 },
+    { ...base, track_id: "t3", title: "Third Song", is_available: true, track_number: 3 },
+    { ...base, track_id: "t4", title: "Fourth Song", is_available: true, track_number: 4 },
+  ],
+};
+
+describe("AlbumScreen action row", () => {
+  it("plays the whole album from its first playable track", async () => {
+    const ctx = await setup({ getAlbum: albumOf(bigAlbum) });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: en.album.play }));
+    const state = ctx.playback.getState();
+    expect(state.queue.map((t) => t.trackId)).toEqual(["t1", "t3", "t4"]);
+    expect(state.index).toBe(0);
+    expect(state.current?.trackId).toBe("t1");
+    expect(state.source).toEqual({ kind: "album", id: "MPREb_1", name: "Test Album" });
+  });
+
+  it("shuffles the whole album from a random playable track", async () => {
+    jest.spyOn(Math, "random").mockReturnValue(0.99);
+    const ctx = await setup({ getAlbum: albumOf(bigAlbum) });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: en.album.shuffle }));
+    const state = ctx.playback.getState();
+    expect(state.shuffle).toBe(true);
+    expect(state.current?.trackId).toBe("t4");
+    expect(new Set(state.queue.map((t) => t.trackId))).toEqual(new Set(["t1", "t3", "t4"]));
+    expect(state.queue.map((t) => t.trackId)).not.toContain(undefined);
+  });
+
+  it("plays from the first playable track with shuffle off after another list was shuffled", async () => {
+    const ctx = makeCore({ getAlbum: albumOf(bigAlbum) });
+    ctx.playback.setShuffle(true);
+    await ctx.playback.playList(
+      [
+        {
+          trackId: "x1",
+          title: "Other",
+          artists: [],
+          album: null,
+          albumId: null,
+          coverUrl: null,
+          durationSeconds: 1,
+        },
+      ],
+      0,
+      { kind: "album", id: "other", name: "Other" },
+    );
+    await render(
+      <Wrapper core={ctx.core}>
+        <SafeAreaProvider initialMetrics={metrics}>
+          <AlbumScreen />
+        </SafeAreaProvider>
+      </Wrapper>,
+    );
+    await screen.findByText("First Song");
+    expect(screen.getByRole("button", { name: en.album.play })).toBeTruthy();
+    await fireEvent.press(screen.getByRole("button", { name: en.album.play }));
+    const state = ctx.playback.getState();
+    expect(state.shuffle).toBe(false);
+    expect(state.current?.trackId).toBe("t1");
+    expect(state.queue.map((t) => t.trackId)).toEqual(["t1", "t3", "t4"]);
+    expect(state.source).toEqual({ kind: "album", id: "MPREb_1", name: "Test Album" });
+  });
+
+  it("registers the album as a recent when play or shuffle starts it", async () => {
+    const ctx = await setup({ getAlbum: albumOf(bigAlbum) });
+    await screen.findByText("First Song");
+    const body = {
+      entity_type: "album",
+      entity_id: "MPREb_1",
+      metadata: { title: "Test Album", subtitle: "Test Artist", thumbnail_url: "test://img/al1" },
+    };
+    await fireEvent.press(screen.getByRole("button", { name: en.album.play }));
+    expect(ctx.registerRecent).toHaveBeenLastCalledWith(body);
+    await fireEvent.press(screen.getByRole("button", { name: en.album.shuffle }));
+    expect(ctx.registerRecent).toHaveBeenCalledTimes(2);
+    expect(ctx.registerRecent).toHaveBeenLastCalledWith(body);
+  });
+
+  it("leaves the shuffle flag alone on a row tap", async () => {
+    const ctx = await setup({ getAlbum: albumOf(bigAlbum) });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: en.album.shuffle }));
+    expect(ctx.playback.getState().shuffle).toBe(true);
+    await fireEvent.press(screen.getByRole("button", { name: "Fourth Song" }));
+    expect(ctx.playback.getState().shuffle).toBe(true);
+    await act(() => {
+      ctx.playback.setShuffle(false);
+    });
+    await fireEvent.press(screen.getByRole("button", { name: "Fourth Song" }));
+    expect(ctx.playback.getState().shuffle).toBe(false);
+  });
+
+  it.each([
+    ["every track unavailable", { ...bigAlbum, tracks: bigAlbum.tracks.slice(1, 2) }],
+    ["no tracks", { ...bigAlbum, tracks: [] }],
+  ])("disables play and shuffle when no track is playable: %s", async (_name, album) => {
+    const ctx = await setup({ getAlbum: albumOf(album) });
+    await screen.findByTestId("album-actions");
+    for (const name of [en.album.play, en.album.shuffle]) {
+      const button = screen.getByRole("button", { name });
+      expect(stateFlag(button, "disabled")).toBe(true);
+      await fireEvent.press(button);
+    }
+    expect(ctx.playback.getState().queue).toEqual([]);
+  });
+
+  const playingEvent = (ctx: Awaited<ReturnType<typeof setup>>) =>
+    act(() => {
+      ctx.player.emit({
+        type: "progress",
+        playing: true,
+        buffering: false,
+        positionSeconds: 1,
+        durationSeconds: 100,
+      });
+    });
+
+  it("goes idle, loading, playing, then pauses and resumes", async () => {
+    const ctx = await setup({ getAlbum: albumOf(bigAlbum) });
+    await screen.findByText("First Song");
+    const idle = screen.getByRole("button", { name: en.album.play });
+    expect(within(idle).getByText(en.album.play)).toBeTruthy();
+    await fireEvent.press(idle);
+    const loading = screen.getByRole("button", { name: en.album.play });
+    expect(stateFlag(loading, "busy")).toBe(true);
+    expect(within(loading).getByTestId("play-button-busy")).toBeTruthy();
+    await playingEvent(ctx);
+    const pause = screen.getByRole("button", { name: en.album.pause });
+    expect(within(pause).getByTestId("play-button-pause")).toBeTruthy();
+    await fireEvent.press(pause);
+    await waitFor(() => {
+      expect(ctx.playback.getState().status).toBe("paused");
+    });
+    expect(ctx.player.port.pause).toHaveBeenCalled();
+    const paused = screen.getByRole("button", { name: en.album.play });
+    expect(within(paused).getByTestId("play-button-play")).toBeTruthy();
+    ctx.player.port.play.mockClear();
+    await fireEvent.press(paused);
+    await waitFor(() => {
+      expect(ctx.playback.getState().status).toBe("playing");
+    });
+    expect(ctx.player.port.play).toHaveBeenCalled();
+  });
+
+  it("shows play idle while another list plays", async () => {
+    const ctx = makeCore({ getAlbum: albumOf(bigAlbum) });
+    await ctx.playback.playList(
+      [
+        {
+          trackId: "x1",
+          title: "Other",
+          artists: [],
+          album: null,
+          albumId: null,
+          coverUrl: null,
+          durationSeconds: 1,
+        },
+      ],
+      0,
+      { kind: "album", id: "other", name: "Other" },
+    );
+    await render(
+      <Wrapper core={ctx.core}>
+        <SafeAreaProvider initialMetrics={metrics}>
+          <AlbumScreen />
+        </SafeAreaProvider>
+      </Wrapper>,
+    );
+    await screen.findByText("First Song");
+    await playingEvent(ctx);
+    const button = screen.getByRole("button", { name: en.album.play });
+    expect(within(button).getByText(en.album.play)).toBeTruthy();
+    await fireEvent.press(button);
+    expect(ctx.playback.getState().source).toEqual({
+      kind: "album",
+      id: "MPREb_1",
+      name: "Test Album",
+    });
+  });
+
+  it("marks the playing track's row and freezes it on pause", async () => {
+    const ctx = await setup({ getAlbum: albumOf(bigAlbum) });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: "Third Song" }));
+    await playingEvent(ctx);
+    expect(
+      within(screen.getByRole("button", { name: "Third Song" })).getByTestId("now-playing-bars"),
+    ).toBeTruthy();
+    expect(
+      within(screen.getByRole("button", { name: "First Song" })).queryByTestId("now-playing-bars"),
+    ).toBeNull();
+    await fireEvent.press(screen.getByRole("button", { name: en.album.pause }));
+    await waitFor(() => {
+      expect(ctx.playback.getState().status).toBe("paused");
+    });
+    expect(
+      within(screen.getByRole("button", { name: "Third Song" })).getByTestId("now-playing-bars"),
+    ).toBeTruthy();
+  });
+});
+
+describe("AlbumScreen save", () => {
+  const savedState = (saved: boolean) => () =>
+    Promise.resolve<HttpOutcome<{ saved: boolean }>>({
+      kind: "success",
+      data: { saved },
+      maxAgeSeconds: 0,
+    });
+
+  it("asks for the saved state of the route's album", async () => {
+    const ctx = await setup();
+    await screen.findByText("First Song");
+    expect(ctx.getSavedState).toHaveBeenCalledWith("album", "MPREb_1");
+  });
+
+  it("draws save as saved when the album is saved", async () => {
+    await setup({ getSavedState: savedState(true) });
+    const button = await screen.findByRole("button", { name: en.album.unsave });
+    expect(stateFlag(button, "selected")).toBe(true);
+  });
+
+  it("saves the album with its body and flips the label at once, then rereads the state", async () => {
+    // The server answers not saved first and saved once the save went through.
+    const ctx = await setup({
+      getSavedState: jest
+        .fn<() => ReturnType<ReturnType<typeof savedState>>>()
+        .mockImplementationOnce(savedState(false))
+        .mockImplementation(savedState(true)),
+    });
+    await fireEvent.press(await screen.findByRole("button", { name: en.album.save }));
+    expect(ctx.saveItem).toHaveBeenCalledWith({
+      kind: "album",
+      source: "external",
+      external_id: "MPREb_1",
+      title: "Test Album",
+      album_id: "MPREb_1",
+      album_name: "Test Album",
+      thumbnail_url: "test://img/al1",
+      artist: "Test Artist",
+      artist_id: "ar1",
+    });
+    expect(await screen.findByRole("button", { name: en.album.unsave })).toBeTruthy();
+    await waitFor(() => {
+      expect(ctx.getSavedState).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it("removes a saved album", async () => {
+    // The server answers saved first and not saved once the remove went through.
+    const ctx = await setup({
+      getSavedState: jest
+        .fn<() => ReturnType<ReturnType<typeof savedState>>>()
+        .mockImplementationOnce(savedState(true))
+        .mockImplementation(savedState(false)),
+    });
+    await fireEvent.press(await screen.findByRole("button", { name: en.album.unsave }));
+    expect(ctx.removeItem).toHaveBeenCalledWith("album", "MPREb_1");
+    expect(await screen.findByRole("button", { name: en.album.save })).toBeTruthy();
+  });
+
+  it("rolls the save button back when the save fails", async () => {
+    // The refetch after the failure never answers, so the label returns by the rollback alone.
+    const ctx = await setup({
+      getSavedState: jest
+        .fn<() => ReturnType<ReturnType<typeof savedState>>>()
+        .mockImplementationOnce(savedState(false))
+        .mockImplementation(() => new Promise(() => undefined)),
+      saveItem: () => Promise.resolve({ kind: "api_failure", reason: "upstream_error" }),
+    });
+    await fireEvent.press(await screen.findByRole("button", { name: en.album.save }));
+    await waitFor(() => {
+      expect(ctx.log.warn).toHaveBeenCalledWith("library.save_failed", {
+        kind: "album",
+        detail: "upstream_error",
+      });
+    });
+    expect(await screen.findByRole("button", { name: en.album.save })).toBeTruthy();
+    expect(screen.queryByText(en.common.error.generic)).toBeNull();
+  });
+
+  it("keeps not saved when the remove answers library_item_not_found", async () => {
+    const getSavedState = jest
+      .fn<() => ReturnType<ReturnType<typeof savedState>>>()
+      .mockImplementationOnce(savedState(true))
+      .mockImplementation(savedState(false));
+    await setup({
+      getSavedState,
+      removeItem: () => Promise.resolve({ kind: "api_failure", reason: "library_item_not_found" }),
+    });
+    await fireEvent.press(await screen.findByRole("button", { name: en.album.unsave }));
+    expect(await screen.findByRole("button", { name: en.album.save })).toBeTruthy();
+  });
+
+  it("disables save while its state loads", async () => {
+    await setup({ getSavedState: () => new Promise(() => undefined) });
+    await screen.findByText("First Song");
+    expect(stateFlag(screen.getByRole("button", { name: en.album.save }), "disabled")).toBe(true);
+  });
+
+  it("disables save and draws the rest when its state fails", async () => {
+    await setup({
+      getSavedState: () => Promise.resolve({ kind: "api_failure", reason: "upstream_error" }),
+    });
+    await screen.findByText("First Song");
+    await waitFor(() => {
+      expect(stateFlag(screen.getByRole("button", { name: en.album.save }), "disabled")).toBe(true);
+    });
+    expect(screen.queryByText(en.common.error.generic)).toBeNull();
+  });
+
+  it("draws the row labels in es", async () => {
+    await i18n.changeLanguage("es");
+    await setup();
+    const play = await screen.findByRole("button", { name: es.album.play });
+    expect(within(play).getByText(es.album.play)).toBeTruthy();
+    expect(screen.getByRole("button", { name: es.album.shuffle })).toBeTruthy();
+    expect(screen.getByRole("button", { name: es.album.save })).toBeTruthy();
   });
 });

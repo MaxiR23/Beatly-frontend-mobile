@@ -1,4 +1,4 @@
-// INFO: the related tab of the player sheet, from GET /tracks/{id}/related: the songs (a press plays them from it), the artists and the albums (a press opens them); an empty section is hidden and three empty lists draw the empty state; every song row ends with the track menu button.
+// INFO: the related tab of the player sheet, from GET /tracks/{id}/related: the songs (a press plays them from it), the artists and the albums (a press opens them); an empty section is hidden and three empty lists draw the empty state; every song row ends with the track menu button and the current track's row is marked.
 import type { AlbumRef, RelatedArtist } from "@beatly/core";
 import { layout, spacing } from "@beatly/ui";
 import {
@@ -17,6 +17,7 @@ import { useT } from "../../adapters/i18n.ts";
 import { useRelated } from "../../queries/useTracks.ts";
 import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
 import { playableOf } from "./queue.ts";
+import { useNowPlaying } from "./useNowPlaying.ts";
 import { usePlayback, usePlaybackActions } from "./usePlayback.ts";
 
 interface RelatedTabProps {
@@ -32,6 +33,7 @@ export function RelatedTab({ trackId, onAtTopChange, onOpenAlbum, onOpenArtist }
   const t = useT("player");
   const tc = useT("common");
   const playback = usePlaybackActions();
+  const nowPlaying = useNowPlaying();
   const current = usePlayback((s) => s.current);
   const related = useRelated(trackId);
   const listed =
@@ -100,6 +102,8 @@ export function RelatedTab({ trackId, onAtTopChange, onOpenAlbum, onOpenArtist }
               urls={urlsOf(song.thumbnail_url)}
               title={song.title}
               subtitle={song.artists.map((a) => a.name).join(t("artistSeparator"))}
+              nowPlaying={nowPlaying.of(song.track_id)}
+              reduceMotion={nowPlaying.reduceMotion}
               trailing={<TrackMenuButton track={playable[position] ?? playableOf(song)} />}
               onPress={() => {
                 if (current !== null) {

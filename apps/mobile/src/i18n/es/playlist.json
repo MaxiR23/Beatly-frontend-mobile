@@ -10,5 +10,10 @@
   "durationMinutes": "{{minutes}} min",
   "durationHours": "{{hours}} h {{minutes}} min",
   "empty": "Esta playlist todavía no tiene canciones.",
-  "notFound": "Playlist no encontrada"
+  "notFound": "Playlist no encontrada",
+  "play": "Reproducir",
+  "pause": "Pausar",
+  "shuffle": "Aleatorio",
+  "save": "Guardar en la biblioteca",
+  "unsave": "Quitar de la biblioteca"
 }

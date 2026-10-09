@@ -41,6 +41,10 @@ The floating back button is drawn in every state.
 | Error with retry | `ErrorState`; retry refetches                                                                           | `common:error.generic`, `common:retry`                                                                                                   |
 | Unavailable      | `EmptyState` with no action, for `invalid_request`                                                      | `artist:notAvailable`                                                                                                                    |
 
+The row of the current popular song (whoever started it) draws the now playing bars over its cover on a
+scrim, with no row background; the bars are frozen while paused and static under reduce motion. An
+unavailable song is never marked.
+
 The back button is labeled `artist:back`.
 
 ## Data
@@ -70,4 +74,4 @@ nothing to go back to.
 
 Screenshots of an artist on iOS and Android; the crop and fade on real artist images, the name's
 legibility over bright images and the floating back button over the image; no white edge during a
-push and a swipe-back in every tab, on the JS tab bar and on NativeTabs (iOS 26+).
+push and a swipe-back in every tab, on the JS tab bar and on NativeTabs (iOS 26+); the now playing bars on a popular song, moving, frozen on pause and static under reduce motion.

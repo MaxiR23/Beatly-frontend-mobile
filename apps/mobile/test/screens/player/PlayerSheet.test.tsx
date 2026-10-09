@@ -14,6 +14,7 @@
 // - lyrics: the playing line following the progress and centered, a press seeking, plain lyrics, null lyrics, loading, error with retry
 // - related: songs, artists and albums, an empty section hidden, three empty lists, a song playing, an album or artist opening in the current tab, loading, error with retry
 // - a more button on each up next and related row
+// - the current track's row marked with the now playing bars: a later repeat in up next, and the track among the related songs
 // - es
 //
 // Run with: pnpm --filter @beatly/mobile test -- PlayerSheet
@@ -23,7 +24,7 @@
 import type { HttpOutcome, PlayableTrack, TrackLyrics, TrackRelated, UpNext } from "@beatly/core";
 import { color, motion } from "@beatly/ui";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { Animated, BackHandler, Dimensions, FlatList } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -403,6 +404,19 @@ describe("up next", () => {
     expect(state.source).toEqual({ kind: "track", id: "t1", name: "Song t1" });
   });
 
+  it("marks a later repeat of the current track", async () => {
+    const ctx = await setup({}, ["t1", "t2", "t1"]);
+    await openSheet();
+    await screen.findByText("Up u2");
+    await progress(ctx, 1);
+    expect(
+      within(screen.getByRole("button", { name: "Song t1" })).getByTestId("now-playing-bars"),
+    ).toBeTruthy();
+    expect(
+      within(screen.getByRole("button", { name: "Song t2" })).queryByTestId("now-playing-bars"),
+    ).toBeNull();
+  });
+
   it("draws the loading state while pending, keeping the rest of the queue", async () => {
     await setup({ getUpNext: pending });
     await openSheet();
@@ -544,6 +558,24 @@ describe("related", () => {
     const state = ctx.playback.getState();
     expect(state.current?.trackId).toBe("r1");
     expect(state.source).toEqual({ kind: "track", id: "t1", name: "Song t1" });
+  });
+
+  it("marks the current track among the related songs", async () => {
+    const withCurrent: TrackRelated = {
+      ...relatedFixture,
+      songs: [...relatedFixture.songs, ...upNextFixture.tracks.slice(0, 1)],
+    };
+    const ctx = await setup({ getRelated: () => Promise.resolve(ok(withCurrent)) });
+    await openSheet();
+    await selectTab(en.player.sheet.tabs.related);
+    await screen.findByText("Up r1");
+    await progress(ctx, 1);
+    expect(
+      within(screen.getByRole("button", { name: "Up t1" })).getByTestId("now-playing-bars"),
+    ).toBeTruthy();
+    expect(
+      within(screen.getByRole("button", { name: "Up r1" })).queryByTestId("now-playing-bars"),
+    ).toBeNull();
   });
 
   it("closes the player and opens the album in the current tab", async () => {

@@ -66,10 +66,19 @@ export type {
   CreatePlaylistInput,
   PlaylistsService,
 } from "./services/playlists.ts";
-export { libraryEntryKindSchema, libraryEntrySchema } from "./domain/library.ts";
-export type { LibraryEntry } from "./domain/library.ts";
-export { createLibraryService } from "./services/library.ts";
-export type { LibraryService } from "./services/library.ts";
+export {
+  libraryEntryKindSchema,
+  libraryEntrySchema,
+  libraryItemSchema,
+  librarySavedStateSchema,
+} from "./domain/library.ts";
+export type { LibraryEntry, LibraryItem, LibrarySavedState } from "./domain/library.ts";
+export {
+  albumLibraryInputOf,
+  createLibraryService,
+  genrePlaylistLibraryInputOf,
+} from "./services/library.ts";
+export type { LibraryItemInput, LibraryItemKind, LibraryService } from "./services/library.ts";
 export { playEventSchema, recentEntitySchema, recentEntityTypeSchema } from "./domain/activity.ts";
 export type { PlayEvent, RecentEntity } from "./domain/activity.ts";
 export { createActivityService } from "./services/activity.ts";
