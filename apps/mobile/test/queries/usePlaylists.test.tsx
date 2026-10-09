@@ -14,6 +14,7 @@
 // - creation refetching the library and the playlists, and a rejected creation surfacing its outcome
 // - the playlist ids that hold a track, cache time from Cache-Control
 // - add and remove invalidating the library, the playlists, that playlist and the membership; create-with-track refreshing them even when the add fails
+// - an edit renaming the playback source when it is that playlist, and leaving another source alone
 // - edit invalidating the library, the playlists, that playlist's header only and the recents; delete invalidating the library, the playlists and the recents but not the deleted playlist; neither refreshing anything when it fails
 //
 // Run with: pnpm --filter @beatly/mobile test -- usePlaylists
@@ -340,8 +341,36 @@ describe("the playlist write mutations", () => {
     expect(ctx.registerRecent).not.toHaveBeenCalled();
   });
 
+  const playable = {
+    trackId: "t1",
+    title: "Song",
+    artists: [{ id: "ar1", name: "Artist" }],
+    album: "Album",
+    albumId: "al1",
+    coverUrl: null,
+    durationSeconds: 200,
+  };
+
+  it("edit renames the playback source when it is that playlist", async () => {
+    const { ctx, wrapper } = mount();
+    await ctx.playback.playList([playable], 0, { kind: "playlist", id: "p1", name: "Old" });
+    const { queue } = ctx.playback.getState();
+    const { result } = await renderHook(() => useUpdatePlaylist(), { wrapper });
+    await act(() => result.current.mutateAsync({ id: "p1", input: { title: "New one" } }));
+    expect(ctx.playback.getState().source?.name).toBe("New one");
+    expect(ctx.playback.getState().queue).toBe(queue);
+  });
+
+  it("edit leaves another playback source alone", async () => {
+    const { ctx, wrapper } = mount();
+    await ctx.playback.playList([playable], 0, { kind: "playlist", id: "p2", name: "Old" });
+    const { result } = await renderHook(() => useUpdatePlaylist(), { wrapper });
+    await act(() => result.current.mutateAsync({ id: "p1", input: { title: "New one" } }));
+    expect(ctx.playback.getState().source?.name).toBe("Old");
+  });
+
   it("edit refreshes nothing when it fails", async () => {
-    const { wrapper, keys } = mount({
+    const { ctx, wrapper, keys } = mount({
       updatePlaylist: () => Promise.resolve({ kind: "api_failure", reason: "upstream_error" }),
     });
     const { result } = await renderHook(() => useUpdatePlaylist(), { wrapper });
@@ -353,6 +382,7 @@ describe("the playlist write mutations", () => {
     });
     expect(error).toBeInstanceOf(OutcomeError);
     expect(keys()).toEqual([]);
+    expect(ctx.playback.getState().source).toBeNull();
   });
 
   it("delete invalidates the library, the playlists and the recents, not the deleted playlist", async () => {

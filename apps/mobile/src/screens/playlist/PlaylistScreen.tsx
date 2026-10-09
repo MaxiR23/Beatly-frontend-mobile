@@ -1,4 +1,4 @@
-// INFO: a playlist, own, liked or genre by its source param: the detail base with its cover, title, creator, description, meta line and tracks paged by infinite scroll for own and liked; a genre playlist's header and tracks come in one request; unavailable for playlist_not_found; every track has a menu button, with remove from this playlist inside an own playlist; a row under the header plays the whole list from its first track or shuffled from a random one, loading every remaining page of an own or liked playlist first (leaving the screen before they arrive cancels the start), and a genre playlist can be saved to the library; the play button pauses and resumes the playlist while it is the playback source and the current track's rows are marked; starting a list registers it as a recent; an own playlist's action row ends with an options button (system menu on iOS, a sheet elsewhere) to edit its title and description in a sheet or delete it after a native confirmation, which goes back; a failed delete shows the error notice and playback is never touched.
+// INFO: a playlist, own, liked or genre by its source param: the detail base with its cover, title, creator, description, meta line and tracks paged by infinite scroll for own and liked; a genre playlist's header and tracks come in one request; unavailable for playlist_not_found; every track has a menu button, with remove from this playlist inside an own playlist; a row under the header plays the whole list from its first track or shuffled from a random one, loading every remaining page of an own or liked playlist first (leaving the screen before they arrive cancels the start), and a genre playlist can be saved to the library; the play button pauses and resumes the playlist while it is the playback source and the current track's rows are marked; starting a list registers it as a recent; an own playlist's action row ends with an options button that opens a sheet on both platforms to edit its title and description in a sheet or delete it after a native confirmation, which goes back; a failed delete shows the error notice and playback is never touched.
 import {
   genrePlaylistLibraryInputOf,
   profileName,
@@ -11,6 +11,7 @@ import {
   DetailActions,
   DetailScreen,
   EmptyState,
+  IconButton,
   MediaRow,
   Notice,
   Text,
@@ -32,7 +33,6 @@ import { useProfile } from "../../queries/useProfile.ts";
 import { useRegisterRecent } from "../../queries/useRecents.ts";
 import { useDominantColor } from "../detail/useDominantColor.ts";
 import { EditPlaylistSheet } from "./EditPlaylistSheet.tsx";
-import { PlaylistOptionsButton } from "./PlaylistOptionsButton.tsx";
 import { PlaylistOptionsSheet } from "./PlaylistOptionsSheet.tsx";
 import type { PlaylistOptionKey } from "./playlistOptions.ts";
 import { playlistMeta } from "./playlistMeta.ts";
@@ -331,9 +331,10 @@ export function PlaylistScreen() {
               {...(data.source === "user"
                 ? {
                     options: (
-                      <PlaylistOptionsButton
-                        onSelect={selectOption}
-                        onOpenSheet={() => {
+                      <IconButton
+                        icon="ellipsis"
+                        accessibilityLabel={t("options.more")}
+                        onPress={() => {
                           setSheet("options");
                         }}
                       />

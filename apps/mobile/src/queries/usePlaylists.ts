@@ -1,4 +1,4 @@
-// INFO: the query hook of GET /playlists, the caller's own playlists, paged through the shared infinite-query hook, the mutation of POST /playlists, which refetches the library and the playlists once the playlist exists, the query of GET /playlists/owned-with-track/{id}, and the mutations that add a track to a playlist, create a playlist with a track and remove a track, which refresh the library, the playlists, that playlist and the membership, and the mutations of PATCH and DELETE /playlists/{id}, which refresh the library, the playlists and the recents, and after an edit that playlist's header.
+// INFO: the query hook of GET /playlists, the caller's own playlists, paged through the shared infinite-query hook, the mutation of POST /playlists, which refetches the library and the playlists once the playlist exists, the query of GET /playlists/owned-with-track/{id}, and the mutations that add a track to a playlist, create a playlist with a track and remove a track, which refresh the library, the playlists, that playlist and the membership, and the mutations of PATCH and DELETE /playlists/{id}, which refresh the library, the playlists and the recents, and after an edit that playlist's header and the playback source's name.
 import type {
   AddTrackInput,
   CreatePlaylistInput,
@@ -121,7 +121,7 @@ export function useRemoveFromPlaylist() {
 }
 
 export function useUpdatePlaylist() {
-  const { playlists } = useCore();
+  const { playlists, playback } = useCore();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdatePlaylistInput }) => {
@@ -129,14 +129,17 @@ export function useUpdatePlaylist() {
       if (outcome.kind !== "success") throw new OutcomeError(outcome);
       return outcome.data;
     },
-    onSuccess: (_data, { id }) =>
-      Promise.all([
+    // The player's "playing from" shows the new title at once; the controller ignores it unless this playlist is the source.
+    onSuccess: (updated, { id }) => {
+      playback.renameSource({ kind: "playlist", id }, updated.title);
+      return Promise.all([
         queryClient.invalidateQueries({ queryKey: libraryQueryKey }),
         queryClient.invalidateQueries({ queryKey: playlistsQueryKey }),
         // Exact: the tracks key shares this prefix and an edit does not change them.
         queryClient.invalidateQueries({ queryKey: playlistQueryKey("user", id), exact: true }),
         queryClient.invalidateQueries({ queryKey: recentsQueryKey }),
-      ]),
+      ]);
+    },
   });
 }
 

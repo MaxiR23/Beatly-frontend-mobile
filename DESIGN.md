@@ -93,13 +93,13 @@ scroll.
 - Creator line (playlist): a `layout.creatorMark` mark (avatar or brand mark on
   `color.accent.primary`, `radius.full`) with the name in `typography.rowTitle`, gap
   `spacing.sm`.
-- Action row: `DetailActions`, centered, `layout.gap` between the buttons, `layout.gutter` sides:
+- Action row: `DetailActions`, three fixed columns with play in the exact center: the two side slots `layout.controlHeight` wide (the end one empty when there is nothing to hold) and the center column always the idle pill's width, reserved by a sizer at `motion.hiddenOpacity`, so no button moves when play changes state; `layout.gap` between them, `layout.gutter` sides:
   shuffle (`IconButton` plain), play (`PlayButton`), and save (`IconButton` plain, plus or check,
-  selected when saved) on albums and genre playlists and, on an own playlist only, the options button after play (`IconButton` plain `ellipsis`, or `NativeMenu` on iOS). `PlayButton`: idle, a `layout.playButtonMedium`
+  selected when saved) on albums and genre playlists and, on an own playlist only, the options button in the end slot (`IconButton` plain `ellipsis`, opening a sheet). `PlayButton`: idle, a `layout.playButtonMedium`
   tall pill in `color.accent.primary`, `spacing.xl` sides, the play glyph (`icon.size.lg`) and the
   label in `typography.button` `color.text.inverse`, `spacing.sm` apart; loading, playing and paused,
   a `layout.playButtonMedium` circle with a spinner, the pause glyph or the play glyph. Leaving idle
-  it shrinks to the circle in `motion.duration.fast`; becoming pause it scales in from
+  it always shrinks to the circle in `motion.duration.fast`, empty, and draws the spinner or glyph only when the shrink ends; becoming pause it scales in from
   `motion.enterScale` in `motion.duration.fast`; under reduce motion neither. Disabled on
   `color.surface.control` with the glyph in `color.text.disabled`.
 - Title: `typography.title` under the hero. The base reserves no space for an action
@@ -211,6 +211,7 @@ Roles, not raw sizes. Every role uses the platform's system font (no
 | How long a brief notice stays                                                                                                                 | `motion.duration.notice`                 |
 | The one spring (the player cover's pause scale, a drag that springs back, the sheet opening and closing, the handle settling after its nudge) | `motion.spring` (`damping`, `stiffness`) |
 | Opacity of a pressed control                                                                                                                  | `motion.pressOpacity`                    |
+| Opacity of a layout sizer (laid out, never seen)                                                                                              | `motion.hiddenOpacity`                   |
 | Scale the player cover drops to while paused                                                                                                  | `motion.pausedScale`                     |
 | Scale the player drops to behind the open sheet                                                                                               | `motion.behindSheetScale`                |
 | Scale a control starts from when it enters (the detail play button becoming pause)                                                            | `motion.enterScale`                      |

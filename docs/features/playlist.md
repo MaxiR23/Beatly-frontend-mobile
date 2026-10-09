@@ -32,11 +32,16 @@ the info block:
   both disabled when the loaded list is empty (playlist tracks are always playable); save only
   on a genre playlist, disabled while its state loads or when reading it failed. While play or
   shuffle loads the remaining pages of an own or liked playlist, the pressed button is busy and
-  both are disabled. The row is centered: shuffle, play (`PlayButton`) and, on a genre playlist,
-  save; on an own playlist only, an options button after play (`NativeMenu` on iOS where the native
-  module exists, an `IconButton` `ellipsis` opening a `Sheet` of `ActionRow`s elsewhere) with Edit
-  playlist (`pencil`) and Delete playlist (`trash`, destructive); never on liked, genre or albums; no
-  share or search button yet.
+  both are disabled. The row has three slots with play in the exact center of the screen:
+  shuffle, play (`PlayButton`), and an end slot as wide as shuffle's (`layout.controlHeight`) holding
+  save on a genre playlist, the options button on an own playlist (an `IconButton` `ellipsis` opening a
+  `Sheet` of `ActionRow`s on both platforms) with Edit playlist (`pencil`) and Delete playlist
+  (`trash`, destructive); never on liked, genre or albums; no share or search button yet. The options
+  open the sheet on iOS too, unlike the track menu's system menu (ADR 023): the iOS menu is anchored to
+  the button, and a playlist-wide action reads better as a sheet from the bottom. On the liked
+  playlist the end slot is empty, so play stays centered. The center column is always as wide as the
+  play pill, so shuffle and the end slot never move; when the pill shrinks to the circle the space
+  around it grows.
 - Edit sheet: the `CreatePlaylistSheet` layout (`spacing.lg` form gap, two `field` buttons `spacing.md`
   apart) with the name and the description prefilled and no public switch. Save is disabled while
   nothing changed or the title is empty or over 200 characters, and sends only the changed fields.
@@ -45,8 +50,10 @@ the info block:
   `motion.duration.notice`; each failure restarts the timer).
 - Play button: idle (the playlist is not the playback source) it is a pill with the play glyph and
   `playlist:play`; pressing it plays the whole list from the first track, after loading every page of
-  an own or liked playlist (the pressed button shows the spinner meanwhile). While the stream loads it
-  is a circle with a spinner (a mid-track buffer shows it too); playing it is a circle with the pause
+  an own or liked playlist (the pressed button shows the spinner meanwhile). Pressing it, the pill
+  first shrinks to the circle in `motion.duration.fast`, empty, and only then draws the spinner, or the
+  pause glyph if playback already started. While the stream loads it is a circle with a spinner (a
+  mid-track buffer shows it too); playing it is a circle with the pause
   glyph, labelled `playlist:pause`, and pressing it pauses; paused it shows the play glyph and pressing
   it resumes. Once the list has ended (paused on its last track) pressing it restarts the list from position 0 of the current play order: the first track with shuffle off, the first of the shuffled order with shuffle on. Under reduce motion neither the shrink nor the scale-in animate.
 - The row of every occurrence of the current track (whoever started it) draws the now playing bars
@@ -101,7 +108,7 @@ Play and shuffle of an own or liked playlist fetch every remaining page of `trac
 
 Save (genre only, never on own or liked) sends `{ kind: "playlist", source: "genre", external_id, title }` with `thumbnail_url` (the first cover url) when there is one, and no `artist`. The button flips at once and rolls back if the write fails.
 
-Edit sends only the changed fields (an emptied description as `null`) and refreshes the header, `library`, `playlists/mine` and `recents`. Delete counts `playlist_not_found` as deleted, goes back and refreshes `library`, `playlists/mine` and `recents`. Delete is confirmed with React Native's `Alert.alert`, not a `packages/ui` component, so its look is the OS's and not the tokens'. Delete does not refresh the deleted playlist's own queries (header and tracks), so the screen does not flash the unavailable state before it goes back. Neither registers a recent nor touches playback, so a deleted playlist that is the playback source keeps playing its queue.
+Edit sends only the changed fields (an emptied description as `null`) and refreshes the header, `library`, `playlists/mine` and `recents`. Delete counts `playlist_not_found` as deleted, goes back and refreshes `library`, `playlists/mine` and `recents`. Delete is confirmed with React Native's `Alert.alert`, not a `packages/ui` component, so its look is the OS's and not the tokens'. Delete does not refresh the deleted playlist's own queries (header and tracks), so the screen does not flash the unavailable state before it goes back. Neither registers a recent. A saved edit renames the playback source when this playlist is playing, so the player's "playing from" shows the new title; the queue and the track are kept. `useUpdatePlaylist` is the first query hook that writes to playback (`playback.renameSource`, in its `onSuccess`): the rename has to land with the confirmed title of the PATCH response, the same moment the queries refresh, and the playback controller only changes `source.name` when that playlist is the current source. A delete never touches playback, so a deleted playlist that is the playback source keeps playing its queue under its old name.
 
 Home's recents follow both: a rename updates the title of the playlist's recents and a delete removes them, on the backend (`PATCH` and `DELETE /playlists/{id}` in `docs/api/playlists.md`), and the `recents` refresh after each makes Home show it without reopening the app.
 
@@ -140,7 +147,7 @@ or replaces with `/` when there is nothing to go back to.
 
 ## Checked by hand
 
-The iOS system menu and the Android sheet of the options button; the native confirmation on both platforms; a rename and a delete seen in Home and Library without reopening the app; deleting the playing playlist; screenshots of the three kinds on iOS and Android; the action row centered on iOS and Android, the play pill shrinking to a circle and scaling in as pause, the now playing bars moving, freezing on pause and static under reduce motion; play and shuffle on a real own or liked playlist of more than 50 tracks; saving a genre playlist and finding it in the library; infinite scroll with a real
+The options sheet on iOS and Android; the native confirmation on both platforms; a rename and a delete seen in Home and Library without reopening the app; deleting the playing playlist; screenshots of the three kinds on iOS and Android; play centered on own, liked, genre and an album in the pill and the circle; the pill shrinking fully before the spinner or pause, on an album (instant) and a long own playlist; a rename of the playing playlist shown as the player's source; the play pill shrinking to a circle and scaling in as pause, the now playing bars moving, freezing on pause and static under reduce motion; play and shuffle on a real own or liked playlist of more than 50 tracks; saving a genre playlist and finding it in the library; infinite scroll with a real
 gesture on a playlist of more than 50 tracks; real covers on an own playlist header; a playlist recent of each kind opening from
 Home; real covers, the dominant-color wash
 and the brand mark at `layout.creatorMark`; swipe-back per tab and the native tab

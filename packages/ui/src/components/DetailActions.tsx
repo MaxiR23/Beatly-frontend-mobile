@@ -1,4 +1,4 @@
-// INFO: the action row of a detail screen, centered: shuffle, the play button, an optional save toggle and an optional options button after them; the play button starts when idle and toggles when this list plays or is paused; while either start button loads the list's pages both are disabled, so a second start cannot race the first.
+// INFO: the action row of a detail screen in three fixed columns with play in the exact center: shuffle, the play button (always as wide as its pill, so nothing moves when it shrinks), and an end slot of the same width as shuffle's that holds the save toggle, the options button or nothing; the play button starts when idle and toggles when this list plays or is paused; while either start button loads the list's pages both are disabled, so a second start cannot race the first.
 import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -22,7 +22,7 @@ interface DetailActionsProps {
   disabled: boolean;
   // Absent on own and liked playlists.
   save?: { label: string; saved: boolean; disabled: boolean; onPress: () => void };
-  // The own playlist's options button, drawn after play (and after save, which no own playlist has).
+  // The own playlist's options button, in the end slot; no own playlist has save, so the slot holds save or options, or stays empty (liked) so play stays centered.
   options?: ReactNode;
   reduceMotion: boolean;
   testID?: string;
@@ -41,13 +41,15 @@ export function DetailActions({
   const playState: PlayButtonState = play.busy ? "loading" : play.state;
   return (
     <View style={styles.row} testID={testID}>
-      <IconButton
-        icon="shuffle"
-        accessibilityLabel={shuffle.label}
-        busy={shuffle.busy}
-        disabled={startDisabled}
-        onPress={shuffle.onPress}
-      />
+      <View style={styles.slot} testID="detail-actions-start">
+        <IconButton
+          icon="shuffle"
+          accessibilityLabel={shuffle.label}
+          busy={shuffle.busy}
+          disabled={startDisabled}
+          onPress={shuffle.onPress}
+        />
+      </View>
       <PlayButton
         state={playState}
         playLabel={play.label}
@@ -56,16 +58,19 @@ export function DetailActions({
         reduceMotion={reduceMotion}
         onPress={playState === "idle" ? play.onStart : play.onToggle}
       />
-      {save !== undefined ? (
-        <IconButton
-          icon={save.saved ? "check" : "plus"}
-          accessibilityLabel={save.label}
-          selected={save.saved}
-          disabled={save.disabled}
-          onPress={save.onPress}
-        />
-      ) : null}
-      {options}
+      <View style={styles.slot} testID="detail-actions-end">
+        {save !== undefined ? (
+          <IconButton
+            icon={save.saved ? "check" : "plus"}
+            accessibilityLabel={save.label}
+            selected={save.saved}
+            disabled={save.disabled}
+            onPress={save.onPress}
+          />
+        ) : (
+          options
+        )}
+      </View>
     </View>
   );
 }
@@ -77,5 +82,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: layout.gutter,
     gap: layout.gap,
+  },
+  slot: {
+    width: layout.controlHeight,
+    height: layout.controlHeight,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

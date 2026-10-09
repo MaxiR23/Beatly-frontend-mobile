@@ -6,7 +6,7 @@
 // - DetailActions
 //
 // What is covered:
-// - shuffle, play and save in order, centered with the layout gap; no save without save; the save toggle state and label
+// - shuffle, play and save in order, centered with the layout gap, in three fixed columns, the side two `layout.controlHeight` wide and the center one the pill's width in every play state, the end one empty without save or options; no save without save; the save toggle state and label
 // - a press on an idle play starts, on a playing or paused one toggles
 // - the start buttons disabled with no playable track, while pages load for either one, and play alone while its stream loads
 // - the presses, and a disabled save ignoring them
@@ -181,5 +181,47 @@ describe("DetailActions", () => {
     );
     await fireEvent.press(screen.getByRole("button", { name: "Options" }));
     expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it("draws the end slot with save, with options, or empty, the same width as shuffle's", async () => {
+    const view = await render(<DetailActions {...props()} />);
+    expect(
+      within(screen.getByTestId("detail-actions-end")).getByRole("button", { name: "Save" }),
+    ).toBeTruthy();
+    await view.rerender(
+      <DetailActions
+        {...propsWithoutSave({
+          options: <Pressable accessibilityRole="button" accessibilityLabel="Options" />,
+        })}
+      />,
+    );
+    expect(
+      within(screen.getByTestId("detail-actions-end")).getByRole("button", { name: "Options" }),
+    ).toBeTruthy();
+    await view.rerender(<DetailActions {...propsWithoutSave()} />);
+    expect(screen.getByTestId("detail-actions-end").children).toHaveLength(0);
+    for (const id of ["detail-actions-start", "detail-actions-end"]) {
+      expect(screen.getByTestId(id)).toHaveStyle({
+        width: layout.controlHeight,
+        height: layout.controlHeight,
+      });
+    }
+  });
+
+  it("keeps both side slots the same width in every play state", async () => {
+    const p = propsWithoutSave();
+    const view = await render(<DetailActions {...p} />);
+    const states = ["idle", "loading", "playing", "paused"] as const;
+    for (const state of states) {
+      await view.rerender(<DetailActions {...p} play={{ ...p.play, state }} />);
+      for (const id of ["detail-actions-start", "detail-actions-end"]) {
+        expect(screen.getByTestId(id)).toHaveStyle({ width: layout.controlHeight });
+      }
+      expect(screen.getByTestId("play-button-sizer", { includeHiddenElements: true })).toBeTruthy();
+    }
+    await view.rerender(<DetailActions {...p} play={{ ...p.play, busy: true }} />);
+    expect(screen.getByTestId("detail-actions-start")).toHaveStyle({ width: layout.controlHeight });
+    expect(screen.getByTestId("detail-actions-end")).toHaveStyle({ width: layout.controlHeight });
+    expect(screen.getByTestId("play-button-sizer", { includeHiddenElements: true })).toBeTruthy();
   });
 });

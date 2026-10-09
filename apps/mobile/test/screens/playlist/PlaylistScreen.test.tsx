@@ -13,7 +13,7 @@
 // - the track menu: remove from an own playlist calls the service and refetches the tracks, none for the liked and genre playlists
 // - the action row: play and shuffle of the whole list (after loading every page for own and liked), busy until the pages load, a failed page drawing the error, leaving the screen cancelling the start, disabled when empty, registering the recent, turning shuffle off on play after another list was shuffled, the play button idle, loading, playing, pausing and resuming, every row of the playing track marked
 // - save only on a genre playlist: its state, its body, rolling back, disabled while loading or failing, none on own and liked
-// - the options button only on an own playlist, after play; the options sheet; the edit sheet prefilled, Save disabled unchanged or invalid, only changed fields, empty description as null, a failed save keeping the sheet and input, a saved edit closing it and redrawing the header; delete asking first, cancel doing nothing, confirm going back, a failed delete showing the notice and staying, playback untouched; no recent registered by an edit or a delete
+// - the options button only on an own playlist, after play, opening the sheet; a saved rename shown as the player's source with the queue kept; the edit sheet prefilled, Save disabled unchanged or invalid, only changed fields, empty description as null, a failed save keeping the sheet and input, a saved edit closing it and redrawing the header; delete asking first, cancel doing nothing, confirm going back, a failed delete showing the notice and staying, playback untouched; no recent registered by an edit or a delete
 // - the skeleton, back and its fallback, es
 //
 // Run with: pnpm --filter @beatly/mobile test -- PlaylistScreen
@@ -30,6 +30,7 @@ import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { PlaylistScreen } from "../../../src/screens/playlist/PlaylistScreen.tsx";
 import {
+  createdPlaylistFixture,
   likedDetailFixture,
   makeCore,
   pageOf,
@@ -1003,6 +1004,41 @@ describe("PlaylistScreen own playlist options", () => {
     });
     expect((await screen.findAllByText("Renamed")).length).toBeGreaterThan(0);
     expect(ctx.registerRecent).not.toHaveBeenCalled();
+  });
+
+  it("shows a saved rename as the player's source and keeps the queue", async () => {
+    const ctx = await setup({
+      listPlaylistTracks: tracksOf(two),
+      updatePlaylist: () =>
+        Promise.resolve({
+          kind: "success",
+          data: { ...createdPlaylistFixture, id: "p1", title: "Renamed" },
+          maxAgeSeconds: 0,
+        }),
+    });
+    await screen.findByText("First Song");
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.play }));
+    await waitFor(() => {
+      expect(ctx.playback.getState().queue.length).toBe(2);
+    });
+    await playingEvent(ctx);
+    const before = ctx.playback.getState();
+    ctx.player.port.unload.mockClear();
+    ctx.player.port.load.mockClear();
+    ctx.player.port.pause.mockClear();
+    await openEdit();
+    await fireEvent.changeText(nameField(), "Renamed");
+    await fireEvent.press(save());
+    await waitFor(() => {
+      expect(screen.queryByLabelText(en.playlist.edit.name)).toBeNull();
+    });
+    const after = ctx.playback.getState();
+    expect(after.source).toEqual({ ...before.source, name: "Renamed" });
+    expect(after.queue).toBe(before.queue);
+    expect(after.status).toBe(before.status);
+    expect(ctx.player.port.unload).not.toHaveBeenCalled();
+    expect(ctx.player.port.load).not.toHaveBeenCalled();
+    expect(ctx.player.port.pause).not.toHaveBeenCalled();
   });
 
   const confirmation = (alert: jest.SpiedFunction<typeof Alert.alert>) => {

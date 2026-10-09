@@ -23,12 +23,12 @@ the body:
   `typography.meta` and `color.text.tertiary`: the kind, the year, the song count
   and the duration in hours and minutes, each omitted when the API sends none.
 - Action row: `DetailActions` (`DESIGN.md`, "Detail screen base") between the info and the
-  tracks, centered: shuffle, play (`PlayButton`) and save (plus, or check when saved). No share,
+  tracks, in three slots with play in the exact center of the screen: shuffle, play (`PlayButton`) and save (plus, or check when saved), the side slots both `layout.controlHeight` wide and the center column always as wide as the play pill, so shuffle and save never move when it shrinks. No share,
   search or options button yet. Play and shuffle are disabled when no track is playable; save is
   disabled while its state loads or when reading it failed.
 - Play button: idle (the album is not the playback source) it is a pill with the play glyph and
-  `album:play`; pressing it plays the album from its first playable track. While the stream loads it
-  shrinks to a circle with a spinner (a mid-track buffer shows the spinner too); playing it is a
+  `album:play`; pressing it plays the album from its first playable track. Pressed, it shrinks to
+  the circle in `motion.duration.fast`, empty, and only then draws the spinner while the stream loads, or the pause glyph if it already plays (a mid-track buffer shows the spinner too); playing it is a
   circle with the pause glyph, labelled `album:pause`, and pressing it pauses; paused it shows the
   play glyph and pressing it resumes. Once the list has ended (paused on its last track) pressing it restarts the list from position 0 of the current play order: the first track with shuffle off, the first of the shuffled order with shuffle on. Under reduce motion neither the shrink nor the scale-in animate.
 - Tracks: one `TrackRow` per track in API order, keyed by `track_number`. The
