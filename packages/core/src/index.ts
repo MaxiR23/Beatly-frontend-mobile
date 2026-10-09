@@ -65,6 +65,7 @@ export type {
   AddTrackResult,
   CreatePlaylistInput,
   PlaylistsService,
+  UpdatePlaylistInput,
 } from "./services/playlists.ts";
 export {
   libraryEntryKindSchema,

@@ -15,5 +15,28 @@
   "pause": "Pausar",
   "shuffle": "Aleatorio",
   "save": "Guardar en la biblioteca",
-  "unsave": "Quitar de la biblioteca"
+  "unsave": "Quitar de la biblioteca",
+  "options": {
+    "more": "Opciones de la playlist",
+    "close": "Cerrar",
+    "items": {
+      "edit": "Editar playlist",
+      "delete": "Eliminar playlist"
+    }
+  },
+  "edit": {
+    "title": "Editar playlist",
+    "name": "Nombre",
+    "nameTooLong": "Usa {{max}} caracteres o menos",
+    "description": "Descripción (opcional)",
+    "cancel": "Cancelar",
+    "submit": "Guardar",
+    "close": "Cerrar"
+  },
+  "delete": {
+    "title": "¿Eliminar “{{title}}”?",
+    "message": "Esta acción no se puede deshacer.",
+    "confirm": "Eliminar",
+    "cancel": "Cancelar"
+  }
 }

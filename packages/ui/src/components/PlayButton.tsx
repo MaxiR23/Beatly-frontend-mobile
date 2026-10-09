@@ -1,13 +1,6 @@
-// INFO: the detail play button, with four states: idle is an accent pill with the play glyph and a label; loading, playing and paused are a circle with a spinner, the pause glyph or the play glyph. Leaving idle the pill shrinks to the circle in motion.duration.fast, and becoming pause the circle scales in from motion.enterScale; under reduce motion neither animates. Disabled greys it out and ignores presses; loading ignores them too.
-import { useLayoutEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Animated,
-  Pressable,
-  StyleSheet,
-  View,
-  type LayoutChangeEvent,
-} from "react-native";
+// INFO: the detail play button, with four states: idle is an accent pill layout.playButtonPill wide with the play glyph and a label; loading, playing and paused are a circle with a spinner, the pause glyph or the play glyph. Leaving idle the label fades in motion.playButton.labelFade, then the pill, holding the play glyph, shrinks to the circle in motion.playButton.shrink (ease in-out), whatever the state does meanwhile; only then does it draw the spinner, the play glyph or the pause glyph, which scales in from motion.enterScale in motion.playButton.scaleIn. Under reduce motion nothing animates. Disabled greys it out and ignores presses; loading ignores them too.
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ActivityIndicator, Animated, Easing, Pressable, StyleSheet, View } from "react-native";
 
 import { color } from "../tokens/color.ts";
 import { motion } from "../tokens/motion.ts";
@@ -40,43 +33,87 @@ export function PlayButton({
   onPress,
   testID,
 }: PlayButtonProps) {
-  const [width] = useState(() => new Animated.Value(layout.playButtonMedium));
+  const [width] = useState(
+    () => new Animated.Value(state === "idle" ? layout.playButtonPill : layout.playButtonMedium),
+  );
   const [scale] = useState(() => new Animated.Value(1));
+  const [labelOpacity] = useState(() => new Animated.Value(1));
+  const [phase, setPhase] = useState<"fade" | "shrink" | null>(null);
+  // The fade phase is set while rendering the state change, so the label is still drawn when the fade starts.
+  const [drawn, setDrawn] = useState<PlayButtonState>(state);
+  if (state !== drawn) {
+    setDrawn(state);
+    if (drawn === "idle" && !reduceMotion) setPhase("fade");
+  }
   const previous = useRef<PlayButtonState>(state);
-  const pillWidth = useRef<number | null>(null);
+  const running = useRef<Animated.CompositeAnimation | null>(null);
 
   useLayoutEffect(() => {
-    const before = previous.current;
-    previous.current = state;
-    if (state === "idle") return;
-    const measured = pillWidth.current;
-    if (before === "idle" && measured !== null && !reduceMotion) {
-      width.setValue(measured);
-      Animated.timing(width, {
-        toValue: layout.playButtonMedium,
-        duration: motion.duration.fast,
-        useNativeDriver: false,
-      }).start();
-    } else {
-      width.setValue(layout.playButtonMedium);
-    }
-    if (state === "playing" && before !== "playing" && !reduceMotion) {
+    const scaleIn = () => {
       scale.setValue(motion.enterScale);
       Animated.timing(scale, {
         toValue: 1,
-        duration: motion.duration.fast,
+        duration: motion.playButton.scaleIn,
         useNativeDriver: true,
       }).start();
-    } else {
+    };
+    const before = previous.current;
+    previous.current = state;
+    if (state === "idle") {
+      running.current?.stop();
+      labelOpacity.setValue(1);
+      width.setValue(layout.playButtonPill);
       scale.setValue(1);
+      return;
     }
-  }, [state, reduceMotion, width, scale]);
+    if (before === "idle" && !reduceMotion) {
+      width.setValue(layout.playButtonPill);
+      scale.setValue(1);
+      const fade = Animated.timing(labelOpacity, {
+        toValue: 0,
+        duration: motion.playButton.labelFade,
+        useNativeDriver: true,
+      });
+      running.current = fade;
+      fade.start(({ finished }) => {
+        if (running.current !== fade) return;
+        if (!finished) {
+          running.current = null;
+          setPhase(null);
+          return;
+        }
+        setPhase("shrink");
+        const shrink = Animated.timing(width, {
+          toValue: layout.playButtonMedium,
+          duration: motion.playButton.shrink,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        });
+        running.current = shrink;
+        shrink.start(({ finished: done }) => {
+          if (running.current === shrink) running.current = null;
+          setPhase(null);
+          if (done && previous.current === "playing") scaleIn();
+        });
+      });
+      return;
+    }
+    // A change while the chain runs keeps it going; the content and the scale-in wait for its end.
+    if (running.current !== null) return;
+    width.setValue(layout.playButtonMedium);
+    if (state === "playing" && before !== "playing" && !reduceMotion) scaleIn();
+    else scale.setValue(1);
+  }, [state, reduceMotion, width, scale, labelOpacity]);
+
+  useEffect(
+    () => () => {
+      running.current?.stop();
+    },
+    [],
+  );
 
   const inactive = disabled || state === "loading";
   const tone: Tone = disabled ? "disabled" : "inverse";
-  const onLayout = (event: LayoutChangeEvent) => {
-    if (state === "idle") pillWidth.current = event.nativeEvent.layout.width;
-  };
 
   return (
     <Pressable
@@ -90,20 +127,21 @@ export function PlayButton({
     >
       <Animated.View style={{ transform: [{ scale }] }}>
         <Animated.View
-          style={[
-            styles.shape,
-            disabled ? styles.inactive : styles.active,
-            state === "idle" ? undefined : { width },
-          ]}
-          onLayout={onLayout}
+          style={[styles.shape, disabled ? styles.inactive : styles.active, { width }]}
           testID="play-button-pill"
         >
-          {state === "idle" ? (
+          {state === "idle" || phase === "fade" ? (
             <View style={styles.pill}>
               <Icon name="play" size="lg" tone={tone} />
-              <Text variant="button" tone={tone}>
-                {playLabel}
-              </Text>
+              <Animated.View style={{ opacity: labelOpacity }} testID="play-button-label">
+                <Text variant="button" tone={tone}>
+                  {playLabel}
+                </Text>
+              </Animated.View>
+            </View>
+          ) : phase === "shrink" ? (
+            <View testID="play-button-shrink">
+              <Icon name="play" size="lg" tone={tone} />
             </View>
           ) : state === "loading" ? (
             <ActivityIndicator color={toneColor[tone]} testID="play-button-busy" />
@@ -136,7 +174,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    paddingHorizontal: spacing.xl,
   },
   pressed: { opacity: motion.pressOpacity },
 });

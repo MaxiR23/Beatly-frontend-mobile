@@ -1,4 +1,4 @@
-// INFO: the playback controller: the queue, the play order (shuffle), repeat one, the current track, a jump to a position of the queue and the status over the player port; an immutable snapshot plus subscribe.
+// INFO: the playback controller: the queue, the play order (shuffle), repeat one, the current track, a jump to a position of the queue, a rename of the current source and the status over the player port; an immutable snapshot plus subscribe.
 import type { SearchArtistRef } from "../domain/search.ts";
 import type { LogPort } from "../ports/log.ts";
 import type { PlayerEvent, PlayerPort } from "../ports/player.ts";
@@ -68,6 +68,11 @@ export interface PlaybackController {
   setRepeatOne(on: boolean): void;
   retry(): Promise<void>;
   stop(): void;
+  // Renames the current source when it is this list (after an edit); the queue, the track and the status are kept, and any other source is left alone.
+  renameSource(
+    list: { readonly kind: PlaybackSource["kind"]; readonly id: string },
+    name: string,
+  ): void;
 }
 
 export const PREVIOUS_RESTARTS_AFTER_SECONDS = 3;
@@ -311,6 +316,12 @@ export function createPlaybackController(deps: {
       order = [];
       player.unload();
       update({ ...IDLE, shuffle: state.shuffle, repeatOne: state.repeatOne });
+    },
+    renameSource: (list, name) => {
+      const current = state.source;
+      if (current === null) return;
+      if (current.kind !== list.kind || current.id !== list.id || current.name === name) return;
+      update({ source: { ...current, name } });
     },
   };
 }

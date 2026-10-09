@@ -9,13 +9,14 @@
 // - with data, expected empty (an empty or out-of-range start), the typed resolution failure and the player error
 // - the listen identity: bumped on every track start, repeat-one replay and list end, kept by a seek
 // - toggle, next, previous with its restart rule, skipTo, seek, shuffle on and off, repeat one, ended at the end of the list, a stale resolution, stop
+// - renaming the current source in place, ignoring another source or an idle controller
 // - Not applicable: ok:false reasons, because the controller does not call the API
 //
 // Run with: pnpm --filter @beatly/core test -- playback
 //
 // SEE: packages/core/src/services/playback.ts
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { PlayableTrack, PlaybackSource } from "../../src/services/playback.ts";
 import {
@@ -549,5 +550,52 @@ describe("listen", () => {
     await controller.playList(list, 0, source);
     controller.stop();
     expect(controller.getState().listen).toBe(0);
+  });
+});
+
+describe("renameSource", () => {
+  const playlist: PlaybackSource = { kind: "playlist", id: "p1", name: "Old" };
+
+  it("renames the current source in place and keeps the queue, the track and the status", async () => {
+    const { controller, player } = setup();
+    await controller.playList([track("t1"), track("t2")], 0, playlist);
+    player.advance(1);
+    const before = controller.getState();
+    const callsBefore = player.calls.length;
+    controller.renameSource({ kind: "playlist", id: "p1" }, "New");
+    const after = controller.getState();
+    expect(after.source).toEqual({ kind: "playlist", id: "p1", name: "New" });
+    expect(after.queue).toBe(before.queue);
+    expect(after.current).toBe(before.current);
+    expect(after.status).toBe(before.status);
+    expect(after.index).toBe(before.index);
+    expect(player.calls).toHaveLength(callsBefore);
+  });
+
+  it("does nothing while idle", () => {
+    const { controller } = setup();
+    const listener = vi.fn();
+    controller.subscribe(listener);
+    const before = controller.getState();
+    controller.renameSource({ kind: "playlist", id: "p1" }, "New");
+    expect(controller.getState()).toBe(before);
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it("ignores another list's source", async () => {
+    const { controller } = setup();
+    await controller.playList(list, 0, playlist);
+    controller.renameSource({ kind: "playlist", id: "p2" }, "New");
+    controller.renameSource({ kind: "album", id: "p1" }, "New");
+    expect(controller.getState().source?.name).toBe("Old");
+  });
+
+  it("does not notify when the name is the same", async () => {
+    const { controller } = setup();
+    await controller.playList(list, 0, playlist);
+    const listener = vi.fn();
+    controller.subscribe(listener);
+    controller.renameSource({ kind: "playlist", id: "p1" }, "Old");
+    expect(listener).not.toHaveBeenCalled();
   });
 });

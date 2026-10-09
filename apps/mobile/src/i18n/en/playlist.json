@@ -15,5 +15,28 @@
   "pause": "Pause",
   "shuffle": "Shuffle",
   "save": "Save to library",
-  "unsave": "Remove from library"
+  "unsave": "Remove from library",
+  "options": {
+    "more": "Playlist options",
+    "close": "Close",
+    "items": {
+      "edit": "Edit playlist",
+      "delete": "Delete playlist"
+    }
+  },
+  "edit": {
+    "title": "Edit playlist",
+    "name": "Name",
+    "nameTooLong": "Use {{max}} characters or fewer",
+    "description": "Description (optional)",
+    "cancel": "Cancel",
+    "submit": "Save",
+    "close": "Close"
+  },
+  "delete": {
+    "title": "Delete “{{title}}”?",
+    "message": "This can't be undone.",
+    "confirm": "Delete",
+    "cancel": "Cancel"
+  }
 }
