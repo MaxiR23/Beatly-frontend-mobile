@@ -6,10 +6,10 @@ The more button of every track row and the player header, the menu it opens, the
 
 Act on one track from anywhere it is listed: like it or remove the like, add it to a playlist (an existing
 one or a new one), go to its artist or its album, read its credits and, inside an own playlist, remove it from
-that playlist. The menu lists only the items that apply to the track. A track missing what a route requires does not
+that playlist, and report a problem with it (always offered, last; `bug-reports.md`). The menu lists only the items that apply to the track. A track missing what a route requires does not
 offer that item: Like and Remove from Liked need `likeInputOf` to map (an artist with an id, album, album id and
 cover), Add to a playlist needs `addTrackInputOf` (the same plus a duration), Go to artist needs an artist with an id,
-Go to album needs an album id. Credits is always offered. The player also draws a heart beside the title with the
+Go to album needs an album id. Credits and Report a problem are always offered. The player also draws a heart beside the title with the
 same rule as Like (`likes.md`).
 
 Every screen with track rows (album, playlist, artist, search, the player's up next and related) renders one
@@ -26,6 +26,7 @@ Token names only.
 - Playlist picker: a `Sheet` kept `topInset` below the status bar; `typography.subtitle` title, a New playlist `MediaRow` (`size="medium"`,
   the plus tile), then the playlists as `MediaRow`s of `layout.rowCoverMedium`; a playlist that holds the track has a trailing
   check in `color.status.success` and is not pressable. The new playlist form is an `Input`, Cancel and Create as `Button`s of shape `field`.
+- Report item: the `flag` glyph in the `ActionRow` and the SF Symbol `flag` in the iOS menu; it opens the report form (`bug-reports.md`) with the track's title.
 - Credits: a `Sheet` with `typography.subtitle` title and a scrolling list: each section title in `typography.rowTitle` and its names in `typography.body`, `color.text.secondary`, `spacing.lg` between sections.
 - Notice: a `Notice`, a check or an x (`icon.size.md`, `color.status.success` or `color.status.error`) and one `typography.meta` line,
   floating on a `GlassSurface` `bar` `layout.gutter` from the sides and `spacing.md` above the bottom inset, for `motion.duration.notice`.
@@ -71,6 +72,7 @@ A failed like or a failed remove draws the floating notice with `common:error.ge
 | `POST /playlists`                          | no        | `private, no-cache`                      | `invalid_request`, `unauthorized`, `upstream_*`                                                                                | none                                                                                        |
 | `POST /playlists/{id}/tracks`              | no        | `private, no-cache`                      | `track_already_in_playlist` (409), `order_key_conflict`, `playlist_not_found`, `invalid_request`, `unauthorized`, `upstream_*` | `track_already_in_playlist`, turned into a success in `core` (counted as added, no message) |
 | `DELETE /playlists/{id}/tracks/{track_id}` | no        | `private, no-cache`                      | `playlist_not_found`, `invalid_request`, `unauthorized`, `upstream_*`; idempotent, `data: null`                                | none                                                                                        |
+| `POST /bug-reports`                        | no        | `private, no-cache`                      | `invalid_request`, `unauthorized`, `upstream_*`                                                                                | none                                                                                        |
 | `POST /likes`, `DELETE /likes/{id}`        | no        | `private, no-cache`                      | see `likes.md`                                                                                                                 | the service's outcome kind, never a reason                                                  |
 
 Adding a track, removing one and creating a playlist refresh the library, the caller's playlists, that playlist's header and
@@ -82,10 +84,10 @@ Go to artist and Go to album push `/artist/[id]` and `/album/[id]` in the curren
 
 ## i18n namespace
 
-`trackMenu`, `common` and `player:artistSeparator`.
+`trackMenu` (`items.report` included), `common`, `bugReports` and `player:artistSeparator`.
 
 ## Checked by hand
 
 The iOS system menu opening from the button with its SF Symbols and the destructive red; the three dots in the icon color, not the system blue; whether Expo Go ships the `ExpoUI` module (the sheet is the fallback);
-the marquee's real motion and its ellipsis under the system Reduce Motion setting; a sheet opened from inside the player route, including that the sheets mount on open and unmount on close, and the swap from the menu to the picker or the credits (ADR 023);
+the marquee's real motion and its ellipsis under the system Reduce Motion setting; a sheet opened from inside the player route, including that the sheets mount on open and unmount on close, and the swap from the menu to the picker, the credits or the report form (ADR 023);
 the notice above the iOS 26 tab accessory and the Android floating bar; screenshots of the heart, the menu, the picker and the credits on iOS and Android.

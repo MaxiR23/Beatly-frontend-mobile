@@ -75,6 +75,21 @@ export type {
   UpdatePlaylistInput,
 } from "./services/playlists.ts";
 export {
+  BUG_REPORT_CATEGORIES,
+  bugReportCategorySchema,
+  bugReportEntityTypeSchema,
+  bugReportSchema,
+  bugReportStatusSchema,
+} from "./domain/bugReport.ts";
+export type {
+  BugReport,
+  BugReportCategory,
+  BugReportEntityType,
+  BugReportStatus,
+} from "./domain/bugReport.ts";
+export { createBugReportsService } from "./services/bugReports.ts";
+export type { BugReportsService, CreateBugReportInput } from "./services/bugReports.ts";
+export {
   libraryEntryKindSchema,
   libraryEntrySchema,
   libraryItemSchema,

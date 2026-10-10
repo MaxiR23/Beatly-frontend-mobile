@@ -10,6 +10,7 @@
 // - like through the likes service with the mapped input, the error notice for a rejected like and for a storage failure, hiding after its time, nothing for a pending one
 // - go to artist and go to album closing the sheet and calling the screen
 // - remove calling the service for an own playlist, and the error notice when it fails
+// - report a problem swapping the menu for the report form with the track's title, and sending the track attached
 //
 // Run with: pnpm --filter @beatly/mobile test -- TrackMenuHost
 //
@@ -135,5 +136,30 @@ describe("the track menu", () => {
     await openMenu();
     await choose(en.trackMenu.items.removeFromPlaylist);
     expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+  });
+
+  it("opens the report form with the track's title from the menu", async () => {
+    await setupMenu();
+    await openMenu();
+    await choose(en.trackMenu.items.report);
+    expect(screen.queryByTestId("track-menu-sheet")).toBeNull();
+    expect(screen.getByText("About: Menu Song")).toBeTruthy();
+  });
+
+  it("sends the report with the track attached", async () => {
+    const ctx = await setupMenu();
+    await openMenu();
+    await choose(en.trackMenu.items.report);
+    await choose(en.bugReports.categories.ui);
+    await fireEvent.changeText(
+      screen.getByLabelText(en.bugReports.form.description),
+      "The cover is cut",
+    );
+    await fireEvent.press(screen.getByRole("button", { name: en.bugReports.form.send }));
+    expect(ctx.createBugReport).toHaveBeenCalledWith({
+      category: "ui",
+      description: "The cover is cut",
+      entity: { type: "track", id: "t1" },
+    });
   });
 });

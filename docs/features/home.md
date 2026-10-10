@@ -51,7 +51,7 @@ playlists without a subtitle.
 | Error with retry | `ErrorState` when either list failed, on the first load or on a next page of playlists; retry refetches the failed ones | `common:error.generic`, `common:retry`                       |
 
 The avatar and the sheet are `AccountButton`, shared with Explore. The sheet
-holds the log out button (`common:account.logout`); a failed log out draws
+holds report a problem and My reports (`common:account.report`, `common:account.myReports`; `bug-reports.md`) above the log out button (`common:account.logout`); a failed log out draws
 `common:error.generic`. The avatar and sheet close use `common:account.open` and
 `common:account.close`.
 

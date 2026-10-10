@@ -33,6 +33,7 @@ export { Sheet } from "./components/Sheet.tsx";
 export { Avatar } from "./components/Avatar.tsx";
 export { Carousel, type CarouselItem } from "./components/Carousel.tsx";
 export { GenreRow } from "./components/GenreRow.tsx";
+export { Badge } from "./components/Badge.tsx";
 export { Chip } from "./components/Chip.tsx";
 export { Cover } from "./components/Cover.tsx";
 export { GradientFill } from "./components/GradientFill.tsx";

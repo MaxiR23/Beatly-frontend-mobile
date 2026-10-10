@@ -1,4 +1,4 @@
-// INFO: one per screen with track rows: it owns which sheet is open (the Android and fallback menu, the playlist picker, the credits) and a brief floating notice, and gives the rows' menu buttons the actions (open, select an item, like); a like that the backend refuses or the device cannot store shows the generic error notice, a pending one shows nothing because the service sends it again on the next sync.
+// INFO: one per screen with track rows: it owns which sheet is open (the Android and fallback menu, the playlist picker, the credits, the report form) and a brief floating notice, and gives the rows' menu buttons the actions (open, select an item, like); a like that the backend refuses or the device cannot store shows the generic error notice, a pending one shows nothing because the service sends it again on the next sync.
 import { likeInputOf, type PlayableTrack } from "@beatly/core";
 import { layout, motion, spacing } from "@beatly/ui";
 import { Notice } from "@beatly/ui/native";
@@ -9,6 +9,7 @@ import { useT } from "../../adapters/i18n.ts";
 import { useLikesActions } from "../../queries/useLikes.ts";
 import { useRemoveFromPlaylist } from "../../queries/usePlaylists.ts";
 import { CreditsSheet } from "./CreditsSheet.tsx";
+import { ReportProblemSheet } from "../bugReports/ReportProblemSheet.tsx";
 import { PlaylistPickerSheet } from "./PlaylistPickerSheet.tsx";
 import { TrackMenuSheet } from "./TrackMenuSheet.tsx";
 import { TrackMenuContext } from "./trackMenuContext.ts";
@@ -24,7 +25,7 @@ interface TrackMenuHostProps {
   children: ReactNode;
 }
 
-type Open = { sheet: "menu" | "picker" | "credits"; track: PlayableTrack } | null;
+type Open = { sheet: "menu" | "picker" | "credits" | "report"; track: PlayableTrack } | null;
 
 export function TrackMenuHost({
   ownPlaylistId = null,
@@ -73,6 +74,9 @@ export function TrackMenuHost({
       case "credits":
         setOpen({ sheet: "credits", track });
         break;
+      case "report":
+        setOpen({ sheet: "report", track });
+        break;
       case "goToArtist":
         setOpen(null);
         if (item.artistId !== undefined) onOpenArtist(item.artistId);
@@ -115,6 +119,12 @@ export function TrackMenuHost({
           <PlaylistPickerSheet track={open.track} onClose={close} />
         ) : null}
         {open?.sheet === "credits" ? <CreditsSheet track={open.track} onClose={close} /> : null}
+        {open?.sheet === "report" ? (
+          <ReportProblemSheet
+            track={{ id: open.track.trackId, title: open.track.title }}
+            onClose={close}
+          />
+        ) : null}
         {notice !== null ? (
           <View
             pointerEvents="none"
