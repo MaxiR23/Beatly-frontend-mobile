@@ -107,6 +107,11 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
   controller does not drive the infinite query, so a long paginated
   playlist (own or liked) stops after its loaded pages. Autoplay or an
   up-next list needs a new record.
+- `023-native-track-menu-behind-a-single-ui-importer.md` says the single
+  importer of `@expo/ui` is `components/NativeMenu.tsx`. Since
+  `025-swiftui-edit-list-through-a-single-expo-ui-loader.md` it is the
+  loader `components/swiftUI.ts`, and `NativeMenu` and `NativeEditList`
+  draw through it.
 
 ## Files
 
@@ -189,3 +194,6 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
 - `024-import-cycles-fail-lint-with-import-x.md` — why an import cycle fails
   `pnpm lint` through `eslint-plugin-import-x`, despite ADR 010's no-plugin
   rule, and why relative side-effect imports are banned.
+- `025-swiftui-edit-list-through-a-single-expo-ui-loader.md` — why the
+  single importer of `@expo/ui` is the loader `components/swiftUI.ts`, so
+  the track menu and the playlist edit list can both draw SwiftUI.
