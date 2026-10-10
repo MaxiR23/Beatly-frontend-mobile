@@ -26,7 +26,12 @@ export type StreamFailureCause = "unplayable" | "timeout" | "network" | "invalid
 
 export type StreamResolution =
   | { readonly kind: "resolved"; readonly url: string }
-  | { readonly kind: "failure"; readonly cause: StreamFailureCause };
+  | {
+      readonly kind: "failure";
+      readonly cause: StreamFailureCause;
+      // Only an unplayable failure for a non-2xx answer carries it.
+      readonly httpStatus?: number;
+    };
 
 export interface StreamResolver {
   // Never rejects: every failure, a timeout included, is a failure value.
@@ -45,6 +50,8 @@ export interface PlaybackState {
   readonly source: PlaybackSource | null;
   readonly status: PlaybackStatus;
   readonly failure: PlaybackFailure | null;
+  // The HTTP status of an unplayable stream answer; null for every other failure and when not failed.
+  readonly failureHttpStatus: number | null;
   readonly positionSeconds: number;
   readonly durationSeconds: number | null;
   readonly shuffle: boolean;
@@ -84,6 +91,7 @@ const IDLE: PlaybackState = Object.freeze({
   source: null,
   status: "idle",
   failure: null,
+  failureHttpStatus: null,
   positionSeconds: 0,
   durationSeconds: null,
   shuffle: false,
@@ -150,6 +158,7 @@ export function createPlaybackController(deps: {
       current: track,
       status: "loading",
       failure: null,
+      failureHttpStatus: null,
       positionSeconds: 0,
       durationSeconds: track.durationSeconds,
       listen: nextListen(),
@@ -161,7 +170,11 @@ export function createPlaybackController(deps: {
     }
     if (resolution.kind === "failure") {
       log.warn("playback.unplayable", { cause: resolution.cause, trackId: track.trackId });
-      update({ status: "failed", failure: resolution.cause });
+      update({
+        status: "failed",
+        failure: resolution.cause,
+        failureHttpStatus: resolution.httpStatus ?? null,
+      });
       return;
     }
     player.load(resolution.url);
@@ -208,7 +221,7 @@ export function createPlaybackController(deps: {
       });
     } else if (event.type === "error") {
       log.warn("playback.player_error", { message: event.message });
-      update({ status: "failed", failure: "playback" });
+      update({ status: "failed", failure: "playback", failureHttpStatus: null });
     } else {
       void onEnded();
     }

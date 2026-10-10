@@ -44,6 +44,7 @@ const adapterOnlyLibraries = [
   "i18next",
   "expo-localization",
   "react-native-image-colors",
+  "expo-constants",
 ];
 
 // Icons are drawn with the Icon component of packages/ui; its file is the

@@ -160,7 +160,7 @@ export function createStreamResolver(deps: {
 
     if (response.status < 200 || response.status > 299) {
       log.warn("stream.status", { status: response.status });
-      return { kind: "failure", cause: "unplayable" };
+      return { kind: "failure", cause: "unplayable", httpStatus: response.status };
     }
 
     let raw: unknown;
