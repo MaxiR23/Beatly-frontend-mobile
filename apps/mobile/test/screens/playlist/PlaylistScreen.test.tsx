@@ -14,7 +14,7 @@
 // - the liked playlist's play and shuffle pills
 // - the action row: play and shuffle of the whole list (after loading every page for own and liked), busy until the pages load, a failed page drawing the error, leaving the screen cancelling the start, disabled when empty, registering the recent, turning shuffle off on play after another list was shuffled, the play button idle, loading, playing, pausing and resuming, every row of the playing track marked
 // - save only on a genre playlist: its state, its body, rolling back, disabled while loading or failing, none on own and liked
-// - the options button only on an own playlist, after play, opening the sheet; a saved rename shown as the player's source with the queue kept; the edit sheet prefilled, Save disabled unchanged or invalid, only changed fields, empty description as null, a failed save keeping the sheet and input, a saved edit closing it and redrawing the header; delete asking first, cancel doing nothing, confirm going back, a failed delete showing the notice and staying, playback untouched; no recent registered by an edit or a delete
+// - the options button only on an own playlist, after play, opening the sheet with edit, edit tracks and delete in that order, edit tracks opening the edit mode without asking; a saved rename shown as the player's source with the queue kept; the edit sheet prefilled, Save disabled unchanged or invalid, only changed fields, empty description as null, a failed save keeping the sheet and input, a saved edit closing it and redrawing the header; delete asking first, cancel doing nothing, confirm going back, a failed delete showing the notice and staying, playback untouched; no recent registered by an edit or a delete
 // - the skeleton, back and its fallback, es
 //
 // Run with: pnpm --filter @beatly/mobile test -- PlaylistScreen
@@ -48,10 +48,16 @@ import {
 
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
+const mockPush = jest.fn();
 let mockCanGoBack = true;
 let mockParams: Record<string, string | undefined> = { id: "p1", source: "user" };
 jest.mock("expo-router", () => ({
-  useRouter: () => ({ back: mockBack, replace: mockReplace, canGoBack: () => mockCanGoBack }),
+  useRouter: () => ({
+    back: mockBack,
+    replace: mockReplace,
+    push: mockPush,
+    canGoBack: () => mockCanGoBack,
+  }),
   useLocalSearchParams: () => mockParams,
 }));
 jest.mock("../../../src/adapters/imageColors.ts", () => ({
@@ -82,6 +88,7 @@ afterEach(async () => {
   jest.restoreAllMocks();
   mockBack.mockClear();
   mockReplace.mockClear();
+  mockPush.mockClear();
   mockCanGoBack = true;
   mockParams = { id: "p1", source: "user" };
   await i18n.changeLanguage("en");
@@ -981,12 +988,34 @@ describe("PlaylistScreen own playlist options", () => {
     expect(screen.queryByRole("button", { name: en.playlist.options.more })).toBeNull();
   });
 
-  it("opens the options sheet with edit and delete", async () => {
+  it("opens the options sheet with edit, edit tracks and delete, in that order", async () => {
     await setup({ listPlaylistTracks: tracksOf(two) });
     await openOptions();
-    expect(screen.getByTestId("playlist-options-sheet")).toBeTruthy();
-    expect(screen.getByRole("button", { name: en.playlist.options.items.edit })).toBeTruthy();
-    expect(screen.getByRole("button", { name: en.playlist.options.items.delete })).toBeTruthy();
+    const sheet = screen.getByTestId("playlist-options-sheet");
+    const labels = [
+      en.playlist.options.items.edit,
+      en.playlist.options.items.editTracks,
+      en.playlist.options.items.delete,
+    ];
+    const shown = within(sheet)
+      .getAllByText(new RegExp(`^(${labels.join("|")})$`))
+      .map((node) => node.props.children as string);
+    expect(shown).toEqual(labels);
+  });
+
+  it("edit tracks opens the edit mode of this playlist and asks nothing", async () => {
+    const alert = jest.spyOn(Alert, "alert");
+    await setup({ listPlaylistTracks: tracksOf(two) });
+    await openOptions();
+    await fireEvent.press(
+      screen.getByRole("button", { name: en.playlist.options.items.editTracks }),
+    );
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: "/playlist-edit/[id]",
+      params: { id: "p1" },
+    });
+    expect(alert).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("playlist-options-sheet")).toBeNull();
   });
 
   it("prefills the edit sheet and keeps Save disabled until something changes", async () => {

@@ -59,12 +59,19 @@ export { publicGenrePlaylistSchema } from "./domain/public.ts";
 export type { PublicGenrePlaylist } from "./domain/public.ts";
 export { createPublicService } from "./services/public.ts";
 export type { PublicService } from "./services/public.ts";
-export { addTrackInputOf, createPlaylistsService } from "./services/playlists.ts";
+export {
+  addTrackInputOf,
+  createPlaylistsService,
+  createTrackEditor,
+} from "./services/playlists.ts";
 export type {
   AddTrackInput,
   AddTrackResult,
   CreatePlaylistInput,
   PlaylistsService,
+  TrackEdit,
+  TrackEditResult,
+  TrackEditor,
   UpdatePlaylistInput,
 } from "./services/playlists.ts";
 export {

@@ -7,7 +7,7 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the stateful likes mirror, credits, membership, add, create-with-track and remove fakes, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, library item, the saved read, add and remove, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, and the bug reports fixtures and fakes, and the page builder)
+// (the stateful likes mirror, credits, membership, add, create-with-track, remove and move fakes, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, library item, the saved read, add and remove, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, the bug reports fixtures and fakes, and the page builder)
 //
 import type {
   ActivityService,
@@ -544,6 +544,7 @@ export function makeCore(
     addTrackToPlaylist?: PlaylistsService["addTrackToPlaylist"];
     createPlaylistWithTrack?: PlaylistsService["createPlaylistWithTrack"];
     removeTrackFromPlaylist?: PlaylistsService["removeTrackFromPlaylist"];
+    moveTrack?: PlaylistsService["moveTrack"];
     updatePlaylist?: PlaylistsService["updatePlaylist"];
     deletePlaylist?: PlaylistsService["deletePlaylist"];
     // What setLiked answers after it flipped the mirror, as the real service does before the network.
@@ -684,6 +685,9 @@ export function makeCore(
     options.removeTrackFromPlaylist ??
       (() => Promise.resolve({ kind: "success", data: null, maxAgeSeconds: 0 })),
   );
+  const moveTrack = jest.fn<PlaylistsService["moveTrack"]>(
+    options.moveTrack ?? (() => Promise.resolve({ kind: "success", data: null, maxAgeSeconds: 0 })),
+  );
   const updatePlaylist = jest.fn<PlaylistsService["updatePlaylist"]>(
     options.updatePlaylist ??
       (() => Promise.resolve({ kind: "success", data: createdPlaylistFixture, maxAgeSeconds: 0 })),
@@ -763,6 +767,7 @@ export function makeCore(
       addTrackToPlaylist,
       createPlaylistWithTrack,
       removeTrackFromPlaylist,
+      moveTrack,
       updatePlaylist,
       deletePlaylist,
     },
@@ -810,6 +815,7 @@ export function makeCore(
     addTrackToPlaylist,
     createPlaylistWithTrack,
     removeTrackFromPlaylist,
+    moveTrack,
     updatePlaylist,
     deletePlaylist,
     storage,

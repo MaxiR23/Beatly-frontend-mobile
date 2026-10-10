@@ -1,16 +1,13 @@
-// INFO: the only importer of @expo/ui: the iOS system menu opened by a three-dots button, one button per item. It is drawn only where isNativeMenuAvailable() is true (iOS with the ExpoUI module built in); everywhere else the caller draws its own sheet. The library is loaded lazily, once the native module is known to exist.
-import { requireOptionalNativeModule } from "expo";
+// INFO: drawn through the swiftUI loader: the iOS system menu opened by a three-dots button, one button per item. It is drawn only where isNativeMenuAvailable() is true (iOS with the ExpoUI module built in); everywhere else the caller draws its own sheet. The library is loaded lazily, once the native module is known to exist.
 import type { ComponentProps } from "react";
-import { Platform } from "react-native";
-import type * as SwiftUI from "@expo/ui/swift-ui";
-import type * as Modifiers from "@expo/ui/swift-ui/modifiers";
 
 import { color } from "../tokens/color.ts";
 import { icon } from "../tokens/icon.ts";
 import { layout } from "../tokens/spacing.ts";
 import type { IconName } from "./Icon.tsx";
+import { isSwiftUIAvailable, loadSwiftUI, type SwiftUIViews } from "./swiftUI.ts";
 
-type SFSymbol = NonNullable<ComponentProps<typeof SwiftUI.Button>["systemImage"]>;
+type SFSymbol = NonNullable<ComponentProps<SwiftUIViews["Button"]>["systemImage"]>;
 
 export interface NativeMenuItem {
   key: string;
@@ -37,17 +34,13 @@ const sfSymbol: Partial<Record<IconName, SFSymbol>> = {
   x: "minus.circle",
 };
 
-// The library evaluates its native module on import, which crashes where the module is not built in (Expo Go), so it is checked before use.
 export function isNativeMenuAvailable(): boolean {
-  return Platform.OS === "ios" && requireOptionalNativeModule("ExpoUI") !== null;
+  return isSwiftUIAvailable();
 }
 
 export function NativeMenu({ accessibilityLabel, items, testID }: NativeMenuProps) {
-  // A lazy require, not an import: the module must not load where it is missing.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- loaded only once the native module is known to exist
-  const { Host, Menu, Button, Image } = require("@expo/ui/swift-ui") as typeof SwiftUI;
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- loaded with the library above
-  const modifiers = require("@expo/ui/swift-ui/modifiers") as typeof Modifiers;
+  const { views, modifiers } = loadSwiftUI();
+  const { Host, Menu, Button, Image } = views;
   const labelModifier = modifiers.accessibilityLabel;
   return (
     <Host

@@ -8,6 +8,7 @@
 // - usePlaylistsWithTrack
 // - useAddToPlaylist, useRemoveFromPlaylist, useCreatePlaylistWithTrack
 // - useUpdatePlaylist, useDeletePlaylist
+// - usePlaylistTrackEditor
 //
 // What is covered:
 // - the first page unwrapped, cache time from Cache-Control
@@ -16,6 +17,7 @@
 // - add and remove invalidating the library, the playlists, that playlist and the membership; create-with-track refreshing them even when the add fails
 // - an edit renaming the playback source when it is that playlist, and leaving another source alone
 // - edit invalidating the library, the playlists, that playlist's header only and the recents; delete invalidating the library, the playlists and the recents but not the deleted playlist; neither refreshing anything when it fails
+// - the track editor sending a move and a remove through the service in order, refreshing the library, the playlists, that playlist and the removed tracks' membership on leave only when something was sent, and reloading the tracks once the queue settles and accepting edits again
 //
 // Run with: pnpm --filter @beatly/mobile test -- usePlaylists
 //
@@ -36,6 +38,7 @@ import {
   useCreatePlaylist,
   useCreatePlaylistWithTrack,
   useDeletePlaylist,
+  usePlaylistTrackEditor,
   usePlaylists,
   usePlaylistsWithTrack,
   useRemoveFromPlaylist,
@@ -408,5 +411,89 @@ describe("the playlist write mutations", () => {
     });
     expect(error).toBeInstanceOf(OutcomeError);
     expect(keys()).toEqual([]);
+  });
+});
+
+describe("usePlaylistTrackEditor", () => {
+  function mount(options: Parameters<typeof makeCore>[0] = {}) {
+    const ctx = makeCore(options);
+    const queryClient = createTestQueryClient();
+    const invalidate = jest.spyOn(queryClient, "invalidateQueries");
+    const reset = jest.spyOn(queryClient, "resetQueries");
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <Wrapper core={ctx.core} client={queryClient}>
+        {children}
+      </Wrapper>
+    );
+    const keys = () => invalidate.mock.calls.map((call) => call[0]?.queryKey);
+    return { ctx, wrapper, keys, reset };
+  }
+
+  it("sends a move and a remove through the service in the order applied", async () => {
+    const { ctx, wrapper } = mount();
+    const { result } = await renderHook(() => usePlaylistTrackEditor("p1"), { wrapper });
+    await act(async () => {
+      await result.current.move(0, 2);
+      await result.current.remove("t7");
+    });
+    expect(ctx.moveTrack).toHaveBeenCalledWith("p1", 1, 3);
+    expect(ctx.removeTrackFromPlaylist).toHaveBeenCalledWith("p1", "t7");
+    expect(ctx.moveTrack.mock.invocationCallOrder[0]).toBeLessThan(
+      ctx.removeTrackFromPlaylist.mock.invocationCallOrder[0] ?? 0,
+    );
+  });
+
+  it("unmounting invalidates the library, the playlists, the playlist and the removed tracks' membership after the queue settles", async () => {
+    const { wrapper, keys } = mount();
+    const { result, unmount } = await renderHook(() => usePlaylistTrackEditor("p1"), { wrapper });
+    await act(async () => {
+      await result.current.move(0, 2);
+      await result.current.remove("t7");
+    });
+    expect(keys()).toEqual([]);
+    await unmount();
+    await waitFor(() => {
+      expect(keys()).toEqual(
+        expect.arrayContaining([
+          ["library"],
+          ["playlists", "mine"],
+          ["playlist", "user", "p1"],
+          ["playlists", "withTrack", "t7"],
+        ]),
+      );
+    });
+  });
+
+  it("unmounting refreshes nothing when no edit was sent", async () => {
+    const { wrapper, keys } = mount();
+    const { result, unmount } = await renderHook(() => usePlaylistTrackEditor("p1"), { wrapper });
+    await act(async () => {
+      await result.current.move(2, 2);
+    });
+    await unmount();
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(keys()).toEqual([]);
+  });
+
+  it("reload resets the playlist's tracks query once the queue settles and accepts edits again", async () => {
+    const { ctx, wrapper, reset } = mount({
+      moveTrack: () => Promise.resolve({ kind: "api_failure", reason: "order_key_conflict" }),
+    });
+    const { result } = await renderHook(() => usePlaylistTrackEditor("p1"), { wrapper });
+    await act(async () => {
+      expect((await result.current.move(0, 1)).kind).toBe("failed");
+      expect((await result.current.move(1, 0)).kind).toBe("dropped");
+    });
+    expect(ctx.moveTrack).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      await result.current.reload();
+    });
+    expect(reset).toHaveBeenCalledWith({ queryKey: ["playlist", "user", "p1", "tracks"] });
+    await act(async () => {
+      expect((await result.current.move(1, 0)).kind).toBe("failed");
+    });
+    expect(ctx.moveTrack).toHaveBeenCalledTimes(2);
   });
 });
