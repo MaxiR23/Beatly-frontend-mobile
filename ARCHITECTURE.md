@@ -77,14 +77,16 @@ The six public build-time values are read in `apps/mobile/src/env.ts`.
 adapters that need them, and the three stream values to `core` through the
 `config` port (ADR 021).
 
-`createCore()` also starts one headless subscriber, `createListeningCounter`.
-It lives as long as the app and its unsubscribe is not kept. It reads the
-player's state through the playback controller and posts a play to the API
-after 30 seconds of real listening, with no screen or hook involved. It is
-headless because a play must count whichever screen is open, or none; a
-screen that mounts and unmounts would lose or double the count. It is the
-first `core` service that runs without a screen or a hook, and a failure is
-only logged.
+`createCore()` also starts two headless subscribers, `createListeningCounter`
+and `createPlaybackErrorReporter`. Both live as long as the app and their
+unsubscribe is not kept. The counter reads the player's state through the
+playback controller and posts a play to the API after 30 seconds of real
+listening, with no screen or hook involved. It is headless because a play
+must count whichever screen is open, or none; a screen that mounts and
+unmounts would lose or double the count. It is the first `core` service that
+runs without a screen or a hook, and a failure is only logged. The reporter
+sends every failure the controller enters to `POST /errors/playback`,
+detached, and a failed report is only logged.
 
 The local database's migrations also run once at start, from `createCore()`,
 and the likes mirror is synced by `SessionProvider` (at start with a stored
@@ -96,6 +98,9 @@ port because `core` never translates.
 
 `adapters/imageColors.ts` wraps `react-native-image-colors`. It has no
 port because `core` never needs a color (ADR 019).
+
+`adapters/device.ts` wraps `expo-constants` and reads `Platform`. It has no
+port because `core` receives the device as a plain value.
 
 The list grows by one row per adapter, in the same PR as the adapter,
 and the library's name is added to the adapter-only list in
@@ -170,17 +175,17 @@ string comes from i18n in both languages. A parity test keeps `es` and
 
 ## Where does this go?
 
-| I need to...                             | It goes in                                                                                           |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| call a new API route                     | a service in `core`, a schema in `core/domain`                                                       |
-| talk to a new native module or library   | a port in `core`, an adapter in `apps/mobile` (a UI-drawing one: a single importer in `packages/ui`) |
-| show data on a screen                    | a query hook, then the screen                                                                        |
-| add a visual value (color, size, radius) | `packages/ui/src/tokens/`, with a named role                                                         |
-| add a reusable piece of UI               | `packages/ui/src/components/`                                                                        |
-| add text                                 | `apps/mobile/src/i18n/es/` and `en/`, same PR                                                        |
-| decide something non-obvious             | `docs/adr/`                                                                                          |
-| document what a screen uses and draws    | `docs/features/`                                                                                     |
-| compute across pages, rank, aggregate    | a backend issue                                                                                      |
+| I need to...                             | It goes in                                                                                                                                                                                                                 |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| call a new API route                     | a service in `core`, a schema in `core/domain`                                                                                                                                                                             |
+| talk to a new native module or library   | a port in `core`, an adapter in `apps/mobile` (a UI-drawing one: a single importer in `packages/ui`; when `core` only needs a value fixed at start, an adapter without a port that `createCore()` passes as a plain value) |
+| show data on a screen                    | a query hook, then the screen                                                                                                                                                                                              |
+| add a visual value (color, size, radius) | `packages/ui/src/tokens/`, with a named role                                                                                                                                                                               |
+| add a reusable piece of UI               | `packages/ui/src/components/`                                                                                                                                                                                              |
+| add text                                 | `apps/mobile/src/i18n/es/` and `en/`, same PR                                                                                                                                                                              |
+| decide something non-obvious             | `docs/adr/`                                                                                                                                                                                                                |
+| document what a screen uses and draws    | `docs/features/`                                                                                                                                                                                                           |
+| compute across pages, rank, aggregate    | a backend issue                                                                                                                                                                                                            |
 
 ## See also
 

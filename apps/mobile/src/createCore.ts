@@ -3,12 +3,14 @@ import {
   createActivityService,
   createAlbumService,
   createArtistsService,
+  createErrorsService,
   createGenresService,
   createHttpClient,
   createLibraryService,
   createLikesService,
   createListeningCounter,
   createPlaybackController,
+  createPlaybackErrorReporter,
   createPlaylistsService,
   createProfileService,
   createPublicService,
@@ -43,6 +45,7 @@ import { Platform } from "react-native";
 import { createAuthAdapter } from "./adapters/auth.ts";
 import { createConfigAdapter } from "./adapters/config.ts";
 import { createDbAdapter } from "./adapters/db.ts";
+import { readDevice } from "./adapters/device.ts";
 import { createHttpAdapter } from "./adapters/http.ts";
 import { createLogAdapter } from "./adapters/log.ts";
 import { createPlayerAdapter } from "./adapters/player.ts";
@@ -100,6 +103,14 @@ export function createCore(): Core {
   });
   // Lives as long as the app: counts listening and registers plays; the unsubscribe is not kept.
   createListeningCounter({ playback, activity, log });
+  // Lives as long as the app: reports every playback failure; the unsubscribe is not kept.
+  createPlaybackErrorReporter({
+    playback,
+    errors: createErrorsService(client),
+    auth,
+    device: readDevice(),
+    log,
+  });
   return {
     activity,
     album: createAlbumService(client),

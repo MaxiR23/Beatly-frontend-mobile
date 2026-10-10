@@ -7,7 +7,7 @@
 // - chooseStreamFormat per platform
 //
 // What is covered:
-// - with data, the typed unplayable failure where the contract has an empty (no stream data, no format for the platform), an error status, timeout, network, a body that is not JSON and a body that fails the schema
+// - with data, the typed unplayable failure where the contract has an empty (no stream data, no format for the platform), an error status (carrying that status), timeout, network, a body that is not JSON and a body that fails the schema
 // - the locale fields; the stored identifier sent on every request and the one the endpoint returns kept; one login-required retry with a fresh identifier or none, never a second; a store that cannot be read or written
 // - the per-platform container table, the bitrate choice and fallback, never by response order or format number
 // - Not applicable: ok:false reasons and the cursor case, because the endpoint is not the Beatly API and is not paginated
@@ -160,6 +160,13 @@ describe("createStreamResolver", () => {
     });
   });
 
+  it("carries no http status for an unplayable answer with a 2xx status", async () => {
+    const { resolver } = setup(() => ({ body: { playabilityStatus: { status: "unavailable" } } }));
+    const result = await resolver.resolve("t1");
+    expect(result).toEqual({ kind: "failure", cause: "unplayable" });
+    expect("httpStatus" in result).toBe(false);
+  });
+
   it("fails as unplayable when no format suits the platform", async () => {
     const { log, resolver } = setup(() => answer([webmHigh]), { platform: "ios" });
     expect(await resolver.resolve("t1")).toEqual({ kind: "failure", cause: "unplayable" });
@@ -170,7 +177,11 @@ describe("createStreamResolver", () => {
 
   it("fails as unplayable when the endpoint answers an error status", async () => {
     const { log, resolver } = setup(() => ({ status: 403, body: {} }));
-    expect(await resolver.resolve("t1")).toEqual({ kind: "failure", cause: "unplayable" });
+    expect(await resolver.resolve("t1")).toEqual({
+      kind: "failure",
+      cause: "unplayable",
+      httpStatus: 403,
+    });
     expect(log.entries).toContainEqual({
       level: "warn",
       message: "stream.status",

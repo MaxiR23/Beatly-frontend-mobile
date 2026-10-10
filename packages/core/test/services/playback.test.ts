@@ -10,6 +10,7 @@
 // - the listen identity: bumped on every track start, repeat-one replay and list end, kept by a seek
 // - toggle, next, previous with its restart rule, skipTo, seek, shuffle on and off, repeat one, ended at the end of the list, a stale resolution, stop
 // - renaming the current source in place, ignoring another source or an idle controller
+// - the HTTP status of an unplayable answer in the state: kept on that failure, null on a player error and on a restart
 // - Not applicable: ok:false reasons, because the controller does not call the API
 //
 // Run with: pnpm --filter @beatly/core test -- playback
@@ -597,5 +598,25 @@ describe("renameSource", () => {
     controller.subscribe(listener);
     controller.renameSource({ kind: "playlist", id: "p1" }, "Old");
     expect(listener).not.toHaveBeenCalled();
+  });
+});
+
+describe("failureHttpStatus", () => {
+  it("carries the resolver's http status on an unplayable failure and null on any other failure or a restart", async () => {
+    const { controller, player, streams } = setup();
+    streams.answer("t1", { kind: "failure", cause: "unplayable", httpStatus: 403 });
+    await controller.playList(list, 0, source);
+    expect(controller.getState().status).toBe("failed");
+    expect(controller.getState().failureHttpStatus).toBe(403);
+
+    streams.answer("t1", { kind: "resolved", url: "test://audio/t1" });
+    const retrying = controller.retry();
+    expect(controller.getState().status).toBe("loading");
+    expect(controller.getState().failureHttpStatus).toBeNull();
+    await retrying;
+
+    player.emit({ type: "error", message: "boom" });
+    expect(controller.getState().failure).toBe("playback");
+    expect(controller.getState().failureHttpStatus).toBeNull();
   });
 });
