@@ -166,6 +166,11 @@ scroll.
 - `NativeMenu`: the iOS system menu behind the more button (ADR 023): `icon.size.lg` ellipsis in `color.text.primary` in a `layout.controlHeight` square; SF Symbols for its items, the destructive one in the system red.
 - Sheets (picker, credits): the `Sheet` shrinks to the room left and scrolls its list; `topInset` keeps it below the status bar; `typography.subtitle` title, `spacing.md` to `spacing.lg` gaps, rows as `MediaRow` (`size="medium"`).
 
+## Edit list
+
+- `NativeEditList` (iOS with the ExpoUI module, ADR 025): a SwiftUI `List` in edit mode, plain style, scroll background hidden on `color.surface.base`; each row is `typography.rowTitle` in `color.text.primary` over `typography.meta` in `color.text.secondary`, without a cover; the system draws the handles and the delete.
+- `ReorderList` (Android and the iOS fallback): rows `layout.controlHeight + 2 * spacing.xs` tall: an `IconButton` `x`, a `MediaRow` `regular`, and a `layout.controlHeight` handle with `gripVertical`. The held row is lifted on `color.surface.raised` with `shadow.floating`; the others make room over `motion.duration.fast`; the list auto-scrolls inside `motion.reorder.edge` of either end at `motion.reorder.speed`.
+
 ## Radius (`radius`)
 
 | Role                                                          | Token         |
@@ -226,8 +231,10 @@ Roles, not raw sizes. Every role uses the platform's system font (no
 | Travel, in points, before a vertical drag is taken (the player's close, the sheet's open and close)                                           | `motion.dragToClose.slop`                              |
 | Share of the window height a released vertical drag must pass to commit                                                                       | `motion.dragToClose.distanceShare`                     |
 | Speed, in points per millisecond, that commits a vertical drag on release                                                                     | `motion.dragToClose.velocity`                          |
+| Points from the top or bottom of a reorder list where a held row starts the auto-scroll (`ReorderList`)                                       | `motion.reorder.edge`                                  |
+| Points per second a reorder list auto-scrolls while a row is held at its edge (`ReorderList`)                                                 | `motion.reorder.speed`                                 |
 
-`VerticalDrag` (the one vertical drag), `DragToClose` and `PullUpSheet` over it, `PauseScale`, `Marquee`, `NowPlayingBars` and `PlayButton` in `@beatly/ui/native` are the only animated components. They use React Native's `Animated` with the native driver (except the `PlayButton` pill's width, a layout property) and `PanResponder`, and take `reduceMotion` from the app.
+`VerticalDrag` (the one vertical drag), `DragToClose` and `PullUpSheet` over it, `PauseScale`, `Marquee`, `NowPlayingBars`, `PlayButton` and `ReorderList` in `@beatly/ui/native` are the only animated components. They use React Native's `Animated` with the native driver (except the `PlayButton` pill's width, a layout property) and `PanResponder`, and take `reduceMotion` from the app.
 
 ## Icons (`icon`)
 

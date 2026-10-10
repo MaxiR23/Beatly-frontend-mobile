@@ -9,6 +9,7 @@
 // - opening a genre from explore and going back
 // - opening an album from home recents, a search result, a saved album and the explore stack, back returning to the same tab
 // - opening a playlist recent from home, an own playlist from home, liked and a saved genre playlist from library, and a genre playlist from the genre grid, back returning to the origin
+// - editing an own playlist's tracks from its options, back showing the new order, count and duration
 // - opening another album from an album's carousel and going back to the first album
 // - opening an artist from the search top artist, a home artist recent and an album's artist name, and a similar artist from an artist, back returning to the origin
 //
@@ -19,9 +20,17 @@
 //
 // SEE: apps/mobile/app/(tabs)/(home,explore,search,library)/_layout.tsx
 
+import type { PlaylistTrack } from "@beatly/core";
 import { beforeAll, describe, expect, it, jest } from "@jest/globals";
 import { router } from "expo-router";
-import { act, cleanup, fireEvent, renderRouter, screen } from "expo-router/testing-library";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  renderRouter,
+  screen,
+  waitFor,
+} from "expo-router/testing-library";
 
 import { resources } from "../../../../src/i18n/resources.ts";
 import {
@@ -31,7 +40,9 @@ import {
   genrePlaylistFixture,
   likedEntryFixture,
   pageOf,
+  playlistDetailFixture,
   playlistFixture,
+  playlistTrackFixture,
   recentFixture,
   savedAlbumEntryFixture,
   savedPlaylistEntryFixture,
@@ -174,6 +185,64 @@ describe("the shared tab stack", () => {
     await fireEvent.press(playlistBack());
     expect(await screen.findByTestId("home")).toBeTruthy();
     expect(isSelected(screen.getByRole("tab", { name: en.tabs.home }))).toBe(true);
+  });
+
+  it("edits an own playlist's tracks and back shows the new order and count on the playlist", async () => {
+    const base = playlistTrackFixture;
+    let server: PlaylistTrack[] = [
+      { ...base, track_id: "t1", title: "First Song", position: 1 },
+      { ...base, track_id: "t2", title: "Second Song", position: 2 },
+      { ...base, track_id: "t3", title: "Third Song", position: 3 },
+    ];
+    mockCore.set("signed_in", {
+      listPlaylists: () => Promise.resolve(pageOf([playlistFixture])),
+      getPlaylist: () =>
+        Promise.resolve({
+          kind: "success",
+          maxAgeSeconds: 0,
+          data: {
+            ...playlistDetailFixture,
+            total_count: server.length,
+            total_duration_seconds: server.reduce((sum, track) => sum + track.duration_seconds, 0),
+          },
+        }),
+      listPlaylistTracks: () => Promise.resolve(pageOf(server)),
+      moveTrack: (_id, oldPosition, newPosition) => {
+        const next = [...server];
+        const [moved] = next.splice(oldPosition - 1, 1);
+        if (moved !== undefined) next.splice(newPosition - 1, 0, moved);
+        server = next;
+        return Promise.resolve({ kind: "success", data: null, maxAgeSeconds: 0 });
+      },
+      removeTrackFromPlaylist: (_id, trackId) => {
+        server = server.filter((track) => track.track_id !== trackId);
+        return Promise.resolve({ kind: "success", data: null, maxAgeSeconds: 0 });
+      },
+    });
+    await renderRouter("app", { initialUrl: "/" });
+    await fireEvent.press(await screen.findByRole("button", { name: "Road trip" }));
+    await screen.findByTestId("playlist");
+    await fireEvent.press(await screen.findByRole("button", { name: en.playlist.options.more }));
+    await fireEvent.press(
+      await screen.findByRole("button", { name: en.playlist.options.items.editTracks }),
+    );
+    await screen.findByTestId("edit-tracks");
+    await screen.findByText("Third Song");
+    const moveUp = (title: string) =>
+      fireEvent(screen.getByLabelText(new RegExp(`^${title},`)), "accessibilityAction", {
+        nativeEvent: { actionName: "moveUp" },
+      });
+    await moveUp("Third Song");
+    await moveUp("Third Song");
+    await fireEvent.press(screen.getByLabelText("Remove Second Song"));
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.editTracks.done }));
+    await screen.findByTestId("playlist");
+    await waitFor(() => {
+      expect(screen.getByText(/2 songs/)).toBeTruthy();
+    });
+    expect(screen.getByText(/8 min/)).toBeTruthy();
+    const order = screen.getAllByText(/ Song$/).map((node) => node.props.children as string);
+    expect(order).toEqual(["Third Song", "First Song"]);
   });
 
   it("opens a playlist recent from home and back returns to home with home selected", async () => {
