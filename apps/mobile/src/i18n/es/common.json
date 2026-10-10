@@ -13,6 +13,8 @@
   "account": {
     "open": "Cuenta",
     "close": "Cerrar",
+    "report": "Reportar un problema",
+    "myReports": "Mis reportes",
     "logout": "Cerrar sesión"
   }
 }

@@ -30,6 +30,7 @@ const sfSymbol: Partial<Record<IconName, SFSymbol>> = {
   user: "person",
   music: "music.note",
   info: "info.circle",
+  flag: "flag",
   x: "minus.circle",
 };
 

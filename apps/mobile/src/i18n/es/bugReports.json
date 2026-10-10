@@ -1,0 +1,39 @@
+{
+  "form": {
+    "title": "Reportar un problema",
+    "about": "Sobre: {{title}}",
+    "category": "Categoría",
+    "description": "Descripción",
+    "tooShort": "Escribe al menos {{min}} caracteres",
+    "tooLong": "Usa {{max}} caracteres o menos",
+    "counter": "{{length}} / {{max}}",
+    "send": "Enviar",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "sent": "Gracias, enviamos tu reporte"
+  },
+  "categories": {
+    "playback": "Reproducción",
+    "loading": "Carga",
+    "ui": "Interfaz",
+    "crash": "Cierre inesperado",
+    "other": "Otro"
+  },
+  "list": {
+    "title": "Mis reportes",
+    "close": "Cerrar",
+    "empty": "Todavía no enviaste reportes.",
+    "metaSeparator": " · ",
+    "date": "{{date, datetime}}",
+    "entity": {
+      "track": "Canción",
+      "album": "Álbum",
+      "artist": "Artista",
+      "playlist": "Playlist"
+    },
+    "status": {
+      "open": "Abierto",
+      "closed": "Cerrado"
+    }
+  }
+}

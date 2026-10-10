@@ -3,6 +3,7 @@
 import enAlbum from "./en/album.json";
 import enArtist from "./en/artist.json";
 import enAuthCallback from "./en/authCallback.json";
+import enBugReports from "./en/bugReports.json";
 import enCommon from "./en/common.json";
 import enExplore from "./en/explore.json";
 import enGenre from "./en/genre.json";
@@ -18,6 +19,7 @@ import enTrackMenu from "./en/trackMenu.json";
 import esAlbum from "./es/album.json";
 import esArtist from "./es/artist.json";
 import esAuthCallback from "./es/authCallback.json";
+import esBugReports from "./es/bugReports.json";
 import esCommon from "./es/common.json";
 import esExplore from "./es/explore.json";
 import esGenre from "./es/genre.json";
@@ -34,6 +36,7 @@ import esTrackMenu from "./es/trackMenu.json";
 export const resources = {
   es: {
     common: esCommon,
+    bugReports: esBugReports,
     album: esAlbum,
     artist: esArtist,
     library: esLibrary,
@@ -51,6 +54,7 @@ export const resources = {
   },
   en: {
     common: enCommon,
+    bugReports: enBugReports,
     album: enAlbum,
     artist: enArtist,
     library: enLibrary,

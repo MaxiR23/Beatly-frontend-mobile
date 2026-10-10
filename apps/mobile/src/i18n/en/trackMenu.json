@@ -8,7 +8,8 @@
     "goToArtist": "Go to artist",
     "goToAlbum": "Go to album",
     "credits": "View credits",
-    "removeFromPlaylist": "Remove from this playlist"
+    "removeFromPlaylist": "Remove from this playlist",
+    "report": "Report a problem"
   },
   "picker": {
     "title": "Add to a playlist",

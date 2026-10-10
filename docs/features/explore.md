@@ -34,8 +34,9 @@ see `tabs.md`.
 | Expected empty   | `EmptyState` with the compass icon, no action | `explore:empty`                        |
 | Error with retry | `ErrorState`; retry refetches the genres      | `common:error.generic`, `common:retry` |
 
-The avatar and its sheet use `common:account.open`, `common:account.close` and
-`common:account.logout`.
+The avatar and its sheet use `common:account.open`, `common:account.close`,
+`common:account.report`, `common:account.myReports` and `common:account.logout`;
+the two report entries open the form and My reports (`bug-reports.md`).
 
 ## Data
 
