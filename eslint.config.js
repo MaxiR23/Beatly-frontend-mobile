@@ -4,7 +4,7 @@
 // their adapter in apps/mobile. Four libraries have a single importer inside
 // packages/ui instead: lucide-react-native (Icon.tsx), expo-glass-effect
 // (GlassSurface.tsx), react-native-svg (GradientFill.tsx) and @expo/ui
-// (NativeMenu.tsx). A boundary is a rule here, not a habit.
+// (swiftUI.ts). A boundary is a rule here, not a habit.
 
 import js from "@eslint/js";
 import comments from "@eslint-community/eslint-plugin-eslint-comments/configs";
@@ -71,12 +71,12 @@ const svgLibraryOnlyInGradientFill = {
     "Gradients are drawn with GradientFill inside packages/ui; packages/ui/src/components/GradientFill.tsx is the only importer of react-native-svg.",
 };
 
-// Native menus are drawn with NativeMenu of packages/ui; its file is the only
-// importer of the Expo UI library.
-const nativeMenuLibraryOnlyInNativeMenu = {
+// SwiftUI views are drawn with NativeMenu and NativeEditList of packages/ui;
+// the swiftUI.ts loader is the only importer of the Expo UI library (ADR 025).
+const expoUILibraryOnlyInSwiftUILoader = {
   group: ["@expo/ui", "@expo/ui/*"],
   message:
-    "Native menus are drawn with NativeMenu of @beatly/ui/native; packages/ui/src/components/NativeMenu.tsx is the only importer of @expo/ui.",
+    "SwiftUI views are drawn with NativeMenu and NativeEditList of @beatly/ui/native; packages/ui/src/components/swiftUI.ts is the only importer of @expo/ui.",
 };
 
 // A workspace is imported by its package name, never by a relative path
@@ -233,7 +233,7 @@ export default tseslint.config(
           ...crossWorkspacePaths,
         ],
         "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
-        [iconLibraryOnlyInIcon, svgLibraryOnlyInGradientFill, nativeMenuLibraryOnlyInNativeMenu],
+        [iconLibraryOnlyInIcon, svgLibraryOnlyInGradientFill, expoUILibraryOnlyInSwiftUILoader],
       ),
     },
   },
@@ -253,7 +253,7 @@ export default tseslint.config(
           ...crossWorkspacePaths,
         ],
         "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
-        [svgLibraryOnlyInGradientFill, nativeMenuLibraryOnlyInNativeMenu],
+        [svgLibraryOnlyInGradientFill, expoUILibraryOnlyInSwiftUILoader],
       ),
     },
   },
@@ -270,7 +270,7 @@ export default tseslint.config(
         [
           iconLibraryOnlyInIcon,
           svgLibraryOnlyInGradientFill,
-          nativeMenuLibraryOnlyInNativeMenu,
+          expoUILibraryOnlyInSwiftUILoader,
           {
             group: ["expo-*", "!expo-glass-effect"],
             message:
@@ -295,15 +295,15 @@ export default tseslint.config(
           ...crossWorkspacePaths,
         ],
         "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
-        [iconLibraryOnlyInIcon, nativeMenuLibraryOnlyInNativeMenu],
+        [iconLibraryOnlyInIcon, expoUILibraryOnlyInSwiftUILoader],
       ),
     },
   },
 
-  // The NativeMenu component is the one file allowed to import the Expo UI
+  // The SwiftUI loader is the one file allowed to import the Expo UI
   // library. Same shape as the Icon block.
   {
-    files: ["packages/ui/src/components/NativeMenu.tsx"],
+    files: ["packages/ui/src/components/swiftUI.ts"],
     rules: {
       ...restricted(
         [
@@ -345,7 +345,7 @@ export default tseslint.config(
           iconLibraryOnlyInIcon,
           glassLibraryOnlyInGlassSurface,
           svgLibraryOnlyInGradientFill,
-          nativeMenuLibraryOnlyInNativeMenu,
+          expoUILibraryOnlyInSwiftUILoader,
         ],
       ),
     },
@@ -370,7 +370,7 @@ export default tseslint.config(
           iconLibraryOnlyInIcon,
           glassLibraryOnlyInGlassSurface,
           svgLibraryOnlyInGradientFill,
-          nativeMenuLibraryOnlyInNativeMenu,
+          expoUILibraryOnlyInSwiftUILoader,
           {
             group: ["**/queries/queryClient", "**/queries/queryClient.ts"],
             importNames: ["createQueryClient"],

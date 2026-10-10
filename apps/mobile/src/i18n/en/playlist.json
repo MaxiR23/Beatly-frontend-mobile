@@ -20,12 +20,13 @@
     "more": "Playlist options",
     "close": "Close",
     "items": {
-      "edit": "Edit playlist",
+      "edit": "Edit details",
+      "editTracks": "Edit tracks",
       "delete": "Delete playlist"
     }
   },
   "edit": {
-    "title": "Edit playlist",
+    "title": "Edit details",
     "name": "Name",
     "nameTooLong": "Use {{max}} characters or fewer",
     "description": "Description (optional)",
@@ -38,5 +39,16 @@
     "message": "This can't be undone.",
     "confirm": "Delete",
     "cancel": "Cancel"
+  },
+  "editTracks": {
+    "title": "Edit tracks",
+    "done": "Done",
+    "row": "{{title}}, {{artists}}",
+    "position": "{{position}} of {{total}}",
+    "remove": "Remove {{title}}",
+    "move": "Move {{title}}",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "moveHint": "Drag to reorder"
   }
 }

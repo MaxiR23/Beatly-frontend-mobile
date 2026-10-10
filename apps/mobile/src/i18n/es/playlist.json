@@ -20,12 +20,13 @@
     "more": "Opciones de la playlist",
     "close": "Cerrar",
     "items": {
-      "edit": "Editar playlist",
+      "edit": "Editar detalles",
+      "editTracks": "Editar canciones",
       "delete": "Eliminar playlist"
     }
   },
   "edit": {
-    "title": "Editar playlist",
+    "title": "Editar detalles",
     "name": "Nombre",
     "nameTooLong": "Usa {{max}} caracteres o menos",
     "description": "Descripción (opcional)",
@@ -38,5 +39,16 @@
     "message": "Esta acción no se puede deshacer.",
     "confirm": "Eliminar",
     "cancel": "Cancelar"
+  },
+  "editTracks": {
+    "title": "Editar canciones",
+    "done": "Listo",
+    "row": "{{title}}, {{artists}}",
+    "position": "{{position}} de {{total}}",
+    "remove": "Quitar {{title}}",
+    "move": "Mover {{title}}",
+    "moveUp": "Subir",
+    "moveDown": "Bajar",
+    "moveHint": "Arrastra para reordenar"
   }
 }

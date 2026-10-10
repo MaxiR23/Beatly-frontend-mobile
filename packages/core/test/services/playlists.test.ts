@@ -29,6 +29,8 @@
 // - addTrackToPlaylist posts the whole body, counts track_already_in_playlist as added and surfaces other reasons
 // - createPlaylistWithTrack creates then adds, and stops after a failed create
 // - removeTrackFromPlaylist deletes the track, also when it was not there
+// - moveTrack posts the 1-based positions, surfaces its listed reasons and fails with a timeout, network or schema outcome
+// - createTrackEditor sends moves with 1-based positions, removes, one at a time in order, drops the rest after a failure until reset, and reports what it sent
 // - updatePlaylist patches only the given fields, clears the description with null, surfaces playlist_not_found and fails with a timeout, network or schema outcome
 // - deletePlaylist deletes the playlist, counts playlist_not_found as deleted, surfaces other reasons and fails with a timeout, network or schema outcome
 // - addTrackInputOf maps a playable track and returns null when it lacks a field
@@ -46,6 +48,7 @@ import { createHttpClient, DEFAULT_TIMEOUT_MS } from "../../src/http/client.ts";
 import {
   addTrackInputOf,
   createPlaylistsService,
+  createTrackEditor,
   type AddTrackInput,
 } from "../../src/services/playlists.ts";
 import type { PlayableTrack } from "../../src/services/playback.ts";
@@ -858,6 +861,201 @@ describe("removeTrackFromPlaylist", () => {
       kind: "transport_failure",
       cause: "schema",
     });
+  });
+});
+
+describe("moveTrack", () => {
+  const route = "POST /playlists/p%201/move-track";
+  const ok = () => ({ body: { ok: true, data: null } });
+
+  it("posts old_position and new_position and succeeds with data null", async () => {
+    const { service, http } = setupRoutes({ [route]: ok });
+    expect(await service.moveTrack("p 1", 2, 4)).toEqual({
+      kind: "success",
+      data: null,
+      maxAgeSeconds: 0,
+    });
+    expect(http.requests[0]?.method).toBe("POST");
+    expect(http.requests[0]?.url).toBe("test://api/playlists/p%201/move-track");
+    expect(http.requests[0]?.body).toBe('{"old_position":2,"new_position":4}');
+  });
+
+  it.each([
+    [409, "order_key_conflict"],
+    [404, "playlist_not_found"],
+    [422, "invalid_request"],
+  ])("surfaces %i %s as an api failure", async (status, reason) => {
+    const { service } = setupRoutes({ [route]: failureOf(status, reason) });
+    expect(await service.moveTrack("p 1", 2, 4)).toEqual({ kind: "api_failure", reason });
+  });
+
+  it("fails with a timeout outcome when the API does not answer", async () => {
+    vi.useFakeTimers();
+    const { service } = setupRoutes({ [route]: never });
+    const pending = service.moveTrack("p 1", 2, 4);
+    await vi.advanceTimersByTimeAsync(DEFAULT_TIMEOUT_MS + 1);
+    expect(await pending).toEqual({ kind: "transport_failure", cause: "timeout" });
+  });
+
+  it("fails with a network outcome when the request cannot be sent", async () => {
+    const { service } = setupRoutes({ [route]: () => Promise.reject(new Error("offline")) });
+    expect(await service.moveTrack("p 1", 2, 4)).toEqual({
+      kind: "transport_failure",
+      cause: "network",
+    });
+  });
+
+  it("fails with a schema outcome when data is an object", async () => {
+    const { service } = setupRoutes({
+      [route]: () => ({ body: { ok: true, data: { moved: true } } }),
+    });
+    expect(await service.moveTrack("p 1", 2, 4)).toEqual({
+      kind: "transport_failure",
+      cause: "schema",
+    });
+  });
+});
+
+describe("createTrackEditor", () => {
+  const move = "POST /playlists/p1/move-track";
+  const remove = "DELETE /playlists/p1/tracks/t1";
+  const ok = () => ({ body: { ok: true, data: null } });
+  const bodies = (http: { requests: readonly { body?: string | undefined }[] }) =>
+    http.requests.map((request) => request.body);
+
+  async function movePositions(fromIndex: number, toIndex: number) {
+    const { service, http } = setupRoutes({ [move]: ok });
+    const editor = createTrackEditor(service, "p1");
+    const result = await editor.apply({ kind: "move", fromIndex, toIndex });
+    expect(result).toEqual({ kind: "saved" });
+    expect(http.requests).toHaveLength(1);
+    return http.requests[0]?.body;
+  }
+
+  it("sends a move down as one move-track with 1-based positions", async () => {
+    expect(await movePositions(1, 3)).toBe('{"old_position":2,"new_position":4}');
+  });
+
+  it("sends a move up as one move-track with 1-based positions", async () => {
+    expect(await movePositions(3, 1)).toBe('{"old_position":4,"new_position":2}');
+  });
+
+  it("sends a move to the first place as old n, new 1", async () => {
+    expect(await movePositions(4, 0)).toBe('{"old_position":5,"new_position":1}');
+  });
+
+  it("sends a move to the last place as old 1, new n", async () => {
+    expect(await movePositions(0, 4)).toBe('{"old_position":1,"new_position":5}');
+  });
+
+  it("sends nothing for a move to its own index and resolves unchanged", async () => {
+    const { service, http } = setupRoutes({});
+    const editor = createTrackEditor(service, "p1");
+    expect(await editor.apply({ kind: "move", fromIndex: 2, toIndex: 2 })).toEqual({
+      kind: "unchanged",
+    });
+    expect(http.requests).toHaveLength(0);
+    expect(await editor.idle()).toEqual({ sent: 0, removed: [] });
+  });
+
+  it("sends a remove as one DELETE of the track id", async () => {
+    const { service, http } = setupRoutes({ [remove]: ok });
+    const editor = createTrackEditor(service, "p1");
+    expect(await editor.apply({ kind: "remove", trackId: "t1" })).toEqual({ kind: "saved" });
+    expect(http.requests).toHaveLength(1);
+    expect(http.requests[0]?.method).toBe("DELETE");
+    expect(http.requests[0]?.url).toBe("test://api/playlists/p1/tracks/t1");
+  });
+
+  it("sends edits one at a time, in the order applied", async () => {
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let calls = 0;
+    const { service, http } = setupRoutes({
+      [move]: async () => {
+        calls += 1;
+        if (calls === 1) await held;
+        return { body: { ok: true, data: null } };
+      },
+    });
+    const editor = createTrackEditor(service, "p1");
+    const first = editor.apply({ kind: "move", fromIndex: 0, toIndex: 2 });
+    const second = editor.apply({ kind: "move", fromIndex: 2, toIndex: 1 });
+    await vi.waitFor(() => {
+      expect(http.requests).toHaveLength(1);
+    });
+    await Promise.resolve();
+    expect(http.requests).toHaveLength(1);
+    release();
+    expect(await first).toEqual({ kind: "saved" });
+    expect(await second).toEqual({ kind: "saved" });
+    expect(bodies(http)).toEqual([
+      '{"old_position":1,"new_position":3}',
+      '{"old_position":3,"new_position":2}',
+    ]);
+  });
+
+  it("resolves the failing edit failed with its outcome and drops every edit queued behind it", async () => {
+    const { service, http } = setupRoutes({ [move]: failureOf(409, "order_key_conflict") });
+    const editor = createTrackEditor(service, "p1");
+    const first = editor.apply({ kind: "move", fromIndex: 0, toIndex: 2 });
+    const second = editor.apply({ kind: "move", fromIndex: 2, toIndex: 1 });
+    expect(await first).toEqual({
+      kind: "failed",
+      failure: { kind: "api_failure", reason: "order_key_conflict" },
+    });
+    expect(await second).toEqual({ kind: "dropped" });
+    expect(http.requests).toHaveLength(1);
+  });
+
+  it("fails the same way on a transport failure and sends nothing behind it", async () => {
+    const { service, http } = setupRoutes({
+      [move]: () => Promise.reject(new Error("offline")),
+      [remove]: ok,
+    });
+    const editor = createTrackEditor(service, "p1");
+    const first = editor.apply({ kind: "move", fromIndex: 0, toIndex: 2 });
+    const second = editor.apply({ kind: "remove", trackId: "t1" });
+    expect(await first).toEqual({
+      kind: "failed",
+      failure: { kind: "transport_failure", cause: "network" },
+    });
+    expect(await second).toEqual({ kind: "dropped" });
+    expect(http.requests).toHaveLength(1);
+  });
+
+  it("drops edits applied after a failure until reset, and sends again after reset", async () => {
+    let calls = 0;
+    const { service, http } = setupRoutes({
+      [move]: () => {
+        calls += 1;
+        return calls === 1
+          ? { status: 409, body: { ok: false, reason: "order_key_conflict" } }
+          : { body: { ok: true, data: null } };
+      },
+    });
+    const editor = createTrackEditor(service, "p1");
+    expect((await editor.apply({ kind: "move", fromIndex: 0, toIndex: 1 })).kind).toBe("failed");
+    expect(await editor.apply({ kind: "move", fromIndex: 1, toIndex: 0 })).toEqual({
+      kind: "dropped",
+    });
+    expect(http.requests).toHaveLength(1);
+    editor.reset();
+    expect(await editor.apply({ kind: "move", fromIndex: 1, toIndex: 0 })).toEqual({
+      kind: "saved",
+    });
+    expect(http.requests).toHaveLength(2);
+  });
+
+  it("idle resolves after the queue settles with the count sent and the removed track ids", async () => {
+    const { service } = setupRoutes({ [move]: ok, [remove]: ok });
+    const editor = createTrackEditor(service, "p1");
+    void editor.apply({ kind: "move", fromIndex: 0, toIndex: 1 });
+    void editor.apply({ kind: "remove", trackId: "t1" });
+    void editor.apply({ kind: "move", fromIndex: 3, toIndex: 3 });
+    expect(await editor.idle()).toEqual({ sent: 2, removed: ["t1"] });
   });
 });
 

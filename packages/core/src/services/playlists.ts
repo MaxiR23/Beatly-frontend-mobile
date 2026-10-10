@@ -1,4 +1,4 @@
-// INFO: the playlists service: the caller's own playlists, a page at a time, over the shared paginated helper, one playlist or the liked one with its tracks, the creation of a playlist, which playlists hold a track, adding a track to one (an already added track counts as added), creating one with a track, removing a track, renaming or describing one, and deleting one (an already deleted playlist counts as deleted).
+// INFO: the playlists service: the caller's own playlists, a page at a time, over the shared paginated helper, one playlist or the liked one with its tracks, the creation of a playlist, which playlists hold a track, adding a track to one (an already added track counts as added), creating one with a track, moving a track, removing a track, a sequencer that sends a playlist's moves and removes one at a time, in order, and drops the rest after a failure, renaming or describing one, and deleting one (an already deleted playlist counts as deleted).
 import { z } from "zod";
 
 import {
@@ -16,7 +16,7 @@ import {
   type PlaylistTrack,
 } from "../domain/playlist.ts";
 import type { HttpClient } from "../http/client.ts";
-import type { HttpOutcome } from "../http/outcome.ts";
+import type { ApiFailure, HttpOutcome, TransportFailure } from "../http/outcome.ts";
 import { fetchPage, type PageResult } from "../http/paginated.ts";
 import type { PlayArtist } from "./activity.ts";
 import type { PlayableTrack } from "./playback.ts";
@@ -88,6 +88,11 @@ export interface PlaylistsService {
     input: AddTrackInput,
   ): Promise<HttpOutcome<{ readonly playlist: Playlist }>>;
   removeTrackFromPlaylist(playlistId: string, trackId: string): Promise<HttpOutcome<null>>;
+  moveTrack(
+    playlistId: string,
+    oldPosition: number,
+    newPosition: number,
+  ): Promise<HttpOutcome<null>>;
   updatePlaylist(id: string, input: UpdatePlaylistInput): Promise<HttpOutcome<Playlist>>;
   deletePlaylist(id: string): Promise<HttpOutcome<null>>;
   getPlaylist(id: string): Promise<HttpOutcome<PlaylistDetail>>;
@@ -161,6 +166,13 @@ export function createPlaylistsService(client: HttpClient): PlaylistsService {
         path: `/playlists/${encodeURIComponent(playlistId)}/tracks/${encodeURIComponent(trackId)}`,
         schema: z.null(),
       }),
+    moveTrack: (playlistId, oldPosition, newPosition) =>
+      client.request({
+        method: "POST",
+        path: `/playlists/${encodeURIComponent(playlistId)}/move-track`,
+        body: { old_position: oldPosition, new_position: newPosition },
+        schema: z.null(),
+      }),
     updatePlaylist: (id, input) =>
       client.request({
         method: "PATCH",
@@ -184,5 +196,63 @@ export function createPlaylistsService(client: HttpClient): PlaylistsService {
       client.request({ path: "/playlists/liked", schema: likedPlaylistSchema }),
     listLikedTracks: (cursor) =>
       fetchPage(client, { path: "/playlists/liked/tracks", item: playlistTrackSchema, cursor }),
+  };
+}
+
+// An edit of a fully loaded playlist: indices are zero-based in the list as it stood when the edit was made.
+export type TrackEdit =
+  | { readonly kind: "move"; readonly fromIndex: number; readonly toIndex: number }
+  | { readonly kind: "remove"; readonly trackId: string };
+
+export type TrackEditResult =
+  | { readonly kind: "saved" }
+  | { readonly kind: "unchanged" } // a move to its own index: nothing sent
+  | { readonly kind: "failed"; readonly failure: ApiFailure | TransportFailure }
+  | { readonly kind: "dropped" }; // behind a failure, before reset(): nothing sent
+
+export interface TrackEditor {
+  apply(edit: TrackEdit): Promise<TrackEditResult>;
+  // Resolves once every edit applied so far has settled: how many were sent and which track ids were removed.
+  idle(): Promise<{ readonly sent: number; readonly removed: readonly string[] }>;
+  // Accepts edits again after a failure, once the caller has reloaded the server order.
+  reset(): void;
+}
+
+export function createTrackEditor(
+  service: Pick<PlaylistsService, "moveTrack" | "removeTrackFromPlaylist">,
+  playlistId: string,
+): TrackEditor {
+  let tail: Promise<unknown> = Promise.resolve();
+  let failed = false;
+  let sent = 0;
+  const removed: string[] = [];
+  const run = async (edit: TrackEdit): Promise<TrackEditResult> => {
+    if (failed) return { kind: "dropped" };
+    if (edit.kind === "move" && edit.fromIndex === edit.toIndex) return { kind: "unchanged" };
+    sent += 1;
+    if (edit.kind === "remove") removed.push(edit.trackId);
+    const outcome =
+      edit.kind === "move"
+        ? await service.moveTrack(playlistId, edit.fromIndex + 1, edit.toIndex + 1)
+        : await service.removeTrackFromPlaylist(playlistId, edit.trackId);
+    if (outcome.kind !== "success") {
+      failed = true;
+      return { kind: "failed", failure: outcome };
+    }
+    return { kind: "saved" };
+  };
+  return {
+    apply: (edit) => {
+      const result = tail.then(() => run(edit));
+      tail = result;
+      return result;
+    },
+    idle: async () => {
+      await tail;
+      return { sent, removed: [...removed] };
+    },
+    reset: () => {
+      failed = false;
+    },
   };
 }

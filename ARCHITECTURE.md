@@ -106,8 +106,8 @@ The list grows by one row per adapter, in the same PR as the adapter,
 and the library's name is added to the adapter-only list in
 `eslint.config.js` in that same PR. The exception is a library that draws UI:
 it has a single importer in `packages/ui` (`Icon.tsx`, `GlassSurface.tsx`,
-`GradientFill.tsx`, `NativeMenu.tsx`),
-enforced the same way in `eslint.config.js`; see ADR 017 and ADR 023.
+`GradientFill.tsx`, `swiftUI.ts`),
+enforced the same way in `eslint.config.js`; see ADR 017, ADR 023 and ADR 025.
 
 ## How a screen gets data
 
