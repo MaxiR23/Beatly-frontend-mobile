@@ -1,4 +1,4 @@
-// INFO: the header's account avatar and its sheet with the profile row, report a problem, my reports and log out; the row opens the profile screen, the report entries open the form or the reports sheet in its place, shared by the home, explore, search and library tabs.
+// INFO: the header's account avatar and its sheet with the profile row, report a problem, my reports, all reports (only for a developer or an admin) and log out; the row opens the profile screen, the report entries open the form or the reports sheet in its place, the all reports entry opens its screen, shared by the home, explore, search and library tabs.
 import { profileName } from "@beatly/core";
 import { spacing } from "@beatly/ui";
 import { ActionRow, Avatar, AvatarRow, Button, Sheet, Text } from "@beatly/ui/native";
@@ -20,6 +20,8 @@ export function AccountButton() {
   const profile = useProfile();
   const signOut = useSignOut();
   const [open, setOpen] = useState<"account" | "report" | "reports" | null>(null);
+
+  const canTriage = profile.data?.role === "developer" || profile.data?.role === "admin";
 
   const close = () => {
     setOpen(null);
@@ -77,6 +79,17 @@ export function AccountButton() {
               setOpen("reports");
             }}
           />
+          {canTriage ? (
+            <ActionRow
+              icon="eye"
+              label={tc("account.allReports")}
+              testID="account-all-reports"
+              onPress={() => {
+                close();
+                router.push("/bug-reports");
+              }}
+            />
+          ) : null}
         </View>
         <Button
           variant="secondary"

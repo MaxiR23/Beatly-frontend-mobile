@@ -80,12 +80,16 @@ export {
   bugReportEntityTypeSchema,
   bugReportSchema,
   bugReportStatusSchema,
+  bugReportWithReporterSchema,
+  bugReporterSchema,
 } from "./domain/bugReport.ts";
 export type {
   BugReport,
   BugReportCategory,
   BugReportEntityType,
   BugReportStatus,
+  BugReportWithReporter,
+  BugReporter,
 } from "./domain/bugReport.ts";
 export { createBugReportsService } from "./services/bugReports.ts";
 export type { BugReportsService, CreateBugReportInput } from "./services/bugReports.ts";

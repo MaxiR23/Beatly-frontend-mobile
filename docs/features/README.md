@@ -16,6 +16,6 @@ One file per screen; every file follows `_template.md`.
 | `player.md`      | the mini player and the player                                 |
 | `tabs.md`        | the tab navigator                                              |
 | `likes.md`       | the likes mirror (no screen)                                   |
-| `bug-reports.md` | the report form and My reports                                 |
+| `bug-reports.md` | the report form, My reports and All reports                    |
 | `profile.md`     | the profile screen and the edit profile sheet                  |
 | `track-menu.md`  | the heart, the track menu, the playlist picker and the credits |

@@ -1,12 +1,12 @@
 # Bug reports
 
-The report form and the list of the caller's own reports, both sheets.
+The report form and the list of the caller's own reports, both sheets, and All reports, the triage screen for developers and admins.
 
 ## Purpose
 
 Report a problem from the account sheet or from a track's menu, and see one's own reports with their status.
-The form takes a category and a description; from the track menu it also carries the track. There are no admin features:
-changing a status and reading other users' reports are not in the app.
+The form takes a category and a description; from the track menu it also carries the track.
+A developer or an admin also sees every report in All reports, filtered by all, open or closed, opens one in full and closes or reopens it.
 
 ## Layout
 
@@ -18,6 +18,10 @@ Token names only.
   (`color.text.secondary` or `color.status.error`); Cancel and Send as `Button`s of shape `field`, `spacing.md` apart.
 - List: a `Sheet` with a `typography.subtitle` title and a scrolling list of `MediaRow`s (`size="medium"`) with the `flag` tile; the subtitle joins the date,
   what it is about and the description; the `Badge` sits trailing (`typography.label` on `color.overlay.subtle`, `radius.sm`; open in `color.text.primary`, closed in `color.text.tertiary`).
+- All reports: a full-screen route; a header with a back `IconButton` and a `typography.title` title, a row of `Chip`s (`spacing.sm` apart, `layout.gutter` inset)
+  and a list of `MediaRow`s as in My reports, the subtitle joining the reporter, the date and the description, with the `Badge` trailing.
+- Report detail: a `Sheet` kept `topInset` below the status bar; `typography.subtitle` title with the status `Badge`, `typography.label` captions in `color.text.secondary`
+  over `typography.body` values (`spacing.xxs` apart, `spacing.lg` between pairs), a `Button` of shape `field` to close or reopen, and an inline `typography.meta` line in `color.status.error` for a failure.
 
 ## Platform differences
 
@@ -43,28 +47,56 @@ The list:
 | Expected empty   | `EmptyState` with the `inbox` glyph                                                | `bugReports:list.empty`                                                                                                            |
 | Error with retry | `ErrorState`; retry refetches                                                      | `common:error.generic`, `common:retry`                                                                                             |
 
+All reports:
+
+| State            | What is drawn                                                                            | i18n keys                                                                                                                                        |
+| ---------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Loading          | `LoadingState` under the filters                                                         | `common:loading`                                                                                                                                 |
+| With data        | the reports as the API sends them, each with category, reporter, date, excerpt and badge | `bugReports:triage.title`, `bugReports:triage.filters.*`, `bugReports:triage.username`, `bugReports:triage.unknownReporter`, `bugReports:list.*` |
+| Expected empty   | `EmptyState` with the `inbox` glyph, one message per filter                              | `bugReports:triage.empty.all`, `bugReports:triage.empty.open`, `bugReports:triage.empty.closed`                                                  |
+| Error with retry | `ErrorState`; retry refetches                                                            | `common:error.generic`, `common:retry`                                                                                                           |
+| Not allowed      | `EmptyState` with the `flag` glyph and no retry, on `forbidden`                          | `bugReports:triage.forbidden`                                                                                                                    |
+
+The report detail:
+
+| State     | What is drawn                                                            | i18n keys                                                                                                                                                                                                                                                                                                                       |
+| --------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Idle      | the pairs, the status badge and Close report or Reopen report            | `bugReports:triage.detail.title`, `bugReports:triage.detail.description`, `bugReports:triage.detail.category`, `bugReports:triage.detail.reporter`, `bugReports:triage.detail.entity`, `bugReports:triage.detail.date`, `bugReports:triage.detail.close`, `bugReports:triage.detail.reopen`, `bugReports:triage.detail.dismiss` |
+| Changing  | the badge and the button already show the new status; the button spinner |                                                                                                                                                                                                                                                                                                                                 |
+| Forbidden | the old status again and an inline line                                  | `bugReports:triage.detail.forbidden`                                                                                                                                                                                                                                                                                            |
+| Not found | the old status again and an inline line                                  | `bugReports:triage.detail.notFound`                                                                                                                                                                                                                                                                                             |
+| Failed    | the old status again and the generic inline line                         | `common:error.generic`                                                                                                                                                                                                                                                                                                          |
+
 ## Data
 
-| Route             | Method | Paginated                      | Cache-Control                          | Reasons listed                                                                          | Branches on                                        |
-| ----------------- | ------ | ------------------------------ | -------------------------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `/bug-reports`    | POST   | no                             | `private, no-cache`; errors `no-store` | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                 | none: `common:error.generic` inline, the form kept |
-| `/bug-reports/me` | GET    | yes, through `useInfiniteList` | `private, no-cache`; errors `no-store` | `invalid_request`, `invalid_cursor` (the helper restarts), `unauthorized`, `upstream_*` | none: `common:error.generic` with retry            |
+| Route                                   | Method | Paginated                                                                       | Cache-Control                          | Reasons listed                                                                                                           | Branches on                                                                                                                                 |
+| --------------------------------------- | ------ | ------------------------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/bug-reports`                          | POST   | no                                                                              | `private, no-cache`; errors `no-store` | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                                                  | none: `common:error.generic` inline, the form kept                                                                                          |
+| `/bug-reports/me`                       | GET    | yes, through `useInfiniteList`                                                  | `private, no-cache`; errors `no-store` | `invalid_request`, `invalid_cursor` (the helper restarts), `unauthorized`, `upstream_*`                                  | none: `common:error.generic` with retry                                                                                                     |
+| `/bug-reports` (`?status=open\|closed`) | GET    | yes, through `useInfiniteList`; each filter is its own list from the first page | `private, no-cache`; errors `no-store` | `invalid_request`, `invalid_cursor` (the helper restarts, keeping the status), `unauthorized`, `forbidden`, `upstream_*` | `forbidden`: `bugReports:triage.forbidden`; the rest `common:error.generic` with retry                                                      |
+| `/bug-reports/{report_id}`              | PATCH  | no                                                                              | `private, no-cache`; errors `no-store` | `invalid_request`, `unauthorized`, `forbidden`, `report_not_found`, `upstream_*`                                         | `forbidden`: `bugReports:triage.detail.forbidden`; `report_not_found`: `bugReports:triage.detail.notFound`; the rest `common:error.generic` |
+
+The status filter is not on the backend yet; All reports sends no `status` for all.
+The optimistic patch rewrites `status` across every cached filter and invalidates them all once settled; changing the filter opens its own list from the first page.
 
 The POST body is the category, the description and, with a track, `entity_type` and `entity_id` together. A sent report refetches the list.
 
 ## Navigation
 
-No route. The account sheet (Home, Explore, Search, Library) opens the form or the list in its place; the track menu opens the form with the track.
+The account sheet (Home, Explore, Search, Library) opens the form or the list in its place; the track menu opens the form with the track.
+The route `/bug-reports` sits in each tab's stack and is reached from the account sheet only when the profile's role is `developer` or `admin` (`common:account.allReports`).
 
-Why sheets and not routes: most sheets in the app mount on open, and lists reached from a menu or another sheet are sheets too. Full-screen routes are kept for content entities (ADR 020). Mounting on open also resets the form for free, with no state to clear between reports.
+Why sheets and not routes: the report form and My reports stay sheets, as most sheets in the app mount on open. All reports is a route because the list can be long, like the profile and the edit mode. Mounting on open also resets the form for free, with no state to clear between reports.
 
 Dates: the first date drawn in the app is the report date in My reports. It uses i18next's datetime formatter (`{{date, datetime}}` with `formatParams: { date: { dateStyle: "medium" } }`), so the locale is chosen inside i18n and the screen never reads it. `reportDate` trims fractional seconds beyond milliseconds before parsing, because the backend sends microseconds. Later dates follow the same shape.
 
 ## i18n namespace
 
-`bugReports`, `common` (`account.report`, `account.myReports`) and `trackMenu` (`items.report`).
+`bugReports` (`form.*`, `list.*`, `triage.*`), `common` (`account.report`, `account.myReports`, `account.allReports`) and `trackMenu` (`items.report`).
 
 ## Checked by hand
+
+All reports against the backend with its status filter: the three filters, `forbidden` after a role change, closing and reopening, the role gate for user, tester, developer and admin accounts, the `eye` glyph in the account sheet, and VoiceOver/TalkBack on the chips, rows, badge and action.
 
 Sending a report from the account sheet and from a track's menu against the real API, then opening My reports and seeing both, newest first, the second marked as a track;
 the sheet swaps (account sheet to form or list, track menu to form, including from the player route); the multiline field above the keyboard on iOS and Android;

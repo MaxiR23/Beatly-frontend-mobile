@@ -7,11 +7,12 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the stateful likes mirror, credits, membership, add, create-with-track, remove and move fakes, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile and its update, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, library item, the saved read, add and remove, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, the bug reports fixtures and fakes, and the page builder)
+// (the stateful likes mirror, credits, membership, add, create-with-track, remove and move fakes, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile and its update, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, library item, the saved read, add and remove, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, the bug reports fixtures and fakes (including the triage fixtures with a reporter, the list and the status update), and the page builder)
 //
 import type {
   ActivityService,
   BugReport,
+  BugReportWithReporter,
   BugReportsService,
   Album,
   AddTrackResult,
@@ -103,6 +104,26 @@ export const trackBugReportFixture: BugReport = {
   entity_type: "track",
   entity_id: "t1",
   status: "closed",
+};
+
+export const triageReportFixture: BugReportWithReporter = {
+  ...bugReportFixture,
+  reporter: { id: "u1", display_name: "Maxi", username: "maxi_23" },
+};
+
+export const triageUsernameFixture: BugReportWithReporter = {
+  ...trackBugReportFixture,
+  id: "r3",
+  status: "closed",
+  reporter: { id: "u3", display_name: null, username: "lu" },
+};
+
+export const triageAnonymousFixture: BugReportWithReporter = {
+  ...bugReportFixture,
+  id: "r4",
+  category: "crash",
+  description: "It closes by itself",
+  reporter: { id: "u4", display_name: null, username: null },
 };
 
 export const playlistFixture: PlaylistListItem = {
@@ -519,6 +540,8 @@ export function makeCore(
     registerRecent?: ActivityService["registerRecent"];
     createBugReport?: BugReportsService["createBugReport"];
     listMyBugReports?: BugReportsService["listMyBugReports"];
+    listBugReports?: BugReportsService["listBugReports"];
+    updateBugReportStatus?: BugReportsService["updateBugReportStatus"];
     listPlaylists?: PlaylistsService["listPlaylists"];
     createPlaylist?: PlaylistsService["createPlaylist"];
     listLibrary?: LibraryService["listLibrary"];
@@ -585,6 +608,13 @@ export function makeCore(
   );
   const listMyBugReports = jest.fn<BugReportsService["listMyBugReports"]>(
     options.listMyBugReports ?? (() => Promise.resolve(pageOf<BugReport>([]))),
+  );
+  const listBugReports = jest.fn<BugReportsService["listBugReports"]>(
+    options.listBugReports ?? (() => Promise.resolve(pageOf<BugReportWithReporter>([]))),
+  );
+  const updateBugReportStatus = jest.fn<BugReportsService["updateBugReportStatus"]>(
+    options.updateBugReportStatus ??
+      (() => Promise.resolve({ kind: "success", data: bugReportFixture, maxAgeSeconds: 0 })),
   );
   const listPlaylists = jest.fn<PlaylistsService["listPlaylists"]>(
     options.listPlaylists ?? (() => Promise.resolve(pageOf<PlaylistListItem>([]))),
@@ -755,7 +785,12 @@ export function makeCore(
     album: { getAlbum },
     artists: { getArtist },
     auth,
-    bugReports: { createBugReport, listMyBugReports },
+    bugReports: {
+      createBugReport,
+      listMyBugReports,
+      listBugReports,
+      updateBugReportStatus,
+    },
     genres: { listGenres, listGenrePlaylists, listGenreCategories },
     library: { listLibrary, getSavedState, saveItem, removeItem },
     likes,
@@ -794,6 +829,8 @@ export function makeCore(
     registerRecent,
     createBugReport,
     listMyBugReports,
+    listBugReports,
+    updateBugReportStatus,
     listPlaylists,
     createPlaylist,
     listLibrary,
