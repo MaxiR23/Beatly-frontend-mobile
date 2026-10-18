@@ -38,7 +38,7 @@ export type { FetchPageOptions, PageResult } from "./http/paginated.ts";
 export { profileName, profileSchema } from "./domain/profile.ts";
 export type { Profile } from "./domain/profile.ts";
 export { createProfileService, profileReasonSchema } from "./services/profile.ts";
-export type { ProfileReason, ProfileService } from "./services/profile.ts";
+export type { ProfileReason, ProfileService, UpdateProfileInput } from "./services/profile.ts";
 export {
   likedPlaylistSchema,
   playlistDetailSchema,

@@ -1,6 +1,6 @@
 // INFO: spacing tokens, a multiples-of-four scale, plus the layout
 // constants (gutter, gap, hitSlop, control height, text area height, and the carousel card,
-// avatar, creator mark, tab item, chip, genre bar, row cover, detail hero cover,
+// avatar, creator mark, profile avatar, tab item, chip, genre bar, row cover, detail hero cover,
 // track-number column, now playing bar width, large and medium play button, the detail play pill's width, the detail action row's gap, seek bar and sheet handle sizes, and the skeleton bar widths).
 export const spacing = {
   xxs: 2,
@@ -22,6 +22,8 @@ export const layout = {
   carouselCard: 140,
   avatar: 36,
   creatorMark: 24,
+  // Side of the large avatar of the profile screen.
+  profileAvatar: 96,
   tabItemWidth: 64,
   chipHeight: 36,
   genreBarWidth: 6,
@@ -51,6 +53,6 @@ export const layout = {
   // Width and height of the sheet handle bar.
   handleWidth: 36,
   handleHeight: 4,
-  // Widths of the detail skeleton's placeholder bars, as a share of their row.
+  // Widths of a skeleton's placeholder bars, as a share of their row.
   skeletonBar: { title: "70%", meta: "45%", rowTitle: "60%", rowMeta: "35%" },
 } as const;

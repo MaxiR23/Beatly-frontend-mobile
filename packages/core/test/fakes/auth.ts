@@ -1,4 +1,4 @@
-// INFO: in-memory auth port: returns a fixed token and lets a test emit session changes.
+// INFO: in-memory auth port: returns a fixed token and email and lets a test emit session changes.
 import type { AuthChange, AuthPort } from "../../src/ports/auth.ts";
 
 export interface FakeAuth {
@@ -6,11 +6,15 @@ export interface FakeAuth {
   emit(change: AuthChange): void;
 }
 
-export function createFakeAuth(token: string | null = "test-token"): FakeAuth {
+export function createFakeAuth(
+  token: string | null = "test-token",
+  email: string | null = "listener@example.com",
+): FakeAuth {
   const listeners = new Set<(change: AuthChange) => void>();
   const port: AuthPort = {
     getAccessToken: () => Promise.resolve(token),
     getStatus: () => Promise.resolve(token === null ? "signed_out" : "signed_in"),
+    getEmail: () => Promise.resolve(token === null ? null : email),
     signIn: () => Promise.resolve({ kind: "success" }),
     signUp: () => Promise.resolve({ kind: "confirmation_sent" }),
     signOut: () => Promise.resolve({ kind: "success" }),

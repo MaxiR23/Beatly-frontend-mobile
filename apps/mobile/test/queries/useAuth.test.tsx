@@ -1,14 +1,16 @@
 // apps/mobile/test/queries/useAuth.test.tsx
 //
-// Tests for the sign-out mutation and the recent searches it clears.
+// Tests for the sign-out mutation and the recent searches it clears, and the email query.
 //
 // Tested:
 // - useSignOut
+// - useEmail
 //
 // What is covered:
 // - a successful sign-out clears the stored recents and drops the cached list
 // - a failed sign-out keeps them
 // - a failed clear does not fail the sign-out
+// - the stored session's email, read again on every mount since local data carries no max-age
 // - Not applicable: the cache time from Cache-Control, because a mutation has none
 //
 // Run with: pnpm --filter @beatly/mobile test -- useAuth
@@ -17,10 +19,10 @@
 
 import { RECENT_SEARCHES_KEY } from "@beatly/core";
 import { describe, expect, it, jest } from "@jest/globals";
-import { act, renderHook } from "@testing-library/react-native";
+import { act, renderHook, waitFor } from "@testing-library/react-native";
 import type { ReactNode } from "react";
 
-import { useSignOut } from "../../src/queries/useAuth.ts";
+import { useEmail, useSignOut } from "../../src/queries/useAuth.ts";
 import { createTestQueryClient } from "../helpers/queryClient.ts";
 import { recentSearchesQueryKey } from "../../src/queries/useRecentSearches.ts";
 import { makeCore, memoryStorage, Wrapper } from "../helpers/core.tsx";
@@ -76,5 +78,28 @@ describe("useSignOut", () => {
     });
     expect(outcome).toEqual({ kind: "success" });
     expect(client.getQueryData(recentSearchesQueryKey)).toBeUndefined();
+  });
+});
+
+describe("useEmail", () => {
+  it("returns the stored session's email", async () => {
+    const { wrapper } = setup();
+    const { result } = await renderHook(() => useEmail(), { wrapper });
+    await waitFor(() => {
+      expect(result.current.data).toBe("listener@example.com");
+    });
+  });
+
+  it("reads the email again on every mount, since local data carries no max-age", async () => {
+    const { ctx, wrapper } = setup();
+    const first = await renderHook(() => useEmail(), { wrapper });
+    await waitFor(() => {
+      expect(first.result.current.isFetching).toBe(false);
+    });
+    const second = await renderHook(() => useEmail(), { wrapper });
+    await waitFor(() => {
+      expect(second.result.current.isFetching).toBe(false);
+    });
+    expect(ctx.auth.getEmail).toHaveBeenCalledTimes(2);
   });
 });

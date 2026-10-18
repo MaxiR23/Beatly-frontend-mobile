@@ -9,6 +9,7 @@
 // - With reveal, the entry starts hidden, the eye shows it and hides it again, and its label follows the state
 // - Without reveal there is no eye button and secureTextEntry passes through
 // - multiline passes through to the text entry
+// - the prefix is drawn before the entry and is not part of its value
 //
 // Run with: pnpm --filter @beatly/ui test -- Input
 //
@@ -53,5 +54,11 @@ describe("Input", () => {
   it("is single line without the prop", async () => {
     await render(<Input label="Description" value="x" onChangeText={jest.fn()} />);
     expect(screen.getByLabelText("Description").props.multiline).toBeFalsy();
+  });
+
+  it("draws the prefix before the entry and keeps it out of the value", async () => {
+    await render(<Input label="Username" value="maxi" onChangeText={jest.fn()} prefix="@" />);
+    expect(screen.getByText("@")).toBeTruthy();
+    expect(screen.getByLabelText("Username").props.value).toBe("maxi");
   });
 });

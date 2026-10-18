@@ -1,9 +1,16 @@
-// INFO: the mutation hooks over the auth port; the port never rejects, so the outcome is the mutation's data.
+// INFO: the hooks over the auth port: the stored session's email as a query (local data with no Cache-Control, so the default stale time applies) and the mutations; the sign operations never reject, so their outcome is the mutation's data.
 import type { EmailLink, SignInInput, SignUpInput } from "@beatly/core";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useCore } from "../providers/CoreProvider.tsx";
 import { recentSearchesQueryKey } from "./useRecentSearches.ts";
+
+export const emailQueryKey = ["auth", "email"] as const;
+
+export function useEmail() {
+  const { auth } = useCore();
+  return useQuery({ queryKey: emailQueryKey, queryFn: () => auth.getEmail() });
+}
 
 export function useSignIn() {
   const { auth } = useCore();

@@ -50,7 +50,8 @@ playlists without a subtitle.
 | Expected empty   | `EmptyState` when both lists have no items, no action                                                                   | `home:empty`                                                 |
 | Error with retry | `ErrorState` when either list failed, on the first load or on a next page of playlists; retry refetches the failed ones | `common:error.generic`, `common:retry`                       |
 
-The avatar and the sheet are `AccountButton`, shared with Explore. The sheet
+The avatar and the sheet are `AccountButton`, shared with Explore. The sheet's
+first row is the `AvatarRow`, always drawn: with the profile in the cache it shows the header avatar, `display_name` or `common:account.noName`, and `common:account.viewProfile`, labelled `common:account.profileRow`. With no profile yet (loading or failed), a skeleton circle and bar stand in for the avatar and the name, and the row is labelled `common:account.viewProfile`. Either way it opens `/profile` (`profile.md`). Below it the sheet
 holds report a problem and My reports (`common:account.report`, `common:account.myReports`; `bug-reports.md`) above the log out button (`common:account.logout`); a failed log out draws
 `common:error.generic`. The avatar and sheet close use `common:account.open` and
 `common:account.close`.

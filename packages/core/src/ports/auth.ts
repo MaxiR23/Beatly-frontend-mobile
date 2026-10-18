@@ -46,6 +46,8 @@ export interface AuthPort {
   getAccessToken(): Promise<string | null>;
   // The stored session, read without the network. Rejects only if the store cannot be read.
   getStatus(): Promise<AuthStatus>;
+  // The signed-in user's email from the stored session, read without the network; null when signed out or the session has none. Rejects only if the store cannot be read.
+  getEmail(): Promise<string | null>;
   // Returns the unsubscribe function.
   onAuthChange(listener: (change: AuthChange) => void): () => void;
   // The four operations below never reject: every failure, including a timeout, is an AuthFailure.

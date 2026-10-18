@@ -35,8 +35,9 @@ see `tabs.md`.
 | Error with retry | `ErrorState`; retry refetches the genres      | `common:error.generic`, `common:retry` |
 
 The avatar and its sheet use `common:account.open`, `common:account.close`,
+`common:account.viewProfile`, `common:account.noName`, `common:account.profileRow`,
 `common:account.report`, `common:account.myReports` and `common:account.logout`;
-the two report entries open the form and My reports (`bug-reports.md`).
+the profile row opens the profile (`profile.md`) and the two report entries open the form and My reports (`bug-reports.md`).
 
 ## Data
 

@@ -12,6 +12,7 @@ import enLibrary from "./en/library.json";
 import enLogin from "./en/login.json";
 import enPlayer from "./en/player.json";
 import enPlaylist from "./en/playlist.json";
+import enProfile from "./en/profile.json";
 import enSearch from "./en/search.json";
 import enSignUp from "./en/signUp.json";
 import enTabs from "./en/tabs.json";
@@ -28,6 +29,7 @@ import esLibrary from "./es/library.json";
 import esLogin from "./es/login.json";
 import esPlayer from "./es/player.json";
 import esPlaylist from "./es/playlist.json";
+import esProfile from "./es/profile.json";
 import esSearch from "./es/search.json";
 import esSignUp from "./es/signUp.json";
 import esTabs from "./es/tabs.json";
@@ -48,6 +50,7 @@ export const resources = {
     genre: esGenre,
     player: esPlayer,
     playlist: esPlaylist,
+    profile: esProfile,
     search: esSearch,
     tabs: esTabs,
     trackMenu: esTrackMenu,
@@ -66,6 +69,7 @@ export const resources = {
     genre: enGenre,
     player: enPlayer,
     playlist: enPlaylist,
+    profile: enProfile,
     search: enSearch,
     tabs: enTabs,
     trackMenu: enTrackMenu,

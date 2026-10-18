@@ -1,7 +1,8 @@
-// INFO: the header's account avatar and its sheet with report a problem, my reports and log out, which opens the report form or the reports sheet in its place, shared by the home, explore, search and library tabs.
+// INFO: the header's account avatar and its sheet with the profile row, report a problem, my reports and log out; the row opens the profile screen, the report entries open the form or the reports sheet in its place, shared by the home, explore, search and library tabs.
 import { profileName } from "@beatly/core";
 import { spacing } from "@beatly/ui";
-import { ActionRow, Avatar, Button, Sheet, Text } from "@beatly/ui/native";
+import { ActionRow, Avatar, AvatarRow, Button, Sheet, Text } from "@beatly/ui/native";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,6 +16,7 @@ import { ReportProblemSheet } from "../bugReports/ReportProblemSheet.tsx";
 export function AccountButton() {
   const tc = useT("common");
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const profile = useProfile();
   const signOut = useSignOut();
   const [open, setOpen] = useState<"account" | "report" | "reports" | null>(null);
@@ -38,6 +40,28 @@ export function AccountButton() {
         closeLabel={tc("account.close")}
         bottomInset={insets.bottom}
       >
+        <AvatarRow
+          identity={
+            profile.data
+              ? {
+                  name: profileName(profile.data),
+                  title: profile.data.display_name ?? tc("account.noName"),
+                }
+              : null
+          }
+          subtitle={tc("account.viewProfile")}
+          accessibilityLabel={
+            profile.data
+              ? tc("account.profileRow", {
+                  name: profile.data.display_name ?? tc("account.noName"),
+                })
+              : tc("account.viewProfile")
+          }
+          onPress={() => {
+            close();
+            router.push("/profile");
+          }}
+        />
         <View style={styles.entries}>
           <ActionRow
             icon="flag"
