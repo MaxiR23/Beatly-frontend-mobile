@@ -47,6 +47,7 @@ value: the value lives once, in the token file.
 | Width of a carousel card and side of its cover                                                                                                     | `layout.carouselCard`                                           |
 | Side of the header account avatar                                                                                                                  | `layout.avatar`                                                 |
 | Side of the leading mark (avatar or brand mark) in a detail creator line                                                                           | `layout.creatorMark`                                            |
+| Side of the large avatar of the profile screen                                                                                                     | `layout.profileAvatar`                                          |
 | Width of a floating tab bar item                                                                                                                   | `layout.tabItemWidth`                                           |
 | Height of a filter chip and of a segmented control option                                                                                          | `layout.chipHeight`                                             |
 | Width / height of the genre accent bar in a genre row                                                                                              | `layout.genreBarWidth` / `layout.genreBarHeight`                |
@@ -64,7 +65,7 @@ value: the value lives once, in the token file.
 | Gap between the buttons of the detail action row (shuffle, play, the side button)                                                                  | `layout.actionGap`                                              |
 | Height of the seek bar track / side of its thumb                                                                                                   | `layout.seekTrack` / `layout.seekThumb`                         |
 | Width / height of the sheet handle bar                                                                                                             | `layout.handleWidth` / `layout.handleHeight`                    |
-| Width of a detail skeleton placeholder bar (title, meta, row title, row meta), as a share of its row                                               | `layout.skeletonBar.title` / `.meta` / `.rowTitle` / `.rowMeta` |
+| Width of a skeleton placeholder bar (title, meta, row title, row meta), as a share of its row                                                      | `layout.skeletonBar.title` / `.meta` / `.rowTitle` / `.rowMeta` |
 
 ## Floating surfaces
 
@@ -177,6 +178,14 @@ scroll.
 - `Badge`: a read-only status pill, `typography.label` text on `color.overlay.subtle`, `radius.sm`, `spacing.sm` horizontal and `spacing.xxs` vertical padding; open in `color.text.primary`, closed in `color.text.tertiary`.
 - Form: a multiline `Input` at `layout.textAreaHeight` minimum, the category `Chip`s wrapping `spacing.sm` apart, `spacing.lg` between the form's parts.
 - Report row: a `MediaRow` with the `flag` tile and the `Badge` trailing.
+
+## Profile
+
+- `AvatarRow`: the `ActionRow` row (`layout.controlHeight`, `spacing.sm` vertical, `layout.gap`), the header `Avatar`, `typography.rowTitle` over `typography.meta` in `color.text.secondary`, and a trailing `chevronRight` at `icon.size.md` in `color.text.tertiary`.
+- The profile avatar: `layout.profileAvatar`, initials in `typography.display`, or the `user` icon at `icon.size.xl`.
+- `ProfileSkeleton`: `SkeletonCircle` at `layout.profileAvatar`, a `typography.title` bar at `layout.skeletonBar.title` and a `typography.body` bar at `.meta`, then a `Card` with two `typography.label` / `typography.body` bar pairs at `.rowMeta` / `.rowTitle`. All in `color.surface.border`, bars `radius.sm`, circles `radius.full`, no motion.
+- New skeletons build on the exported `SkeletonBar` and `SkeletonCircle` of `Skeleton.tsx`; `DetailSkeleton` keeps its private bars.
+- `AvatarRow` with no identity: `SkeletonCircle` at `layout.avatar` and a `typography.rowTitle` bar at `.rowTitle`.
 
 ## Radius (`radius`)
 

@@ -31,6 +31,9 @@ export {
 export { SwitchRow } from "./components/SwitchRow.tsx";
 export { Sheet } from "./components/Sheet.tsx";
 export { Avatar } from "./components/Avatar.tsx";
+export { AvatarRow } from "./components/AvatarRow.tsx";
+export { ProfileSkeleton } from "./components/ProfileSkeleton.tsx";
+export { SkeletonBar } from "./components/Skeleton.tsx";
 export { Carousel, type CarouselItem } from "./components/Carousel.tsx";
 export { GenreRow } from "./components/GenreRow.tsx";
 export { Badge } from "./components/Badge.tsx";

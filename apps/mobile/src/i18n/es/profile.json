@@ -1,0 +1,32 @@
+{
+  "title": "Perfil",
+  "back": "Volver",
+  "username": "@{{username}}",
+  "noUsername": "Sin nombre de usuario",
+  "roles": {
+    "admin": "Administrador",
+    "developer": "Desarrollador",
+    "tester": "Tester"
+  },
+  "email": "Email",
+  "memberSince": "Miembro desde",
+  "memberSinceDate": "{{date, datetime}}",
+  "editProfile": "Editar perfil",
+  "edit": {
+    "title": "Editar perfil",
+    "name": "Nombre",
+    "namePlaceholder": "Tu nombre",
+    "nameTooLong": "Usa {{max}} caracteres o menos",
+    "username": "Nombre de usuario",
+    "usernamePrefix": "@",
+    "usernamePlaceholder": "nombre_de_usuario",
+    "usernameTooShort": "Usa al menos {{min}} caracteres",
+    "usernameTooLong": "Usa {{max}} caracteres o menos",
+    "usernameInvalid": "Usa solo letras, números y guiones bajos",
+    "usernameRequired": "Tu nombre de usuario no puede quedar vacío",
+    "usernameTaken": "Ese nombre de usuario ya está en uso.",
+    "cancel": "Cancelar",
+    "submit": "Guardar",
+    "close": "Cerrar"
+  }
+}

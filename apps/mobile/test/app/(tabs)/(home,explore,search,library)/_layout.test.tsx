@@ -10,6 +10,7 @@
 // - opening an album from home recents, a search result, a saved album and the explore stack, back returning to the same tab
 // - opening a playlist recent from home, an own playlist from home, liked and a saved genre playlist from library, and a genre playlist from the genre grid, back returning to the origin
 // - editing an own playlist's tracks from its options, back showing the new order, count and duration
+// - opening the profile from the account sheet in home, back returning to home with home selected
 // - opening another album from an album's carousel and going back to the first album
 // - opening an artist from the search top artist, a home artist recent and an album's artist name, and a similar artist from an artist, back returning to the origin
 //
@@ -309,6 +310,22 @@ describe("the shared tab stack", () => {
     await fireEvent.press(playlistBack());
     expect(await screen.findByTestId("genre")).toBeTruthy();
     expect(isSelected(screen.getByRole("tab", { name: en.tabs.explore }))).toBe(true);
+  });
+
+  it("opens the profile from the account sheet in home and back returns to home with home selected", async () => {
+    mockCore.set("signed_in");
+    await renderRouter("app", { initialUrl: "/" });
+    await screen.findByTestId("home");
+    await fireEvent.press(await screen.findByRole("button", { name: en.common.account.open }));
+    await fireEvent.press(
+      await screen.findByRole("button", {
+        name: en.common.account.profileRow.replace("{{name}}", "Maxi"),
+      }),
+    );
+    expect(await screen.findByTestId("profile")).toBeTruthy();
+    await fireEvent.press(screen.getByRole("button", { name: en.profile.back }));
+    expect(await screen.findByTestId("home")).toBeTruthy();
+    expect(isSelected(screen.getByRole("tab", { name: en.tabs.home }))).toBe(true);
   });
 
   function artistBack() {

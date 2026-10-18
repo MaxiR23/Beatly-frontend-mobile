@@ -7,7 +7,7 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the stateful likes mirror, credits, membership, add, create-with-track, remove and move fakes, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, library item, the saved read, add and remove, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, the bug reports fixtures and fakes, and the page builder)
+// (the stateful likes mirror, credits, membership, add, create-with-track, remove and move fakes, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile and its update, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, library item, the saved read, add and remove, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, the bug reports fixtures and fakes, and the page builder)
 //
 import type {
   ActivityService,
@@ -450,6 +450,7 @@ function baseAuth() {
   return {
     getAccessToken: jest.fn<AuthPort["getAccessToken"]>(() => Promise.resolve("test-token")),
     getStatus: jest.fn<AuthPort["getStatus"]>(() => Promise.resolve("signed_in")),
+    getEmail: jest.fn<AuthPort["getEmail"]>(() => Promise.resolve("listener@example.com")),
     onAuthChange: jest.fn<AuthPort["onAuthChange"]>(() => () => undefined),
     signIn: jest.fn<AuthPort["signIn"]>(() => Promise.resolve({ kind: "success" })),
     signUp: jest.fn<AuthPort["signUp"]>(() => Promise.resolve({ kind: "confirmation_sent" })),
@@ -512,6 +513,7 @@ export function makeCore(
   options: {
     auth?: MockAuth;
     getMyProfile?: ProfileService["getMyProfile"];
+    updateMyProfile?: ProfileService["updateMyProfile"];
     listRecents?: ActivityService["listRecents"];
     logPlay?: ActivityService["logPlay"];
     registerRecent?: ActivityService["registerRecent"];
@@ -557,6 +559,9 @@ export function makeCore(
   const auth = options.auth ?? makeAuth();
   const getMyProfile = jest.fn<ProfileService["getMyProfile"]>(
     options.getMyProfile ?? (() => Promise.resolve(successOf(profileFixture))),
+  );
+  const updateMyProfile = jest.fn<ProfileService["updateMyProfile"]>(
+    options.updateMyProfile ?? (() => Promise.resolve(successOf(profileFixture))),
   );
   const listRecents = jest.fn<ActivityService["listRecents"]>(
     options.listRecents ?? (() => Promise.resolve(pageOf<RecentEntity>([]))),
@@ -771,7 +776,7 @@ export function makeCore(
       updatePlaylist,
       deletePlaylist,
     },
-    profile: { getMyProfile },
+    profile: { getMyProfile, updateMyProfile },
     publicShare: { getGenrePlaylist },
     recentSearches: createRecentSearchesService({ storage, log }),
     search: { search },
@@ -783,6 +788,7 @@ export function makeCore(
     auth,
     log,
     getMyProfile,
+    updateMyProfile,
     listRecents,
     logPlay,
     registerRecent,

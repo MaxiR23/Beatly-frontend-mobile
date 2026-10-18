@@ -17,4 +17,5 @@ One file per screen; every file follows `_template.md`.
 | `tabs.md`        | the tab navigator                                              |
 | `likes.md`       | the likes mirror (no screen)                                   |
 | `bug-reports.md` | the report form and My reports                                 |
+| `profile.md`     | the profile screen and the edit profile sheet                  |
 | `track-menu.md`  | the heart, the track menu, the playlist picker and the credits |

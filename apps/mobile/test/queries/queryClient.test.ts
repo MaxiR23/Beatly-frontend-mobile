@@ -25,6 +25,7 @@ import { createQueryClient, staleTimeFor } from "../../src/queries/queryClient.t
 const auth: AuthPort = {
   getAccessToken: () => Promise.resolve(null),
   getStatus: () => Promise.resolve("signed_out"),
+  getEmail: () => Promise.resolve(null),
   onAuthChange: () => () => undefined,
   signIn: () => Promise.resolve({ kind: "success" }),
   signUp: () => Promise.resolve({ kind: "confirmation_sent" }),

@@ -33,11 +33,11 @@ It now feeds the home avatar; see `home.md`.
 
 The core schema declares `username` as nullable, as the backend does: it is null
 until the user sets one, so `GET /profile/me` succeeds for a freshly signed-up
-account. The name shown is `username`, or `display_name` when `username` is null.
+account. The name shown is `username`, or `display_name` when `username` is null, in the header avatar; the account row and the profile screen show `display_name`.
 
 ## Auth port operations
 
-`signIn`, `signUp`, `signOut`, `confirmEmail`, `getStatus` and `onAuthChange`.
+`signIn`, `signUp`, `signOut`, `confirmEmail`, `getStatus`, `getEmail` and `onAuthChange`.
 None of the sign operations rejects: every failure, including a 15 second
 timeout, is a typed `AuthFailure`.
 
@@ -65,6 +65,7 @@ timeout, is a typed `AuthFailure`.
 
 - `getStatus` reads the stored session from the secure store without the network,
   so the gate decides at once.
+- `getEmail` reads the email of the stored session from the secure store without the network (never the library's session read, which refreshes an expired session); the profile screen draws it.
 - Change events from `onAuthChange` flip the gate; a `signed_in` to `signed_out`
   change clears the query cache.
 - Token refresh follows the app's foreground state (`AppState`).

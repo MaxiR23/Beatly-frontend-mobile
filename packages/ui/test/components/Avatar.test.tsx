@@ -6,7 +6,7 @@
 // - Avatar
 //
 // What is covered:
-// - initials or the user icon, the gradient stop from the name, the press and its role, the plain view without onPress, the creator size
+// - initials or the user icon, the gradient stop from the name, the press and its role, the plain view without onPress, the creator size, the profile size
 //
 // Run with: pnpm --filter @beatly/ui test -- Avatar
 //
@@ -75,6 +75,16 @@ describe("Avatar", () => {
     );
     expect(style.width).toBe(layout.creatorMark);
     expect(style.height).toBe(layout.creatorMark);
+  });
+
+  it("draws the profile size at layout.profileAvatar", async () => {
+    await render(<Avatar name="Max Reb" size="profile" />);
+    const root = screen.toJSON();
+    const style = StyleSheet.flatten(
+      (isJsonNode(root) ? root.props.style : undefined) as ViewStyle,
+    );
+    expect(style.width).toBe(layout.profileAvatar);
+    expect(style.height).toBe(layout.profileAvatar);
   });
 
   it("calls onPress and exposes a button with the given label", async () => {

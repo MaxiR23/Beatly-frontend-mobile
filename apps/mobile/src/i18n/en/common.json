@@ -15,6 +15,9 @@
     "close": "Close",
     "report": "Report a problem",
     "myReports": "My reports",
-    "logout": "Log out"
+    "logout": "Log out",
+    "viewProfile": "View profile",
+    "noName": "No name",
+    "profileRow": "{{name}}, view profile"
   }
 }

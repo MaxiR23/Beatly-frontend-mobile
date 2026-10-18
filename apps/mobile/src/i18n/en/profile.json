@@ -1,0 +1,32 @@
+{
+  "title": "Profile",
+  "back": "Back",
+  "username": "@{{username}}",
+  "noUsername": "No username",
+  "roles": {
+    "admin": "Admin",
+    "developer": "Developer",
+    "tester": "Tester"
+  },
+  "email": "Email",
+  "memberSince": "Member since",
+  "memberSinceDate": "{{date, datetime}}",
+  "editProfile": "Edit profile",
+  "edit": {
+    "title": "Edit profile",
+    "name": "Name",
+    "namePlaceholder": "Your name",
+    "nameTooLong": "Use {{max}} characters or fewer",
+    "username": "Username",
+    "usernamePrefix": "@",
+    "usernamePlaceholder": "username",
+    "usernameTooShort": "Use at least {{min}} characters",
+    "usernameTooLong": "Use {{max}} characters or fewer",
+    "usernameInvalid": "Use only letters, numbers and underscores",
+    "usernameRequired": "Your username can't be empty",
+    "usernameTaken": "That username is already taken.",
+    "cancel": "Cancel",
+    "submit": "Save",
+    "close": "Close"
+  }
+}

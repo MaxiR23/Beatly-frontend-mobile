@@ -1,6 +1,7 @@
 // INFO: labeled text input on the card surface, 48 high, with an optional
 // error, an optional multiline mode at text area height, and an optional eye
-// button that shows and hides a secure entry.
+// button that shows and hides a secure entry, and an optional fixed prefix
+// drawn before the entry, outside its value.
 import { useState } from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
@@ -24,6 +25,7 @@ interface InputProps {
   keyboardType?: "default" | "email-address";
   autoCapitalize?: "none" | "sentences" | "words";
   autoComplete?: "email" | "password" | "new-password" | "name";
+  prefix?: string;
 }
 
 export function Input({
@@ -38,6 +40,7 @@ export function Input({
   keyboardType,
   autoCapitalize,
   autoComplete,
+  prefix,
 }: InputProps) {
   const [revealed, setRevealed] = useState(false);
   const secure = reveal === undefined ? secureTextEntry : !revealed;
@@ -54,6 +57,13 @@ export function Input({
           { borderColor: error ? color.status.error : color.surface.border },
         ]}
       >
+        {prefix !== undefined ? (
+          <View accessible={false} style={styles.prefix}>
+            <Text variant="body" tone="secondary">
+              {prefix}
+            </Text>
+          </View>
+        ) : null}
         <TextInput
           accessibilityLabel={label}
           maxFontSizeMultiplier={maxFontScale}
@@ -67,7 +77,11 @@ export function Input({
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
           autoComplete={autoComplete}
-          style={[styles.input, multiline ? styles.inputMultiline : undefined]}
+          style={[
+            styles.input,
+            multiline ? styles.inputMultiline : undefined,
+            prefix !== undefined ? styles.inputAfterPrefix : undefined,
+          ]}
         />
         {reveal ? (
           <Pressable
@@ -110,6 +124,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
   },
+  prefix: { paddingLeft: spacing.lg },
+  inputAfterPrefix: { paddingLeft: spacing.xs },
   inputMultiline: { textAlignVertical: "top" },
   reveal: {
     alignSelf: "stretch",
