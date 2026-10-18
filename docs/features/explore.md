@@ -36,8 +36,8 @@ see `tabs.md`.
 
 The avatar and its sheet use `common:account.open`, `common:account.close`,
 `common:account.viewProfile`, `common:account.noName`, `common:account.profileRow`,
-`common:account.report`, `common:account.myReports` and `common:account.logout`;
-the profile row opens the profile (`profile.md`) and the two report entries open the form and My reports (`bug-reports.md`).
+`common:account.report`, `common:account.myReports`, `common:account.allReports` (developers and admins only) and `common:account.logout`;
+the profile row opens the profile (`profile.md`) and the three report entries open the form, My reports and All reports (developers and admins only), which opens the All reports screen (`bug-reports.md`).
 
 ## Data
 

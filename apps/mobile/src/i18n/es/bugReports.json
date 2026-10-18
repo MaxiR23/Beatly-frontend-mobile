@@ -35,5 +35,35 @@
       "open": "Abierto",
       "closed": "Cerrado"
     }
+  },
+  "triage": {
+    "title": "Todos los reportes",
+    "back": "Volver",
+    "filters": {
+      "all": "Todos",
+      "open": "Abiertos",
+      "closed": "Cerrados"
+    },
+    "empty": {
+      "all": "Todavía no hay reportes.",
+      "open": "No hay reportes abiertos.",
+      "closed": "No hay reportes cerrados."
+    },
+    "forbidden": "No tenés permiso para ver estos reportes.",
+    "username": "@{{username}}",
+    "unknownReporter": "Usuario desconocido",
+    "detail": {
+      "title": "Reporte",
+      "dismiss": "Cerrar",
+      "description": "Descripción",
+      "category": "Categoría",
+      "reporter": "Reportado por",
+      "entity": "Sobre",
+      "date": "Fecha",
+      "close": "Cerrar reporte",
+      "reopen": "Reabrir reporte",
+      "forbidden": "Ya no tenés permiso para cambiar reportes.",
+      "notFound": "Este reporte ya no existe."
+    }
   }
 }

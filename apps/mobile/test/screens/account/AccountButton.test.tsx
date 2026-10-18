@@ -9,6 +9,7 @@
 // - the profile row first, then report a problem and My reports above log out
 // - the row from the cache with no new request, No name, the skeleton row while the profile loads or fails, always opening the profile
 // - the report form and My reports opening in place of the account sheet
+// - All reports below My reports for a developer or an admin, never for a user or a tester, nor while the profile loads or fails, opening its screen and closing the sheet
 //
 // Run with: pnpm --filter @beatly/mobile test -- AccountButton
 //
@@ -143,6 +144,50 @@ describe("the account sheet", () => {
     await fireEvent.press(screen.getByRole("button", { name: en.common.account.report }));
     expect(screen.getByText(en.bugReports.form.title)).toBeTruthy();
     expect(screen.queryByText(/^About:/)).toBeNull();
+    expect(screen.queryByRole("button", { name: en.common.account.logout })).toBeNull();
+  });
+
+  it.each(["developer", "admin"] as const)(
+    "offers All reports below My reports for a %s",
+    async (role) => {
+      await setup({
+        getMyProfile: () => Promise.resolve(successOf({ ...profileFixture, role })),
+      });
+      await screen.findByRole("button", { name: profileLabel("Maxi") });
+      const names = screen.getAllByRole("button").map((node) => {
+        const label: unknown = node.props.accessibilityLabel;
+        return typeof label === "string" ? label : "";
+      });
+      const mine = names.indexOf(en.common.account.myReports);
+      const all = names.indexOf(en.common.account.allReports);
+      expect(all).toBeGreaterThan(mine);
+      expect(names.indexOf(en.common.account.logout)).toBeGreaterThan(all);
+    },
+  );
+
+  it.each(["user", "tester"] as const)("never offers All reports to a %s", async (role) => {
+    await setup({ getMyProfile: () => Promise.resolve(successOf({ ...profileFixture, role })) });
+    await screen.findByRole("button", { name: profileLabel("Maxi") });
+    expect(screen.queryByTestId("account-all-reports")).toBeNull();
+  });
+
+  it("does not offer All reports while the profile loads or after it fails", async () => {
+    await setup({ getMyProfile: pending });
+    expect(screen.queryByTestId("account-all-reports")).toBeNull();
+    await screen.unmount();
+    const ctx = await setup({ getMyProfile: failing });
+    await waitFor(() => {
+      expect(ctx.getMyProfile).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.queryByTestId("account-all-reports")).toBeNull();
+  });
+
+  it("opens the All reports screen from the entry and closes the sheet", async () => {
+    await setup({
+      getMyProfile: () => Promise.resolve(successOf({ ...profileFixture, role: "admin" })),
+    });
+    await fireEvent.press(await screen.findByTestId("account-all-reports"));
+    expect(mockPush).toHaveBeenCalledWith("/bug-reports");
     expect(screen.queryByRole("button", { name: en.common.account.logout })).toBeNull();
   });
 

@@ -1,9 +1,12 @@
-// INFO: the bug reports service: sending a report, with the entity it is about when there is one, and the caller's own reports, a page at a time, over the shared paginated helper.
+// INFO: the bug reports service: sending a report, with the entity it is about when there is one, the caller's own reports and every report with its reporter (optionally by status), a page at a time, over the shared paginated helper, and the change of a report's status.
 import {
   bugReportSchema,
+  bugReportWithReporterSchema,
   type BugReport,
   type BugReportCategory,
   type BugReportEntityType,
+  type BugReportStatus,
+  type BugReportWithReporter,
 } from "../domain/bugReport.ts";
 import type { HttpClient } from "../http/client.ts";
 import type { HttpOutcome } from "../http/outcome.ts";
@@ -19,6 +22,11 @@ export interface CreateBugReportInput {
 export interface BugReportsService {
   createBugReport(input: CreateBugReportInput): Promise<HttpOutcome<BugReport>>;
   listMyBugReports(cursor: string | null): Promise<HttpOutcome<PageResult<BugReport>>>;
+  listBugReports(
+    status: BugReportStatus | null,
+    cursor: string | null,
+  ): Promise<HttpOutcome<PageResult<BugReportWithReporter>>>;
+  updateBugReportStatus(id: string, status: BugReportStatus): Promise<HttpOutcome<BugReport>>;
 }
 
 export function createBugReportsService(client: HttpClient): BugReportsService {
@@ -36,5 +44,19 @@ export function createBugReportsService(client: HttpClient): BugReportsService {
       }),
     listMyBugReports: (cursor) =>
       fetchPage(client, { path: "/bug-reports/me", item: bugReportSchema, cursor }),
+    listBugReports: (status, cursor) =>
+      fetchPage(client, {
+        path: "/bug-reports",
+        item: bugReportWithReporterSchema,
+        cursor,
+        query: { status: status ?? undefined },
+      }),
+    updateBugReportStatus: (id, status) =>
+      client.request({
+        method: "PATCH",
+        path: `/bug-reports/${encodeURIComponent(id)}`,
+        body: { status },
+        schema: bugReportSchema,
+      }),
   };
 }
