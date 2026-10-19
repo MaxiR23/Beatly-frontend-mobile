@@ -1,7 +1,7 @@
-// INFO: a playlist as POST /playlists returns it, and the item of GET /playlists, which adds thumbnail_urls: up to four cover urls for the mosaic, [] when the playlist has none; the endpoint has no single thumbnail_url; the detail adds total_count and total_duration_seconds to the list item (thumbnail_urls included) and serves GET /playlists/{id}; the liked playlist has the same fields without thumbnail_urls and serves GET /playlists/liked; a playlist track is the item of the three /tracks routes; owned-with-track returns the ids of the caller's playlists that hold a track.
+// INFO: a playlist as POST /playlists returns it, and the item of GET /playlists, which adds thumbnail_urls: up to four cover urls for the mosaic, [] when the playlist has none; the endpoint has no single thumbnail_url; the detail adds total_count and total_duration_seconds to the list item (thumbnail_urls included) and serves GET /playlists/{id}; the liked playlist has the same fields without thumbnail_urls and serves GET /playlists/liked; a playlist track is the item of the three /tracks routes; owned-with-track returns the ids of the caller's playlists that hold a track, a song's artists follow the track artists rule.
 import { z } from "zod";
 
-import { searchArtistRefSchema } from "./search.ts";
+import { trackArtistsSchema } from "./search.ts";
 
 export const playlistSchema = z.object({
   id: z.string(),
@@ -38,7 +38,7 @@ export type LikedPlaylist = z.infer<typeof likedPlaylistSchema>;
 export const playlistTrackSchema = z.object({
   track_id: z.string(),
   title: z.string(),
-  artists: z.array(searchArtistRefSchema),
+  artists: trackArtistsSchema,
   album: z.string(),
   album_id: z.string(),
   duration_seconds: z.number().int(),

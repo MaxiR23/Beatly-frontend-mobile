@@ -1,13 +1,13 @@
-// INFO: the schemas of GET /artist/{id}; songs, albums, singles and related come whole, an empty list is a section the provider did not send, a song without track_id is unavailable.
+// INFO: the schemas of GET /artist/{id}; songs, albums, singles and related come whole, an empty list is a section the provider did not send, a song without track_id is unavailable, a song's artists follow the track artists rule.
 import { z } from "zod";
 
 import { albumRefSchema } from "./album.ts";
-import { searchArtistRefSchema } from "./search.ts";
+import { trackArtistsSchema } from "./search.ts";
 
 export const artistSongSchema = z.object({
   track_id: z.string().nullable(),
   title: z.string(),
-  artists: z.array(searchArtistRefSchema),
+  artists: trackArtistsSchema,
   album: z.string().nullable(),
   album_id: z.string().nullable(),
   duration_seconds: z.number().int().nullable(),

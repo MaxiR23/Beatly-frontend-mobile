@@ -1,13 +1,12 @@
-// INFO: the item of GET /likes and GET /likes/sync and the data of POST /likes; deleted_at is null on GET /likes and set on an unliked row of GET /likes/sync; duration_seconds can be null; both lists also carry the checkpoint.
+// INFO: the item of GET /likes and GET /likes/sync and the data of POST /likes; deleted_at is null on GET /likes and set on an unliked row of GET /likes/sync; duration_seconds can be null; both lists also carry the checkpoint; artists follow the track artists rule.
 import { z } from "zod";
 
-export const likeArtistSchema = z.object({ id: z.string(), name: z.string() });
+import { trackArtistsSchema } from "./search.ts";
 
 export const likeSchema = z.object({
   track_id: z.string(),
   title: z.string(),
-  // No min(1): a single legacy row must not fail a whole sync page.
-  artists: z.array(likeArtistSchema),
+  artists: trackArtistsSchema,
   album: z.string(),
   album_id: z.string(),
   thumbnail_url: z.string(),

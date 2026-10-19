@@ -18,7 +18,7 @@ import {
 import type { HttpClient } from "../http/client.ts";
 import type { ApiFailure, HttpOutcome, TransportFailure } from "../http/outcome.ts";
 import { fetchPage, type PageResult } from "../http/paginated.ts";
-import type { PlayArtist } from "./activity.ts";
+import type { TrackArtistRef } from "../domain/search.ts";
 import type { PlayableTrack } from "./playback.ts";
 
 export interface CreatePlaylistInput {
@@ -36,8 +36,8 @@ export interface UpdatePlaylistInput {
 export interface AddTrackInput {
   readonly track_id: string;
   readonly title: string;
-  // Non-empty, every id set: the contract's TrackArtist.id is required.
-  readonly artists: readonly PlayArtist[];
+  // Every artist in order; the first has an id, a later one may have id null (conventions.md, Track artists).
+  readonly artists: readonly TrackArtistRef[];
   readonly album: string;
   readonly album_id: string;
   readonly thumbnail_url: string;
@@ -51,16 +51,17 @@ export interface AddTrackResult {
 
 // The body POST /playlists/{id}/tracks requires, or null when the track lacks a field of it.
 export function addTrackInputOf(track: PlayableTrack): AddTrackInput | null {
-  const artists: PlayArtist[] = [];
-  for (const artist of track.artists) {
-    if (artist.id !== null) artists.push({ id: artist.id, name: artist.name });
-  }
+  // Every artist in order; the backend refuses a first artist without an id (conventions.md, Track artists).
+  const artists = track.artists.map((artist) => ({ id: artist.id, name: artist.name }));
+  const primaryId = artists[0]?.id;
   if (
     track.album === null ||
     track.albumId === null ||
     track.coverUrl === null ||
     track.durationSeconds === null ||
-    artists.length === 0
+    primaryId === undefined ||
+    primaryId === null ||
+    primaryId === ""
   ) {
     return null;
   }

@@ -8,6 +8,7 @@
 // What is covered:
 // - the sheet with only the items that apply, closing on a choice
 // - like through the likes service with the mapped input, the error notice for a rejected like and for a storage failure, hiding after its time, nothing for a pending one
+// - a secondary artist without an id drawn by name in the sheet header, never linked
 // - go to artist and go to album closing the sheet and calling the screen
 // - remove calling the service for an own playlist, and the error notice when it fails
 // - report a problem swapping the menu for the report form with the track's title, and sending the track attached
@@ -65,7 +66,10 @@ describe("the track menu", () => {
       {
         track_id: "t1",
         title: "Menu Song",
-        artists: [{ id: "ar1", name: "Ann" }],
+        artists: [
+          { id: "ar1", name: "Ann" },
+          { id: null, name: "Guest" },
+        ],
         album: "Album",
         album_id: "al1",
         thumbnail_url: "test://img/t1",
@@ -100,12 +104,20 @@ describe("the track menu", () => {
     expect(screen.queryByText(en.common.error.generic)).toBeNull();
   });
 
-  it("goes to the first artist with an id and closes the sheet", async () => {
+  it("goes to the first artist and closes the sheet", async () => {
     const ctx = await setupMenu();
     await openMenu();
     await choose(en.trackMenu.items.goToArtist);
     expect(ctx.onOpenArtist).toHaveBeenCalledWith("ar1");
     expect(screen.queryByTestId("track-menu-sheet")).toBeNull();
+  });
+
+  it("draws a secondary artist without an id by name, with no link", async () => {
+    await setupMenu();
+    await openMenu();
+    expect(screen.getByText("Ann, Guest")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Guest" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Guest" })).toBeNull();
   });
 
   it("goes to the album and closes the sheet", async () => {

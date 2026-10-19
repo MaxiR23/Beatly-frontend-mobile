@@ -7,8 +7,8 @@ The more button of every track row and the player header, the menu it opens, the
 Act on one track from anywhere it is listed: like it or remove the like, add it to a playlist (an existing
 one or a new one), go to its artist or its album, read its credits and, inside an own playlist, remove it from
 that playlist, and report a problem with it (always offered, last; `bug-reports.md`). The menu lists only the items that apply to the track. A track missing what a route requires does not
-offer that item: Like and Remove from Liked need `likeInputOf` to map (an artist with an id, album, album id and
-cover), Add to a playlist needs `addTrackInputOf` (the same plus a duration), Go to artist needs an artist with an id,
+offer that item: Like and Remove from Liked need `likeInputOf` to map (a first artist with an id, album, album id and
+cover; every artist is sent, a later one with id null included), Add to a playlist needs `addTrackInputOf` (the same plus a duration), Go to artist needs the first artist's id (the primary artist; conventions.md, Track artists) and opens it; a later artist is never linked, and one without an id is drawn by name only,
 Go to album needs an album id. Credits and Report a problem are always offered. The player also draws a heart beside the title with the
 same rule as Like (`likes.md`).
 

@@ -30,12 +30,12 @@ const urlsOf = (url: string | null): string[] => (url === null ? [] : [url]);
 type ArtistSong = Artist["songs"][number];
 
 // The song as playback and the menu see it: null when it has no track id.
-function toPlayable(artist: Artist, song: ArtistSong): PlayableTrack | null {
+function toPlayable(song: ArtistSong): PlayableTrack | null {
   if (song.track_id === null) return null;
   return {
     trackId: song.track_id,
     title: song.title,
-    artists: song.artists.length > 0 ? song.artists : [{ id: artist.id, name: artist.name }],
+    artists: song.artists,
     album: song.album,
     albumId: song.album_id,
     coverUrl: song.thumbnail_url,
@@ -97,7 +97,7 @@ export function ArtistScreen() {
   } else {
     const data = artist.data;
     const playSong = (tapped: number) => {
-      const queue = toQueue(data.songs, tapped, (song) => toPlayable(data, song));
+      const queue = toQueue(data.songs, tapped, (song) => toPlayable(song));
       if (queue !== null) {
         void playback.playList(queue.tracks, queue.index, {
           kind: "artist",
@@ -125,7 +125,7 @@ export function ArtistScreen() {
                 <Text variant="section">{t("popular")}</Text>
               </View>
               {data.songs.map((song, index) => {
-                const playable = toPlayable(data, song);
+                const playable = toPlayable(song);
                 return (
                   <MediaRow
                     key={`${String(index)}:${song.track_id ?? song.title}`}

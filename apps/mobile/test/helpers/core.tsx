@@ -302,7 +302,7 @@ export const artistFixture: Artist = {
     {
       track_id: null,
       title: "Hidden Song",
-      artists: [],
+      artists: [{ id: "ar9", name: "Hidden Artist" }],
       album: null,
       album_id: null,
       duration_seconds: null,
@@ -347,7 +347,7 @@ export const albumFixture: Album = {
     {
       track_id: null,
       title: "Hidden Song",
-      artists: [],
+      artists: [{ id: "ar9", name: "Hidden Artist" }],
       duration_seconds: null,
       is_available: false,
       track_number: 2,

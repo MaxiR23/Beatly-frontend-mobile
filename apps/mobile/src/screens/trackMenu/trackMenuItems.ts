@@ -1,4 +1,4 @@
-// INFO: the items the track menu offers for one track, in order, only those that apply: like or remove from liked and add to a playlist when the track carries what their routes require, go to the artist (the first with an id) and the album when they are known, credits always, remove from this playlist inside an own playlist, and report a problem always, last.
+// INFO: the items the track menu offers for one track, in order, only those that apply: like or remove from liked and add to a playlist when the track carries what their routes require, go to the artist (the first one, when it has an id) and the album when they are known, credits always, remove from this playlist inside an own playlist, and report a problem always, last.
 import { addTrackInputOf, likeInputOf, type PlayableTrack } from "@beatly/core";
 import type { IconName } from "@beatly/ui/native";
 
@@ -43,8 +43,9 @@ export function trackMenuItems(
       destructive: false,
     });
   }
-  const artistId = track.artists.find((artist) => artist.id !== null)?.id;
-  if (artistId !== undefined && artistId !== null) {
+  // The first artist is the primary one and carries the id (conventions.md, Track artists); a later artist is never linked.
+  const artistId = track.artists[0]?.id;
+  if (artistId !== undefined && artistId !== null && artistId !== "") {
     items.push({
       key: "goToArtist",
       labelKey: "items.goToArtist",

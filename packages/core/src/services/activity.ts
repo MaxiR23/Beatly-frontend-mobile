@@ -5,20 +5,16 @@ import {
   type PlayEvent,
   type RecentEntity,
 } from "../domain/activity.ts";
+import type { TrackArtistRef } from "../domain/search.ts";
 import type { HttpClient } from "../http/client.ts";
 import type { HttpOutcome } from "../http/outcome.ts";
 import { fetchPage, type PageResult } from "../http/paginated.ts";
 
-export interface PlayArtist {
-  readonly id: string;
-  readonly name: string;
-}
-
 export interface PlayInput {
   readonly track_id: string;
   readonly title: string;
-  // Non-empty: the counter never sends a play without one.
-  readonly artists: readonly PlayArtist[];
+  // Every artist in order; the first has an id, a later one may have id null (conventions.md, Track artists).
+  readonly artists: readonly TrackArtistRef[];
   readonly album: string;
   readonly album_id: string;
   readonly thumbnail_url: string;

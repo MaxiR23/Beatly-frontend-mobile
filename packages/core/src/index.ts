@@ -109,7 +109,7 @@ export type { LibraryItemInput, LibraryItemKind, LibraryService } from "./servic
 export { playEventSchema, recentEntitySchema, recentEntityTypeSchema } from "./domain/activity.ts";
 export type { PlayEvent, RecentEntity } from "./domain/activity.ts";
 export { createActivityService } from "./services/activity.ts";
-export type { ActivityService, PlayArtist, PlayInput, RecentInput } from "./services/activity.ts";
+export type { ActivityService, PlayInput, RecentInput } from "./services/activity.ts";
 export { genreCategorySchema, genrePlaylistListItemSchema, genreSchema } from "./domain/genre.ts";
 export type { Genre, GenrePlaylistListItem } from "./domain/genre.ts";
 export { createGenresService } from "./services/genres.ts";
@@ -121,6 +121,8 @@ export {
   searchArtistSchema,
   searchResultSchema,
   searchSongSchema,
+  trackArtistRefSchema,
+  trackArtistsSchema,
 } from "./domain/search.ts";
 export type {
   SearchAlbum,
@@ -128,6 +130,8 @@ export type {
   SearchArtistRef,
   SearchResult,
   SearchSong,
+  TrackArtistRef,
+  TrackArtists,
 } from "./domain/search.ts";
 export { albumRefSchema, albumSchema, albumTrackSchema } from "./domain/album.ts";
 export type { Album, AlbumRef, AlbumTrack } from "./domain/album.ts";
@@ -203,7 +207,7 @@ export {
 } from "./services/listening.ts";
 export { MIGRATIONS, migrate } from "./db/migrations.ts";
 export type { MigrateOutcome, Migration } from "./db/migrations.ts";
-export { likeArtistSchema, likeSchema } from "./domain/like.ts";
+export { likeSchema } from "./domain/like.ts";
 export type { Like } from "./domain/like.ts";
 export {
   LIKE_RETRY_DELAYS_MS,

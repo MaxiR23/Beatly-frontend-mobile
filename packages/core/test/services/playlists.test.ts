@@ -33,7 +33,8 @@
 // - createTrackEditor sends moves with 1-based positions, removes, one at a time in order, drops the rest after a failure until reset, and reports what it sent
 // - updatePlaylist patches only the given fields, clears the description with null, surfaces playlist_not_found and fails with a timeout, network or schema outcome
 // - deletePlaylist deletes the playlist, counts playlist_not_found as deleted, surfaces other reasons and fails with a timeout, network or schema outcome
-// - addTrackInputOf maps a playable track and returns null when it lacks a field
+// - addTrackInputOf maps a playable track with every artist and returns null when it lacks a field or a first artist id
+// - addTrackToPlaylist sends every artist, a secondary with id null included
 //
 // What is covered:
 // - Happy path, expected empty state, api failure, transport failure, pagination, creation, detail, tracks, membership, add, remove, edit and delete
@@ -697,6 +698,22 @@ describe("addTrackToPlaylist", () => {
     expect(JSON.parse(http.requests[0]?.body ?? "null")).toEqual(addInput);
   });
 
+  it("sends every artist, a secondary with id null included", async () => {
+    const two = [
+      { id: "ar1", name: "Artist" },
+      { id: null, name: "Guest" },
+    ];
+    const { service, http } = setupRoutes({
+      [route]: () => ({ status: 201, body: { ok: true, data: { ...addedTrack, artists: two } } }),
+    });
+    expect(await service.addTrackToPlaylist("p 1", { ...addInput, artists: two })).toEqual({
+      kind: "success",
+      data: { alreadyThere: false },
+      maxAgeSeconds: 0,
+    });
+    expect(JSON.parse(http.requests[0]?.body ?? "null")).toMatchObject({ artists: two });
+  });
+
   it("treats track_already_in_playlist as added", async () => {
     const { service } = setupRoutes({ [route]: failureOf(409, "track_already_in_playlist") });
     expect(await service.addTrackToPlaylist("p 1", addInput)).toEqual({
@@ -1199,8 +1216,8 @@ describe("addTrackInputOf", () => {
     trackId: "t1",
     title: "Song",
     artists: [
-      { id: null, name: "Guest" },
       { id: "ar1", name: "Artist" },
+      { id: null, name: "Guest" },
     ],
     album: "Album",
     albumId: "al1",
@@ -1208,11 +1225,14 @@ describe("addTrackInputOf", () => {
     durationSeconds: 200,
   };
 
-  it("maps a full track and drops the artists without an id", () => {
+  it("maps a full track and keeps every artist, a secondary with id null included", () => {
     expect(addTrackInputOf(playable)).toEqual({
       track_id: "t1",
       title: "Song",
-      artists: [{ id: "ar1", name: "Artist" }],
+      artists: [
+        { id: "ar1", name: "Artist" },
+        { id: null, name: "Guest" },
+      ],
       album: "Album",
       album_id: "al1",
       thumbnail_url: "test://img/t1",
@@ -1225,7 +1245,25 @@ describe("addTrackInputOf", () => {
     ["album id", { albumId: null }],
     ["cover", { coverUrl: null }],
     ["duration", { durationSeconds: null }],
-    ["artist with an id", { artists: [{ id: null, name: "Guest" }] }],
+    ["artists", { artists: [] }],
+    [
+      "a first artist with an id",
+      {
+        artists: [
+          { id: null, name: "Guest" },
+          { id: "ar1", name: "Artist" },
+        ],
+      },
+    ],
+    [
+      "a non-empty first artist id",
+      {
+        artists: [
+          { id: "", name: "Guest" },
+          { id: "ar1", name: "Artist" },
+        ],
+      },
+    ],
   ])("returns null without %s", (_name, patch) => {
     expect(addTrackInputOf({ ...playable, ...patch })).toBeNull();
   });

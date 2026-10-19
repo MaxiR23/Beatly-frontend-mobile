@@ -45,7 +45,7 @@ function toPlayable(album: Album, track: AlbumTrack): PlayableTrack | null {
   return {
     trackId: track.track_id,
     title: track.title,
-    artists: track.artists.length > 0 ? track.artists : album.artists,
+    artists: track.artists,
     // The album being played fills what the track lacks.
     album: album.title,
     albumId: album.id,

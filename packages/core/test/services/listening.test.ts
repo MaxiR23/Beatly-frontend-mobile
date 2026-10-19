@@ -7,7 +7,7 @@
 // - registers nothing at 29 seconds, and once per listen however long the track keeps playing
 // - does not count a seek forward or back, a jump of the engine, nor a pause
 // - counts again when repeat one replays the track, and a next track as a new listen
-// - registers no play for a track without album, without cover or without an artist id
+// - registers no play for a track without album, without cover or without a first artist id; sends every artist, a secondary with id null included
 // - keeps playing when the registration fails (api failure or transport failure) and logs it
 // - stops counting after the returned unsubscribe
 //
@@ -196,9 +196,28 @@ describe("createListeningCounter", () => {
     expect(log.entries.at(-1)?.fields).toEqual({ trackId: "t1", missing: "thumbnail_url" });
   });
 
-  it("sends only the artists with an id, and registers none when no artist has one", async () => {
+  it("sends every artist, a secondary with id null included, and registers none when the first artist has no id", async () => {
     const withSome = setup();
     await withSome.controller.playList(
+      [
+        track("t1", {
+          artists: [
+            { id: "ar2", name: "Somebody" },
+            { id: null, name: "Nobody" },
+          ],
+        }),
+      ],
+      0,
+      source,
+    );
+    withSome.listen(30);
+    expect(withSome.logPlay.mock.calls[0]?.[0].artists).toEqual([
+      { id: "ar2", name: "Somebody" },
+      { id: null, name: "Nobody" },
+    ]);
+
+    const withNone = setup();
+    await withNone.controller.playList(
       [
         track("t1", {
           artists: [
@@ -207,15 +226,6 @@ describe("createListeningCounter", () => {
           ],
         }),
       ],
-      0,
-      source,
-    );
-    withSome.listen(30);
-    expect(withSome.logPlay.mock.calls[0]?.[0].artists).toEqual([{ id: "ar2", name: "Somebody" }]);
-
-    const withNone = setup();
-    await withNone.controller.playList(
-      [track("t1", { artists: [{ id: null, name: "Nobody" }] })],
       0,
       source,
     );
