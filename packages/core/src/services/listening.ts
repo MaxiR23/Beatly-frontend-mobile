@@ -1,6 +1,6 @@
-// INFO: the listening counter: counts real listening of the current track from the playback controller (seeks and pauses do not count) and, at 30 seconds of one listen, posts the play once, detached; a track without album, cover or an artist with an id is not registered, and a failure is only logged.
+// INFO: the listening counter: counts real listening of the current track from the playback controller (seeks and pauses do not count) and, at 30 seconds of one listen, posts the play once, detached; a track without album, cover or a first artist with an id is not registered; every artist is sent, a later one with id null included, and a failure is only logged.
 import type { LogPort } from "../ports/log.ts";
-import type { ActivityService, PlayArtist } from "./activity.ts";
+import type { ActivityService } from "./activity.ts";
 import type { PlayableTrack, PlaybackController } from "./playback.ts";
 
 export const PLAY_AFTER_SECONDS = 30;
@@ -20,14 +20,13 @@ export function createListeningCounter(deps: {
   let done = false;
 
   const register = (track: PlayableTrack): void => {
-    const artists: PlayArtist[] = [];
-    for (const artist of track.artists) {
-      if (artist.id !== null) artists.push({ id: artist.id, name: artist.name });
-    }
+    // Every artist in order; the backend refuses a first artist without an id (conventions.md, Track artists).
+    const artists = track.artists.map((artist) => ({ id: artist.id, name: artist.name }));
+    const primaryId = artists[0]?.id;
     let missing: string | null = null;
     if (track.album === null || track.albumId === null) missing = "album";
     else if (track.coverUrl === null) missing = "thumbnail_url";
-    else if (artists.length === 0) missing = "artists";
+    else if (primaryId === undefined || primaryId === null || primaryId === "") missing = "artists";
     if (
       missing !== null ||
       track.album === null ||

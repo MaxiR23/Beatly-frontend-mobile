@@ -103,7 +103,7 @@ describe("getArtist", () => {
         {
           track_id: null,
           title: "Hidden",
-          artists: [],
+          artists: [{ id: "UCar1", name: "Daft Punk" }],
           album: null,
           album_id: null,
           duration_seconds: null,

@@ -1,12 +1,12 @@
-// INFO: the schemas of GET /album/{id}; tracks, other_versions and related_recommendations come whole, a track marked unavailable has null track_id and duration, artist ids are nullable.
+// INFO: the schemas of GET /album/{id}; tracks, other_versions and related_recommendations come whole, a track marked unavailable has null track_id and duration, album artist ids are nullable and the list can be [], a track's artists follow the track artists rule.
 import { z } from "zod";
 
-import { searchArtistRefSchema } from "./search.ts";
+import { searchArtistRefSchema, trackArtistsSchema } from "./search.ts";
 
 export const albumTrackSchema = z.object({
   track_id: z.string().nullable(),
   title: z.string(),
-  artists: z.array(searchArtistRefSchema),
+  artists: trackArtistsSchema,
   duration_seconds: z.number().int().nullable(),
   is_available: z.boolean(),
   track_number: z.number().int(),

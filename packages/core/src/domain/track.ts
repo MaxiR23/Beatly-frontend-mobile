@@ -1,14 +1,14 @@
-// INFO: the schemas of GET /tracks/{id}/upnext, /lyrics, /related and /credits; not paginated, the first upnext track is the requested one, lyrics is null when the track has none, start_ms and end_ms are null on every line of unsynced lyrics, credits has four nullable sections and other_sections, never null.
+// INFO: the schemas of GET /tracks/{id}/upnext, /lyrics, /related and /credits; not paginated, a song's artists follow the track artists rule, the first upnext track is the requested one, lyrics is null when the track has none, start_ms and end_ms are null on every line of unsynced lyrics, credits has four nullable sections and other_sections, never null.
 import { z } from "zod";
 
 import { albumRefSchema } from "./album.ts";
 import { relatedArtistSchema } from "./artist.ts";
-import { searchArtistRefSchema } from "./search.ts";
+import { trackArtistsSchema } from "./search.ts";
 
 export const trackRefSchema = z.object({
   track_id: z.string(),
   title: z.string(),
-  artists: z.array(searchArtistRefSchema),
+  artists: trackArtistsSchema,
   album: z.string().nullable(),
   album_id: z.string().nullable(),
   duration_seconds: z.number().int().nullable(),

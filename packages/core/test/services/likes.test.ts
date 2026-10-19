@@ -15,7 +15,9 @@
 // - a pending row is not overwritten by a synced one, nor a newer row by an older one; a row with deleted_at is stored as not liked
 // - the mirror answers without network, clear empties it and the watermark, and a sync in flight does not refill it
 // - a database failure and a migration failure return a storage failure
-// - likeInputOf maps a playable track and returns null when it lacks a field, keeping a null duration
+// - likeInputOf maps a playable track with every artist and returns null when it lacks a field or a first artist id, keeping a null duration
+// - setLiked sends every artist, a secondary with id null included
+// - a like whose secondary artist has a null id is stored, read back and its unlike confirmed
 //
 // What is covered:
 // - Happy path, expected empty state (sync; DELETE's null data), api failure, transport failure, against real SQLite (node:sqlite, in memory)
@@ -482,9 +484,47 @@ describe("sync", () => {
     expect(await offline.service.sync()).toEqual({ kind: "transport_failure", cause: "network" });
     expect(offline.service.isLiked("t1")).toBe(true);
   });
+  it("keeps a like whose secondary artist has no id and syncs its unlike", async () => {
+    vi.useFakeTimers();
+    const artists = [
+      { id: "ar1", name: "Artist" },
+      { id: null, name: "Guest" },
+    ];
+    const { service, db } = await setup({
+      "GET /likes": () => page([likeData("t1", { artists })]),
+      "DELETE /likes/t1": () => ok(null),
+    });
+    expect(await service.sync()).toEqual({ kind: "success" });
+    expect(service.isLiked("t1")).toBe(true);
+    const stored = z
+      .array(z.object({ artists: z.string() }))
+      .parse(db.raw.prepare("SELECT artists FROM likes").all());
+    expect(JSON.parse(stored[0]?.artists ?? "null")).toEqual(artists);
+
+    const result = service.setLiked({ ...track, artists }, false);
+    await tick(LIKE_SEND_DELAY_MS);
+    expect(await result).toEqual({ kind: "confirmed" });
+  });
 });
 
 describe("setLiked", () => {
+  it("sends every artist to POST /likes, a secondary with id null included", async () => {
+    vi.useFakeTimers();
+    const artists = [
+      { id: "ar1", name: "Artist" },
+      { id: null, name: "Guest" },
+    ];
+    const { service, http } = await setup({
+      "POST /likes": () => ok(likeData("t1", { artists })),
+    });
+    const result = service.setLiked({ ...track, artists }, true);
+    await tick(LIKE_SEND_DELAY_MS);
+    expect(await result).toEqual({ kind: "confirmed" });
+    const body = z
+      .object({ artists: z.array(z.object({ id: z.string().nullable(), name: z.string() })) })
+      .parse(JSON.parse(http.requests[0]?.body ?? "null"));
+    expect(body.artists).toEqual(artists);
+  });
   it("marks the like at once and confirms it with POST /likes", async () => {
     vi.useFakeTimers();
     const { service, db, http } = await setup({
@@ -808,8 +848,8 @@ describe("likeInputOf", () => {
     trackId: "t1",
     title: "Song",
     artists: [
-      { id: null, name: "Guest" },
       { id: "ar1", name: "Artist" },
+      { id: null, name: "Guest" },
     ],
     album: "Album",
     albumId: "al1",
@@ -817,11 +857,14 @@ describe("likeInputOf", () => {
     durationSeconds: 200,
   };
 
-  it("maps a full track and drops the artists without an id", () => {
+  it("maps a full track and keeps every artist, a secondary with id null included", () => {
     expect(likeInputOf(playable)).toEqual({
       track_id: "t1",
       title: "Song",
-      artists: [{ id: "ar1", name: "Artist" }],
+      artists: [
+        { id: "ar1", name: "Artist" },
+        { id: null, name: "Guest" },
+      ],
       album: "Album",
       album_id: "al1",
       thumbnail_url: "test://img/t1",
@@ -837,7 +880,25 @@ describe("likeInputOf", () => {
     ["album", { album: null }],
     ["album id", { albumId: null }],
     ["cover", { coverUrl: null }],
-    ["artist with an id", { artists: [{ id: null, name: "Guest" }] }],
+    ["artists", { artists: [] }],
+    [
+      "a first artist with an id",
+      {
+        artists: [
+          { id: null, name: "Guest" },
+          { id: "ar1", name: "Artist" },
+        ],
+      },
+    ],
+    [
+      "a non-empty first artist id",
+      {
+        artists: [
+          { id: "", name: "Guest" },
+          { id: "ar1", name: "Artist" },
+        ],
+      },
+    ],
   ])("returns null without %s", (_name, patch) => {
     expect(likeInputOf({ ...playable, ...patch })).toBeNull();
   });

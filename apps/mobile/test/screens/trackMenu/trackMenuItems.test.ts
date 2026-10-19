@@ -8,7 +8,7 @@
 // What is covered:
 // - all seven items in order for a full track in an own playlist, unlike when liked
 // - like and add hidden without album or cover, add hidden without a duration
-// - go to artist with the first artist that has an id, go to album hidden without an album id
+// - go to artist with the first artist, hidden when it has no id, go to album hidden without an album id
 // - remove hidden outside an own playlist, credits always offered, report a problem always offered and last
 //
 // Run with: pnpm --filter @beatly/mobile test -- trackMenuItems
@@ -24,8 +24,8 @@ const full: PlayableTrack = {
   trackId: "t1",
   title: "Song",
   artists: [
-    { id: null, name: "Guest" },
     { id: "ar1", name: "Ann" },
+    { id: null, name: "Guest" },
   ],
   album: "Album",
   albumId: "al1",
@@ -84,15 +84,23 @@ describe("trackMenuItems", () => {
     ]);
   });
 
-  it("goes to the first artist with an id", () => {
+  it("goes to the first artist", () => {
     const item = trackMenuItems(full, { liked: false, ownPlaylistId: null }).find(
       (candidate) => candidate.key === "goToArtist",
     );
     expect(item?.artistId).toBe("ar1");
   });
 
-  it("hides go to artist when no artist has an id", () => {
-    expect(keys({ ...full, artists: [{ id: null, name: "Guest" }] })).not.toContain("goToArtist");
+  it("hides go to artist when the first artist has no id, even if a later one has", () => {
+    expect(
+      keys({
+        ...full,
+        artists: [
+          { id: null, name: "Guest" },
+          { id: "ar2", name: "Bob" },
+        ],
+      }),
+    ).not.toContain("goToArtist");
   });
 
   it("hides go to album without an album id", () => {

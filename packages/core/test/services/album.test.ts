@@ -4,7 +4,7 @@
 //
 // Tested:
 // - getAlbum returns the album with its tracks and referenced albums
-// - Keeps an unavailable track with null id and duration, a null year, count and cover, and an artist reference without an id
+// - Keeps an unavailable track with null id and duration, a null year, count and cover, and a secondary artist without an id
 // - Encodes the album id in the path
 // - Returns empty tracks and empty referenced lists as a success when the album has no audio playlist
 // - Surfaces invalid_request, upstream_error and upstream_timeout as api failures
@@ -97,7 +97,7 @@ describe("getAlbum", () => {
     expect(http.requests[0]?.headers.authorization).toBe("Bearer test-token");
   });
 
-  it("keeps an unavailable track with null id and duration, a null year, count and cover, and an artist reference without an id", async () => {
+  it("keeps an unavailable track with null id and duration, a null year, count and cover, and a secondary artist without an id", async () => {
     const odd = {
       ...data,
       year: null,
@@ -107,7 +107,10 @@ describe("getAlbum", () => {
         {
           track_id: null,
           title: "Hidden",
-          artists: [{ id: null, name: "Various" }],
+          artists: [
+            { id: "ar1", name: "Daft Punk" },
+            { id: null, name: "Various" },
+          ],
           duration_seconds: null,
           is_available: false,
           track_number: 1,

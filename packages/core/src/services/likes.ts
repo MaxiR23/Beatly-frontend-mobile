@@ -2,14 +2,14 @@
 import { z } from "zod";
 
 import type { MigrateOutcome } from "../db/migrations.ts";
-import { likeArtistSchema, likeSchema, likesCheckpointSchema, type Like } from "../domain/like.ts";
+import { likeSchema, likesCheckpointSchema, type Like } from "../domain/like.ts";
 import type { ApiReason } from "../domain/envelope.ts";
 import type { HttpClient } from "../http/client.ts";
 import type { ApiFailure, HttpOutcome, TransportFailure } from "../http/outcome.ts";
 import { fetchPageWith, type PageResult } from "../http/paginated.ts";
+import { trackArtistRefSchema, type TrackArtistRef } from "../domain/search.ts";
 import type { DbExecutor, DbPort, SqlValue } from "../ports/db.ts";
 import type { LogPort } from "../ports/log.ts";
-import type { PlayArtist } from "./activity.ts";
 import type { PlayableTrack } from "./playback.ts";
 import type { StorageFailure } from "./recentSearches.ts";
 
@@ -21,7 +21,7 @@ export const LIKE_RETRY_DELAYS_MS: readonly number[] = [1000, 2000, 4000];
 export interface LikeInput {
   readonly track_id: string;
   readonly title: string;
-  readonly artists: readonly PlayArtist[];
+  readonly artists: readonly TrackArtistRef[];
   readonly album: string;
   readonly album_id: string;
   readonly thumbnail_url: string;
@@ -30,15 +30,16 @@ export interface LikeInput {
 
 // The body POST /likes requires, or null when the track lacks a field of it; the duration is optional.
 export function likeInputOf(track: PlayableTrack): LikeInput | null {
-  const artists: PlayArtist[] = [];
-  for (const artist of track.artists) {
-    if (artist.id !== null) artists.push({ id: artist.id, name: artist.name });
-  }
+  // Every artist in order; the backend refuses a first artist without an id (conventions.md, Track artists).
+  const artists = track.artists.map((artist) => ({ id: artist.id, name: artist.name }));
+  const primaryId = artists[0]?.id;
   if (
     track.album === null ||
     track.albumId === null ||
     track.coverUrl === null ||
-    artists.length === 0
+    primaryId === undefined ||
+    primaryId === null ||
+    primaryId === ""
   ) {
     return null;
   }
@@ -104,7 +105,7 @@ const rowSchema = z.object({
 interface Row {
   readonly track_id: string;
   readonly title: string;
-  readonly artists: readonly PlayArtist[];
+  readonly artists: readonly TrackArtistRef[];
   readonly album: string;
   readonly album_id: string;
   readonly thumbnail_url: string;
@@ -169,7 +170,8 @@ function toRow(raw: unknown): Row {
   } catch {
     throw new RowSchemaError("artists is not JSON");
   }
-  return { ...row, artists: parseRows(z.array(likeArtistSchema), artists) };
+  // The element only: a row stored before the track artists rule may hold []; the rule is checked at the API edge.
+  return { ...row, artists: parseRows(z.array(trackArtistRefSchema), artists) };
 }
 
 async function readRow(executor: DbExecutor, trackId: string): Promise<Row | null> {

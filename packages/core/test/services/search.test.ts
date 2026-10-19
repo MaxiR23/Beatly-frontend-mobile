@@ -5,7 +5,8 @@
 // Tested:
 // - search returns the top artist, songs and albums for a query
 // - Parses albums with or without playlist_id, dropping it when present
-// - Keeps an artist without an image, an artist reference without an id and an album without year or cover
+// - Keeps an artist without an image, a secondary song artist without an id and an album without artists, year or cover
+// - Fails with a schema outcome when a song's first artist has no id
 // - Returns a null artist and empty lists as a success when nothing matches
 // - Surfaces upstream_error and upstream_timeout as api failures
 // - Fails with a timeout, network or schema outcome
@@ -92,10 +93,15 @@ describe("search", () => {
     });
   });
 
-  it("keeps an artist without an image, an artist reference without an id and an album without year or cover", async () => {
+  it("keeps an artist without an image, a secondary song artist without an id and an album without artists, year or cover", async () => {
     const odd = {
       artist: { ...data.artist, thumbnail_url: null },
-      songs: [{ ...data.songs[0], artists: [{ id: null, name: "Various" }] }],
+      songs: [
+        {
+          ...data.songs[0],
+          artists: [data.songs[0]?.artists[0], { id: null, name: "Various" }],
+        },
+      ],
       albums: [{ ...data.albums[0], artists: [], year: null, thumbnail_url: null }],
     };
     const { service } = setup(() => ({ body: { ok: true, data: odd } }));
@@ -139,6 +145,16 @@ describe("search", () => {
   it("fails with a network outcome when the request cannot be sent", async () => {
     const { service } = setup(() => Promise.reject(new Error("offline")));
     expect(await service.search("x")).toEqual({ kind: "transport_failure", cause: "network" });
+  });
+
+  it("fails with a schema outcome when a song's first artist has no id", async () => {
+    const { service } = setup(() => ({
+      body: {
+        ok: true,
+        data: { ...data, songs: [{ ...data.songs[0], artists: [{ id: null, name: "Various" }] }] },
+      },
+    }));
+    expect(await service.search("x")).toEqual({ kind: "transport_failure", cause: "schema" });
   });
 
   it("fails with a schema outcome when a song breaks the contract", async () => {

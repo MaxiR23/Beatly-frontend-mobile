@@ -1,12 +1,12 @@
 // INFO: the playback controller: the queue, the play order (shuffle), repeat one, the current track, a jump to a position of the queue, a rename of the current source and the status over the player port; an immutable snapshot plus subscribe.
-import type { SearchArtistRef } from "../domain/search.ts";
+import type { TrackArtistRef } from "../domain/search.ts";
 import type { LogPort } from "../ports/log.ts";
 import type { PlayerEvent, PlayerPort } from "../ports/player.ts";
 
 export interface PlayableTrack {
   readonly trackId: string;
   readonly title: string;
-  readonly artists: readonly SearchArtistRef[];
+  readonly artists: readonly TrackArtistRef[];
   // The album as POST /plays takes it; null when the screen has none, and then no play is registered.
   readonly album: string | null;
   readonly albumId: string | null;

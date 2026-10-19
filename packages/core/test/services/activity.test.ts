@@ -8,7 +8,7 @@
 // - Returns an empty first page as a success when there is no recent activity
 // - Surfaces unauthorized as an api failure
 // - Fails with a timeout, network or schema outcome
-// - logPlay posts the play and returns the logged event; surfaces upstream_error; fails with a timeout, network or schema outcome
+// - logPlay posts the play, with every artist, a secondary with id null included, and returns the logged event; surfaces upstream_error; fails with a timeout, network or schema outcome
 // - registerRecent posts the recent and returns the saved entity; surfaces upstream_error; fails with a timeout, network or schema outcome
 //
 // What is covered:
@@ -243,6 +243,23 @@ describe("logPlay", () => {
     expect(http.requests[0]?.method).toBe("POST");
     expect(http.requests[0]?.url).toBe("test://api/plays");
     expect(JSON.parse(http.requests[0]?.body ?? "null")).toEqual(playInput);
+  });
+
+  it("posts every artist, a secondary with id null included", async () => {
+    const artists = [
+      { id: "ar1", name: "Artist" },
+      { id: null, name: "Guest" },
+    ];
+    const { service, http } = setup(never, () => ({
+      headers: { "cache-control": "private, no-cache" },
+      body: { ok: true, data: { ...playData, metadata: { title: "Song" } } },
+    }));
+    expect(await service.logPlay({ ...playInput, artists })).toEqual({
+      kind: "success",
+      maxAgeSeconds: 0,
+      data: playData,
+    });
+    expect(JSON.parse(http.requests[0]?.body ?? "null")).toMatchObject({ artists });
   });
 
   it("surfaces upstream_error as an api failure", async () => {

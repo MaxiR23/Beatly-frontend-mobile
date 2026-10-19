@@ -21,8 +21,8 @@ export const fullTrack: PlayableTrack = {
   trackId: "t1",
   title: "Menu Song",
   artists: [
-    { id: null, name: "Guest" },
     { id: "ar1", name: "Ann" },
+    { id: null, name: "Guest" },
   ],
   album: "Album",
   albumId: "al1",

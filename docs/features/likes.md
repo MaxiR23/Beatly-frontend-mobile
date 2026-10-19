@@ -7,13 +7,13 @@ The local copy of the caller's likes, kept in the device database; its screens a
 Answer "is this track liked?" instantly and offline, and keep a like made
 without network until the backend confirms it. The heart in the player and the
 track menu's Like and Remove from Liked items draw it, and only for a track that carries
-what `POST /likes` requires (`likeInputOf`: title, an artist with an id, album, album id and cover).
+what `POST /likes` requires (`likeInputOf`: title, a first artist with an id, album, album id and cover; every artist is sent, a later one with `id: null` included).
 
 ## Local data
 
 Migration 1 (`packages/core/src/db/migrations.ts`) creates two tables.
 
-- `likes`: `track_id` (key), `title`, `artists` (JSON array of `{id, name}`),
+- `likes`: `track_id` (key), `title`, `artists` (JSON array of `{id, name}`, the first with an id, a later one may have `id: null`; read back without the non-empty check, so a row stored before the rule stays readable),
   `album`, `album_id`, `thumbnail_url`, `duration_seconds`, `liked` (0/1),
   `updated_at` (the backend's, null for a row only changed locally), `pending`
   (0/1, not yet confirmed) and `confirmed_liked` (the last state the backend
