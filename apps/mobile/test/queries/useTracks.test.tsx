@@ -8,6 +8,7 @@
 // What is covered:
 // - the data unwrapped from the outcome, cache time from Cache-Control, one cache entry per track
 // - OutcomeError carrying track_not_found
+// - useUpNext reading without refetching on mount: a stale outcome kept, an empty cache still fetched
 //
 // Run with: pnpm --filter @beatly/mobile test -- useTracks
 //
@@ -125,5 +126,36 @@ describe.each(cases)("$name", ({ leaf, hook, data }) => {
       kind: "api_failure",
       reason: "track_not_found",
     });
+  });
+});
+
+describe("useUpNext reading without refetching on mount", () => {
+  it("does not refetch a stale outcome on a mount that reads without refetching", async () => {
+    const { send, wrapper } = setup(upNextFixture, { "cache-control": "max-age=60" });
+    const first = await renderHook(() => useUpNext("t1"), { wrapper });
+    await waitFor(() => {
+      expect(first.result.current.isFetching).toBe(false);
+    });
+    jest.useFakeTimers({ advanceTimers: true });
+    jest.advanceTimersByTime(61_000);
+    const reading = await renderHook(() => useUpNext("t1", { refetchOnMount: false }), {
+      wrapper,
+    });
+    await waitFor(() => {
+      expect(reading.result.current.data).toEqual(upNextFixture);
+    });
+    expect(reading.result.current.isFetching).toBe(false);
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it("still fetches on a reading mount when nothing is cached", async () => {
+    const { send, wrapper } = setup(upNextFixture, { "cache-control": "max-age=60" });
+    const { result } = await renderHook(() => useUpNext("t1", { refetchOnMount: false }), {
+      wrapper,
+    });
+    await waitFor(() => {
+      expect(result.current.data).toEqual(upNextFixture);
+    });
+    expect(send).toHaveBeenCalledTimes(1);
   });
 });

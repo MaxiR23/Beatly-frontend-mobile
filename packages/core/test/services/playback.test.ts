@@ -11,6 +11,7 @@
 // - toggle, next, previous with its restart rule, skipTo, seek, shuffle on and off, repeat one, ended at the end of the list, a stale resolution, stop
 // - renaming the current source in place, ignoring another source or an idle controller
 // - the HTTP status of an unplayable answer in the state: kept on that failure, null on a player error and on a restart
+// - the seed of a source, the sourceStart counter, autoplay at the end of the queue (shuffle, repeat one, no suggestions, stale suggestions) and whether the suggestions are wanted (last track started, the tab asked, sticky, reset by a new source)
 // - Not applicable: ok:false reasons, because the controller does not call the API
 //
 // Run with: pnpm --filter @beatly/core test -- playback
@@ -618,5 +619,305 @@ describe("failureHttpStatus", () => {
     player.emit({ type: "error", message: "boom" });
     expect(controller.getState().failure).toBe("playback");
     expect(controller.getState().failureHttpStatus).toBeNull();
+  });
+});
+
+const suggested = ["s1", "s2", "s3"].map(track);
+
+describe("autoplay", () => {
+  async function ended(player: ReturnType<typeof setup>["player"], times: number) {
+    for (let i = 0; i < times; i += 1) {
+      player.emit({ type: "ended" });
+      await flush();
+    }
+  }
+
+  it("starts the suggestions as a track source of the seed when the list ends with autoplay on", async () => {
+    const { controller, streams, player } = setup();
+    controller.setAutoplay(true);
+    await controller.playList(list, 0, source);
+    controller.setSuggestions("t1", suggested.slice(0, 2));
+    await ended(player, 3);
+    const state = controller.getState();
+    expect(state.current?.trackId).toBe("s1");
+    expect(state.queue.map((t) => t.trackId)).toEqual(["s1", "s2"]);
+    expect(state.source).toEqual({ kind: "track", id: "t1", name: "Song t1" });
+    expect(state.seed?.trackId).toBe("s1");
+    expect(streams.calls.at(-1)).toBe("s1");
+  });
+
+  it("plays the following suggestion after the first", async () => {
+    const { controller, player } = setup();
+    controller.setAutoplay(true);
+    await controller.playList(list, 0, source);
+    controller.setSuggestions("t1", suggested.slice(0, 2));
+    await ended(player, 4);
+    expect(controller.getState().current?.trackId).toBe("s2");
+  });
+
+  it("pauses at 0 when the list ends with autoplay off", async () => {
+    const { controller, player } = setup();
+    controller.setAutoplay(true);
+    controller.setAutoplay(false);
+    await controller.playList(list, 0, source);
+    controller.setSuggestions("t1", suggested);
+    await ended(player, 3);
+    const state = controller.getState();
+    expect(state.status).toBe("paused");
+    expect(state.positionSeconds).toBe(0);
+    expect(state.current?.trackId).toBe("t3");
+    expect(player.calls.at(-1)).toEqual({ type: "seek", seconds: 0 });
+  });
+
+  it("pauses at 0 when the source has no suggestions", async () => {
+    const empty = setup();
+    empty.controller.setAutoplay(true);
+    await empty.controller.playList(list, 0, source);
+    empty.controller.setSuggestions("t1", []);
+    await ended(empty.player, 3);
+    expect(empty.controller.getState().status).toBe("paused");
+    expect(empty.controller.getState().current?.trackId).toBe("t3");
+
+    const none = setup();
+    none.controller.setAutoplay(true);
+    await none.controller.playList(list, 0, source);
+    await ended(none.player, 3);
+    expect(none.controller.getState().status).toBe("paused");
+    expect(none.controller.getState().positionSeconds).toBe(0);
+  });
+
+  it("drops suggestions handed for another seed", async () => {
+    const { controller, player, log } = setup();
+    controller.setAutoplay(true);
+    await controller.playList(list, 0, source);
+    controller.setSuggestions("x", suggested);
+    await ended(player, 3);
+    expect(controller.getState().status).toBe("paused");
+    expect(log.entries.map((e) => e.message)).toContain("playback.stale_suggestions");
+  });
+
+  it("discards the previous source's suggestions when a new source starts", async () => {
+    const { controller, player } = setup();
+    controller.setAutoplay(true);
+    await controller.playList(list, 0, source);
+    controller.setSuggestions("t1", suggested);
+    await controller.playList([track("b1")], 0, source);
+    await ended(player, 1);
+    expect(controller.getState().status).toBe("paused");
+    expect(controller.getState().current?.trackId).toBe("b1");
+  });
+
+  it("replays the last track with repeat one on and does not autoplay", async () => {
+    const { controller, player } = setup();
+    controller.setAutoplay(true);
+    await controller.playList(list, 2, source);
+    controller.setSuggestions("t3", suggested);
+    controller.setRepeatOne(true);
+    await ended(player, 1);
+    expect(controller.getState().current?.trackId).toBe("t3");
+    expect(controller.getState().status).toBe("playing");
+  });
+
+  it("starts autoplay only after every track of the shuffled order has played", async () => {
+    const { controller, player } = setup(() => 0);
+    controller.setAutoplay(true);
+    controller.setShuffle(true);
+    await controller.playList(list, 0, source);
+    controller.setSuggestions("t1", suggested);
+    await ended(player, 2);
+    expect(list.map((t) => t.trackId)).toContain(controller.getState().current?.trackId);
+    expect(controller.getState().index).toBe(2);
+    await ended(player, 1);
+    expect(controller.getState().current?.trackId).toBe("s1");
+  });
+
+  it("starts the autoplay list shuffled from the first suggestion when shuffle is on", async () => {
+    const { controller, player } = setup(() => 0);
+    controller.setAutoplay(true);
+    controller.setShuffle(true);
+    await controller.playList(list, 0, source);
+    controller.setSuggestions("t1", suggested);
+    await ended(player, 3);
+    const state = controller.getState();
+    expect(state.current?.trackId).toBe("s1");
+    expect(state.index).toBe(0);
+    expect(state.queue.map((t) => t.trackId)).toEqual(["s1", "s3", "s2"]);
+  });
+});
+
+describe("seed and sourceStart", () => {
+  it("keeps the tapped track as the seed while the source advances, replaces it on the next playList and clears it on stop", async () => {
+    const { controller, player } = setup();
+    await controller.playList(list, 1, source);
+    expect(controller.getState().seed?.trackId).toBe("t2");
+    player.emit({ type: "ended" });
+    await flush();
+    expect(controller.getState().current?.trackId).toBe("t3");
+    expect(controller.getState().seed?.trackId).toBe("t2");
+    await controller.playList(list, 0, source);
+    expect(controller.getState().seed?.trackId).toBe("t1");
+    controller.stop();
+    expect(controller.getState().seed).toBeNull();
+  });
+
+  it("keeps the tapped track as the seed with shuffle on", async () => {
+    const { controller } = setup(() => 0);
+    controller.setShuffle(true);
+    await controller.playList(list, 1, source);
+    expect(controller.getState().seed?.trackId).toBe("t2");
+    expect(controller.getState().current?.trackId).toBe("t2");
+  });
+
+  it("bumps sourceStart on every playList and autoplay start, keeps it on next, skipTo, shuffle and repeat, and zeroes it after stop", async () => {
+    const { controller, player } = setup();
+    controller.setAutoplay(true);
+    expect(controller.getState().sourceStart).toBe(0);
+    await controller.playList(list, 0, source);
+    expect(controller.getState().sourceStart).toBe(1);
+    await controller.next();
+    await controller.skipTo(0);
+    controller.setShuffle(true);
+    controller.setShuffle(false);
+    controller.setRepeatOne(true);
+    controller.setRepeatOne(false);
+    expect(controller.getState().sourceStart).toBe(1);
+    controller.setSuggestions("t1", suggested);
+    await controller.skipTo(2);
+    player.emit({ type: "ended" });
+    await flush();
+    expect(controller.getState().sourceStart).toBe(2);
+    controller.stop();
+    expect(controller.getState().sourceStart).toBe(0);
+  });
+});
+
+describe("suggestions wanted", () => {
+  const wanted = (c: ReturnType<typeof setup>["controller"]) => c.getState().suggestionsWanted;
+
+  it("is not wanted when a source of several tracks starts", async () => {
+    const { controller, player } = setup();
+    await controller.playList(list, 0, source);
+    expect(wanted(controller)).toBe(false);
+    player.emit({ type: "ended" });
+    await flush();
+    expect(controller.getState().current?.trackId).toBe("t2");
+    expect(wanted(controller)).toBe(false);
+  });
+
+  it("is wanted once the last track starts", async () => {
+    const { controller, player } = setup();
+    await controller.playList(list, 0, source);
+    player.emit({ type: "ended" });
+    await flush();
+    player.emit({ type: "ended" });
+    await flush();
+    expect(controller.getState().current?.trackId).toBe("t3");
+    expect(wanted(controller)).toBe(true);
+  });
+
+  it("is wanted when next or skipTo reaches the last position", async () => {
+    const viaNext = setup();
+    await viaNext.controller.playList(list, 1, source);
+    await viaNext.controller.next();
+    expect(wanted(viaNext.controller)).toBe(true);
+
+    const viaSkip = setup();
+    await viaSkip.controller.playList(list, 0, source);
+    await viaSkip.controller.skipTo(2);
+    expect(wanted(viaSkip.controller)).toBe(true);
+  });
+
+  it("is wanted at once for a one-track source", async () => {
+    const { controller } = setup();
+    await controller.playList([track("t1")], 0, source);
+    expect(wanted(controller)).toBe(true);
+  });
+
+  it("is wanted when the tab asks, and stays wanted", async () => {
+    const { controller, player } = setup();
+    await controller.playList(list, 0, source);
+    controller.wantSuggestions();
+    expect(wanted(controller)).toBe(true);
+    player.emit({ type: "ended" });
+    await flush();
+    await controller.next();
+    controller.setRepeatOne(true);
+    expect(controller.getState().current?.trackId).toBe("t3");
+    expect(wanted(controller)).toBe(true);
+  });
+
+  it("ignores the ask when idle", async () => {
+    const { controller } = setup();
+    let notified = 0;
+    controller.subscribe(() => {
+      notified += 1;
+    });
+    controller.wantSuggestions();
+    expect(wanted(controller)).toBe(false);
+    await controller.playList(list, 0, source);
+    controller.stop();
+    const seen = notified;
+    controller.wantSuggestions();
+    expect(wanted(controller)).toBe(false);
+    expect(notified).toBe(seen);
+  });
+
+  it("is not wanted again after a new source starts", async () => {
+    const { controller, player } = setup();
+    await controller.playList(list, 0, source);
+    controller.wantSuggestions();
+    await controller.playList(list, 0, { kind: "album", id: "a2", name: "Other" });
+    expect(wanted(controller)).toBe(false);
+
+    controller.setAutoplay(true);
+    controller.setSuggestions("t1", suggested.slice(0, 2));
+    controller.wantSuggestions();
+    player.emit({ type: "ended" });
+    await flush();
+    player.emit({ type: "ended" });
+    await flush();
+    player.emit({ type: "ended" });
+    await flush();
+    expect(controller.getState().current?.trackId).toBe("s1");
+    expect(wanted(controller)).toBe(false);
+    player.emit({ type: "ended" });
+    await flush();
+    expect(controller.getState().current?.trackId).toBe("s2");
+    expect(wanted(controller)).toBe(true);
+  });
+
+  it("is wanted when shuffle off puts the playing track at the last position", async () => {
+    const { controller, player } = setup(() => 0);
+    controller.setShuffle(true);
+    await controller.playList(list, 0, source);
+    player.emit({ type: "ended" });
+    await flush();
+    expect(controller.getState().current?.trackId).toBe("t3");
+    expect(wanted(controller)).toBe(false);
+    controller.setShuffle(false);
+    expect(controller.getState().index).toBe(2);
+    expect(wanted(controller)).toBe(true);
+  });
+
+  it("with shuffle on, is wanted only at the last position of the shuffled order", async () => {
+    const { controller, player } = setup(() => 0);
+    controller.setShuffle(true);
+    await controller.playList(list, 0, source);
+    expect(wanted(controller)).toBe(false);
+    player.emit({ type: "ended" });
+    await flush();
+    expect(controller.getState().index).toBe(1);
+    expect(wanted(controller)).toBe(false);
+    player.emit({ type: "ended" });
+    await flush();
+    expect(controller.getState().index).toBe(2);
+    expect(wanted(controller)).toBe(true);
+  });
+
+  it("is false after stop", async () => {
+    const { controller } = setup();
+    await controller.playList([track("t1")], 0, source);
+    controller.stop();
+    expect(wanted(controller)).toBe(false);
   });
 });

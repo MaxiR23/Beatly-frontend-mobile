@@ -1,4 +1,4 @@
-// INFO: the up next tab of the player sheet: the rest of the queue (a press jumps inside it), then the suggestions of GET /tracks/{id}/upnext without the first track, which is the current one (a press plays the suggestions from it); the rest of the queue is local, so it is drawn while the suggestions load or fail; every row ends with the track menu button; a row of the current track (a later repeat in the rest of the queue) is marked.
+// INFO: the up next tab of the player sheet: the rest of the queue (a press jumps inside it), then the suggestions of the source (the up next of the track it started on, requested once per source when this tab opens or the last track starts, and never refetched by the tab) without that first track, under the autoplay switch (a press plays the suggestions from it under a track source of that track); the rest of the queue is local, so it is drawn while the suggestions load or fail; every row ends with the track menu button; a row of the current track (a later repeat in the rest of the queue) is marked.
 import type { PlayableTrack } from "@beatly/core";
 import { EmptyState, ErrorState, LoadingState, MediaRow } from "@beatly/ui/native";
 import { useEffect } from "react";
@@ -7,12 +7,13 @@ import { FlatList } from "react-native";
 import { useT } from "../../adapters/i18n.ts";
 import { useUpNext } from "../../queries/useTracks.ts";
 import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
-import { playableOf } from "./queue.ts";
+import { AutoplaySwitch } from "./AutoplaySwitch.tsx";
+import { suggestionsOf } from "./queue.ts";
 import { useNowPlaying } from "./useNowPlaying.ts";
 import { usePlayback, usePlaybackActions } from "./usePlayback.ts";
 
 interface UpNextTabProps {
-  trackId: string;
+  seed: PlayableTrack;
   onAtTopChange: (atTop: boolean) => void;
 }
 
@@ -23,22 +24,27 @@ interface Row {
   track: PlayableTrack;
 }
 
-export function UpNextTab({ trackId, onAtTopChange }: UpNextTabProps) {
+export function UpNextTab({ seed, onAtTopChange }: UpNextTabProps) {
   const t = useT("player");
   const tc = useT("common");
   const playback = usePlaybackActions();
   const nowPlaying = useNowPlaying();
   const queue = usePlayback((s) => s.queue);
   const index = usePlayback((s) => s.index);
-  const current = usePlayback((s) => s.current);
-  const upNext = useUpNext(trackId);
+  const sourceStart = usePlayback((s) => s.sourceStart);
+  const upNext = useUpNext(seed.trackId, { refetchOnMount: false });
+
+  // The tab open is one of the two moments the source's suggestions are requested; a new source while it stays open asks again.
+  useEffect(() => {
+    playback.wantSuggestions();
+  }, [playback, sourceStart]);
 
   useEffect(() => {
     onAtTopChange(true);
   }, [onAtTopChange]);
 
   const rest = queue.slice(index + 1);
-  const suggestions = (upNext.data?.tracks.slice(1) ?? []).map(playableOf);
+  const suggestions = upNext.data === undefined ? [] : suggestionsOf(upNext.data);
   const rows: Row[] = [
     ...rest.map((track, position): Row => ({
       key: `rest:${String(position)}:${track.trackId}`,
@@ -57,11 +63,11 @@ export function UpNextTab({ trackId, onAtTopChange }: UpNextTabProps) {
   function press(row: Row) {
     if (row.section === "rest") {
       void playback.skipTo(index + 1 + row.position);
-    } else if (current !== null) {
+    } else {
       void playback.playList(suggestions, row.position, {
         kind: "track",
-        id: current.trackId,
-        name: current.title,
+        id: seed.trackId,
+        name: seed.title,
       });
     }
   }
@@ -88,6 +94,7 @@ export function UpNextTab({ trackId, onAtTopChange }: UpNextTabProps) {
       onScroll={(event) => {
         onAtTopChange(event.nativeEvent.contentOffset.y <= 0);
       }}
+      ListHeaderComponent={<AutoplaySwitch />}
       ListFooterComponent={footer}
       renderItem={({ item }) => (
         <MediaRow

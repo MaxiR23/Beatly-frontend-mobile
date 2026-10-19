@@ -26,6 +26,8 @@
       "related": "Related"
     },
     "upNextEmpty": "Nothing up next.",
+    "autoplay": "Autoplay",
+    "autoplayHelper": "When the queue ends, keep playing suggested songs.",
     "lyricsEmpty": "This song has no lyrics.",
     "relatedEmpty": "Nothing related to this song.",
     "songs": "Songs",

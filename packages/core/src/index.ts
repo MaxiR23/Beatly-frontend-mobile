@@ -194,6 +194,8 @@ export type {
 } from "./domain/track.ts";
 export { createTracksService } from "./services/tracks.ts";
 export type { TracksService } from "./services/tracks.ts";
+export { AUTOPLAY_KEY, createAutoplayService } from "./services/autoplay.ts";
+export type { AutoplayOutcome, AutoplayService } from "./services/autoplay.ts";
 export {
   SHEET_NUDGE_KEY,
   SHEET_NUDGE_LIMIT,

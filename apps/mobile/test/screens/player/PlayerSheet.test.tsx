@@ -10,7 +10,7 @@
 // - the body drawn while the sheet is dragged up and while it closes, unmounted once the close ends or the spring back of a short handle drag ends, the body drag taking a downward drag again after a reopen or a track change
 // - the system back and the accessibility escape closing the sheet first and the player next, no back handler while it is closed
 // - the song row closing it, the cache per track across a close and a reopen
-// - up next: the rest of the queue then the suggestions without the current track, a press jumping in the queue or playing the suggestions, loading, error with retry, expected empty
+// - up next: the rest of the queue then the suggestions without the current track, a press jumping in the queue or playing the suggestions (under the source's first track after the source advanced), loading, error with retry, expected empty
 // - lyrics: the playing line following the progress and centered, a press seeking, plain lyrics, null lyrics, loading, error with retry
 // - related: songs, artists and albums, an empty section hidden, three empty lists, a song playing, an album or artist opening in the current tab, loading, error with retry
 // - a more button on each up next and related row
@@ -402,6 +402,25 @@ describe("up next", () => {
     expect(state.queue.map((t) => t.trackId)).toEqual(["u2", "u3"]);
     expect(state.current?.trackId).toBe("u3");
     expect(state.source).toEqual({ kind: "track", id: "t1", name: "Song t1" });
+  });
+
+  it("plays the suggestions under the source's first track after the source advanced", async () => {
+    const ctx = await setup();
+    await act(async () => {
+      ctx.player.emit({ type: "ended" });
+      await Promise.resolve();
+    });
+    expect(ctx.playback.getState().current?.trackId).toBe("t2");
+    await openSheet();
+    await screen.findByText("Up u3");
+    expect(ctx.getUpNext).toHaveBeenCalledTimes(1);
+    expect(ctx.getUpNext).toHaveBeenCalledWith("t1");
+    await fireEvent.press(screen.getByRole("button", { name: "Up u3" }));
+    const state = ctx.playback.getState();
+    expect(state.current?.trackId).toBe("u3");
+    expect(state.source).toEqual({ kind: "track", id: "t1", name: "Song t1" });
+    // the new source asks for its own seed, "u3"; the old seed is not asked again
+    expect(ctx.getUpNext.mock.calls.filter((call) => call[0] === "t1")).toHaveLength(1);
   });
 
   it("marks a later repeat of the current track", async () => {
