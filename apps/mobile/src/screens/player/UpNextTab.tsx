@@ -1,4 +1,4 @@
-// INFO: the up next tab of the player sheet: the rest of the queue (a press jumps inside it), then the suggestions of the source (the up next of the track it started on, requested once per source when this tab opens or the last track starts, and never refetched by the tab) without that first track, under the autoplay switch (a press plays the suggestions from it under a track source of that track); the rest of the queue is local, so it is drawn while the suggestions load or fail; every row ends with the track menu button; a row of the current track (a later repeat in the rest of the queue) is marked.
+// INFO: the up next tab of the player sheet: the rest of the queue (a press jumps inside it), then the suggestions of the source (the up next of the track it started on, with the source, requested once per source when this tab opens or the last track starts, and never refetched by the tab) without that first track, under the autoplay switch (a press plays the suggestions from it under a track source of that track); the rest of the queue is local, so it is drawn while the suggestions load or fail; every row ends with the track menu button; a row of the current track (a later repeat in the rest of the queue) is marked.
 import type { PlayableTrack } from "@beatly/core";
 import { EmptyState, ErrorState, LoadingState, MediaRow } from "@beatly/ui/native";
 import { useEffect } from "react";
@@ -32,7 +32,8 @@ export function UpNextTab({ seed, onAtTopChange }: UpNextTabProps) {
   const queue = usePlayback((s) => s.queue);
   const index = usePlayback((s) => s.index);
   const sourceStart = usePlayback((s) => s.sourceStart);
-  const upNext = useUpNext(seed.trackId, { refetchOnMount: false });
+  const source = usePlayback((s) => s.source);
+  const upNext = useUpNext(seed.trackId, source, { refetchOnMount: false });
 
   // The tab open is one of the two moments the source's suggestions are requested; a new source while it stays open asks again.
   useEffect(() => {

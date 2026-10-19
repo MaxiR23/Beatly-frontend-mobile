@@ -192,8 +192,8 @@ export type {
   TrackRelated,
   UpNext,
 } from "./domain/track.ts";
-export { createTracksService } from "./services/tracks.ts";
-export type { TracksService } from "./services/tracks.ts";
+export { createTracksService, upNextSourceOf } from "./services/tracks.ts";
+export type { TracksService, UpNextSource } from "./services/tracks.ts";
 export { AUTOPLAY_KEY, createAutoplayService } from "./services/autoplay.ts";
 export type { AutoplayOutcome, AutoplayService } from "./services/autoplay.ts";
 export {

@@ -7,6 +7,7 @@
 //
 // What is covered:
 // - the suggestions requested once per source, at the first of two triggers (the up next tab opens, the last track starts), never when a source starts, and not while another tab is shown
+// - the up next read carrying the playing source, asked again for the same seed under a new source and under a track source once autoplayed
 // - the list kept while the source plays, a new source asking at its own trigger
 // - the end of the queue: the first suggestion then the next one with autoplay on, a pause at 0 with autoplay off, with no suggestions or when they failed
 // - the switch: on by default, stored when turned off and read back by a fresh app, the error with retry when the setting cannot be read, es
@@ -132,7 +133,7 @@ describe("when the suggestions are requested", () => {
     await openSheet();
     await screen.findByText("Up u2");
     expect(ctx.getUpNext).toHaveBeenCalledTimes(1);
-    expect(ctx.getUpNext).toHaveBeenCalledWith("t1");
+    expect(ctx.getUpNext).toHaveBeenCalledWith("t1", album);
     const titles = screen
       .getAllByText(/^(Song t[23]|Up u)/)
       .map((node) => String(node.props.children));
@@ -150,7 +151,7 @@ describe("when the suggestions are requested", () => {
     await play(ctx, ["t1", "t2", "t3"]);
     await ended(ctx, 2);
     await waitForCalls(ctx, 1);
-    expect(ctx.getUpNext).toHaveBeenCalledWith("t1");
+    expect(ctx.getUpNext).toHaveBeenCalledWith("t1", album);
     await openSheet();
     expect(await screen.findByText("Up u2")).toBeTruthy();
     expect(ctx.getUpNext).toHaveBeenCalledTimes(1);
@@ -160,7 +161,7 @@ describe("when the suggestions are requested", () => {
     const ctx = await setup();
     await play(ctx, ["t1"]);
     await waitForCalls(ctx, 1);
-    expect(ctx.getUpNext).toHaveBeenCalledWith("t1");
+    expect(ctx.getUpNext).toHaveBeenCalledWith("t1", album);
   });
 
   it("requests the suggestions of a new source at its own trigger and draws them", async () => {
@@ -173,6 +174,33 @@ describe("when the suggestions are requested", () => {
     expect(await screen.findByText("Up v2")).toBeTruthy();
     expect(callsFor(open, "x1")).toBe(1);
     expect(screen.queryByText("Up u2")).toBeNull();
+  });
+
+  it("requests the same seed again under a new source", async () => {
+    const ctx = await setup({
+      getUpNext: () => Promise.resolve({ kind: "success", data: upNextFixture, maxAgeSeconds: 60 }),
+    });
+    await play(ctx, ["t1"]);
+    await waitForCalls(ctx, 1);
+    await play(ctx, ["t1"], otherAlbum);
+    await waitForCalls(ctx, 2);
+    expect(callsFor(ctx, "t1")).toBe(2);
+    expect(ctx.getUpNext).toHaveBeenLastCalledWith("t1", otherAlbum);
+  });
+
+  it("asks the suggestions of an autoplayed source under its track source", async () => {
+    const ctx = await setup();
+    await play(ctx, ["t1"]);
+    await waitForCalls(ctx, 1);
+    await ended(ctx);
+    expect(ctx.playback.getState().current?.trackId).toBe("u2");
+    await ended(ctx);
+    await waitForCalls(ctx, 2);
+    expect(ctx.getUpNext).toHaveBeenLastCalledWith("u2", {
+      kind: "track",
+      id: "t1",
+      name: "Song t1",
+    });
   });
 
   it("does not request a new source's suggestions until its last track starts when the sheet is closed", async () => {
