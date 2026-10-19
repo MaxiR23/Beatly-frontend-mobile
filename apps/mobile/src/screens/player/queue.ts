@@ -1,5 +1,5 @@
-// INFO: keeps the items that map to a playable track and finds the tapped one among them, or the first or a random one for a whole list; maps a track of the up next or related routes to a playable track.
-import type { PlayableTrack, TrackRef } from "@beatly/core";
+// INFO: keeps the items that map to a playable track and finds the tapped one among them, or the first or a random one for a whole list; maps a track of the up next or related routes to a playable track, and the suggestions of an up next answer.
+import type { PlayableTrack, TrackRef, UpNext } from "@beatly/core";
 
 export function toQueue<T>(
   items: readonly T[],
@@ -45,4 +45,9 @@ export function playableOf(ref: TrackRef): PlayableTrack {
     coverUrl: ref.thumbnail_url,
     durationSeconds: ref.duration_seconds,
   };
+}
+
+// The suggestions of an up next answer in the order drawn: without the first track, which is the requested one.
+export function suggestionsOf(upNext: UpNext): PlayableTrack[] {
+  return upNext.tracks.slice(1).map(playableOf);
 }

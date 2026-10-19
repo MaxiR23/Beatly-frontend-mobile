@@ -26,6 +26,8 @@
       "related": "Relacionados"
     },
     "upNextEmpty": "No hay nada a continuación.",
+    "autoplay": "Reproducción automática",
+    "autoplayHelper": "Cuando termina la fila, siguen canciones sugeridas.",
     "lyricsEmpty": "Esta canción no tiene letra.",
     "relatedEmpty": "No hay nada relacionado con esta canción.",
     "songs": "Canciones",

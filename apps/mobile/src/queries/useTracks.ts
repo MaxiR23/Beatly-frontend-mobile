@@ -1,4 +1,4 @@
-// INFO: the query hooks of GET /tracks/{id}/upnext, /lyrics, /related and /credits, one cache entry per track; their cache time comes from the outcome's max-age via the QueryClient.
+// INFO: the query hooks of GET /tracks/{id}/upnext, /lyrics, /related and /credits, one cache entry per track; their cache time comes from the outcome's max-age via the QueryClient; the up next tab reads without refetching on mount, so a source's suggestions stay the ones fetched the first time they were wanted.
 import { useQuery } from "@tanstack/react-query";
 
 import { useCore } from "../providers/CoreProvider.tsx";
@@ -10,10 +10,14 @@ export const relatedQueryKey = (trackId: string) => ["track", trackId, "related"
 
 export const creditsQueryKey = (trackId: string) => ["track", trackId, "credits"] as const;
 
-export function useUpNext(trackId: string) {
+export function useUpNext(
+  trackId: string,
+  options: { refetchOnMount: boolean } = { refetchOnMount: true },
+) {
   const { tracks } = useCore();
   return useQuery({
     queryKey: upNextQueryKey(trackId),
+    refetchOnMount: options.refetchOnMount,
     queryFn: async () => {
       const outcome = await tracks.getUpNext(trackId);
       if (outcome.kind !== "success") throw new OutcomeError(outcome);

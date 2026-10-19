@@ -3,12 +3,13 @@
 // Tests for the queue helper.
 //
 // Tested:
-// - toQueue, wholeQueue, playableOf
+// - toQueue, wholeQueue, playableOf, suggestionsOf
 //
 // What is covered:
 // - the index skipping the unplayable items before the tapped one, an unplayable tapped item
 // - wholeQueue keeping the playable items in order, starting at the first or at a random one, null with none
 // - a track of the up next or related routes mapped to a playable track, with its artist refs and album, and its nulls kept
+// - the suggestions of an up next answer without the first track, in order, none for an empty list or only the requested track
 //
 // Run with: pnpm --filter @beatly/mobile test -- screens/player/queue
 //
@@ -17,7 +18,13 @@
 import type { PlayableTrack } from "@beatly/core";
 import { describe, expect, it } from "@jest/globals";
 
-import { playableOf, toQueue, wholeQueue } from "../../../src/screens/player/queue.ts";
+import { upNextFixture } from "../../helpers/core.tsx";
+import {
+  playableOf,
+  suggestionsOf,
+  toQueue,
+  wholeQueue,
+} from "../../../src/screens/player/queue.ts";
 
 const items = [
   { id: "a", ok: true },
@@ -120,5 +127,18 @@ describe("playableOf", () => {
       coverUrl: null,
       durationSeconds: null,
     });
+  });
+});
+
+describe("suggestionsOf", () => {
+  it("maps the suggestions without the first track, in order", () => {
+    const suggestions = suggestionsOf(upNextFixture);
+    expect(suggestions.map((t) => t.trackId)).toEqual(["u2", "u3"]);
+    expect(suggestions).toEqual(upNextFixture.tracks.slice(1).map(playableOf));
+  });
+
+  it("returns no suggestions for an empty list or only the requested track", () => {
+    expect(suggestionsOf({ tracks: [] })).toEqual([]);
+    expect(suggestionsOf({ tracks: upNextFixture.tracks.slice(0, 1) })).toEqual([]);
   });
 });

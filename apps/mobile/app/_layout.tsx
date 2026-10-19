@@ -1,4 +1,4 @@
-// INFO: root layout of the app; wires the core and the providers, holds the splash until the session is known, and gates the routes by session status.
+// INFO: root layout of the app; wires the core and the providers, holds the splash until the session is known, gates the routes by session status and mounts the player's autoplay while signed in.
 import { color } from "@beatly/ui";
 import { Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -10,6 +10,7 @@ import { createCore } from "../src/createCore.ts";
 import { CoreProvider } from "../src/providers/CoreProvider.tsx";
 import { QueryProvider } from "../src/providers/QueryProvider.tsx";
 import { SessionProvider, useSession } from "../src/providers/SessionProvider.tsx";
+import { Autoplay } from "../src/screens/player/Autoplay.tsx";
 import { playerRouteOptions } from "../src/screens/player/playerRoute.ts";
 import { useReduceMotion } from "../src/screens/player/useReduceMotion.ts";
 
@@ -24,22 +25,25 @@ function RootNavigator() {
   }, [status]);
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: color.surface.base },
-      }}
-    >
-      <Stack.Protected guard={status === "signed_in"}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="player" options={playerRouteOptions(reduceMotion)} />
-      </Stack.Protected>
-      <Stack.Protected guard={status !== "signed_in"}>
-        <Stack.Screen name="login" />
-        <Stack.Screen name="sign-up" />
-      </Stack.Protected>
-      <Stack.Screen name="auth/callback" />
-    </Stack>
+    <>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: color.surface.base },
+        }}
+      >
+        <Stack.Protected guard={status === "signed_in"}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="player" options={playerRouteOptions(reduceMotion)} />
+        </Stack.Protected>
+        <Stack.Protected guard={status !== "signed_in"}>
+          <Stack.Screen name="login" />
+          <Stack.Screen name="sign-up" />
+        </Stack.Protected>
+        <Stack.Screen name="auth/callback" />
+      </Stack>
+      {status === "signed_in" ? <Autoplay /> : null}
+    </>
   );
 }
 

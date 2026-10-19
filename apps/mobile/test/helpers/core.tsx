@@ -7,7 +7,7 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the stateful likes mirror, credits, membership, add, create-with-track, remove and move fakes, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile and its update, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, library item, the saved read, add and remove, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, the bug reports fixtures and fakes (including the triage fixtures with a reporter, the list and the status update), and the page builder)
+// (the stateful likes mirror, credits, membership, add, create-with-track, remove and move fakes, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile and its update, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, library item, the saved read, add and remove, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, the autoplay setting, the bug reports fixtures and fakes (including the triage fixtures with a reporter, the list and the status update), and the page builder)
 //
 import type {
   ActivityService,
@@ -56,6 +56,7 @@ import type {
 } from "@beatly/core";
 import {
   createPlaybackController,
+  createAutoplayService,
   createRecentSearchesService,
   createSheetNudgeService,
 } from "@beatly/core";
@@ -813,6 +814,7 @@ export function makeCore(
     },
     profile: { getMyProfile, updateMyProfile },
     publicShare: { getGenrePlaylist },
+    autoplay: createAutoplayService({ storage, log }),
     recentSearches: createRecentSearchesService({ storage, log }),
     search: { search },
     sheetNudge: createSheetNudgeService({ storage, log }),

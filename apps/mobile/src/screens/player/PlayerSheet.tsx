@@ -1,4 +1,4 @@
-// INFO: the player's up next, lyrics and related sheet over PullUpSheet: the song row (its title scrolls when it does not fit) that closes it, play or pause, the three options and the selected tab's body, mounted from the moment the sheet starts opening (a drag on the handle or open) until its close ends, so it is drawn while the sheet moves and each tab loads only once shown; nudges the handle the first openings.
+// INFO: the player's up next, lyrics and related sheet over PullUpSheet: the song row (its title scrolls when it does not fit) that closes it, play or pause, the three options and the selected tab's body, mounted from the moment the sheet starts opening (a drag on the handle or open) until its close ends, so it is drawn while the sheet moves and each tab loads only once shown (up next asks for the source's suggestions, read once per source); nudges the handle the first openings.
 import { layout, spacing } from "@beatly/ui";
 import { Cover, IconButton, Marquee, PullUpSheet, SegmentedControl, Text } from "@beatly/ui/native";
 import { useState, type ReactNode } from "react";
@@ -39,6 +39,7 @@ export function PlayerSheet({
   const insets = useSafeAreaInsets();
   const playback = usePlaybackActions();
   const current = usePlayback((s) => s.current);
+  const seed = usePlayback((s) => s.seed);
   const status = usePlayback((s) => s.status);
   const nudge = useSheetNudge();
   const [tab, setTab] = useState<Tab>("upNext");
@@ -103,7 +104,7 @@ export function PlayerSheet({
   let body: ReactNode = null;
   if (open || warm) {
     if (tab === "upNext") {
-      body = <UpNextTab trackId={current.trackId} onAtTopChange={setBodyAtTop} />;
+      body = <UpNextTab seed={seed ?? current} onAtTopChange={setBodyAtTop} />;
     } else if (tab === "lyrics") {
       body = <LyricsTab trackId={current.trackId} onAtTopChange={setBodyAtTop} />;
     } else {

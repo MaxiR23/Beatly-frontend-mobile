@@ -1,4 +1,4 @@
-// INFO: the playback controller: the queue, the play order (shuffle), repeat one, the current track, a jump to a position of the queue, a rename of the current source and the status over the player port; an immutable snapshot plus subscribe.
+// INFO: the playback controller: the queue, the play order (shuffle), repeat one, the current track, a jump to a position of the queue, a rename of the current source, the seed of the source with its suggestions, autoplay at the end of the queue, whether the source's suggestions are wanted (its last track started or the up next tab asked) and the status over the player port; an immutable snapshot plus subscribe.
 import type { TrackArtistRef } from "../domain/search.ts";
 import type { LogPort } from "../ports/log.ts";
 import type { PlayerEvent, PlayerPort } from "../ports/player.ts";
@@ -58,6 +58,12 @@ export interface PlaybackState {
   readonly repeatOne: boolean;
   // Bumped on every track start, every repeat-one replay and when the list ends; 0 when idle. A seek keeps it.
   readonly listen: number;
+  // The track the current source started on; its up next suggestions belong to the whole source. null when idle.
+  readonly seed: PlayableTrack | null;
+  // Bumped on every source start (a playList, or autoplay starting the suggestions); 0 when idle.
+  readonly sourceStart: number;
+  // True once the current source's suggestions are wanted: its last track started, or the up next tab asked; false when a source starts and when idle.
+  readonly suggestionsWanted: boolean;
 }
 
 export interface PlaybackController {
@@ -80,6 +86,12 @@ export interface PlaybackController {
     list: { readonly kind: PlaybackSource["kind"]; readonly id: string },
     name: string,
   ): void;
+  // The suggestions of the current source, in the order the up next tab shows them; dropped unless seedTrackId is the current seed.
+  setSuggestions(seedTrackId: string, tracks: readonly PlayableTrack[]): void;
+  // Whether the end of the queue plays the suggestions. Off until the stored setting is applied.
+  setAutoplay(on: boolean): void;
+  // Marks the current source's suggestions as wanted (the up next tab is open); ignored when idle.
+  wantSuggestions(): void;
 }
 
 export const PREVIOUS_RESTARTS_AFTER_SECONDS = 3;
@@ -97,6 +109,9 @@ const IDLE: PlaybackState = Object.freeze({
   shuffle: false,
   repeatOne: false,
   listen: 0,
+  seed: null,
+  sourceStart: 0,
+  suggestionsWanted: false,
 });
 
 export function createPlaybackController(deps: {
@@ -121,6 +136,10 @@ export function createPlaybackController(deps: {
   let endedGeneration = -1;
   let listens = 0;
   const nextListen = (): number => (listens += 1);
+  let suggestions: readonly PlayableTrack[] = [];
+  let autoplay = false;
+  let sources = 0;
+  const nextSource = (): number => (sources += 1);
 
   const update = (patch: Partial<PlaybackState>): void => {
     state = Object.freeze({ ...state, ...patch });
@@ -162,6 +181,7 @@ export function createPlaybackController(deps: {
       positionSeconds: 0,
       durationSeconds: track.durationSeconds,
       listen: nextListen(),
+      suggestionsWanted: state.suggestionsWanted || position === order.length - 1,
     });
     const resolution = await streams.resolve(track.trackId);
     if (mine !== generation) {
@@ -190,6 +210,27 @@ export function createPlaybackController(deps: {
     await player.seek(clamped);
   };
 
+  const start = async (
+    tracks: readonly PlayableTrack[],
+    index: number,
+    source: PlaybackSource,
+  ): Promise<void> => {
+    if (tracks.length === 0 || !Number.isInteger(index) || index < 0 || index >= tracks.length) {
+      log.warn("playback.invalid_start", { length: tracks.length, index });
+      return;
+    }
+    original = [...tracks];
+    order = state.shuffle ? shuffledOrder(index) : original.map((_, i) => i);
+    suggestions = [];
+    update({
+      source,
+      seed: tracks[index] ?? null,
+      sourceStart: nextSource(),
+      suggestionsWanted: false,
+    });
+    await startAt(state.shuffle ? 0 : index);
+  };
+
   const onEnded = async (): Promise<void> => {
     if (endedGeneration === generation) return;
     endedGeneration = generation;
@@ -204,6 +245,11 @@ export function createPlaybackController(deps: {
     }
     if (state.index < state.queue.length - 1) {
       await startAt(state.index + 1);
+      return;
+    }
+    const seed = state.seed;
+    if (autoplay && suggestions.length > 0 && seed !== null) {
+      await start(suggestions, 0, { kind: "track", id: seed.trackId, name: seed.title });
       return;
     }
     player.pause();
@@ -241,16 +287,7 @@ export function createPlaybackController(deps: {
         listeners.delete(listener);
       };
     },
-    playList: async (tracks, index, source) => {
-      if (tracks.length === 0 || !Number.isInteger(index) || index < 0 || index >= tracks.length) {
-        log.warn("playback.invalid_start", { length: tracks.length, index });
-        return;
-      }
-      original = [...tracks];
-      order = state.shuffle ? shuffledOrder(index) : original.map((_, i) => i);
-      update({ source });
-      await startAt(state.shuffle ? 0 : index);
-    },
+    playList: start,
     toggle: async () => {
       if (state.status === "playing" || state.status === "loading") {
         if (!loaded) {
@@ -311,11 +348,17 @@ export function createPlaybackController(deps: {
         update({
           shuffle: true,
           index: 0,
+          suggestionsWanted: state.suggestionsWanted || order.length === 1,
           queue: order.map((i) => original[i]).filter((t): t is PlayableTrack => t !== undefined),
         });
       } else {
         order = original.map((_, i) => i);
-        update({ shuffle: false, index: at, queue: original });
+        update({
+          shuffle: false,
+          index: at,
+          queue: original,
+          suggestionsWanted: state.suggestionsWanted || at === order.length - 1,
+        });
       }
     },
     setRepeatOne: (on) => {
@@ -327,6 +370,7 @@ export function createPlaybackController(deps: {
       loaded = false;
       original = [];
       order = [];
+      suggestions = [];
       player.unload();
       update({ ...IDLE, shuffle: state.shuffle, repeatOne: state.repeatOne });
     },
@@ -335,6 +379,20 @@ export function createPlaybackController(deps: {
       if (current === null) return;
       if (current.kind !== list.kind || current.id !== list.id || current.name === name) return;
       update({ source: { ...current, name } });
+    },
+    setSuggestions: (seedTrackId, tracks) => {
+      if (state.seed?.trackId !== seedTrackId) {
+        log.debug("playback.stale_suggestions", { trackId: seedTrackId });
+        return;
+      }
+      suggestions = [...tracks];
+    },
+    setAutoplay: (on) => {
+      autoplay = on;
+    },
+    wantSuggestions: () => {
+      if (state.seed === null || state.suggestionsWanted) return;
+      update({ suggestionsWanted: true });
     },
   };
 }
