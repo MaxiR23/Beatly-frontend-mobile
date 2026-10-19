@@ -4,12 +4,13 @@
 //
 // Tested:
 // - getUpNext returns the tracks with the requested one first
+// - getUpNext sends the source pair for an album, own, genre or liked source (upNextSourceOf), and none otherwise
 // - getLyrics returns synced or plain lyrics, or null
 // - getRelated returns the songs, artists and albums
 // - getCredits returns the typed sections and the other sections, or all of them empty
 // - Encodes the track id in the path
 // - Returns an empty tracks list, lyrics null and three empty lists as a success
-// - Surfaces track_not_found, upstream_error and upstream_timeout as api failures
+// - Surfaces track_not_found, upstream_error and upstream_timeout as api failures (invalid_request too)
 // - Fails with a timeout, network or schema outcome
 //
 // What is covered:
@@ -106,7 +107,7 @@ describe("getUpNext", () => {
       () => ({ headers: { "cache-control": "max-age=21600" }, body: { ok: true, data: upNext } }),
       route,
     );
-    expect(await service.getUpNext("t1")).toEqual({
+    expect(await service.getUpNext("t1", null)).toEqual({
       kind: "success",
       data: upNext,
       maxAgeSeconds: 21600,
@@ -123,7 +124,7 @@ describe("getUpNext", () => {
       ],
     };
     const { service } = setup(() => ({ body: { ok: true, data: odd } }), route);
-    expect(await service.getUpNext("t1")).toEqual({
+    expect(await service.getUpNext("t1", null)).toEqual({
       kind: "success",
       data: odd,
       maxAgeSeconds: 0,
@@ -135,13 +136,13 @@ describe("getUpNext", () => {
       () => ({ body: { ok: true, data: upNext } }),
       "GET /tracks/a%20b%2Fc/upnext",
     );
-    await service.getUpNext("a b/c");
+    await service.getUpNext("a b/c", null);
     expect(http.requests[0]?.url).toBe("test://api/tracks/a%20b%2Fc/upnext");
   });
 
   it("returns an empty tracks list as a success", async () => {
     const { service } = setup(() => ({ body: { ok: true, data: { tracks: [] } } }), route);
-    expect(await service.getUpNext("t1")).toEqual({
+    expect(await service.getUpNext("t1", null)).toEqual({
       kind: "success",
       data: { tracks: [] },
       maxAgeSeconds: 0,
@@ -150,30 +151,57 @@ describe("getUpNext", () => {
 
   it.each([
     [404, "track_not_found"],
+    [422, "invalid_request"],
     [502, "upstream_error"],
     [504, "upstream_timeout"],
   ])("surfaces %i %s as an api failure", async (status, reason) => {
     const { service } = setup(failure(status, reason), route);
-    expect(await service.getUpNext("t1")).toEqual({ kind: "api_failure", reason });
+    expect(await service.getUpNext("t1", null)).toEqual({ kind: "api_failure", reason });
+  });
+
+  const base = "test://api/tracks/t1/upnext";
+  it.each([
+    [{ kind: "album", id: "MPREb_1", name: "A" }, `${base}?source_kind=album&source_id=MPREb_1`],
+    [{ kind: "playlist", id: "u-1", name: "P" }, `${base}?source_kind=playlist&source_id=u-1`],
+    [
+      { kind: "genre_playlist", id: "g-1", name: "G" },
+      `${base}?source_kind=genre_playlist&source_id=g-1`,
+    ],
+    [{ kind: "liked", id: "liked", name: "Liked" }, `${base}?source_kind=liked&source_id=liked`],
+    [{ kind: "liked", id: "anything", name: "L" }, `${base}?source_kind=liked&source_id=liked`],
+    [{ kind: "artist", id: "UCar1", name: "X" }, base],
+    [{ kind: "search", id: "daft", name: "daft" }, base],
+    [{ kind: "track", id: "t9", name: "Song" }, base],
+    [null, base],
+  ] as const)("sends the source pair of %j as %s", async (source, url) => {
+    const { service, http } = setup(() => ({ body: { ok: true, data: upNext } }), route);
+    await service.getUpNext("t1", source);
+    expect(http.requests[0]?.url).toBe(url);
   });
 
   it("fails with a timeout outcome when the API does not answer", async () => {
     vi.useFakeTimers();
     const { service } = setup(never, route);
-    const pending = service.getUpNext("t1");
+    const pending = service.getUpNext("t1", null);
     await vi.advanceTimersByTimeAsync(DEFAULT_TIMEOUT_MS + 1);
     expect(await pending).toEqual({ kind: "transport_failure", cause: "timeout" });
   });
 
   it("fails with a network outcome when the request cannot be sent", async () => {
     const { service } = setup(() => Promise.reject(new Error("offline")), route);
-    expect(await service.getUpNext("t1")).toEqual({ kind: "transport_failure", cause: "network" });
+    expect(await service.getUpNext("t1", null)).toEqual({
+      kind: "transport_failure",
+      cause: "network",
+    });
   });
 
   it("fails with a schema outcome when a track has no track_id", async () => {
     const broken = { ...ref("t1"), track_id: undefined };
     const { service } = setup(() => ({ body: { ok: true, data: { tracks: [broken] } } }), route);
-    expect(await service.getUpNext("t1")).toEqual({ kind: "transport_failure", cause: "schema" });
+    expect(await service.getUpNext("t1", null)).toEqual({
+      kind: "transport_failure",
+      cause: "schema",
+    });
   });
 });
 

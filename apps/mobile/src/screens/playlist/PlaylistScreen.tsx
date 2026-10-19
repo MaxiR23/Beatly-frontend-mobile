@@ -1,4 +1,4 @@
-// INFO: a playlist, own, liked or genre by its source param: the detail base with its cover, title, creator, description, meta line and tracks paged by infinite scroll for own and liked; a genre playlist's header and tracks come in one request; unavailable for playlist_not_found; every track has a menu button, with remove from this playlist inside an own playlist; a row under the header plays the whole list from its first track or shuffled from a random one (two pills on the liked playlist), loading every remaining page of an own or liked playlist first (leaving the screen before they arrive cancels the start), and a genre playlist can be saved to the library; the play button pauses and resumes the playlist while it is the playback source and the current track's rows are marked; starting a list registers it as a recent; an own playlist's action row ends with an options button that opens a sheet on both platforms to edit its title and description in a sheet, open the edit mode of its tracks, or delete it after a native confirmation, which goes back; a failed delete shows the error notice and playback is never touched.
+// INFO: a playlist, own, liked or genre by its source param: the detail base with its cover, title, creator, description, meta line and tracks paged by infinite scroll for own and liked; a genre playlist's header and tracks come in one request; unavailable for playlist_not_found; every track has a menu button, with remove from this playlist inside an own playlist; a row under the header plays the whole list from its first track or shuffled from a random one (two pills on the liked playlist), loading every remaining page of an own or liked playlist first (leaving the screen before they arrive cancels the start), and a genre playlist can be saved to the library; the play button pauses and resumes the playlist while it is the playback source and the current track's rows are marked; a list plays under the source kind of its playlist kind (own, genre or liked); starting a list registers it as a recent; an own playlist's action row ends with an options button that opens a sheet on both platforms to edit its title and description in a sheet, open the edit mode of its tracks, or delete it after a native confirmation, which goes back; a failed delete shows the error notice and playback is never touched.
 import {
   genrePlaylistLibraryInputOf,
   profileName,
@@ -36,7 +36,7 @@ import { EditPlaylistSheet } from "./EditPlaylistSheet.tsx";
 import { PlaylistOptionsSheet } from "./PlaylistOptionsSheet.tsx";
 import type { PlaylistOptionKey } from "./playlistOptions.ts";
 import { playlistMeta } from "./playlistMeta.ts";
-import { playlistSource } from "./playlistSource.ts";
+import { playbackKindOf, playlistSource } from "./playlistSource.ts";
 import { toQueue, wholeQueue } from "../player/queue.ts";
 import { useListPlayback, useNowPlaying } from "../player/useNowPlaying.ts";
 import { usePlaybackActions } from "../player/usePlayback.ts";
@@ -73,12 +73,13 @@ export function PlaylistScreen() {
   const registerRecent = useRegisterRecent();
   const { id = "", source } = useLocalSearchParams<{ id?: string; source?: string }>();
   const kind = playlistSource(source);
+  const playbackKind = playbackKindOf(kind);
   const header = usePlaylistHeader(kind, id);
   const tracks = usePlaylistTracks(kind, id);
   const saved = useLibrarySaved("playlist", id, kind === "genre");
   const setSaved = useSetSaved("playlist", id);
   const nowPlaying = useNowPlaying();
-  const listPlayback = useListPlayback("playlist", id);
+  const listPlayback = useListPlayback(playbackKind, id);
   const [starting, setStarting] = useState<"play" | "shuffle" | null>(null);
   // Leaving the screen while the pages load cancels the start.
   const mounted = useRef(true);
@@ -217,7 +218,7 @@ export function PlaylistScreen() {
     ) => {
       if (queue === null) return;
       if (mode !== undefined) playback.setShuffle(mode === "shuffle");
-      void playback.playList(queue.tracks, queue.index, { kind: "playlist", id, name: title });
+      void playback.playList(queue.tracks, queue.index, { kind: playbackKind, id, name: title });
       let subtitle: string | null = null;
       if (data.source === "user") subtitle = owner;
       else if (data.source === "genre") subtitle = tc("brand");

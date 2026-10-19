@@ -1,10 +1,12 @@
-// INFO: the query hooks of GET /tracks/{id}/upnext, /lyrics, /related and /credits, one cache entry per track; their cache time comes from the outcome's max-age via the QueryClient; the up next tab reads without refetching on mount, so a source's suggestions stay the ones fetched the first time they were wanted.
+// INFO: the query hooks of GET /tracks/{id}/upnext, /lyrics, /related and /credits, one cache entry per track, and for up next per track and source params (a rename of the source keeps the entry); their cache time comes from the outcome's max-age via the QueryClient; the up next tab reads without refetching on mount, so a source's suggestions stay the ones fetched the first time they were wanted.
+import { upNextSourceOf, type PlaybackSource, type UpNextSource } from "@beatly/core";
 import { useQuery } from "@tanstack/react-query";
 
 import { useCore } from "../providers/CoreProvider.tsx";
 import { OutcomeError } from "./outcomeError.ts";
 
-export const upNextQueryKey = (trackId: string) => ["track", trackId, "upnext"] as const;
+export const upNextQueryKey = (trackId: string, source: UpNextSource | null) =>
+  ["track", trackId, "upnext", source?.kind ?? null, source?.id ?? null] as const;
 export const lyricsQueryKey = (trackId: string) => ["track", trackId, "lyrics"] as const;
 export const relatedQueryKey = (trackId: string) => ["track", trackId, "related"] as const;
 
@@ -12,14 +14,15 @@ export const creditsQueryKey = (trackId: string) => ["track", trackId, "credits"
 
 export function useUpNext(
   trackId: string,
+  source: PlaybackSource | null,
   options: { refetchOnMount: boolean } = { refetchOnMount: true },
 ) {
   const { tracks } = useCore();
   return useQuery({
-    queryKey: upNextQueryKey(trackId),
+    queryKey: upNextQueryKey(trackId, upNextSourceOf(source)),
     refetchOnMount: options.refetchOnMount,
     queryFn: async () => {
-      const outcome = await tracks.getUpNext(trackId);
+      const outcome = await tracks.getUpNext(trackId, source);
       if (outcome.kind !== "success") throw new OutcomeError(outcome);
       return outcome;
     },

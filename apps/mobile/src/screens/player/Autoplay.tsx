@@ -1,4 +1,4 @@
-// INFO: mounted once while signed in, draws nothing: hands the stored autoplay setting to the playback controller, and once per source, when its suggestions are wanted (the up next tab opened or its last track started), reads the up next of the source's seed and hands its suggestions to the controller; that read stays mounted until the next source, so the cache entry lives as long as the source (the test QueryClient never collects, so no test shows it).
+// INFO: mounted once while signed in, draws nothing: hands the stored autoplay setting to the playback controller, and once per source, when its suggestions are wanted (the up next tab opened or its last track started), reads the up next of the source's seed, with the source, and hands its suggestions to the controller; that read stays mounted until the next source, so the cache entry lives as long as the source (the test QueryClient never collects, so no test shows it).
 import type { PlayableTrack } from "@beatly/core";
 import { useEffect } from "react";
 
@@ -24,7 +24,8 @@ export function Autoplay() {
 
 function SourceSuggestions({ seed }: { seed: PlayableTrack }) {
   const playback = usePlaybackActions();
-  const upNext = useUpNext(seed.trackId);
+  const source = usePlayback((s) => s.source);
+  const upNext = useUpNext(seed.trackId, source);
 
   useEffect(() => {
     if (upNext.data !== undefined) {

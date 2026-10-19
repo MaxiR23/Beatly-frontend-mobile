@@ -15,6 +15,7 @@
 // - the action row: play and shuffle of the whole list (after loading every page for own and liked), busy until the pages load, a failed page drawing the error, leaving the screen cancelling the start, disabled when empty, registering the recent, turning shuffle off on play after another list was shuffled, the play button idle, loading, playing, pausing and resuming, every row of the playing track marked
 // - save only on a genre playlist: its state, its body, rolling back, disabled while loading or failing, none on own and liked
 // - the options button only on an own playlist, after play, opening the sheet with edit, edit tracks and delete in that order, edit tracks opening the edit mode without asking; a saved rename shown as the player's source with the queue kept; the edit sheet prefilled, Save disabled unchanged or invalid, only changed fields, empty description as null, a failed save keeping the sheet and input, a saved edit closing it and redrawing the header; delete asking first, cancel doing nothing, confirm going back, a failed delete showing the notice and staying, playback untouched; no recent registered by an edit or a delete
+// - the list playing under its own source kind: playlist, genre_playlist and liked
 // - the skeleton, back and its fallback, es
 //
 // Run with: pnpm --filter @beatly/mobile test -- PlaylistScreen
@@ -552,6 +553,11 @@ describe("PlaylistScreen action row", () => {
       expect(ids(ctx)).toEqual(["t1", "t2", "t3", "t4"]);
     });
     expect(ctx.listLikedTracks).toHaveBeenCalledWith("c1");
+    expect(ctx.playback.getState().source).toEqual({
+      kind: "liked",
+      id: "liked",
+      name: en.playlist.liked,
+    });
   });
 
   it("draws play then shuffle pills on the liked playlist", async () => {
@@ -599,6 +605,11 @@ describe("PlaylistScreen action row", () => {
     });
     expect(ctx.playback.getState().current?.trackId).toBe("t1");
     expect(ctx.listPlaylistTracks).not.toHaveBeenCalled();
+    expect(ctx.playback.getState().source).toEqual({
+      kind: "genre_playlist",
+      id: "gp1",
+      name: "Pop hits",
+    });
   });
 
   it("shuffles an own playlist whole from a random track after loading its pages", async () => {

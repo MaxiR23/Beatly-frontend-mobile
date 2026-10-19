@@ -172,7 +172,7 @@ describe("the handle and the sheet", () => {
     expect(screen.getByRole("tab", { name: en.player.sheet.tabs.lyrics })).toBeTruthy();
     expect(screen.getByRole("tab", { name: en.player.sheet.tabs.related })).toBeTruthy();
     expect(ctx.getUpNext).toHaveBeenCalledTimes(1);
-    expect(ctx.getUpNext).toHaveBeenCalledWith("t1");
+    expect(ctx.getUpNext).toHaveBeenCalledWith("t1", album);
     expect(ctx.getLyrics).not.toHaveBeenCalled();
     expect(ctx.getRelated).not.toHaveBeenCalled();
   });
@@ -248,7 +248,7 @@ describe("the handle and the sheet", () => {
       (handler as (event: unknown) => void)(event);
     });
     expect(screen.getByTestId("player-sheet-upnext", { includeHiddenElements: true })).toBeTruthy();
-    expect(ctx.getUpNext).toHaveBeenCalledWith("t1");
+    expect(ctx.getUpNext).toHaveBeenCalledWith("t1", album);
   });
 
   it("unmounts the body when the spring back of a short handle drag ends", async () => {
@@ -414,7 +414,7 @@ describe("up next", () => {
     await openSheet();
     await screen.findByText("Up u3");
     expect(ctx.getUpNext).toHaveBeenCalledTimes(1);
-    expect(ctx.getUpNext).toHaveBeenCalledWith("t1");
+    expect(ctx.getUpNext).toHaveBeenCalledWith("t1", album);
     await fireEvent.press(screen.getByRole("button", { name: "Up u3" }));
     const state = ctx.playback.getState();
     expect(state.current?.trackId).toBe("u3");

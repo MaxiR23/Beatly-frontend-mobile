@@ -8,6 +8,7 @@
 // What is covered:
 // - the data unwrapped from the outcome, cache time from Cache-Control, one cache entry per track
 // - OutcomeError carrying track_not_found
+// - useUpNext one cache entry per source params, kept when only the source name changes, shared by sources that send no pair
 // - useUpNext reading without refetching on mount: a stale outcome kept, an empty cache still fetched
 //
 // Run with: pnpm --filter @beatly/mobile test -- useTracks
@@ -65,7 +66,12 @@ function setup(
 }
 
 const cases = [
-  { name: "useUpNext", leaf: "upnext", hook: useUpNext, data: upNextFixture },
+  {
+    name: "useUpNext",
+    leaf: "upnext",
+    hook: (id: string) => useUpNext(id, null),
+    data: upNextFixture,
+  },
   { name: "useLyrics", leaf: "lyrics", hook: useLyrics, data: lyricsFixture },
   { name: "useRelated", leaf: "related", hook: useRelated, data: relatedFixture },
   { name: "useCredits", leaf: "credits", hook: useCredits, data: creditsFixture },
@@ -132,13 +138,13 @@ describe.each(cases)("$name", ({ leaf, hook, data }) => {
 describe("useUpNext reading without refetching on mount", () => {
   it("does not refetch a stale outcome on a mount that reads without refetching", async () => {
     const { send, wrapper } = setup(upNextFixture, { "cache-control": "max-age=60" });
-    const first = await renderHook(() => useUpNext("t1"), { wrapper });
+    const first = await renderHook(() => useUpNext("t1", null), { wrapper });
     await waitFor(() => {
       expect(first.result.current.isFetching).toBe(false);
     });
     jest.useFakeTimers({ advanceTimers: true });
     jest.advanceTimersByTime(61_000);
-    const reading = await renderHook(() => useUpNext("t1", { refetchOnMount: false }), {
+    const reading = await renderHook(() => useUpNext("t1", null, { refetchOnMount: false }), {
       wrapper,
     });
     await waitFor(() => {
@@ -150,12 +156,51 @@ describe("useUpNext reading without refetching on mount", () => {
 
   it("still fetches on a reading mount when nothing is cached", async () => {
     const { send, wrapper } = setup(upNextFixture, { "cache-control": "max-age=60" });
-    const { result } = await renderHook(() => useUpNext("t1", { refetchOnMount: false }), {
+    const { result } = await renderHook(() => useUpNext("t1", null, { refetchOnMount: false }), {
       wrapper,
     });
     await waitFor(() => {
       expect(result.current.data).toEqual(upNextFixture);
     });
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("useUpNext by source", () => {
+  const album = { kind: "album", id: "MPREb_1", name: "Album" } as const;
+  const own = { kind: "playlist", id: "u-1", name: "Old" } as const;
+  const headers = { "cache-control": "max-age=60" };
+
+  async function mount(
+    wrapper: ReturnType<typeof setup>["wrapper"],
+    source: Parameters<typeof useUpNext>[1],
+  ) {
+    const rendered = await renderHook(() => useUpNext("t1", source), { wrapper });
+    await waitFor(() => {
+      expect(rendered.result.current.isFetching).toBe(false);
+    });
+  }
+
+  it("keeps one cache entry per source for the same track", async () => {
+    const { send, wrapper } = setup(upNextFixture, headers);
+    await mount(wrapper, album);
+    await mount(wrapper, own);
+    expect(send).toHaveBeenCalledTimes(2);
+    expect(send.mock.calls[0]?.[0].url).toMatch(/\?source_kind=album&source_id=MPREb_1$/);
+    expect(send.mock.calls[1]?.[0].url).toMatch(/\?source_kind=playlist&source_id=u-1$/);
+  });
+
+  it("keeps the entry when only the source name changes", async () => {
+    const { send, wrapper } = setup(upNextFixture, headers);
+    await mount(wrapper, own);
+    await mount(wrapper, { ...own, name: "New" });
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it("shares the entry between two sources that send no pair", async () => {
+    const { send, wrapper } = setup(upNextFixture, headers);
+    await mount(wrapper, { kind: "artist", id: "UCar1", name: "X" });
+    await mount(wrapper, { kind: "search", id: "daft", name: "daft" });
     expect(send).toHaveBeenCalledTimes(1);
   });
 });

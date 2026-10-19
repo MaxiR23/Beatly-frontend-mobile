@@ -76,7 +76,7 @@ the info block:
     touched: when the edited playlist is the playback source the queue keeps playing in the old order.
 - Play button: idle (the playlist is not the playback source) it is a pill with the play glyph and
   `playlist:play`; pressing it plays the whole list from the first track, after loading every page of
-  an own or liked playlist (the pressed button shows the spinner meanwhile). Pressing it, the label
+  an own or liked playlist (the pressed button shows the spinner meanwhile). Playing starts the list under the playback source `playlist` (own), `genre_playlist` or `liked`, which the player sends with up next (`player.md`). Pressing it, the label
   fades out (`motion.playButton.labelFade`), then the `layout.playButtonPill` pill, holding the play
   glyph, shrinks to the circle (`motion.playButton.shrink`, ease in-out), even when the start is
   instant; only then does it draw the spinner, or the pause glyph, scaling in over

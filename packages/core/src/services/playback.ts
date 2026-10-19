@@ -15,8 +15,9 @@ export interface PlayableTrack {
 }
 
 export interface PlaybackSource {
-  readonly kind: "album" | "playlist" | "artist" | "search" | "track";
-  // The album, playlist or artist id; the query for search; the track id whose suggestions or related songs play.
+  // playlist is one of the caller's own; genre_playlist a curated genre playlist; liked the liked songs.
+  readonly kind: "album" | "playlist" | "genre_playlist" | "liked" | "artist" | "search" | "track";
+  // The album, playlist, genre playlist or artist id; "liked" for liked; the query for search; the track id whose suggestions or related songs play.
   readonly id: string;
   // The album, playlist or artist name; the query for search; the track title for track.
   readonly name: string;
