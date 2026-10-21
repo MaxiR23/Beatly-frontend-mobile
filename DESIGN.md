@@ -90,6 +90,8 @@ cover hero, the hero on the image hero) passes `topInset + layout.controlHeight`
 the fade before the title, the cover shrinks until the title starts. On iOS the floating back is not part of the collapse: it never fades and always takes touches; only the floating more fades over the buttons' range. Before the heights are measured nothing moves. Under reduce motion
 the cover does not scale; the fades stay.
 
+Entry: in the ready body the content enters once per mount in a top-down cascade on the native driver, in wrappers separate from the collapse's layers: the hero (on the image hero its surface, image and fade), the title, the children, the first `motion.detailCascade.firstRows` rows, then the rows drawn with them. Each goes from opacity 0 and `motion.detailCascade.offset` lower to its place in `motion.detailCascade.duration`, `motion.detailCascade.stagger` after the previous one. It starts at once when the body becomes ready (replacing the skeleton), and after `motion.detailCascade.navigationDelay` when the body is ready at mount. That delay is a fixed estimate (350 ms) of the native stack push, not tied to the end of the transition: if the push timing changes nothing adjusts, so it is tuned on device. Rows drawn later (scroll, next page) and the floating buttons never animate. The buttons stay out so the native glass installs at full opacity. Under reduce motion everything is at rest from the first frame, or as soon as it turns on.
+
 - Hero: a `layout.heroCover` cover in `radius.sm` with `shadow.cover`, centered
   over a wash. The cover follows `Cover`'s rules: a mosaic with four urls, an image, the
   accent tile with a glyph, or the placeholder. The wash is `color.surface.base` until a dominant color is known,
@@ -280,8 +282,13 @@ Roles, not raw sizes. Every role uses the platform's system font (no
 | Points of scroll each detail header layer takes to fade (floating buttons, title, top bar)                                                            | `motion.detailCollapse.fade`                           |
 | Scale the detail hero cover shrinks to as it scrolls away                                                                                             | `motion.detailCollapse.coverScale`                     |
 | Share of a fade the detail top bar starts before the title is under it                                                                                | `motion.detailCollapse.barLead`                        |
+| Milliseconds each detail content block takes to enter                                                                                                 | `motion.detailCascade.duration`                        |
+| Milliseconds between the starts of two detail content blocks                                                                                          | `motion.detailCascade.stagger`                         |
+| Points lower than its place a detail content block enters from                                                                                        | `motion.detailCascade.offset`                          |
+| Rows in the first row step of the detail entry                                                                                                        | `motion.detailCascade.firstRows`                       |
+| Milliseconds the detail entry waits when the content is ready at mount (after the navigation transition)                                              | `motion.detailCascade.navigationDelay`                 |
 
-`VerticalDrag` (the one vertical drag), `DragToClose` and `PullUpSheet` over it, `PauseScale`, `Marquee`, `NowPlayingBars`, `PlayButton` and `ReorderList` and `DetailScreen` in `@beatly/ui/native` are the only animated components. They use React Native's `Animated` (and `Animated.event` for the detail scroll) with the native driver and `PanResponder`, and take `reduceMotion` from the app.
+`VerticalDrag` (the one vertical drag), `DragToClose` and `PullUpSheet` over it, `PauseScale`, `Marquee`, `NowPlayingBars`, `PlayButton` and `ReorderList` and `DetailScreen` in `@beatly/ui/native` are the only animated components. They use React Native's `Animated` (and `Animated.event` for the detail scroll, `Animated.timing` for its entry cascade) with the native driver and `PanResponder`, and take `reduceMotion` from the app.
 
 ## Icons (`icon`)
 

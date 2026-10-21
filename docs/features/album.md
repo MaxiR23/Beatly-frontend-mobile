@@ -12,6 +12,7 @@ pushes a new album in the same tab. Pressing an available track plays the album 
 ## Layout
 
 - Collapse: the header collapses into the top bar on scroll (`DESIGN.md`, "Detail screen base"): the cover shrinks and fades, the bar is drawn on the dominant color. On iOS the floating back stays fixed and the bar is a strip with no back of its own, reaching from the top edge to `spacing.sm` past `spacing.xs` under the back's bottom edge, with no background: the dominant color and a light shade, both fading to transparent at its bottom edge.
+- Entry: the content enters in a top-down cascade (`DESIGN.md`, "Detail screen base"): the cover over its wash, the title, then the rest of the body (info, action row, tracks and carousels) as one block, `motion.detailCascade.*`. The tracks are part of the body, not rows of the base, so they have no steps of their own. At once when the album arrives, after the navigation transition when it was cached. Nothing moves under reduce motion.
 
 Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), except
 the body:
@@ -103,3 +104,5 @@ collapsed header and top bar; the header collapse on scroll (the cover shrinking
 dominant color on a development build and the neutral fallback in Expo Go;
 swipe-back per tab; and the native tab bar on iOS 26+ with the renamed tab
 groups.
+
+Also: the entry cascade on iOS and Android: its order, the 300 ms and 60 ms feel, the start after the push with cached data (back and reopen) and at once after the skeleton, no animation on rows of a later page, the floating buttons visible from the first frame with the native glass on iOS 26+, nothing moving under reduce motion, the header collapse unchanged after it.

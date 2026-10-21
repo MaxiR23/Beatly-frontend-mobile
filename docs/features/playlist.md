@@ -13,6 +13,7 @@ source (`player.md`). Every track ends with a more button that opens the track m
 ## Layout
 
 - Collapse: the header collapses into the top bar on scroll (`DESIGN.md`, "Detail screen base"): the cover shrinks and fades, the bar is drawn on the dominant color (neutral for liked). On iOS the floating back stays fixed and the bar is a strip with no back of its own, reaching from the top edge to `spacing.sm` past `spacing.xs` under the back's bottom edge, with no background: the dominant color and a light shade, both fading to transparent at its bottom edge (the base surface for liked).
+- Entry: the content enters in a top-down cascade (`DESIGN.md`, "Detail screen base"): the cover over its wash, the title, the info and action row, the first 3 tracks, then the other tracks on screen, `motion.detailCascade.*`. At once when the tracks arrive, after the navigation transition when they were cached. Tracks of a later page do not animate. Nothing moves under reduce motion.
 
 Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), except
 the info block:
@@ -201,3 +202,5 @@ and the brand mark at `layout.creatorMark`; swipe-back per tab and the native ta
 bar on iOS 26+; and the album screen scrolled to its carousels after its list moved
 to a `FlatList`; the next-page skeleton rows on a real own or liked playlist of more than 50 tracks with a slow network, and the next page asked for early enough that a normal scroll rarely reaches them.
 Also: the header collapse on scroll (the cover shrinking and fading, then the floating buttons, the title and the top bar, in that order, without dropped frames on iOS and Android); on iOS the floating back staying fixed and tappable at every scroll position, the title never under it, and the strip's fade matching the top of the wash and ending with no edge under the back, and the strip's transparent bottom catching taps over the first visible row (album, playlist); TalkBack focus moving from the floating buttons to the top bar after a scroll, and VoiceOver reaching the fixed back and the bar's title once collapsed; the bar title's legibility over bright dominant colors and the bar matching the top of the wash.
+
+Also: the entry cascade on iOS and Android: its order, the 300 ms and 60 ms feel, the start after the push with cached data (back and reopen) and at once after the skeleton, no animation on rows of a later page, the floating buttons visible from the first frame with the native glass on iOS 26+, nothing moving under reduce motion, the header collapse unchanged after it.

@@ -14,6 +14,8 @@
 // - the floating back button, the more button only when given, the neutral wash and the gradient wash
 // - the collapse: one Animated.event on the native driver, the cover's shrink and fade, the order of the fades on both heroes, ranges from the measured heights, the touches handed from the floating buttons to the top bar and back, the bar's geometry and fill, no cover scale under reduce motion, static until measured, the other bodies unchanged, the reset when the ready body leaves
 //
+// - the entry cascade: five steps (hero, title, children, the first motion.detailCascade.firstRows rows, the later rows) in that order with the motion.detailCascade tokens on the native driver, opacity and translateY only, at once from loading and after navigationDelay when ready at mount, once per mount, late rows at rest, reduce motion at mount and turning on mid-way, unmount stopping it, the floating buttons never under a cascade wrapper on iOS and Android, no wrapper in the other bodies, the collapse's layers untouched by it
+//
 // - the collapse cases run on Android; on iOS: the floating back fixed, opaque, touchable and announced in every phase and drawn above the bar, the strip's height from the back's tokens plus spacing.sm, no background, its wash stops from the dominant color or the base surface and its shade stops, both from the tokens and transparent at the bottom edge, the title between two control-height slots at the back's vertical center, the mores handed over by the phase, the other bodies
 //
 // Run with: pnpm --filter @beatly/ui test -- DetailScreen
@@ -289,7 +291,7 @@ describe("DetailScreen", () => {
       await draw(imageHero([]));
       expect(screen.queryByTestId("detail-hero-photo")).toBeNull();
       const style = StyleSheet.flatten(
-        screen.getByTestId("detail-hero-image").props.style as ViewStyle,
+        screen.getByTestId("detail-cascade-hero").props.style as ViewStyle,
       );
       expect(style.backgroundColor).toBe(color.surface.card);
     });
@@ -907,6 +909,214 @@ describe("DetailScreen", () => {
           await view.unmount();
         }
       });
+    });
+  });
+
+  describe("entry cascade", () => {
+    const WRAPPERS = [
+      "detail-cascade-hero",
+      "detail-cascade-title",
+      "detail-cascade-children",
+      "detail-cascade-row-r0",
+      "detail-cascade-row-r3",
+    ];
+    // Which wrapper each step drives: rows r0..r2 share the first-rows step, r3..r4 the later one.
+    const STEP_WRAPPERS = [
+      ["detail-cascade-hero"],
+      ["detail-cascade-title"],
+      ["detail-cascade-children"],
+      ["detail-cascade-row-r0", "detail-cascade-row-r1", "detail-cascade-row-r2"],
+      ["detail-cascade-row-r3", "detail-cascade-row-r4"],
+    ];
+    const stubs: { start: jest.Mock; stop: jest.Mock }[] = [];
+    let timing: jest.SpiedFunction<typeof Animated.timing>;
+
+    const rowsBody = (count: number, hero?: "cover" | "image"): DetailBody => ({
+      kind: "ready",
+      ...(hero ? { hero } : {}),
+      title: "Album title",
+      cover: { urls: ["test://img/cover"] },
+      washColor: null,
+      children: <Text>body content</Text>,
+      rows: Array.from({ length: count }, (_, i) => ({
+        key: `r${String(i)}`,
+        element: <Text>{`row ${String(i)}`}</Text>,
+      })),
+    });
+    const at = (id: string) => StyleSheet.flatten(screen.getByTestId(id).props.style as ViewStyle);
+    const translateOf = (id: string) => {
+      const transform = at(id).transform as readonly { translateY: number }[];
+      return transform[0]?.translateY;
+    };
+    const valueOf = (call: number) => timing.mock.calls[call]?.[0] as Animated.Value;
+    const finishAll = async () => {
+      for (let i = 0; i < 5; i += 1) {
+        await act(() => {
+          valueOf(i).setValue(1);
+        });
+      }
+    };
+
+    beforeEach(() => {
+      stubs.length = 0;
+      timing = jest.spyOn(Animated, "timing").mockImplementation(() => {
+        const stub = { start: jest.fn(), stop: jest.fn(), reset: jest.fn() };
+        stubs.push(stub);
+        return stub;
+      });
+    });
+    afterEach(() => {
+      timing.mockRestore();
+      Platform.OS = "ios";
+    });
+
+    it("starts at once from loading to ready, in order hero, title, children, first rows, later rows", async () => {
+      const view = await draw({ kind: "loading", label: "Loading" });
+      expect(timing).not.toHaveBeenCalled();
+      await view.rerender(element(rowsBody(5)));
+      expect(timing).toHaveBeenCalledTimes(5);
+      for (let i = 0; i < 5; i += 1) {
+        expect(timing.mock.calls[i]?.[1]).toEqual(
+          expect.objectContaining({
+            toValue: 1,
+            duration: motion.detailCascade.duration,
+            delay: i * motion.detailCascade.stagger,
+            useNativeDriver: true,
+          }),
+        );
+        expect(stubs[i]?.start).toHaveBeenCalledTimes(1);
+      }
+      for (const id of WRAPPERS) {
+        expect(at(id).opacity).toBe(0);
+        expect(translateOf(id)).toBe(motion.detailCascade.offset);
+      }
+      for (let step = 0; step < 5; step += 1) {
+        await act(() => {
+          valueOf(step).setValue(1);
+        });
+        STEP_WRAPPERS.forEach((ids, other) => {
+          for (const id of ids) {
+            expect(at(id).opacity).toBe(other <= step ? 1 : 0);
+            expect(translateOf(id)).toBe(other <= step ? 0 : motion.detailCascade.offset);
+          }
+        });
+      }
+    });
+
+    it("waits navigationDelay when the body is ready at mount", async () => {
+      await draw(rowsBody(5));
+      expect(timing).toHaveBeenCalledTimes(5);
+      for (let i = 0; i < 5; i += 1) {
+        expect(timing.mock.calls[i]?.[1]).toEqual(
+          expect.objectContaining({
+            delay: motion.detailCascade.navigationDelay + i * motion.detailCascade.stagger,
+          }),
+        );
+      }
+    });
+
+    it("runs once per mount", async () => {
+      const view = await draw(rowsBody(5));
+      await view.rerender(element(rowsBody(5)));
+      await view.rerender(
+        element({
+          kind: "error",
+          message: "Went wrong",
+          retryLabel: "Retry",
+          onRetry: () => undefined,
+        }),
+      );
+      await view.rerender(element(rowsBody(5)));
+      expect(timing).toHaveBeenCalledTimes(5);
+    });
+
+    it("draws rows that arrive later at rest without a new run", async () => {
+      const view = await draw(rowsBody(5));
+      await finishAll();
+      await view.rerender(element(rowsBody(8)));
+      expect(at("detail-cascade-row-r7").opacity).toBe(1);
+      expect(translateOf("detail-cascade-row-r7")).toBe(0);
+      expect(timing).toHaveBeenCalledTimes(5);
+    });
+
+    it("draws everything at rest with no run under reduce motion", async () => {
+      await draw(rowsBody(5), { reduceMotion: true });
+      expect(timing).not.toHaveBeenCalled();
+      for (const id of WRAPPERS) {
+        expect(at(id).opacity).toBe(1);
+        expect(translateOf(id)).toBe(0);
+      }
+    });
+
+    it("stops a cascade under way and parks it at rest when reduce motion turns on", async () => {
+      const view = await draw(rowsBody(5));
+      await view.rerender(element(rowsBody(5), { reduceMotion: true }));
+      expect(stubs).toHaveLength(5);
+      for (const stub of stubs) expect(stub.stop).toHaveBeenCalled();
+      for (const id of WRAPPERS) {
+        expect(at(id).opacity).toBe(1);
+        expect(translateOf(id)).toBe(0);
+      }
+      expect(timing).toHaveBeenCalledTimes(5);
+    });
+
+    it("stops the cascade on unmount", async () => {
+      const view = await draw(rowsBody(5));
+      await view.unmount();
+      for (const stub of stubs) expect(stub.stop).toHaveBeenCalled();
+    });
+
+    it("animates only opacity and translateY", async () => {
+      await draw(rowsBody(5));
+      for (const id of WRAPPERS) {
+        const style = at(id);
+        expect(Object.keys(style).sort()).toEqual(["opacity", "transform"]);
+        const transform = style.transform as readonly Record<string, number>[];
+        expect(transform).toHaveLength(1);
+        expect(Object.keys(transform[0] ?? {})).toEqual(["translateY"]);
+      }
+    });
+
+    it.each(["ios", "android"] as const)(
+      "never puts the floating buttons under a cascade wrapper on %s",
+      async (os) => {
+        Platform.OS = os;
+        await draw(rowsBody(5), { more: { label: "More", onPress: () => undefined } });
+        for (const name of ["Back", "More"]) {
+          let node = screen.getAllByRole("button", { name })[0]?.parent ?? null;
+          expect(node).not.toBeNull();
+          while (node) {
+            const id = node.props.testID as string | undefined;
+            expect(id?.startsWith("detail-cascade") ?? false).toBe(false);
+            const raw = node.props.style as ViewStyle | undefined;
+            expect(raw ? StyleSheet.flatten(raw).opacity : undefined).not.toBe(0);
+            node = node.parent;
+          }
+        }
+      },
+    );
+
+    it("leaves the collapse's layers alone", async () => {
+      await draw(rowsBody(5));
+      const event = { nativeEvent: { layout: { x: 0, y: 0, width: 300, height: 200 } } };
+      await fireEvent(screen.getByTestId("detail-hero"), "layout", event);
+      await fireEvent(screen.getByTestId("detail-title"), "layout", event);
+      expect(at("detail-hero-cover").opacity).toBe(1);
+      expect(at("detail-title").opacity).toBe(1);
+      expect(at("detail-cascade-hero").opacity).toBe(0);
+    });
+
+    it("draws no cascade wrapper in the loading, error and unavailable bodies", async () => {
+      const bodies: DetailBody[] = [
+        { kind: "loading", label: "Loading" },
+        { kind: "error", message: "Went wrong", retryLabel: "Retry", onRetry: () => undefined },
+        { kind: "unavailable", message: "Not available" },
+      ];
+      for (const body of bodies) {
+        const view = await draw(body);
+        expect(screen.queryAllByTestId(/^detail-cascade/)).toHaveLength(0);
+        await view.unmount();
+      }
     });
   });
 });

@@ -4,7 +4,7 @@
 // over it. Four bodies: loading skeleton, error with retry, unavailable,
 // ready. The cover is a mosaic, an image, an accent tile or the placeholder;
 // the ready body is a list: the hero, the title and the children on top,
-// optional rows under them paged by onEndReached two screens before the end, with skeleton rows under them while the next page loads. In the ready body the scroll drives, on the native driver, the cover's shrink to motion.detailCollapse.coverScale and fade, the floating buttons' fade, the title's fade and a top bar's fade in, over ranges derived from the measured hero and title heights; the floating buttons or the bar take touches, never both, on Android; on iOS the floating back never fades and always takes touches, drawn above a strip with no back of its own, reaching from the top edge to spacing.sm past spacing.xs under the back's bottom edge (topInset + spacing.xs + layout.controlHeight + spacing.xs + spacing.sm), with no background: the dominant color (the base surface without one) and a light base-surface shade over it, both fading to transparent at its bottom edge, and only the floating more and the bar's more hand the touches over; under reduce motion the cover does not scale.
+// optional rows under them paged by onEndReached two screens before the end, with skeleton rows under them while the next page loads. In the ready body the scroll drives, on the native driver, the cover's shrink to motion.detailCollapse.coverScale and fade, the floating buttons' fade, the title's fade and a top bar's fade in, over ranges derived from the measured hero and title heights; the floating buttons or the bar take touches, never both, on Android; on iOS the floating back never fades and always takes touches, drawn above a strip with no back of its own, reaching from the top edge to spacing.sm past spacing.xs under the back's bottom edge (topInset + spacing.xs + layout.controlHeight + spacing.xs + spacing.sm), with no background: the dominant color (the base surface without one) and a light base-surface shade over it, both fading to transparent at its bottom edge, and only the floating more and the bar's more hand the touches over; under reduce motion the cover does not scale. In the ready body the content enters once per mount in a top-down cascade on the native driver: the hero, the title, the children, the first motion.detailCascade.firstRows rows and the later rows drawn with them, each from opacity 0 and motion.detailCascade.offset lower, in motion.detailCascade.duration, motion.detailCascade.stagger apart, in wrappers separate from the collapse's layers. It starts at once when the body becomes ready, after motion.detailCascade.navigationDelay when it was ready at mount. Rows drawn later and the floating buttons never animate. Under reduce motion, or when it turns on mid-way, everything is at rest.
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Animated,
@@ -96,6 +96,71 @@ export function DetailScreen({
       ? collapseRanges({ hero: body.hero ?? "cover", heroHeight, titleHeight, topInset })
       : null;
   const latest = useRef(ranges);
+
+  // The entry cascade: one value per step (hero, title, children, the first rows, the later rows), 0 to 1, on the native driver; at 1 from the start under reduce motion.
+  const [cascade] = useState(() => {
+    const from = reduceMotion ? 1 : 0;
+    return {
+      hero: new Animated.Value(from),
+      title: new Animated.Value(from),
+      children: new Animated.Value(from),
+      firstRows: new Animated.Value(from),
+      laterRows: new Animated.Value(from),
+    };
+  });
+  // Ready at the first render (cached data): the cascade waits for the navigation transition.
+  const readyAtMount = useRef(body.kind === "ready");
+  const cascaded = useRef(false);
+  const cascadeRuns = useRef<Animated.CompositeAnimation[]>([]);
+
+  useEffect(() => {
+    const steps = [
+      cascade.hero,
+      cascade.title,
+      cascade.children,
+      cascade.firstRows,
+      cascade.laterRows,
+    ];
+    if (reduceMotion) {
+      // A live change to reduce motion (its read answers after the first render) stops a cascade under way and parks every block at rest.
+      for (const run of cascadeRuns.current) run.stop();
+      cascadeRuns.current = [];
+      cascaded.current = true;
+      for (const step of steps) step.setValue(1);
+      return;
+    }
+    if (body.kind !== "ready" || cascaded.current) return;
+    cascaded.current = true;
+    const start = readyAtMount.current ? motion.detailCascade.navigationDelay : 0;
+    cascadeRuns.current = steps.map((value, step) =>
+      Animated.timing(value, {
+        toValue: 1,
+        duration: motion.detailCascade.duration,
+        delay: start + step * motion.detailCascade.stagger,
+        useNativeDriver: true,
+      }),
+    );
+    for (const run of cascadeRuns.current) run.start();
+  }, [body.kind, reduceMotion, cascade]);
+
+  useEffect(
+    () => () => {
+      for (const run of cascadeRuns.current) run.stop();
+    },
+    [],
+  );
+
+  const entering = (value: Animated.Value) => ({
+    opacity: value,
+    transform: [
+      {
+        translateY: value.interpolate({
+          inputRange: [0, 1],
+          outputRange: [motion.detailCascade.offset, 0],
+        }),
+      },
+    ],
+  });
 
   useEffect(() => {
     latest.current = ranges;
@@ -192,7 +257,16 @@ export function DetailScreen({
           testID={testID ? `${testID}-list` : undefined}
           data={body.rows ?? []}
           keyExtractor={(row) => row.key}
-          renderItem={({ item }) => <>{item.element}</>}
+          renderItem={({ item, index }) => (
+            <Animated.View
+              testID={`detail-cascade-row-${item.key}`}
+              style={entering(
+                index < motion.detailCascade.firstRows ? cascade.firstRows : cascade.laterRows,
+              )}
+            >
+              {item.element}
+            </Animated.View>
+          )}
           onEndReached={body.onEndReached}
           onEndReachedThreshold={END_REACHED_THRESHOLD}
           ListFooterComponent={
@@ -220,80 +294,93 @@ export function DetailScreen({
                   testID="detail-hero-image"
                   onLayout={measureHero}
                 >
-                  {body.cover.urls[0] !== undefined ? (
-                    <Image
-                      source={{ uri: body.cover.urls[0] }}
-                      style={StyleSheet.absoluteFill}
-                      resizeMode="cover"
-                      accessible={false}
-                      testID="detail-hero-photo"
-                    />
-                  ) : null}
-                  <View style={styles.fade} testID="detail-hero-fade">
-                    <GradientFill
-                      direction="vertical"
-                      colors={[color.overlay.clear, color.overlay.clear, color.surface.base]}
-                    />
-                  </View>
                   <Animated.View
-                    style={[styles.imageTitle, titleOpacity ? { opacity: titleOpacity } : null]}
-                    testID="detail-hero-title"
+                    testID="detail-cascade-hero"
+                    style={[styles.imageLayer, entering(cascade.hero)]}
                   >
-                    <Text variant="display" numberOfLines={2}>
-                      {body.title}
-                    </Text>
+                    {body.cover.urls[0] !== undefined ? (
+                      <Image
+                        source={{ uri: body.cover.urls[0] }}
+                        style={StyleSheet.absoluteFill}
+                        resizeMode="cover"
+                        accessible={false}
+                        testID="detail-hero-photo"
+                      />
+                    ) : null}
+                    <View style={styles.fade} testID="detail-hero-fade">
+                      <GradientFill
+                        direction="vertical"
+                        colors={[color.overlay.clear, color.overlay.clear, color.surface.base]}
+                      />
+                    </View>
+                  </Animated.View>
+                  <Animated.View testID="detail-cascade-title" style={entering(cascade.title)}>
+                    <Animated.View
+                      style={[styles.imageTitle, titleOpacity ? { opacity: titleOpacity } : null]}
+                      testID="detail-hero-title"
+                    >
+                      <Text variant="display" numberOfLines={2}>
+                        {body.title}
+                      </Text>
+                    </Animated.View>
                   </Animated.View>
                 </View>
               ) : (
                 <>
-                  <View
-                    style={[
-                      styles.hero,
-                      { paddingTop: topInset + layout.controlHeight + spacing.sm },
-                    ]}
-                    testID="detail-hero"
-                    onLayout={measureHero}
-                  >
-                    {body.washColor === null ? (
-                      <View style={styles.washNeutral} testID="detail-wash-neutral" />
-                    ) : (
-                      <View style={styles.wash} testID="detail-wash-color">
-                        <GradientFill
-                          direction="vertical"
-                          colors={[body.washColor, color.surface.base]}
-                        />
-                      </View>
-                    )}
-                    <Animated.View
-                      testID="detail-hero-cover"
-                      style={
-                        coverOpacity
-                          ? {
-                              opacity: coverOpacity,
-                              ...(coverScale ? { transform: [{ scale: coverScale }] } : {}),
-                            }
-                          : null
-                      }
+                  <Animated.View testID="detail-cascade-hero" style={entering(cascade.hero)}>
+                    <View
+                      style={[
+                        styles.hero,
+                        { paddingTop: topInset + layout.controlHeight + spacing.sm },
+                      ]}
+                      testID="detail-hero"
+                      onLayout={measureHero}
                     >
-                      <Cover
-                        urls={body.cover.urls}
-                        icon={body.cover.icon}
-                        shape="square"
-                        size={layout.heroCover}
-                        elevated
-                      />
+                      {body.washColor === null ? (
+                        <View style={styles.washNeutral} testID="detail-wash-neutral" />
+                      ) : (
+                        <View style={styles.wash} testID="detail-wash-color">
+                          <GradientFill
+                            direction="vertical"
+                            colors={[body.washColor, color.surface.base]}
+                          />
+                        </View>
+                      )}
+                      <Animated.View
+                        testID="detail-hero-cover"
+                        style={
+                          coverOpacity
+                            ? {
+                                opacity: coverOpacity,
+                                ...(coverScale ? { transform: [{ scale: coverScale }] } : {}),
+                              }
+                            : null
+                        }
+                      >
+                        <Cover
+                          urls={body.cover.urls}
+                          icon={body.cover.icon}
+                          shape="square"
+                          size={layout.heroCover}
+                          elevated
+                        />
+                      </Animated.View>
+                    </View>
+                  </Animated.View>
+                  <Animated.View testID="detail-cascade-title" style={entering(cascade.title)}>
+                    <Animated.View
+                      style={[styles.title, titleOpacity ? { opacity: titleOpacity } : null]}
+                      testID="detail-title"
+                      onLayout={measureTitle}
+                    >
+                      <Text variant="title">{body.title}</Text>
                     </Animated.View>
-                  </View>
-                  <Animated.View
-                    style={[styles.title, titleOpacity ? { opacity: titleOpacity } : null]}
-                    testID="detail-title"
-                    onLayout={measureTitle}
-                  >
-                    <Text variant="title">{body.title}</Text>
                   </Animated.View>
                 </>
               )}
-              {body.children}
+              <Animated.View testID="detail-cascade-children" style={entering(cascade.children)}>
+                {body.children}
+              </Animated.View>
             </>
           }
         />
@@ -409,8 +496,8 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     aspectRatio: layout.heroImageRatio,
     justifyContent: "flex-end",
-    backgroundColor: color.surface.card,
   },
+  imageLayer: { ...StyleSheet.absoluteFill, backgroundColor: color.surface.card },
   fade: StyleSheet.absoluteFill,
   imageTitle: { paddingHorizontal: layout.gutter, paddingBottom: spacing.lg },
   title: { paddingHorizontal: layout.gutter, paddingTop: spacing.lg },

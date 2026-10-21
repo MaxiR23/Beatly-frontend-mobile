@@ -11,6 +11,7 @@ another artist in the same tab. Pressing a popular song with a `track_id` plays 
 ## Layout
 
 - Collapse: the header collapses into the top bar on scroll (`DESIGN.md`, "Detail screen base"): the image hero has no cover to scale, and the bar is always neutral (`color.surface.base`) because the artist has no dominant color. On iOS the floating back stays fixed and the bar is a strip with no back of its own, reaching from the top edge to `spacing.sm` past `spacing.xs` under the back's bottom edge, with no background: the base surface and a light shade, both fading to transparent at its bottom edge (no dominant color).
+- Entry: the content enters in a top-down cascade (`DESIGN.md`, "Detail screen base"): the image, the name, then the sections (popular songs and carousels) as one block, `motion.detailCascade.*`. The tracks are part of the body, not rows of the base, so they have no steps of their own. At once when the artist arrives, after the navigation transition when it was cached. Nothing moves under reduce motion.
 
 Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), except the body:
 
@@ -78,3 +79,5 @@ Screenshots of an artist on iOS and Android; the crop and fade on real artist im
 legibility over bright images and the floating back button over the image; no white edge during a
 push and a swipe-back in every tab, on the JS tab bar and on NativeTabs (iOS 26+); the now playing bars on a popular song, moving, frozen on pause and static under reduce motion.
 Also: the header collapse on scroll (the hero image fading, then the floating buttons, the title and the top bar, in that order, without dropped frames on iOS and Android); on iOS the floating back staying fixed and tappable at every scroll position, the title never under it, and the strip's fade matching the top of the wash and ending with no edge under the back, and the strip's transparent bottom catching taps over the first visible row; TalkBack focus moving from the floating buttons to the top bar after a scroll, and VoiceOver reaching the fixed back and the bar's title once collapsed.
+
+Also: the entry cascade on iOS and Android: its order, the 300 ms and 60 ms feel, the start after the push with cached data (back and reopen) and at once after the skeleton, no animation on rows of a later page, the floating buttons visible from the first frame with the native glass on iOS 26+, nothing moving under reduce motion, the header collapse unchanged after it.
