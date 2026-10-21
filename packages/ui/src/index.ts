@@ -7,4 +7,5 @@ export { motion } from "./tokens/motion.ts";
 export { icon } from "./tokens/icon.ts";
 export { border } from "./tokens/border.ts";
 export { shadow } from "./tokens/shadow.ts";
+export { blur } from "./tokens/blur.ts";
 export { genrePalette, avatarPalette } from "./tokens/palette.ts";

@@ -1,10 +1,11 @@
 // INFO: ESLint flat config. Besides the usual TypeScript rules it encodes
 // the import boundaries of ARCHITECTURE.md: what core may not import,
 // what ui may not import, and which libraries may only be imported from
-// their adapter in apps/mobile. Four libraries have a single importer inside
+// their adapter in apps/mobile. Six libraries have a single importer inside
 // packages/ui instead: lucide-react-native (Icon.tsx), expo-glass-effect
-// (GlassSurface.tsx), react-native-svg (GradientFill.tsx) and @expo/ui
-// (swiftUI.ts). A boundary is a rule here, not a habit.
+// (GlassSurface.tsx), react-native-svg (GradientFill.tsx), @expo/ui
+// (swiftUI.ts), expo-blur (BlurFill.tsx) and
+// @react-native-masked-view/masked-view (AlphaMask.tsx). A boundary is a rule here, not a habit.
 
 import js from "@eslint/js";
 import comments from "@eslint-community/eslint-plugin-eslint-comments/configs";
@@ -77,6 +78,22 @@ const expoUILibraryOnlyInSwiftUILoader = {
   group: ["@expo/ui", "@expo/ui/*"],
   message:
     "SwiftUI views are drawn with NativeMenu and NativeEditList of @beatly/ui/native; packages/ui/src/components/swiftUI.ts is the only importer of @expo/ui.",
+};
+
+// Blurs are drawn with BlurFill of packages/ui; its file is the only
+// importer of the blur library (ADR 026).
+const blurLibraryOnlyInBlurFill = {
+  group: ["expo-blur"],
+  message:
+    "Blurs are drawn with BlurFill inside packages/ui; packages/ui/src/components/BlurFill.tsx is the only importer of expo-blur.",
+};
+
+// Masks are drawn with AlphaMask of packages/ui; its file is the only
+// importer of the masked view library (ADR 026).
+const maskLibraryOnlyInAlphaMask = {
+  group: ["@react-native-masked-view/masked-view", "@react-native-masked-view/*"],
+  message:
+    "Masks are drawn with AlphaMask inside packages/ui; packages/ui/src/components/AlphaMask.tsx is the only importer of @react-native-masked-view/masked-view.",
 };
 
 // A workspace is imported by its package name, never by a relative path
@@ -233,7 +250,12 @@ export default tseslint.config(
           ...crossWorkspacePaths,
         ],
         "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
-        [iconLibraryOnlyInIcon, svgLibraryOnlyInGradientFill, expoUILibraryOnlyInSwiftUILoader],
+        [
+          iconLibraryOnlyInIcon,
+          svgLibraryOnlyInGradientFill,
+          expoUILibraryOnlyInSwiftUILoader,
+          maskLibraryOnlyInAlphaMask,
+        ],
       ),
     },
   },
@@ -253,7 +275,11 @@ export default tseslint.config(
           ...crossWorkspacePaths,
         ],
         "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
-        [svgLibraryOnlyInGradientFill, expoUILibraryOnlyInSwiftUILoader],
+        [
+          svgLibraryOnlyInGradientFill,
+          expoUILibraryOnlyInSwiftUILoader,
+          maskLibraryOnlyInAlphaMask,
+        ],
       ),
     },
   },
@@ -271,6 +297,7 @@ export default tseslint.config(
           iconLibraryOnlyInIcon,
           svgLibraryOnlyInGradientFill,
           expoUILibraryOnlyInSwiftUILoader,
+          maskLibraryOnlyInAlphaMask,
           {
             group: ["expo-*", "!expo-glass-effect"],
             message:
@@ -295,7 +322,7 @@ export default tseslint.config(
           ...crossWorkspacePaths,
         ],
         "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
-        [iconLibraryOnlyInIcon, expoUILibraryOnlyInSwiftUILoader],
+        [iconLibraryOnlyInIcon, expoUILibraryOnlyInSwiftUILoader, maskLibraryOnlyInAlphaMask],
       ),
     },
   },
@@ -314,7 +341,49 @@ export default tseslint.config(
           ...crossWorkspacePaths,
         ],
         "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
-        [iconLibraryOnlyInIcon, svgLibraryOnlyInGradientFill],
+        [iconLibraryOnlyInIcon, svgLibraryOnlyInGradientFill, maskLibraryOnlyInAlphaMask],
+      ),
+    },
+  },
+
+  // The BlurFill component is the one file allowed to import the blur library.
+  // Same shape as the GlassSurface block.
+  {
+    files: ["packages/ui/src/components/BlurFill.tsx"],
+    rules: {
+      ...restricted(
+        ["@beatly/mobile", "@tanstack/*", ...adapterOnlyLibraries, ...crossWorkspacePaths],
+        "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
+        [
+          iconLibraryOnlyInIcon,
+          svgLibraryOnlyInGradientFill,
+          expoUILibraryOnlyInSwiftUILoader,
+          maskLibraryOnlyInAlphaMask,
+          {
+            group: ["expo-*", "!expo-blur"],
+            message:
+              "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
+          },
+        ],
+      ),
+    },
+  },
+
+  // The AlphaMask component is the one file allowed to import the masked view
+  // library. Same shape as the Icon block.
+  {
+    files: ["packages/ui/src/components/AlphaMask.tsx"],
+    rules: {
+      ...restricted(
+        [
+          "@beatly/mobile",
+          "expo-*",
+          "@tanstack/*",
+          ...adapterOnlyLibraries,
+          ...crossWorkspacePaths,
+        ],
+        "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
+        [iconLibraryOnlyInIcon, svgLibraryOnlyInGradientFill, expoUILibraryOnlyInSwiftUILoader],
       ),
     },
   },
@@ -346,6 +415,8 @@ export default tseslint.config(
           glassLibraryOnlyInGlassSurface,
           svgLibraryOnlyInGradientFill,
           expoUILibraryOnlyInSwiftUILoader,
+          blurLibraryOnlyInBlurFill,
+          maskLibraryOnlyInAlphaMask,
         ],
       ),
     },
@@ -371,6 +442,8 @@ export default tseslint.config(
           glassLibraryOnlyInGlassSurface,
           svgLibraryOnlyInGradientFill,
           expoUILibraryOnlyInSwiftUILoader,
+          blurLibraryOnlyInBlurFill,
+          maskLibraryOnlyInAlphaMask,
           {
             group: ["**/queries/queryClient", "**/queries/queryClient.ts"],
             importNames: ["createQueryClient"],

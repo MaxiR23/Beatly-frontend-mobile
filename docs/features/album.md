@@ -11,7 +11,7 @@ pushes a new album in the same tab. Pressing an available track plays the album 
 
 ## Layout
 
-- Collapse: the header collapses into the top bar on scroll (`DESIGN.md`, "Detail screen base"): the cover shrinks and fades, the bar is drawn on the dominant color. On iOS the floating back stays fixed and the bar is a strip with no back of its own, reaching from the top edge to `spacing.sm` past `spacing.xs` under the back's bottom edge, with no background: the dominant color and a light shade, both fading to transparent at its bottom edge.
+- Collapse: the header collapses into the top bar on scroll (`DESIGN.md`, "Detail screen base"): the cover shrinks and fades, the bar is drawn on the dominant color. On iOS the floating back stays fixed and the bar is a strip with no back of its own, reaching from the top edge to `spacing.sm` past `spacing.xs` under the back's bottom edge, with no background: the dominant color and a light shade, both fading to transparent at its bottom edge. Under the strip the content is blurred slightly (`blur.detailStrip`), full at the top and fading to zero at the strip's bottom edge, appearing with the strip (`DESIGN.md`, "Detail screen base").
 - Entry: the content enters in a top-down cascade (`DESIGN.md`, "Detail screen base"): the cover over its wash, the title, then the rest of the body (info, action row, tracks and carousels) as one block, `motion.detailCascade.*`. The tracks are part of the body, not rows of the base, so they have no steps of their own. At once when the album arrives, after the navigation transition when it was cached. Nothing moves under reduce motion.
 
 Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), except
@@ -48,7 +48,7 @@ the body:
 ## Platform differences
 
 - iOS: the floating buttons use native glass on iOS 26+, `GlassSurface`'s solid
-  fallback elsewhere. The back's native glass never fades (the back stays fixed); the top bar has no glass on any platform.
+  fallback elsewhere. The back's native glass never fades (the back stays fixed); the top bar has no glass on any platform. On iOS the content under the top strip is blurred; Android has no blur.
 - Android: the solid fallback draws the buttons.
 - Expo Go: the native color module is missing, so the wash stays neutral.
 
@@ -106,3 +106,5 @@ swipe-back per tab; and the native tab bar on iOS 26+ with the renamed tab
 groups.
 
 Also: the entry cascade on iOS and Android: its order, the 300 ms and 60 ms feel, the start after the push with cached data (back and reopen) and at once after the skeleton, no animation on rows of a later page, the floating buttons visible from the first frame with the native glass on iOS 26+, nothing moving under reduce motion, the header collapse unchanged after it.
+
+Also: the iOS strip blur: absent at the top, fading in with the strip and following the scroll with no flicker or dark flash, full at the top and gone at the strip's bottom edge with no visible border or cut, about 4 points (tune `blur.detailStrip`), no change under reduce motion other than the strip's own, the floating back and the title above it unchanged, a development build rebuilt after the install.

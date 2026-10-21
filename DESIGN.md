@@ -35,6 +35,7 @@ value: the value lives once, in the token file.
 | Sheet handle bar on Android                                                                                                                                      | `color.overlay.handleAndroid`                                                                |
 | Clear start of a fade into the base surface (the detail hero image); the see-through container of the player route                                               | `color.overlay.clear`                                                                        |
 | Opacity stops of the iOS detail strip: its wash (the dominant color or the base surface) and the base-surface shade over it, both transparent at the bottom edge | `color.gradient.detailStrip.wash` / `.shade`                                                 |
+| Opacity stops of the mask of the iOS detail strip's blur: opaque to 55% of the strip's height, transparent at its bottom edge                                    | `color.gradient.detailStrip.blurMask`                                                        |
 
 ## Spacing and layout (`spacing`, `layout`)
 
@@ -130,7 +131,7 @@ Entry: in the ready body the content enters once per mount in a top-down cascade
   On iOS: the same strip, fade and range, but it reaches from the top edge to `spacing.sm` past `spacing.xs` under the floating back (`topInset + spacing.xs`,
   `layout.controlHeight`, `spacing.xs`, `spacing.sm`), so the button sits entirely inside it and the fade ends just under it. It has no background: a vertical
   `GradientFill` of the dominant color (`color.surface.base` without one) at `color.gradient.detailStrip.wash`, and over it `color.surface.base` at
-  `color.gradient.detailStrip.shade`. Both end transparent, so the list passes under the strip with no edge. Its transparent bottom still catches touches once active. It has no back of its own: a
+  `color.gradient.detailStrip.shade`. Both end transparent, so the list passes under the strip with no edge. Under both, outside the strip (so no parent of the blur has an opacity), `BlurFill` blurs the content at `blur.detailStrip`, inside `AlphaMask` with a vertical `GradientFill` of `color.surface.base` at `color.gradient.detailStrip.blurMask`: full from the top to 55% of the strip's height, zero at its bottom edge. The mask's opacity is the strip's, so the blur appears with it, also under reduce motion where both follow the scroll; it is mounted once the ranges are measured and made visible only by that mask opacity (0 at the top), so there is no blur at the top and none pops in on a fast flick. The blur takes no touches (`pointerEvents="none"`). `BlurFill` is the only importer of `expo-blur` and `AlphaMask` of the masked view (ADR 026). The strip's transparent bottom still catches touches once active. It has no back of its own: a
   `layout.controlHeight` slot under the fixed floating back, then the title in `typography.subtitle` on one line centered between two
   `layout.controlHeight` slots, at the back's vertical center, and more only with the `more` prop. The floating back is drawn above the bar,
   so the bar catches touches on its area without blocking it. The phase hands over only the mores: the floating more while
@@ -316,6 +317,14 @@ Android reads `elevation`.
 | Cover art / hero image                          | `shadow.cover`    |
 | Floating control (mini player, floating action) | `shadow.floating` |
 | Small control (icon button, the seek bar thumb) | `shadow.control`  |
+
+## Blur (`blur`)
+
+iOS only. The intensity is the blur library's 0-100 scale (a share of the system blur), not points; the tint is the system material. Tuned on the phone.
+
+| Role                                               | Token                                  |
+| -------------------------------------------------- | -------------------------------------- |
+| Content under the iOS detail strip, about 4 points | `blur.detailStrip.intensity` / `.tint` |
 
 ## Decorative palettes (`genrePalette`, `avatarPalette`)
 

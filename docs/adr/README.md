@@ -197,3 +197,7 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
 - `025-swiftui-edit-list-through-a-single-expo-ui-loader.md` — why the
   single importer of `@expo/ui` is the loader `components/swiftUI.ts`, so
   the track menu and the playlist edit list can both draw SwiftUI.
+- `026-masked-blur-behind-two-single-ui-importers.md` — why the iOS detail
+  strip's blur is `expo-blur` under a masked view, each behind one
+  `packages/ui` importer, and why it fades through its mask instead of its
+  parent's opacity.

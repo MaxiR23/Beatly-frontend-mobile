@@ -4,7 +4,7 @@
 // over it. Four bodies: loading skeleton, error with retry, unavailable,
 // ready. The cover is a mosaic, an image, an accent tile or the placeholder;
 // the ready body is a list: the hero, the title and the children on top,
-// optional rows under them paged by onEndReached two screens before the end, with skeleton rows under them while the next page loads. In the ready body the scroll drives, on the native driver, the cover's shrink to motion.detailCollapse.coverScale and fade, the floating buttons' fade, the title's fade and a top bar's fade in, over ranges derived from the measured hero and title heights; the floating buttons or the bar take touches, never both, on Android; on iOS the floating back never fades and always takes touches, drawn above a strip with no back of its own, reaching from the top edge to spacing.sm past spacing.xs under the back's bottom edge (topInset + spacing.xs + layout.controlHeight + spacing.xs + spacing.sm), with no background: the dominant color (the base surface without one) and a light base-surface shade over it, both fading to transparent at its bottom edge, and only the floating more and the bar's more hand the touches over; under reduce motion the cover does not scale. In the ready body the content enters once per mount in a top-down cascade on the native driver: the hero, the title, the children, the first motion.detailCascade.firstRows rows and the later rows drawn with them, each from opacity 0 and motion.detailCascade.offset lower, in motion.detailCascade.duration, motion.detailCascade.stagger apart, in wrappers separate from the collapse's layers. It starts at once when the body becomes ready, after motion.detailCascade.navigationDelay when it was ready at mount. Rows drawn later and the floating buttons never animate. Under reduce motion, or when it turns on mid-way, everything is at rest.
+// optional rows under them paged by onEndReached two screens before the end, with skeleton rows under them while the next page loads. In the ready body the scroll drives, on the native driver, the cover's shrink to motion.detailCollapse.coverScale and fade, the floating buttons' fade, the title's fade and a top bar's fade in, over ranges derived from the measured hero and title heights; the floating buttons or the bar take touches, never both, on Android; on iOS the floating back never fades and always takes touches, drawn above a strip with no back of its own, reaching from the top edge to spacing.sm past spacing.xs under the back's bottom edge (topInset + spacing.xs + layout.controlHeight + spacing.xs + spacing.sm), with no background: the dominant color (the base surface without one) and a light base-surface shade over it, both fading to transparent at its bottom edge, and under them, outside the strip's fading parent, a blur of the content (blur.detailStrip) masked opaque to 55% of the strip's height and transparent at its bottom edge, the mask fading in with the strip, mounted once the ranges are measured and visible only through the mask's opacity (0 at the top), and only the floating more and the bar's more hand the touches over; under reduce motion the cover does not scale. In the ready body the content enters once per mount in a top-down cascade on the native driver: the hero, the title, the children, the first motion.detailCascade.firstRows rows and the later rows drawn with them, each from opacity 0 and motion.detailCascade.offset lower, in motion.detailCascade.duration, motion.detailCascade.stagger apart, in wrappers separate from the collapse's layers. It starts at once when the body becomes ready, after motion.detailCascade.navigationDelay when it was ready at mount. Rows drawn later and the floating buttons never animate. Under reduce motion, or when it turns on mid-way, everything is at rest.
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Animated,
@@ -18,9 +18,12 @@ import {
   type NativeSyntheticEvent,
 } from "react-native";
 
+import { blur } from "../tokens/blur.ts";
 import { color } from "../tokens/color.ts";
 import { motion } from "../tokens/motion.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
+import { AlphaMask } from "./AlphaMask.tsx";
+import { BlurFill } from "./BlurFill.tsx";
 import { Cover } from "./Cover.tsx";
 import { collapsePhase, collapseRanges, type CollapsePhase } from "./detailCollapse.ts";
 import { DetailSkeleton, SkeletonRow } from "./DetailSkeleton.tsx";
@@ -385,6 +388,35 @@ export function DetailScreen({
           }
         />
       ) : null}
+      {body.kind === "ready" && ios && ranges !== null ? (
+        <View
+          testID="detail-top-bar-blur"
+          style={[styles.blur, { height: barHeight }]}
+          pointerEvents="none"
+        >
+          <AlphaMask
+            testID="detail-top-bar-blur-mask"
+            mask={
+              <Animated.View
+                testID="detail-top-bar-blur-fade"
+                style={[styles.blurFade, { opacity: barOpacity ?? 0 }]}
+              >
+                <GradientFill
+                  direction="vertical"
+                  color={color.surface.base}
+                  stops={color.gradient.detailStrip.blurMask}
+                />
+              </Animated.View>
+            }
+          >
+            <BlurFill
+              testID="detail-top-bar-blur-view"
+              intensity={blur.detailStrip.intensity}
+              tint={blur.detailStrip.tint}
+            />
+          </AlphaMask>
+        </View>
+      ) : null}
       {body.kind === "ready" ? (
         <Animated.View
           testID="detail-top-bar"
@@ -492,6 +524,8 @@ const styles = StyleSheet.create({
   hero: { alignItems: "center", paddingBottom: spacing.xl },
   washNeutral: StyleSheet.absoluteFill,
   wash: StyleSheet.absoluteFill,
+  blur: { position: "absolute", top: 0, left: 0, right: 0 },
+  blurFade: StyleSheet.absoluteFill,
   imageHero: {
     alignSelf: "stretch",
     aspectRatio: layout.heroImageRatio,
