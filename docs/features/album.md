@@ -23,7 +23,7 @@ the body:
   `typography.meta` and `color.text.tertiary`: the kind, the year, the song count
   and the duration in hours and minutes, each omitted when the API sends none.
 - Action row: `DetailActions` (`DESIGN.md`, "Detail screen base") between the info and the
-  tracks, a centered group `layout.actionGap` apart: shuffle, play (`PlayButton`) and save (plus, or check when saved), both side buttons `layout.controlHeight`; when the pill shrinks the group stays centered, so shuffle and save follow it toward the center. No share,
+  tracks, a centered group `layout.gap` apart: shuffle, play (`PlayButton`) and save (plus, or check when saved), both side buttons `layout.controlHeight`; when the pill shrinks (on the native driver, no layout animated) shuffle and save follow it toward the center and end `layout.gap` from the circle. No share,
   search or options button yet. Play and shuffle are disabled when no track is playable; save is
   disabled while its state loads or when reading it failed.
 - Play button: idle (the album is not the playback source) it is a pill with the play glyph and
@@ -96,7 +96,7 @@ Back pops the stack, or replaces with `/` when there is nothing to go back to.
 
 ## Checked by hand
 
-The action row centered on iOS and Android, the label fading and the play pill shrinking to a circle with shuffle and save following it, then scaling in as pause, the now playing bars moving, freezing on pause and static under reduce motion, a mid-track buffer on a slow network; saving, closing and reopening the album and finding it on the library screen; screenshots of the album at the top and scrolled, on iOS and Android, with the
+The action row centered on iOS and Android, the shrink without dropped frames while playback starts, on iOS and Android, and a tap on shuffle and on the side button right after the shrink and at the middle of it (taps reach them, not play); the label fading and the play pill shrinking to a circle with shuffle and save following it, then scaling in as pause, the now playing bars moving, freezing on pause and static under reduce motion, a mid-track buffer on a slow network; saving, closing and reopening the album and finding it on the library screen; screenshots of the album at the top and scrolled, on iOS and Android, with the
 floating buttons fixed over the hero; the native glass on iOS 26+; the real
 dominant color on a development build and the neutral fallback in Expo Go;
 swipe-back per tab; and the native tab bar on iOS 26+ with the renamed tab

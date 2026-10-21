@@ -62,7 +62,7 @@ value: the value lives once, in the token file.
 | Side of the large play or pause button of the player                                                                                               | `layout.playButton`                                             |
 | Side of the detail play button's circle and height of its idle pill                                                                                | `layout.playButtonMedium`                                       |
 | Width of the detail play button's idle pill                                                                                                        | `layout.playButtonPill`                                         |
-| Gap between the buttons of the detail action row (shuffle, play, the side button)                                                                  | `layout.actionGap`                                              |
+| Stacking value of the detail action row's side buttons, above the play slot                                                                        | `layout.sideButtonStack`                                        |
 | Height of the seek bar track / side of its thumb                                                                                                   | `layout.seekTrack` / `layout.seekThumb`                         |
 | Width / height of the sheet handle bar                                                                                                             | `layout.handleWidth` / `layout.handleHeight`                    |
 | Width / height of the sheet handle bar on Android                                                                                                  | `layout.handleWidthAndroid` / `layout.handleHeightAndroid`      |
@@ -98,13 +98,14 @@ scroll.
 - Creator line (playlist): a `layout.creatorMark` mark (avatar or brand mark on
   `color.accent.primary`, `radius.full`) with the name in `typography.rowTitle`, gap
   `spacing.sm`.
-- Action row: `DetailActions`, `layout.gutter` sides. Centered (own, album, genre): a group centered with `layout.actionGap` between the buttons, so the side buttons follow the play pill as it shrinks:
+- Action row: `DetailActions`, `layout.gutter` sides. Centered (own, album, genre): a group centered with `layout.gap` between the buttons and the play button's fixed `layout.playButtonPill` slot; as the pill shrinks the side buttons move toward the center with it and end `layout.gap` from the circle:
+  `DetailActions` owns the shared shrink value and passes it to `PlayButton` and the side buttons; the play slot keeps the fixed `layout.playButtonPill` width, and its touch area switches from the pill to the circle in the commit that ends the shrink, so nothing moves on screen when it does; the side buttons carry `layout.sideButtonStack`, above the play slot, so a tap on them wins while they slide over it.
   shuffle (`IconButton` plain), play (`PlayButton`), and save (`IconButton` plain, plus or check,
   selected when saved) on albums and genre playlists and, on an own playlist only, the options button after play (`IconButton` plain `ellipsis`, opening a sheet). `PlayButton`: idle, a `layout.playButtonPill` × `layout.playButtonMedium`
   pill in `color.accent.primary`, the play glyph (`icon.size.lg`) and the
   label in `typography.button` `color.text.inverse`, `spacing.sm` apart; loading, playing and paused,
   a `layout.playButtonMedium` circle with a spinner, the pause glyph or the play glyph. Leaving idle
-  the label fades in `motion.playButton.labelFade`, then the pill, holding the play glyph, shrinks to the circle in `motion.playButton.shrink` (`Easing.inOut(Easing.ease)`), and draws the spinner or glyph only when the shrink ends; becoming pause it scales in from
+  the label fades in `motion.playButton.labelFade`, then the pill, holding the play glyph, shrinks to the circle in `motion.playButton.shrink` (`Easing.inOut(Easing.ease)`: two `radius.full` caps move toward the center and the bridge between them scales to nothing, on the native driver, with no width animated), and draws the spinner or glyph only when the shrink ends; becoming pause it scales in from
   `motion.enterScale` in `motion.playButton.scaleIn`; under reduce motion none of them. Disabled on
   `color.surface.control` with the glyph in `color.text.disabled`. Wide (liked): two `Button` pills with `fill`, `layout.controlHeight` tall and `layout.gap` apart, glyph (`icon.size.lg`) and label `spacing.sm` apart: play `primary` (pause glyph and label while the list plays, the spinner while it loads, no shrink) and shuffle `secondary` (`color.surface.control`).
 - Title: `typography.title` under the hero. The base reserves no space for an action
@@ -252,7 +253,7 @@ Roles, not raw sizes. Every role uses the platform's system font (no
 | Points from the top or bottom of a reorder list where a held row starts the auto-scroll (`ReorderList`)                                               | `motion.reorder.edge`                                  |
 | Points per second a reorder list auto-scrolls while a row is held at its edge (`ReorderList`)                                                         | `motion.reorder.speed`                                 |
 
-`VerticalDrag` (the one vertical drag), `DragToClose` and `PullUpSheet` over it, `PauseScale`, `Marquee`, `NowPlayingBars`, `PlayButton` and `ReorderList` in `@beatly/ui/native` are the only animated components. They use React Native's `Animated` with the native driver (except the `PlayButton` pill's width, a layout property) and `PanResponder`, and take `reduceMotion` from the app.
+`VerticalDrag` (the one vertical drag), `DragToClose` and `PullUpSheet` over it, `PauseScale`, `Marquee`, `NowPlayingBars`, `PlayButton` and `ReorderList` in `@beatly/ui/native` are the only animated components. They use React Native's `Animated` with the native driver and `PanResponder`, and take `reduceMotion` from the app.
 
 ## Icons (`icon`)
 
