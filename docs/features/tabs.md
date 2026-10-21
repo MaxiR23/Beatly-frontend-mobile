@@ -14,14 +14,15 @@ accessible label. Each tab has its own screen (`home.md`, `explore.md`,
   and SF Symbols: `house` / `house.fill`, `safari` / `safari.fill`,
   `magnifyingglass`, `books.vertical` / `books.vertical.fill`.
 - Elsewhere: `FloatingTabBar`, a pill in `radius.full` on `GlassSurface` (solid
-  fallback), `spacing.xs` padding and gap, each item `layout.tabItemWidth` by
-  `layout.controlHeight`, icon `icon.size.lg`, the active item on
+  fallback), the window width minus `layout.gutter` on each side, `spacing.xs`
+  padding and gap, the items sharing its width evenly at
+  `layout.controlHeight` high, icon `icon.size.lg`, the active item on
   `color.overlay.muted` with `color.text.primary`, inactive in
   `color.text.secondary`, `spacing.sm` above the bottom safe area.
 
 The mini player sits above the bar when a track is loaded: on iOS 26+ as
 `NativeTabs.BottomAccessory`, bare inside the system's capsule, elsewhere as the `accessory` of `FloatingTabBar`, drawn `spacing.md` above the
-pill at `floatingTabBarWidth`. Screens clear both with `useTabBarClearance`. See `player.md`.
+pill at the same width, the window width minus `layout.gutter` on each side. Screens clear both with `useTabBarClearance`. See `player.md`.
 
 ## Platform differences
 
