@@ -1,4 +1,4 @@
-// INFO: motion tokens: the duration scale, the one spring used app-wide, the opacity a pressed control drops to, the scale a paused player cover drops to, the scale the player drops to behind the open sheet, the scale a control enters from, the detail play button's fade, shrink and scale-in durations, the now playing bars' fall, loop periods and static heights, the points the sheet handle rises in each bounce of its nudge, the thresholds of the vertical drag (the player's close, the sheet's open and close), the speed and rest of a scrolling title, the edge zone and speed of a reorder list's auto-scroll, the scroll each detail header layer takes to fade, the scale the hero cover shrinks to, the share of a fade the top bar leads by, and how long a brief notice stays.
+// INFO: motion tokens: the duration scale, the one spring used app-wide, the opacity a pressed control drops to, the scale a paused player cover drops to, the scale the player drops to behind the open sheet, the scale a control enters from, the detail play button's fade, shrink and scale-in durations, the now playing bars' fall, loop periods and static heights, the points the sheet handle rises in each bounce of its nudge, the thresholds of the vertical drag (the player's close, the sheet's open and close), the speed and rest of a scrolling title, the edge zone and speed of a reorder list's auto-scroll, the scroll each detail header layer takes to fade, the scale the hero cover shrinks to, the share of a fade the top bar leads by, the detail entry cascade's duration, stagger, offset, first row step and post-navigation delay, and how long a brief notice stays.
 export const motion = {
   duration: {
     fast: 150,
@@ -63,5 +63,18 @@ export const motion = {
     // Share of a fade the top bar starts before the title is fully under it.
     // Must stay <= 1: above 1 the bar and the floating buttons would both take touches at once.
     barLead: 0.5,
+  },
+  detailCascade: {
+    // Milliseconds each block of a detail screen takes to enter (opacity 0 and offset lower, to rest).
+    duration: 300,
+    // Milliseconds between the starts of two consecutive blocks (hero, title, children, first rows, later rows).
+    stagger: 60,
+    // Points lower than its place a block starts from.
+    offset: 12,
+    // Rows that enter in the first row step; the rows drawn after them enter in the next.
+    firstRows: 3,
+    // Milliseconds the cascade waits when the content is ready at mount, so it starts after the navigation transition.
+    // A fixed estimate of the native push, not tied to the transition's end; tune on device.
+    navigationDelay: 350,
   },
 } as const;
