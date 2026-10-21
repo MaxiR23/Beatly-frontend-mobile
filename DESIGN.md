@@ -67,6 +67,7 @@ value: the value lives once, in the token file.
 | Width / height of the sheet handle bar                                                                                                             | `layout.handleWidth` / `layout.handleHeight`                    |
 | Width / height of the sheet handle bar on Android                                                                                                  | `layout.handleWidthAndroid` / `layout.handleHeightAndroid`      |
 | Width of a skeleton placeholder bar (title, meta, row title, row meta), as a share of its row                                                      | `layout.skeletonBar.title` / `.meta` / `.rowTitle` / `.rowMeta` |
+| Placeholder track rows of a detail skeleton (first load, next-page footer)                                                                         | `layout.skeletonRows`                                           |
 
 ## Floating surfaces
 
@@ -112,10 +113,11 @@ scroll.
   row; the screen owns the gap below its own title block.
 - Floating back and more buttons: `GlassSurface` `circle` fixed over the hero, in
   every state. The more button is drawn only when the screen passes a `more` prop.
-- Skeleton: `DetailSkeleton`, a static cover block, a title bar, a meta bar and six
-  track rows in `color.surface.border`, bar widths from `layout.skeletonBar`. With
+- Skeleton: `DetailSkeleton`, a static cover block, a title bar, a meta bar and
+  `layout.skeletonRows` track rows in `color.surface.border`, bar widths from `layout.skeletonBar`. With
   `hero: "image"` (artist) the cover is a full-width `layout.heroImageRatio` block, capped like the loaded hero, with the
   title bar at its bottom left, then the meta bar and the rows.
+- While the next page of a paged detail list loads, `DetailScreen` draws `layout.skeletonRows` of the same `SkeletonRow` under the rows (`layout.gutter` sides, `spacing.md` apart and above), announced as a progress bar; the list asks for that page `END_REACHED_THRESHOLD` (2) visible lengths before its end.
 - Track row: `TrackRow`, a `meta` number in a `layout.trackNumber` column, the
   title in `typography.rowTitle` and the artists in `typography.meta`;
   unavailable uses `color.text.disabled`. `MediaRow` with `available={false}` draws its title
@@ -187,7 +189,7 @@ scroll.
 - `AvatarRow`: the `ActionRow` row (`layout.controlHeight`, `spacing.sm` vertical, `layout.gap`), the header `Avatar`, `typography.rowTitle` over `typography.meta` in `color.text.secondary`, and a trailing `chevronRight` at `icon.size.md` in `color.text.tertiary`.
 - The profile avatar: `layout.profileAvatar`, initials in `typography.display`, or the `user` icon at `icon.size.xl`.
 - `ProfileSkeleton`: `SkeletonCircle` at `layout.profileAvatar`, a `typography.title` bar at `layout.skeletonBar.title` and a `typography.body` bar at `.meta`, then a `Card` with two `typography.label` / `typography.body` bar pairs at `.rowMeta` / `.rowTitle`. All in `color.surface.border`, bars `radius.sm`, circles `radius.full`, no motion.
-- New skeletons build on the exported `SkeletonBar` and `SkeletonCircle` of `Skeleton.tsx`; `DetailSkeleton` keeps its private bars.
+- New skeletons build on the exported `SkeletonBar` and `SkeletonCircle` of `Skeleton.tsx`; `DetailSkeleton` keeps its private bars and exports its `SkeletonRow` for the detail list's footer.
 - `AvatarRow` with no identity: `SkeletonCircle` at `layout.avatar` and a `typography.rowTitle` bar at `.rowTitle`.
 
 ## Radius (`radius`)

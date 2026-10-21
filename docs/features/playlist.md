@@ -7,7 +7,7 @@ An own, the liked or a genre playlist, on the detail screen base.
 Show a playlist: its cover, title, creator, description, meta line and tracks.
 There are three kinds, chosen by the `source` param of the route: `user` (an own
 playlist), `liked` (the liked songs) and `genre` (a curated playlist). Own and liked
-tracks load with infinite scroll; a genre playlist loads whole with its header, in one request. Pressing a track plays the loaded tracks from it, with the playlist as the
+tracks load with infinite scroll, asked for two screens before the end of the list, with skeleton rows under the last track while the next page loads; a genre playlist loads whole with its header, in one request. Pressing a track plays the loaded tracks from it, with the playlist as the
 source (`player.md`). Every track ends with a more button that opens the track menu (`track-menu.md`); in an own playlist the menu also offers Remove from this playlist, which refreshes the header and the tracks, and the liked and genre playlists never offer it. A row under the header plays the whole playlist from its first track with shuffle off, or shuffled from a random track with shuffle on, and registers the recent like a track press; own and liked load every remaining page first, with the pressed button busy. A genre playlist can also be saved to the library; own and liked never can. An own playlist's options button edits its title and description, opens an edit mode to reorder and remove its tracks, or deletes it; sharing is a later issue.
 
 ## Layout
@@ -89,6 +89,7 @@ the info block:
   over its cover on a scrim, with no row background, and is announced as selected; the bars are frozen
   while paused and static under reduce motion.
 - Tracks: one `MediaRow` `regular` per track (`layout.rowCover` cover), in API order.
+  While the next page of an own or liked playlist loads, `DetailScreen` draws `layout.skeletonRows` skeleton rows (`DetailSkeleton`'s `SkeletonRow`) under the last track, announced as `common:loading`; they give way to the page's tracks when it arrives, and there is no footer when there is no next page. The list asks for the next page at `onEndReachedThreshold` 2 (two screens before the end). The same footer also shows while play or shuffle loads every remaining page, because the next-page loading flag is true between those pages; it is the true state and is drawn on purpose.
   The bottom clears the floating tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
 ## Platform differences
@@ -107,6 +108,7 @@ The floating back button is drawn in every state.
 | State                         | What is drawn                                                                                                 | i18n keys                                                                                                                                                                                                                                                        |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Loading                       | `DetailSkeleton`, static, while the header or the tracks load                                                 | `common:loading`                                                                                                                                                                                                                                                 |
+| Loading the next page         | skeleton rows under the last track (own and liked)                                                            | `common:loading`                                                                                                                                                                                                                                                 |
 | With data                     | the hero, title, info and tracks; the song count with plural forms                                            | `playlist:liked`, `playlist:private`, `playlist:public`, `playlist:songs`, `playlist:durationMinutes`, `playlist:durationHours`, `common:brand`, `playlist:play`, `playlist:shuffle`, `playlist:save`, `playlist:unsave`, `playlist:pause`, `playlist:options.*` |
 | Expected empty                | `EmptyState` under the header when there are no tracks                                                        | `playlist:empty`                                                                                                                                                                                                                                                 |
 | Error with retry              | `ErrorState`; retry refetches only the query that failed                                                      | `common:error.generic`, `common:retry`                                                                                                                                                                                                                           |
@@ -195,4 +197,4 @@ gesture on a playlist of more than 50 tracks; real covers on an own playlist hea
 Home; real covers, the dominant-color wash
 and the brand mark at `layout.creatorMark`; swipe-back per tab and the native tab
 bar on iOS 26+; and the album screen scrolled to its carousels after its list moved
-to a `FlatList`.
+to a `FlatList`; the next-page skeleton rows on a real own or liked playlist of more than 50 tracks with a slow network, and the next page asked for early enough that a normal scroll rarely reaches them.

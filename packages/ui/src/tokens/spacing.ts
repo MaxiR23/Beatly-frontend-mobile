@@ -1,7 +1,7 @@
 // INFO: spacing tokens, a multiples-of-four scale, plus the layout
 // constants (gutter, gap, hitSlop, control height, text area height, and the carousel card,
 // avatar, creator mark, profile avatar, tab item, chip, genre bar, row cover, detail hero cover,
-// track-number column, now playing bar width, large and medium play button, the detail play pill's width, the side buttons' stacking value, seek bar and sheet handle sizes (iOS and Android), and the skeleton bar widths).
+// track-number column, now playing bar width, large and medium play button, the detail play pill's width, the side buttons' stacking value, seek bar and sheet handle sizes (iOS and Android), and the skeleton bar widths and row count).
 export const spacing = {
   xxs: 2,
   xs: 4,
@@ -57,4 +57,6 @@ export const layout = {
   handleHeightAndroid: 5,
   // Widths of a skeleton's placeholder bars, as a share of their row.
   skeletonBar: { title: "70%", meta: "45%", rowTitle: "60%", rowMeta: "35%" },
+  // How many placeholder track rows a detail skeleton draws, on first load and under the list while its next page loads.
+  skeletonRows: 6,
 } as const;
