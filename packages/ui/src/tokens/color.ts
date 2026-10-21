@@ -1,6 +1,6 @@
 // INFO: color tokens. Surface levels, text levels, the white accent, the
 // semantic error/success colors, and the black/white overlays used over
-// images and controls, the clear start of a fade, the sheet handle bar on Android, and the opacity stops of the iOS detail strip's wash and shade. Values are the legacy inventory's, named by role.
+// images and controls, the clear start of a fade, the sheet handle bar on Android, and the opacity stops of the iOS detail strip's wash and shade and of the mask of its blur. Values are the legacy inventory's, named by role.
 export const color = {
   surface: {
     base: "#0e0e0e",
@@ -47,6 +47,12 @@ export const color = {
       shade: [
         { offset: 0, opacity: 0 },
         { offset: 0.7, opacity: 0.25 },
+        { offset: 1, opacity: 0 },
+      ],
+      // The mask of the blur under the strip: opaque to 55% of its height, transparent at the bottom edge.
+      blurMask: [
+        { offset: 0, opacity: 1 },
+        { offset: 0.55, opacity: 1 },
         { offset: 1, opacity: 0 },
       ],
     },

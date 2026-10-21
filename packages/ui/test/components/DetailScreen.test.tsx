@@ -16,6 +16,7 @@
 //
 // - the entry cascade: five steps (hero, title, children, the first motion.detailCascade.firstRows rows, the later rows) in that order with the motion.detailCascade tokens on the native driver, opacity and translateY only, at once from loading and after navigationDelay when ready at mount, once per mount, late rows at rest, reduce motion at mount and turning on mid-way, unmount stopping it, the floating buttons never under a cascade wrapper on iOS and Android, no wrapper in the other bodies, the collapse's layers untouched by it
 //
+// - the iOS blur under the strip: absent before the measure, on Android and in the other bodies; mounted once measured whatever the phase, invisible at the top (mask opacity 0), between the list and the strip, at the strip's box, out of touches; the token's intensity and tint; masked by the blurMask stops on the base surface; the mask's opacity the strip's at every offset, also under reduce motion; no opacity on any parent of the blur
 // - the collapse cases run on Android; on iOS: the floating back fixed, opaque, touchable and announced in every phase and drawn above the bar, the strip's height from the back's tokens plus spacing.sm, no background, its wash stops from the dominant color or the base surface and its shade stops, both from the tokens and transparent at the bottom edge, the title between two control-height slots at the back's vertical center, the mores handed over by the phase, the other bodies
 //
 // Run with: pnpm --filter @beatly/ui test -- DetailScreen
@@ -35,6 +36,7 @@ import {
   type ViewStyle,
 } from "react-native";
 
+import { blur } from "../../src/tokens/blur.ts";
 import { color } from "../../src/tokens/color.ts";
 import { motion } from "../../src/tokens/motion.ts";
 import { layout, spacing } from "../../src/tokens/spacing.ts";
@@ -623,6 +625,18 @@ describe("DetailScreen", () => {
       expect(StyleSheet.flatten(bar.props.style as ViewStyle).backgroundColor).toBe("#336699");
     });
 
+    it("draws no blur on Android in any phase", async () => {
+      const { scrollTo, scrollEvent } = await setup(ready(), {
+        more: { label: "More", onPress: () => undefined },
+      });
+      const r = ranges("cover");
+      for (const y of [0, mid(r.buttons), r.bar[0] + 5, r.bar[1] + 100]) {
+        await scrollTo(y);
+        await scrollEvent(y);
+        expect(screen.queryByTestId("detail-top-bar-blur", hidden)).toBeNull();
+      }
+    });
+
     describe("on iOS", () => {
       interface JsonNode {
         props: Record<string, unknown>;
@@ -887,6 +901,143 @@ describe("DetailScreen", () => {
         expect(opacityOf("detail-buttons")).toBeUndefined();
         await scrollTo(r.title[0]);
         expect(opacityOf("detail-floating-more")).toBe(0);
+      });
+
+      it("draws no blur before the measure and in the other bodies", async () => {
+        const unmeasured = await setup(ready(), {}, {});
+        expect(screen.queryByTestId("detail-top-bar-blur", hidden)).toBeNull();
+        await unmeasured.view.unmount();
+        const bodies: DetailBody[] = [
+          { kind: "loading", label: "Loading" },
+          { kind: "error", message: "Went wrong", retryLabel: "Retry", onRetry: () => undefined },
+          { kind: "unavailable", message: "Not available" },
+        ];
+        for (const body of bodies) {
+          const view = await draw(body);
+          expect(screen.queryByTestId("detail-top-bar-blur", hidden)).toBeNull();
+          await view.unmount();
+        }
+      });
+
+      it("keeps the blur invisible at the top and mounted whatever the phase", async () => {
+        const r = ranges("cover");
+        const { scrollEvent } = await setup(ready());
+        expect(screen.getByTestId("detail-top-bar-blur", hidden)).toBeTruthy();
+        expect(opacityOf("detail-top-bar-blur-fade")).toBe(0);
+        for (const y of [0, mid(r.buttons), r.buttons[1], r.bar[1] + 100]) {
+          await scrollEvent(y);
+          expect(screen.getByTestId("detail-top-bar-blur", hidden)).toBeTruthy();
+        }
+        await scrollEvent(0);
+        expect(opacityOf("detail-top-bar-blur-fade")).toBe(0);
+      });
+
+      it("draws the blur between the list and the strip", async () => {
+        const { scrollEvent } = await setup(ready(), {
+          more: { ...moreOf, onPress: () => undefined },
+        });
+        const r = ranges("cover");
+        await scrollEvent(r.buttons[1]);
+        const ids = find(screen.toJSON(), (node) => node.props.testID === "detail")[0]?.children;
+        const order = (Array.isArray(ids) ? ids : [])
+          .filter(isJsonNode)
+          .map((node) => node.props.testID);
+        expect(order.indexOf("detail-list")).toBeGreaterThanOrEqual(0);
+        expect(order.indexOf("detail-list")).toBeLessThan(order.indexOf("detail-top-bar-blur"));
+        expect(order.indexOf("detail-top-bar-blur")).toBeLessThan(order.indexOf("detail-top-bar"));
+        expect(order.indexOf("detail-top-bar")).toBeLessThan(order.indexOf("detail-buttons"));
+        expect(styleOf("detail-top-bar-blur")).toMatchObject({
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: styleOf("detail-top-bar").height,
+        });
+        expect(screen.getByTestId("detail-top-bar-blur", hidden).props.pointerEvents).toBe("none");
+      });
+
+      it("blurs at the token's intensity and tint", async () => {
+        const { scrollEvent } = await setup(ready());
+        await scrollEvent(ranges("cover").buttons[1]);
+        const [layer] = find(
+          screen.toJSON(),
+          (node) => node.props.testID === "detail-top-bar-blur-view",
+        );
+        const [native] = find(layer?.children, (node) => "intensity" in node.props);
+        expect(native?.props.intensity).toBe(blur.detailStrip.intensity);
+        expect(native?.props.tint).toBe(blur.detailStrip.tint);
+      });
+
+      it("masks the blur with the blurMask stops on the base surface", async () => {
+        const { scrollEvent } = await setup(ready("#336699"));
+        await scrollEvent(ranges("cover").buttons[1]);
+        const mask = color.gradient.detailStrip.blurMask;
+        const stops = stopsOf("detail-top-bar-blur-fade");
+        expect(stops.map((stop) => stop.offset)).toEqual(offsetsOf(mask));
+        expect(stops.map((stop) => stop.alpha)).toEqual(alphasOf(mask));
+        expect(stops.every((stop) => stop.rgb === rgbOf(color.surface.base))).toBe(true);
+        expect(stops.find((stop) => stop.offset === 0.55)?.alpha).toBe(255);
+        expect(stops.at(-1)?.alpha).toBe(0);
+        expect(gradientOf("detail-top-bar-blur-fade")).toMatchObject({ x2: "0", y2: "1" });
+        const masked = find(
+          screen.toJSON(),
+          (node) => node.props.testID === "detail-top-bar-blur-mask",
+        )[0];
+        const kids = (Array.isArray(masked?.children) ? masked.children : []).filter(isJsonNode);
+        expect(
+          find(kids[0]?.children, (node) => node.props.testID === "detail-top-bar-blur-fade"),
+        ).toHaveLength(1);
+        const later = kids.slice(1);
+        expect(
+          later.flatMap((node) =>
+            find([node], (n) => n.props.testID === "detail-top-bar-blur-view"),
+          ),
+        ).toHaveLength(1);
+        expect(
+          find(
+            find(kids, (n) => n.props.testID === "detail-top-bar-blur-fade"),
+            (n) => n.props.testID === "detail-top-bar-blur-view",
+          ),
+        ).toHaveLength(0);
+      });
+
+      it("fades the blur's mask with the strip and never its parents", async () => {
+        const { scrollTo, scrollEvent } = await setup(ready());
+        const r = ranges("cover");
+        for (const [y, expected] of [
+          [r.bar[0] + 5, undefined],
+          [mid(r.bar), 0.5],
+          [r.bar[1], 1],
+        ] as const) {
+          await scrollTo(y);
+          await scrollEvent(y);
+          expect(opacityOf("detail-top-bar-blur-fade")).toBe(opacityOf("detail-top-bar"));
+          if (expected !== undefined) {
+            expect(opacityOf("detail-top-bar-blur-fade")).toBeCloseTo(expected);
+          }
+          let node = screen.getByTestId("detail-top-bar-blur-view", hidden).parent;
+          while (node && node.props.testID !== "detail") {
+            const style = node.props.style ? StyleSheet.flatten(node.props.style as ViewStyle) : {};
+            if (node.props.testID !== "detail-top-bar-blur-fade") {
+              expect(style.opacity === undefined || style.opacity === 1).toBe(true);
+            }
+            node = node.parent;
+          }
+          expect(node).not.toBeNull();
+        }
+      });
+
+      it("follows the strip the same way under reduce motion", async () => {
+        const { scrollTo, scrollEvent } = await setup(ready(), { reduceMotion: true });
+        const r = ranges("cover");
+        expect(screen.getByTestId("detail-top-bar-blur", hidden)).toBeTruthy();
+        expect(opacityOf("detail-top-bar-blur-fade")).toBe(0);
+        for (const y of [r.bar[0] + 5, mid(r.bar), r.bar[1]]) {
+          await scrollTo(y);
+          await scrollEvent(y);
+          expect(opacityOf("detail-top-bar-blur-fade")).toBe(opacityOf("detail-top-bar"));
+        }
+        expect(opacityOf("detail-top-bar-blur-fade")).toBe(1);
       });
 
       it("keeps the other bodies as they were on iOS", async () => {

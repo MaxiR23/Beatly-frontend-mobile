@@ -127,7 +127,7 @@ that needs it opens a backend issue instead of computing it here.
   `@supabase/*`, storage, file system: each one lives in one file
   under `apps/mobile/src/adapters/`. The one exception: libraries that
   draw UI have a single importer in `packages/ui` (`Icon.tsx`,
-  `GlassSurface.tsx`, `GradientFill.tsx`, `swiftUI.ts`), enforced in `eslint.config.js`; see ADR 017, ADR 023 and ADR 025.
+  `GlassSurface.tsx`, `GradientFill.tsx`, `swiftUI.ts`, `BlurFill.tsx`, `AlphaMask.tsx`), enforced in `eslint.config.js`; see ADR 017, ADR 023, ADR 025 and ADR 026.
 - Never name the external provider, in code, comments, docs, tests or
   commits. It is "the external provider".
 - Zero secrets in the code. The only env values are the API base URL,
@@ -166,7 +166,7 @@ that needs it opens a backend issue instead of computing it here.
       test/                 mirrors src/; fakes under test/fakes/
     packages/ui/
       src/tokens/           color, spacing, radius, typography, motion,
-                            icon, border, shadow, palette
+                            icon, border, shadow, palette, blur
       src/components/
       test/                 mirrors src/
     docs/                   workflow, testing, repository setup
