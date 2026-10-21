@@ -134,7 +134,7 @@ export function createCore(): Core {
     publicShare: createPublicService(client),
     recentSearches: createRecentSearchesService({ storage, log }),
     search: createSearchService(client),
-    sheetNudge: createSheetNudgeService({ storage, log }),
+    sheetNudge: createSheetNudgeService(),
     tracks: createTracksService(client),
   };
 }

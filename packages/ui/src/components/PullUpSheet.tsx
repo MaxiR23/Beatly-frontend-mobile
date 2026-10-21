@@ -1,6 +1,6 @@
-// INFO: content with a handle at its bottom and a full-screen sheet pulled up from it: a drag up on the handle or its press opens (onDragStart tells the caller a drag began, onClosed that a close animation ended, or a drag up that was released short settled back closed), a drag down on the sheet's header (or its body at its top) closes; the content darkens toward overlay.backdrop and drops to motion.behindSheetScale with the sheet's position; the handle nudges once when asked; under reduce motion the sheet and the dim fade and nothing moves or scales. The caller passes the labels translated.
+// INFO: content with a handle at its bottom and a full-screen sheet pulled up from it: a drag up on the handle or its press opens (onDragStart tells the caller a drag began, onClosed that a close animation ended, or a drag up that was released short settled back closed), a drag down on the sheet's header (or its body at its top) closes; the content darkens toward overlay.backdrop and drops to motion.behindSheetScale with the sheet's position; the handle bounces twice once when asked (its bar is wider, taller and brighter on Android); under reduce motion the sheet and the dim fade and nothing moves or scales (a bounce under way stops when reduce motion turns on). The caller passes the labels translated.
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Animated, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Animated, Platform, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 
 import { color } from "../tokens/color.ts";
 import { motion } from "../tokens/motion.ts";
@@ -83,22 +83,31 @@ export function PullUpSheet({
   }, [open, reduceMotion, height, position, fade]);
 
   const nudged = useRef(false);
+  const bounce = useRef<Animated.CompositeAnimation | null>(null);
   useEffect(() => {
-    if (!nudge || nudged.current || reduceMotion) return;
+    if (reduceMotion) {
+      // A live change to reduce motion (its read answers after the first render) stops a bounce under way and parks the handle at rest.
+      bounce.current?.stop();
+      bounce.current = null;
+      lift.setValue(0);
+      return;
+    }
+    if (!nudge || nudged.current) return;
     nudged.current = true;
-    Animated.sequence([
-      Animated.timing(lift, {
-        toValue: -motion.handleNudge,
-        duration: motion.duration.base,
-        useNativeDriver: true,
-      }),
+    const leg = (toValue: number) =>
+      Animated.timing(lift, { toValue, duration: motion.duration.fast, useNativeDriver: true });
+    bounce.current = Animated.sequence([
+      leg(-motion.handleNudge.first),
+      leg(0),
+      leg(-motion.handleNudge.second),
       Animated.spring(lift, {
         toValue: 0,
         damping: motion.spring.damping,
         stiffness: motion.spring.stiffness,
         useNativeDriver: true,
       }),
-    ]).start();
+    ]);
+    bounce.current.start();
   }, [nudge, reduceMotion, lift]);
 
   const scale = reduceMotion
@@ -140,7 +149,14 @@ export function PullUpSheet({
             style={styles.handleHit}
             testID={`${testID}-handle`}
           >
-            <Animated.View style={[styles.handle, { transform: [{ translateY: lift }] }]} />
+            <Animated.View
+              style={[
+                styles.handle,
+                Platform.OS === "android" ? styles.handleAndroid : null,
+                { transform: [{ translateY: lift }] },
+              ]}
+              testID={`${testID}-handle-bar`}
+            />
           </Pressable>
         </VerticalDrag>
       </Animated.View>
@@ -208,6 +224,11 @@ const styles = StyleSheet.create({
     height: layout.handleHeight,
     borderRadius: radius.full,
     backgroundColor: color.overlay.muted,
+  },
+  handleAndroid: {
+    width: layout.handleWidthAndroid,
+    height: layout.handleHeightAndroid,
+    backgroundColor: color.overlay.handleAndroid,
   },
   dim: { backgroundColor: color.overlay.backdrop },
   panel: {

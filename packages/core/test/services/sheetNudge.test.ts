@@ -3,71 +3,40 @@
 // Tests for the sheet nudge service.
 //
 // Tested:
-// - take counts one player opening over the storage port and says whether it nudges
+// - take says a track nudges the first time it is asked for, and not again
 //
 // What is covered:
-// - with data (the first three openings), the limit reached, the read and write failures and a corrupted count
-// - Not applicable: ok:false reasons and transport failures, because the service does not call the API
+// - the first take of a track, the same track again, another track, a new service (an app restart) remembering none
+// - Not applicable: expected empty, ok:false reasons and transport failures, because the service calls no port
 //
 // Run with: pnpm --filter @beatly/core test -- sheetNudge
 //
 // SEE: packages/core/src/services/sheetNudge.ts
-
 import { describe, expect, it } from "vitest";
 
-import {
-  SHEET_NUDGE_KEY,
-  SHEET_NUDGE_LIMIT,
-  createSheetNudgeService,
-} from "../../src/services/sheetNudge.ts";
-import { createFakeLog } from "../fakes/log.ts";
-import { createFakeStorage } from "../fakes/storage.ts";
-
-function setup(initial?: Record<string, string>) {
-  const storage = createFakeStorage(initial);
-  const log = createFakeLog();
-  const service = createSheetNudgeService({ storage: storage.port, log: log.port });
-  return { service, storage, log };
-}
-
-const ok = (data: boolean) => ({ kind: "success", data });
+import { createSheetNudgeService } from "../../src/services/sheetNudge.ts";
 
 describe("take", () => {
-  it("nudges the first three openings and not the fourth", async () => {
-    const { service, storage } = setup();
-    expect(SHEET_NUDGE_LIMIT).toBe(3);
-    expect(await service.take()).toEqual(ok(true));
-    expect(await service.take()).toEqual(ok(true));
-    expect(await service.take()).toEqual(ok(true));
-    expect(storage.values.get(SHEET_NUDGE_KEY)).toBe("3");
-    expect(await service.take()).toEqual(ok(false));
+  it("nudges the first time a track is asked for", () => {
+    expect(createSheetNudgeService().take("t1")).toBe(true);
   });
 
-  it("does not write once the limit is reached", async () => {
-    const { service, storage } = setup({ [SHEET_NUDGE_KEY]: "3" });
-    storage.fail("set");
-    expect(await service.take()).toEqual(ok(false));
-    expect(storage.values.get(SHEET_NUDGE_KEY)).toBe("3");
+  it("does not nudge a track again", () => {
+    const service = createSheetNudgeService();
+    service.take("t1");
+    expect(service.take("t1")).toBe(false);
+    expect(service.take("t1")).toBe(false);
   });
 
-  it("fails with a read storage failure when the store cannot be read", async () => {
-    const { service, storage, log } = setup();
-    storage.fail("get");
-    expect(await service.take()).toEqual({ kind: "storage_failure", cause: "read" });
-    expect(log.entries.map((e) => e.message)).toEqual(["sheet_nudge.read"]);
+  it("nudges another track", () => {
+    const service = createSheetNudgeService();
+    service.take("t1");
+    expect(service.take("t2")).toBe(true);
+    expect(service.take("t1")).toBe(false);
   });
 
-  it("fails with a write storage failure when the count cannot be written", async () => {
-    const { service, storage, log } = setup();
-    storage.fail("set");
-    expect(await service.take()).toEqual({ kind: "storage_failure", cause: "write" });
-    expect(log.entries.map((e) => e.message)).toEqual(["sheet_nudge.write"]);
-  });
-
-  it("recovers from a corrupted count as a first opening", async () => {
-    const { service, storage, log } = setup({ [SHEET_NUDGE_KEY]: "abc" });
-    expect(await service.take()).toEqual(ok(true));
-    expect(storage.values.get(SHEET_NUDGE_KEY)).toBe("1");
-    expect(log.entries.map((e) => e.message)).toEqual(["sheet_nudge.schema"]);
+  it("remembers nothing in a new service, as after an app restart", () => {
+    createSheetNudgeService().take("t1");
+    expect(createSheetNudgeService().take("t1")).toBe(true);
   });
 });

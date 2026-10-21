@@ -1,4 +1,4 @@
-// INFO: motion tokens: the duration scale, the one spring used app-wide, the opacity a pressed control drops to, the scale a paused player cover drops to, the scale the player drops to behind the open sheet, the scale a control enters from, the detail play button's fade, shrink and scale-in durations, the now playing bars' fall, loop periods and static heights, the points the sheet handle rises when it nudges, the thresholds of the vertical drag (the player's close, the sheet's open and close), the speed and rest of a scrolling title, the edge zone and speed of a reorder list's auto-scroll, and how long a brief notice stays.
+// INFO: motion tokens: the duration scale, the one spring used app-wide, the opacity a pressed control drops to, the scale a paused player cover drops to, the scale the player drops to behind the open sheet, the scale a control enters from, the detail play button's fade, shrink and scale-in durations, the now playing bars' fall, loop periods and static heights, the points the sheet handle rises in each bounce of its nudge, the thresholds of the vertical drag (the player's close, the sheet's open and close), the speed and rest of a scrolling title, the edge zone and speed of a reorder list's auto-scroll, and how long a brief notice stays.
 export const motion = {
   duration: {
     fast: 150,
@@ -25,8 +25,8 @@ export const motion = {
     shrink: 340,
     scaleIn: 280,
   },
-  // Points the sheet handle rises when it nudges.
-  handleNudge: 6,
+  // Points the sheet handle rises in the first and the second bounce of its nudge.
+  handleNudge: { first: 9, second: 5 },
   marquee: {
     // Points per second a title that does not fit scrolls.
     speed: 30,

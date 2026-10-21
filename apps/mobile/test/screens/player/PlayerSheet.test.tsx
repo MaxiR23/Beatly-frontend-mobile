@@ -15,6 +15,7 @@
 // - related: songs, artists and albums, an empty section hidden, three empty lists, a song playing, an album or artist opening in the current tab, loading, error with retry
 // - a more button on each up next and related row
 // - the current track's row marked with the now playing bars: a later repeat in up next, and the track among the related songs
+// - the handle's nudge: the first opening on a track bouncing it, a second opening on it and a track change while open not, an opening on another track bouncing it, none under reduce motion
 // - es
 //
 // Run with: pnpm --filter @beatly/mobile test -- PlayerSheet
@@ -27,7 +28,14 @@ import { color, motion } from "@beatly/ui";
 import { border } from "@beatly/ui/native";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
-import { Animated, BackHandler, Dimensions, FlatList, StyleSheet } from "react-native";
+import {
+  AccessibilityInfo,
+  Animated,
+  BackHandler,
+  Dimensions,
+  FlatList,
+  StyleSheet,
+} from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
@@ -36,6 +44,7 @@ import { PlayerScreen } from "../../../src/screens/player/PlayerScreen.tsx";
 import {
   makeCore,
   memoryStorage,
+  noSheetNudge,
   relatedFixture,
   upNextFixture,
   Wrapper,
@@ -58,6 +67,9 @@ jest.mock("../../../src/adapters/imageColors.ts", () => ({
 }));
 
 const spring = jest.spyOn(Animated, "spring");
+const timing = jest.spyOn(Animated, "timing");
+const bounced = () =>
+  timing.mock.calls.some(([, config]) => config.toValue === -motion.handleNudge.first);
 const scrollToIndex = jest
   .spyOn(FlatList.prototype, "scrollToIndex")
   .mockImplementation(() => undefined);
@@ -71,6 +83,7 @@ const metrics = {
 
 afterEach(async () => {
   spring.mockClear();
+  timing.mockClear();
   scrollToIndex.mockClear();
   mockBack.mockClear();
   mockReplace.mockClear();
@@ -97,7 +110,7 @@ const failed = { kind: "transport_failure", cause: "network" } as const;
 const pending = () => new Promise<never>(() => undefined);
 
 async function setup(options: Parameters<typeof makeCore>[0] = {}, tracks = ["t1", "t2", "t3"]) {
-  const ctx = makeCore({ storage: memoryStorage({ "beatly-sheet-nudges": "3" }), ...options });
+  const ctx = makeCore({ sheetNudge: noSheetNudge, ...options });
   await render(
     <Wrapper core={ctx.core}>
       <SafeAreaProvider initialMetrics={metrics}>
@@ -398,7 +411,7 @@ function drawnOrder(): string[] {
   return out;
 }
 
-const autoplayOff = () => memoryStorage({ "beatly-sheet-nudges": "3", [AUTOPLAY_KEY]: "off" });
+const autoplayOff = () => memoryStorage({ [AUTOPLAY_KEY]: "off" });
 const flushAll = () => act(() => Promise.resolve());
 
 describe("up next", () => {
@@ -762,5 +775,63 @@ describe("the track menu in the sheet rows", () => {
     await selectTab(en.player.sheet.tabs.related);
     await screen.findByText("Up r1");
     expect(more()).toHaveLength(1);
+  });
+});
+
+describe("the handle nudge", () => {
+  const open = (ctx: ReturnType<typeof makeCore>) =>
+    render(
+      <Wrapper core={ctx.core}>
+        <SafeAreaProvider initialMetrics={metrics}>
+          <PlayerScreen />
+        </SafeAreaProvider>
+      </Wrapper>,
+    );
+  const play = (ctx: ReturnType<typeof makeCore>, ids = ["t1", "t2"]) =>
+    act(async () => {
+      await ctx.playback.playList(ids.map(track), 0, album);
+    });
+
+  it("bounces the handle on the first opening on a track and not on the second", async () => {
+    const ctx = makeCore();
+    const first = await open(ctx);
+    await play(ctx);
+    expect(bounced()).toBe(true);
+    await first.unmount();
+    timing.mockClear();
+    await open(ctx);
+    await flushAll();
+    expect(bounced()).toBe(false);
+  });
+
+  it("bounces it on an opening on another track", async () => {
+    const ctx = makeCore();
+    const first = await open(ctx);
+    await play(ctx);
+    await first.unmount();
+    await act(() => ctx.playback.next());
+    timing.mockClear();
+    await open(ctx);
+    await flushAll();
+    expect(bounced()).toBe(true);
+  });
+
+  it("does not bounce it when the track changes while the player is open", async () => {
+    const ctx = makeCore();
+    await open(ctx);
+    await play(ctx);
+    timing.mockClear();
+    await act(() => ctx.playback.next());
+    expect(bounced()).toBe(false);
+  });
+
+  it("does not bounce it under reduce motion", async () => {
+    const reduce = jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockResolvedValue(true);
+    const ctx = makeCore();
+    await open(ctx);
+    await flushAll();
+    await play(ctx);
+    expect(bounced()).toBe(false);
+    reduce.mockRestore();
   });
 });

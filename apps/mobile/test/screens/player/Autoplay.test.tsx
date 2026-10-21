@@ -25,7 +25,13 @@ import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { Autoplay } from "../../../src/screens/player/Autoplay.tsx";
 import { PlayerScreen } from "../../../src/screens/player/PlayerScreen.tsx";
-import { makeCore, memoryStorage, upNextFixture, Wrapper } from "../../helpers/core.tsx";
+import {
+  makeCore,
+  memoryStorage,
+  noSheetNudge,
+  upNextFixture,
+  Wrapper,
+} from "../../helpers/core.tsx";
 
 jest.mock("expo-router", () => ({
   useRouter: () => ({
@@ -83,7 +89,7 @@ type CoreOptions = Parameters<typeof makeCore>[0];
 
 async function setup(options: CoreOptions = {}) {
   const ctx = makeCore({
-    storage: memoryStorage({ "beatly-sheet-nudges": "3" }),
+    sheetNudge: noSheetNudge,
     getUpNext: (id) => Promise.resolve(ok(answerFor(id))),
     ...options,
   });
@@ -252,7 +258,7 @@ describe("the end of the queue", () => {
 
   it("pauses at 0 when the queue ends with autoplay off", async () => {
     const ctx = await setup({
-      storage: memoryStorage({ "beatly-sheet-nudges": "3", "beatly-autoplay": "off" }),
+      storage: memoryStorage({ "beatly-autoplay": "off" }),
     });
     await play(ctx, ["t1", "t2", "t3"]);
     await ended(ctx, 3);
@@ -317,7 +323,7 @@ describe("the autoplay switch", () => {
   });
 
   it("stores the switch turned off and a fresh app reads it off", async () => {
-    const storage = memoryStorage({ "beatly-sheet-nudges": "3" });
+    const storage = memoryStorage();
     const first = await setup({ storage });
     await play(first, ["t1", "t2"]);
     await openSheet();
@@ -340,7 +346,7 @@ describe("the autoplay switch", () => {
   });
 
   it("draws the error with retry when the setting cannot be read, and the end pauses", async () => {
-    const base = memoryStorage({ "beatly-sheet-nudges": "3" });
+    const base = memoryStorage();
     const storage: StoragePort = {
       ...base,
       get: (key) =>
@@ -357,7 +363,7 @@ describe("the autoplay switch", () => {
   });
 
   it("leaves autoplay off when the read fails after a previous session left it on", async () => {
-    const base = memoryStorage({ "beatly-sheet-nudges": "3" });
+    const base = memoryStorage();
     let failRead: () => void = () => undefined;
     const storage: StoragePort = {
       ...base,
