@@ -11,7 +11,7 @@
 // - toggle, next, previous with its restart rule, skipTo, seek, shuffle on and off, repeat one, ended at the end of the list, a stale resolution, stop
 // - renaming the current source in place, ignoring another source or an idle controller
 // - the HTTP status of an unplayable answer in the state: kept on that failure, null on a player error and on a restart
-// - the seed of a source, the sourceStart counter, autoplay at the end of the queue (shuffle, repeat one, no suggestions, stale suggestions) and whether the suggestions are wanted (last track started, the tab asked, sticky, reset by a new source)
+// - the seed of a source, the sourceStart counter, autoplay at the end of the queue (shuffle, repeat one, no suggestions, stale suggestions) and next at the last track sharing that rule (autoplay off, no suggestions, repeat one, after the list ended, idle) and whether the suggestions are wanted (last track started, the tab asked, sticky, reset by a new source)
 // - Not applicable: ok:false reasons, because the controller does not call the API
 //
 // Run with: pnpm --filter @beatly/core test -- playback
@@ -742,6 +742,102 @@ describe("autoplay", () => {
     expect(state.current?.trackId).toBe("s1");
     expect(state.index).toBe(0);
     expect(state.queue.map((t) => t.trackId)).toEqual(["s1", "s3", "s2"]);
+  });
+
+  it("starts the suggestions under the seed's track source on next at the last track with autoplay on", async () => {
+    const { controller, streams } = setup();
+    controller.setAutoplay(true);
+    await controller.playList(list, 0, source);
+    controller.setSuggestions("t1", suggested.slice(0, 2));
+    await controller.next();
+    await controller.next();
+    expect(controller.getState().current?.trackId).toBe("t3");
+    await controller.next();
+    const state = controller.getState();
+    expect(state.current?.trackId).toBe("s1");
+    expect(state.queue.map((t) => t.trackId)).toEqual(["s1", "s2"]);
+    expect(state.source).toEqual({ kind: "track", id: "t1", name: "Song t1" });
+    expect(state.seed?.trackId).toBe("s1");
+    expect(streams.calls.at(-1)).toBe("s1");
+  });
+
+  it("does nothing on next at the last track with autoplay off", async () => {
+    const { controller, player } = setup();
+    controller.setAutoplay(false);
+    await controller.playList(list, 2, source);
+    controller.setSuggestions("t3", suggested);
+    const before = player.calls.length;
+    const sourceStart = controller.getState().sourceStart;
+    await controller.next();
+    const state = controller.getState();
+    expect(state.current?.trackId).toBe("t3");
+    expect(player.calls.length).toBe(before);
+    expect(state.sourceStart).toBe(sourceStart);
+    expect(state.source).toEqual(source);
+  });
+
+  it("does nothing on next at the last track when no suggestions are loaded", async () => {
+    const empty = setup();
+    empty.controller.setAutoplay(true);
+    await empty.controller.playList(list, 2, source);
+    empty.controller.setSuggestions("t3", []);
+    const emptyBefore = empty.player.calls.length;
+    await empty.controller.next();
+    expect(empty.controller.getState().current?.trackId).toBe("t3");
+    expect(empty.player.calls.length).toBe(emptyBefore);
+
+    const none = setup();
+    none.controller.setAutoplay(true);
+    await none.controller.playList(list, 2, source);
+    const noneBefore = none.player.calls.length;
+    await none.controller.next();
+    expect(none.controller.getState().current?.trackId).toBe("t3");
+    expect(none.player.calls.length).toBe(noneBefore);
+  });
+
+  it("moves to the next track of the queue on next before the last, with autoplay on and suggestions loaded", async () => {
+    const { controller } = setup();
+    controller.setAutoplay(true);
+    await controller.playList(list, 0, source);
+    controller.setSuggestions("t1", suggested);
+    await controller.next();
+    const state = controller.getState();
+    expect(state.current?.trackId).toBe("t2");
+    expect(state.source).toEqual(source);
+    expect(state.queue.map((t) => t.trackId)).toEqual(["t1", "t2", "t3"]);
+  });
+
+  it("starts the suggestions on next at the last track with repeat one on", async () => {
+    const { controller } = setup();
+    controller.setAutoplay(true);
+    await controller.playList(list, 2, source);
+    controller.setSuggestions("t3", suggested);
+    controller.setRepeatOne(true);
+    await controller.next();
+    expect(controller.getState().current?.trackId).toBe("s1");
+  });
+
+  it("starts the suggestions on next after the list ended before they loaded", async () => {
+    const { controller, player } = setup();
+    controller.setAutoplay(true);
+    await controller.playList(list, 2, source);
+    await ended(player, 1);
+    expect(controller.getState().status).toBe("paused");
+    controller.setSuggestions("t3", suggested);
+    await controller.next();
+    const state = controller.getState();
+    expect(state.current?.trackId).toBe("s1");
+    expect(state.source).toEqual({ kind: "track", id: "t3", name: "Song t3" });
+  });
+
+  it("does nothing on next while idle with autoplay on", async () => {
+    const { controller, player } = setup();
+    controller.setAutoplay(true);
+    await controller.next();
+    const state = controller.getState();
+    expect(state.current).toBeNull();
+    expect(state.index).toBe(-1);
+    expect(player.calls).toEqual([]);
   });
 });
 

@@ -10,7 +10,7 @@
 // - the body drawn while the sheet is dragged up and while it closes, unmounted once the close ends or the spring back of a short handle drag ends, the body drag taking a downward drag again after a reopen or a track change
 // - the system back and the accessibility escape closing the sheet first and the player next, no back handler while it is closed
 // - the song row closing it, the cache per track across a close and a reopen
-// - up next: the rest of the queue then the suggestions without the current track, a press jumping in the queue or playing the suggestions (under the source's first track after the source advanced), loading, error with retry, expected empty
+// - up next: the rest of the queue then the suggestions without the current track, the divider between the rest and the suggestions with autoplay on and none when either is empty, with autoplay off only the rest without the suggestions' loading or error and the expected empty state, a press jumping in the queue or playing the suggestions (under the source's first track after the source advanced), loading, error with retry, expected empty
 // - lyrics: the playing line following the progress and centered, a press seeking, plain lyrics, null lyrics, loading, error with retry
 // - related: songs, artists and albums, an empty section hidden, three empty lists, a song playing, an album or artist opening in the current tab, loading, error with retry
 // - a more button on each up next and related row
@@ -21,11 +21,13 @@
 //
 // SEE: apps/mobile/src/screens/player/PlayerSheet.tsx
 
+import { AUTOPLAY_KEY } from "@beatly/core";
 import type { HttpOutcome, PlayableTrack, TrackLyrics, TrackRelated, UpNext } from "@beatly/core";
 import { color, motion } from "@beatly/ui";
+import { border } from "@beatly/ui/native";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
-import { Animated, BackHandler, Dimensions, FlatList } from "react-native";
+import { Animated, BackHandler, Dimensions, FlatList, StyleSheet } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
@@ -369,7 +371,116 @@ describe("the handle and the sheet", () => {
   });
 });
 
+const NODE = /^(Song t\d|Up u\d)$/;
+
+interface Json {
+  props: { testID?: unknown };
+  children: (Json | string)[] | null;
+}
+
+function drawnOrder(): string[] {
+  const out: string[] = [];
+  const walk = (node: Json | string, inside: boolean): void => {
+    if (typeof node === "string") {
+      if (inside && NODE.test(node)) out.push(node);
+      return;
+    }
+    const within = inside || node.props.testID === "player-sheet-upnext";
+    if (node.props.testID === "player-sheet-upnext-divider") out.push("divider");
+    node.children?.forEach((child) => {
+      walk(child, within);
+    });
+  };
+  const tree: Json | Json[] | null = screen.toJSON();
+  [tree ?? []].flat().forEach((root) => {
+    walk(root, false);
+  });
+  return out;
+}
+
+const autoplayOff = () => memoryStorage({ "beatly-sheet-nudges": "3", [AUTOPLAY_KEY]: "off" });
+const flushAll = () => act(() => Promise.resolve());
+
 describe("up next", () => {
+  it("draws the rest of the queue, a divider, then the suggestions with autoplay on", async () => {
+    await setup();
+    await openSheet();
+    await screen.findByText("Up u2");
+    expect(drawnOrder()).toEqual(["Song t2", "Song t3", "divider", "Up u2", "Up u3"]);
+    expect(
+      StyleSheet.flatten(screen.getByTestId("player-sheet-upnext-divider").props.style),
+    ).toMatchObject({
+      borderBottomWidth: border.hairline,
+      borderBottomColor: color.surface.border,
+    });
+  });
+
+  it("draws no divider when nothing is left in the queue", async () => {
+    await setup({}, ["t1"]);
+    await openSheet();
+    await screen.findByText("Up u2");
+    expect(screen.queryByTestId("player-sheet-upnext-divider")).toBeNull();
+  });
+
+  it("draws no divider when nothing is suggested", async () => {
+    const only: UpNext = { tracks: upNextFixture.tracks.slice(0, 1) };
+    const ctx = await setup({ getUpNext: () => Promise.resolve(ok(only)) });
+    await openSheet();
+    await screen.findByText("Song t2");
+    await waitFor(() => {
+      expect(ctx.getUpNext).toHaveBeenCalled();
+    });
+    await flushAll();
+    expect(screen.queryByTestId("player-sheet-upnext-divider")).toBeNull();
+    expect(screen.getByText("Song t3")).toBeTruthy();
+  });
+
+  it("draws only the rest of the queue with autoplay off", async () => {
+    const ctx = await setup({ storage: autoplayOff() });
+    await openSheet();
+    const toggle = await screen.findByLabelText(en.player.sheet.autoplay);
+    expect(toggle.props.value).toBe(false);
+    await waitFor(() => {
+      expect(ctx.getUpNext).toHaveBeenCalled();
+    });
+    await flushAll();
+    expect(drawnOrder()).toEqual(["Song t2", "Song t3"]);
+    await fireEvent(toggle, "valueChange", true);
+    await flushAll();
+    await screen.findByText("Up u2");
+    expect(drawnOrder()).toEqual(["Song t2", "Song t3", "divider", "Up u2", "Up u3"]);
+  });
+
+  it("draws neither the suggestions' loading nor their error with autoplay off", async () => {
+    await setup({ storage: autoplayOff(), getUpNext: pending });
+    await openSheet();
+    await screen.findByLabelText(en.player.sheet.autoplay);
+    await flushAll();
+    expect(screen.queryByLabelText(en.common.loading)).toBeNull();
+  });
+
+  it("draws no error with autoplay off when the suggestions fail", async () => {
+    const ctx = await setup({
+      storage: autoplayOff(),
+      getUpNext: () => Promise.resolve(failed),
+    });
+    await openSheet();
+    await screen.findByLabelText(en.player.sheet.autoplay);
+    await waitFor(() => {
+      expect(ctx.getUpNext).toHaveBeenCalled();
+    });
+    await flushAll();
+    expect(screen.queryByText(en.common.error.generic)).toBeNull();
+    expect(screen.getByText("Song t2")).toBeTruthy();
+  });
+
+  it("draws the expected empty state with autoplay off when nothing is left", async () => {
+    await setup({ storage: autoplayOff() }, ["t1"]);
+    await openSheet();
+    expect(await screen.findByText(en.player.sheet.upNextEmpty)).toBeTruthy();
+    expect(screen.queryByText("Up u2")).toBeNull();
+  });
+
   it("draws the rest of the queue, then the suggestions without the current track", async () => {
     await setup();
     await openSheet();
@@ -439,7 +550,7 @@ describe("up next", () => {
   it("draws the loading state while pending, keeping the rest of the queue", async () => {
     await setup({ getUpNext: pending });
     await openSheet();
-    expect(screen.getByLabelText(en.common.loading)).toBeTruthy();
+    expect(await screen.findByLabelText(en.common.loading)).toBeTruthy();
     expect(screen.getByText("Song t2")).toBeTruthy();
   });
 
