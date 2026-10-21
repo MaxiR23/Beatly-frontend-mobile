@@ -1,4 +1,4 @@
-// INFO: the playback controller: the queue, the play order (shuffle), repeat one, the current track, a jump to a position of the queue, a rename of the current source, the seed of the source with its suggestions, autoplay at the end of the queue, whether the source's suggestions are wanted (its last track started or the up next tab asked) and the status over the player port; an immutable snapshot plus subscribe.
+// INFO: the playback controller: the queue, the play order (shuffle), repeat one, the current track, a jump to a position of the queue, a rename of the current source, the seed of the source with its suggestions, autoplay at the end of the queue and on next at the last track, whether the source's suggestions are wanted (its last track started or the up next tab asked) and the status over the player port; an immutable snapshot plus subscribe.
 import type { TrackArtistRef } from "../domain/search.ts";
 import type { LogPort } from "../ports/log.ts";
 import type { PlayerEvent, PlayerPort } from "../ports/player.ts";
@@ -232,6 +232,14 @@ export function createPlaybackController(deps: {
     await startAt(state.shuffle ? 0 : index);
   };
 
+  // The end of the last track and next on it share this: with autoplay on and the source's suggestions loaded, they start as a new source under the seed's track source; false when nothing started.
+  const autoplayFromLast = async (): Promise<boolean> => {
+    const seed = state.seed;
+    if (!autoplay || suggestions.length === 0 || seed === null) return false;
+    await start(suggestions, 0, { kind: "track", id: seed.trackId, name: seed.title });
+    return true;
+  };
+
   const onEnded = async (): Promise<void> => {
     if (endedGeneration === generation) return;
     endedGeneration = generation;
@@ -248,11 +256,7 @@ export function createPlaybackController(deps: {
       await startAt(state.index + 1);
       return;
     }
-    const seed = state.seed;
-    if (autoplay && suggestions.length > 0 && seed !== null) {
-      await start(suggestions, 0, { kind: "track", id: seed.trackId, name: seed.title });
-      return;
-    }
+    if (await autoplayFromLast()) return;
     player.pause();
     update({ status: "paused", positionSeconds: 0, listen: nextListen() });
     await player.seek(0);
@@ -313,8 +317,12 @@ export function createPlaybackController(deps: {
       }
     },
     next: async () => {
-      if (state.current === null || state.index >= state.queue.length - 1) return;
-      await startAt(state.index + 1);
+      if (state.current === null) return;
+      if (state.index < state.queue.length - 1) {
+        await startAt(state.index + 1);
+        return;
+      }
+      await autoplayFromLast();
     },
     previous: async () => {
       if (state.current === null) return;

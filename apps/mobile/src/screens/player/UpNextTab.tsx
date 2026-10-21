@@ -1,10 +1,12 @@
-// INFO: the up next tab of the player sheet: the rest of the queue (a press jumps inside it), then the suggestions of the source (the up next of the track it started on, with the source, requested once per source when this tab opens or the last track starts, and never refetched by the tab) without that first track, under the autoplay switch (a press plays the suggestions from it under a track source of that track); the rest of the queue is local, so it is drawn while the suggestions load or fail; every row ends with the track menu button; a row of the current track (a later repeat in the rest of the queue) is marked.
+// INFO: the up next tab of the player sheet: the rest of the queue (a press jumps inside it), then the suggestions of the source (the up next of the track it started on, with the source, requested once per source when this tab opens or the last track starts, and never refetched by the tab) without that first track, under the autoplay switch, with autoplay on a divider between the rest of the queue and the suggestions when both have rows, and with autoplay off only the rest, without the suggestions' loading or error (a press plays the suggestions from it under a track source of that track); the rest of the queue is local, so it is drawn while the suggestions load or fail; every row ends with the track menu button; a row of the current track (a later repeat in the rest of the queue) is marked.
 import type { PlayableTrack } from "@beatly/core";
-import { EmptyState, ErrorState, LoadingState, MediaRow } from "@beatly/ui/native";
+import { color, layout, spacing } from "@beatly/ui";
+import { EmptyState, ErrorState, LoadingState, MediaRow, border } from "@beatly/ui/native";
 import { useEffect } from "react";
-import { FlatList } from "react-native";
+import { FlatList, StyleSheet, View } from "react-native";
 
 import { useT } from "../../adapters/i18n.ts";
+import { useAutoplaySetting } from "../../queries/useAutoplay.ts";
 import { useUpNext } from "../../queries/useTracks.ts";
 import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
 import { AutoplaySwitch } from "./AutoplaySwitch.tsx";
@@ -17,12 +19,9 @@ interface UpNextTabProps {
   onAtTopChange: (atTop: boolean) => void;
 }
 
-interface Row {
-  key: string;
-  section: "rest" | "suggestion";
-  position: number;
-  track: PlayableTrack;
-}
+type Row =
+  | { key: string; section: "rest" | "suggestion"; position: number; track: PlayableTrack }
+  | { key: string; section: "divider" };
 
 export function UpNextTab({ seed, onAtTopChange }: UpNextTabProps) {
   const t = useT("player");
@@ -33,6 +32,7 @@ export function UpNextTab({ seed, onAtTopChange }: UpNextTabProps) {
   const index = usePlayback((s) => s.index);
   const sourceStart = usePlayback((s) => s.sourceStart);
   const source = usePlayback((s) => s.source);
+  const autoplay = useAutoplaySetting().data === true;
   const upNext = useUpNext(seed.trackId, source, { refetchOnMount: false });
 
   // The tab open is one of the two moments the source's suggestions are requested; a new source while it stays open asks again.
@@ -45,7 +45,7 @@ export function UpNextTab({ seed, onAtTopChange }: UpNextTabProps) {
   }, [onAtTopChange]);
 
   const rest = queue.slice(index + 1);
-  const suggestions = upNext.data === undefined ? [] : suggestionsOf(upNext.data);
+  const suggestions = !autoplay || upNext.data === undefined ? [] : suggestionsOf(upNext.data);
   const rows: Row[] = [
     ...rest.map((track, position): Row => ({
       key: `rest:${String(position)}:${track.trackId}`,
@@ -53,6 +53,9 @@ export function UpNextTab({ seed, onAtTopChange }: UpNextTabProps) {
       position,
       track,
     })),
+    ...(rest.length > 0 && suggestions.length > 0
+      ? [{ key: "divider", section: "divider" } satisfies Row]
+      : []),
     ...suggestions.map((track, position): Row => ({
       key: `suggestion:${String(position)}:${track.trackId}`,
       section: "suggestion",
@@ -61,7 +64,7 @@ export function UpNextTab({ seed, onAtTopChange }: UpNextTabProps) {
     })),
   ];
 
-  function press(row: Row) {
+  function press(row: Extract<Row, { position: number }>) {
     if (row.section === "rest") {
       void playback.skipTo(index + 1 + row.position);
     } else {
@@ -74,9 +77,9 @@ export function UpNextTab({ seed, onAtTopChange }: UpNextTabProps) {
   }
 
   let footer = null;
-  if (upNext.isPending) {
+  if (autoplay && upNext.isPending) {
     footer = <LoadingState label={tc("loading")} />;
-  } else if (upNext.isError) {
+  } else if (autoplay && upNext.isError) {
     footer = (
       <ErrorState
         message={tc("error.generic")}
@@ -97,21 +100,34 @@ export function UpNextTab({ seed, onAtTopChange }: UpNextTabProps) {
       }}
       ListHeaderComponent={<AutoplaySwitch />}
       ListFooterComponent={footer}
-      renderItem={({ item }) => (
-        <MediaRow
-          shape="square"
-          urls={item.track.coverUrl === null ? [] : [item.track.coverUrl]}
-          title={item.track.title}
-          subtitle={item.track.artists.map((artist) => artist.name).join(t("artistSeparator"))}
-          onPress={() => {
-            press(item);
-          }}
-          nowPlaying={nowPlaying.of(item.track.trackId)}
-          reduceMotion={nowPlaying.reduceMotion}
-          trailing={<TrackMenuButton track={item.track} />}
-        />
-      )}
+      renderItem={({ item }) =>
+        item.section === "divider" ? (
+          <View style={styles.divider} testID="player-sheet-upnext-divider" />
+        ) : (
+          <MediaRow
+            shape="square"
+            urls={item.track.coverUrl === null ? [] : [item.track.coverUrl]}
+            title={item.track.title}
+            subtitle={item.track.artists.map((artist) => artist.name).join(t("artistSeparator"))}
+            onPress={() => {
+              press(item);
+            }}
+            nowPlaying={nowPlaying.of(item.track.trackId)}
+            reduceMotion={nowPlaying.reduceMotion}
+            trailing={<TrackMenuButton track={item.track} />}
+          />
+        )
+      }
       testID="player-sheet-upnext"
     />
   );
 }
+
+const styles = StyleSheet.create({
+  divider: {
+    marginHorizontal: layout.gutter,
+    marginVertical: spacing.sm,
+    borderBottomWidth: border.hairline,
+    borderBottomColor: color.surface.border,
+  },
+});
