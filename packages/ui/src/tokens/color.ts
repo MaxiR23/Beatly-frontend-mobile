@@ -1,6 +1,6 @@
 // INFO: color tokens. Surface levels, text levels, the white accent, the
 // semantic error/success colors, and the black/white overlays used over
-// images and controls, and the clear start of a fade. Values are the legacy inventory's, named by role.
+// images and controls, the clear start of a fade, and the sheet handle bar on Android. Values are the legacy inventory's, named by role.
 export const color = {
   surface: {
     base: "#0e0e0e",
@@ -28,6 +28,8 @@ export const color = {
     onImage: "rgba(0, 0, 0, 0.4)",
     subtle: "rgba(255, 255, 255, 0.08)",
     muted: "rgba(255, 255, 255, 0.15)",
+    // The sheet handle bar on Android.
+    handleAndroid: "rgba(255, 255, 255, 0.45)",
     // INFO: surface.base at zero alpha; the two must change together.
     clear: "rgba(14, 14, 14, 0)",
   },

@@ -54,6 +54,7 @@ import type {
   TracksService,
   UpNext,
 } from "@beatly/core";
+import type { SheetNudgeService } from "@beatly/core";
 import {
   createPlaybackController,
   createAutoplayService,
@@ -434,6 +435,9 @@ export const emptyCreditsFixture: TrackCredits = {
   other_sections: [],
 };
 
+// A sheet nudge service that never nudges, for tests whose animation spies must not see the handle's bounce.
+export const noSheetNudge: SheetNudgeService = { take: () => false };
+
 export function memoryStorage(initial: Record<string, string> = {}): StoragePort {
   const values = new Map<string, string>(Object.entries(initial));
   return {
@@ -577,6 +581,7 @@ export function makeCore(
     likeOutcome?: () => Promise<LikeOutcome>;
     likedIds?: readonly string[];
     storage?: StoragePort;
+    sheetNudge?: SheetNudgeService;
     resolve?: StreamResolver["resolve"];
   } = {},
 ) {
@@ -817,7 +822,7 @@ export function makeCore(
     autoplay: createAutoplayService({ storage, log }),
     recentSearches: createRecentSearchesService({ storage, log }),
     search: { search },
-    sheetNudge: createSheetNudgeService({ storage, log }),
+    sheetNudge: options.sheetNudge ?? createSheetNudgeService(),
     tracks: { getUpNext, getLyrics, getRelated, getCredits },
   };
   return {

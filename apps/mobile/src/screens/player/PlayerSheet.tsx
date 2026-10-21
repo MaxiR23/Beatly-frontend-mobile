@@ -1,4 +1,4 @@
-// INFO: the player's up next, lyrics and related sheet over PullUpSheet: the song row (its title scrolls when it does not fit) that closes it, play or pause, the three options and the selected tab's body, mounted from the moment the sheet starts opening (a drag on the handle or open) until its close ends, so it is drawn while the sheet moves and each tab loads only once shown (up next asks for the source's suggestions, read once per source); nudges the handle the first openings.
+// INFO: the player's up next, lyrics and related sheet over PullUpSheet: the song row (its title scrolls when it does not fit) that closes it, play or pause, the three options and the selected tab's body, mounted from the moment the sheet starts opening (a drag on the handle or open) until its close ends, so it is drawn while the sheet moves and each tab loads only once shown (up next asks for the source's suggestions, read once per source); nudges the handle the first time the player opens on each track in the app's session.
 import { layout, spacing } from "@beatly/ui";
 import { Cover, IconButton, Marquee, PullUpSheet, SegmentedControl, Text } from "@beatly/ui/native";
 import { useState, type ReactNode } from "react";
@@ -6,11 +6,11 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
-import { useSheetNudge } from "../../queries/useSheetNudge.ts";
 import { LyricsTab } from "./LyricsTab.tsx";
 import { RelatedTab } from "./RelatedTab.tsx";
 import { UpNextTab } from "./UpNextTab.tsx";
 import { usePlayback, usePlaybackActions } from "./usePlayback.ts";
+import { useSheetNudge } from "./useSheetNudge.ts";
 
 type Tab = "upNext" | "lyrics" | "related";
 
@@ -41,7 +41,7 @@ export function PlayerSheet({
   const current = usePlayback((s) => s.current);
   const seed = usePlayback((s) => s.seed);
   const status = usePlayback((s) => s.status);
-  const nudge = useSheetNudge();
+  const nudge = useSheetNudge(current?.trackId ?? null);
   const [tab, setTab] = useState<Tab>("upNext");
   const [bodyAtTop, setBodyAtTop] = useState(true);
   const [warm, setWarm] = useState(false);

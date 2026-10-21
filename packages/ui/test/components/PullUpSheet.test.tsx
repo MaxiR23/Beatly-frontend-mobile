@@ -8,8 +8,8 @@
 // What is covered:
 // - the handle as a labelled button, the press and the drag up opening, the header and body drags closing (the body only at its top)
 // - the dim and the recede following the sheet's position, the springs of opening and closing, no animation on mount
-// - the closed panel and the open content hidden from accessibility, the nudge once, the wash only with a color
-// - reduce motion (fades instead of movement and scale, no nudge), a live change of it while open leaving the panel and the dim drawn
+// - the closed panel and the open content hidden from accessibility, the double bounce once, the wash only with a color, the handle bar's size and color on iOS and on Android
+// - reduce motion (fades instead of movement and scale, no bounce, a bounce under way stopped when it turns on), a live change of it while open leaving the panel and the dim drawn
 // - onDragStart on a handle drag, onClosed when the close animation finishes and not when it is cut, or when a cancelled handle drag settles back and not when it commits
 //
 // Run with: pnpm --filter @beatly/ui test -- PullUpSheet
@@ -18,11 +18,12 @@
 
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
-import { Animated, Dimensions, Text } from "react-native";
+import { Animated, Dimensions, Platform, Text } from "react-native";
 
 import { PullUpSheet } from "../../src/components/PullUpSheet.tsx";
 import { color } from "../../src/tokens/color.ts";
 import { motion } from "../../src/tokens/motion.ts";
+import { layout } from "../../src/tokens/spacing.ts";
 
 const touch = (from: number, to: number, t: number, dt = 16) => ({
   nativeEvent: { touches: [{}] },
@@ -74,6 +75,7 @@ const height = Dimensions.get("window").height;
 afterEach(() => {
   spring.mockClear();
   timing.mockClear();
+  Platform.OS = "ios";
 });
 
 interface Options {
@@ -208,24 +210,32 @@ describe("PullUpSheet", () => {
     expect(behind().props.importantForAccessibility).toBe("no-hide-descendants");
   });
 
-  it("nudges the handle up and back once when asked", async () => {
+  it("bounces the handle twice and settles it, once, when asked", async () => {
     const { rerender } = await setup({ nudge: true });
-    expect(timing).toHaveBeenCalledTimes(1);
-    expect(timing).toHaveBeenLastCalledWith(
-      expect.anything(),
+    expect(timing).toHaveBeenCalledTimes(3);
+    expect(timing.mock.calls.map(([, config]) => config)).toEqual([
       expect.objectContaining({
-        toValue: -motion.handleNudge,
-        duration: motion.duration.base,
+        toValue: -motion.handleNudge.first,
+        duration: motion.duration.fast,
         useNativeDriver: true,
       }),
-    );
+      expect.objectContaining({ toValue: 0, duration: motion.duration.fast }),
+      expect.objectContaining({
+        toValue: -motion.handleNudge.second,
+        duration: motion.duration.fast,
+      }),
+    ]);
     expect(spring).toHaveBeenCalledTimes(1);
     expect(spring).toHaveBeenLastCalledWith(
       expect.anything(),
-      expect.objectContaining({ toValue: 0 }),
+      expect.objectContaining({
+        toValue: 0,
+        damping: motion.spring.damping,
+        stiffness: motion.spring.stiffness,
+      }),
     );
     await rerender({ nudge: true, bodyAtTop: false });
-    expect(timing).toHaveBeenCalledTimes(1);
+    expect(timing).toHaveBeenCalledTimes(3);
   });
 
   it("does not nudge when not asked", async () => {
@@ -311,11 +321,47 @@ describe("PullUpSheet", () => {
     expect(spring).not.toHaveBeenCalled();
   });
 
-  it("uses the overlay tokens for the dim and the handle", async () => {
+  it("stops a bounce under way when reduce motion turns on and parks the handle", async () => {
+    const stop = jest.fn();
+    const sequence = jest.spyOn(Animated, "sequence").mockImplementationOnce(() => ({
+      start: () => {
+        const lift = timing.mock.calls[0]?.[0];
+        if (lift instanceof Animated.Value) lift.setValue(-6);
+      },
+      stop,
+      reset: jest.fn(),
+    }));
+    const { rerender } = await setup({ nudge: true });
+    expect(screen.getByTestId("sheet-handle-bar")).toHaveStyle({ transform: [{ translateY: -6 }] });
+    await rerender({ nudge: true, reduceMotion: true });
+    expect(stop).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("sheet-handle-bar")).toHaveStyle({ transform: [{ translateY: 0 }] });
+    sequence.mockRestore();
+  });
+
+  it("draws the dim and, on iOS, the handle bar with today's tokens", async () => {
     await setup();
     expect(screen.getByTestId("sheet-dim")).toHaveStyle({
       backgroundColor: color.overlay.backdrop,
     });
+    expect(screen.getByTestId("sheet-handle-bar")).toHaveStyle({
+      width: layout.handleWidth,
+      height: layout.handleHeight,
+      backgroundColor: color.overlay.muted,
+    });
+  });
+
+  it("draws the handle bar 48 x 5 in white at 45% on Android", async () => {
+    Platform.OS = "android";
+    await setup();
+    expect(screen.getByTestId("sheet-handle-bar")).toHaveStyle({
+      width: layout.handleWidthAndroid,
+      height: layout.handleHeightAndroid,
+      backgroundColor: color.overlay.handleAndroid,
+    });
+    expect(layout.handleWidthAndroid).toBe(48);
+    expect(layout.handleHeightAndroid).toBe(5);
+    expect(color.overlay.handleAndroid).toBe("rgba(255, 255, 255, 0.45)");
   });
 
   it("calls onClosed when a handle drag released short settles back, not when it commits", async () => {

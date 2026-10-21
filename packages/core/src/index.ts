@@ -196,12 +196,8 @@ export { createTracksService, upNextSourceOf } from "./services/tracks.ts";
 export type { TracksService, UpNextSource } from "./services/tracks.ts";
 export { AUTOPLAY_KEY, createAutoplayService } from "./services/autoplay.ts";
 export type { AutoplayOutcome, AutoplayService } from "./services/autoplay.ts";
-export {
-  SHEET_NUDGE_KEY,
-  SHEET_NUDGE_LIMIT,
-  createSheetNudgeService,
-} from "./services/sheetNudge.ts";
-export type { SheetNudgeOutcome, SheetNudgeService } from "./services/sheetNudge.ts";
+export { createSheetNudgeService } from "./services/sheetNudge.ts";
+export type { SheetNudgeService } from "./services/sheetNudge.ts";
 export {
   MAX_LISTEN_STEP_SECONDS,
   PLAY_AFTER_SECONDS,
