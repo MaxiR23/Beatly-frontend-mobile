@@ -24,7 +24,6 @@ export const layout = {
   creatorMark: 24,
   // Side of the large avatar of the profile screen.
   profileAvatar: 96,
-  tabItemWidth: 64,
   chipHeight: 36,
   genreBarWidth: 6,
   genreBarHeight: 28,

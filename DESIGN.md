@@ -48,7 +48,6 @@ value: the value lives once, in the token file.
 | Side of the header account avatar                                                                                                                  | `layout.avatar`                                                 |
 | Side of the leading mark (avatar or brand mark) in a detail creator line                                                                           | `layout.creatorMark`                                            |
 | Side of the large avatar of the profile screen                                                                                                     | `layout.profileAvatar`                                          |
-| Width of a floating tab bar item                                                                                                                   | `layout.tabItemWidth`                                           |
 | Height of a filter chip and of a segmented control option                                                                                          | `layout.chipHeight`                                             |
 | Width / height of the genre accent bar in a genre row                                                                                              | `layout.genreBarWidth` / `layout.genreBarHeight`                |
 | Side of the cover in a list row and in the mini player                                                                                             | `layout.rowCover`                                               |
@@ -133,7 +132,8 @@ scroll.
 - Mini player: `MiniPlayer` on a `GlassSurface` `bar` with `tint`, a round `Cover` of `layout.rowCover`, the
   title in `typography.rowTitle`, the subtitle in `typography.meta` (`color.status.error` on a failure), then
   play or pause and next as `IconButton`s. Content height `layout.controlHeight`, so the pill has the tab bar's height.
-  A `spacing.md` gap above the floating tab bar; inside the iOS 26+ system accessory it draws bare (no `GlassSurface`,
+  A `spacing.md` gap above the floating tab bar. Width: the window width minus `layout.gutter` on each side on Android
+  and iOS < 26, the same width as the tab bar pill below it; inside the iOS 26+ system accessory it draws bare (no `GlassSurface`,
   no tint), filling and clipped to the system's frame.
 - Seek bar: `SeekBar`, a `layout.seekTrack` track in `color.overlay.muted`, `radius.full`, the fill in
   `color.text.primary`, a `layout.seekThumb` thumb in `color.accent.primary` with `shadow.control`, a

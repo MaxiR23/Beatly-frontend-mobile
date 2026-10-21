@@ -1,8 +1,9 @@
 // INFO: the floating tab bar for Android and iOS below 26: icon-only tabs
-// on a GlassSurface pill, positioned above the bottom safe area, with an
-// optional accessory (the mini player) above the pill at the pill's width.
+// spread evenly on a GlassSurface pill, positioned above the bottom safe area,
+// with an optional accessory (the mini player) above it; both span the window
+// minus the gutter on each side.
 import type { ReactNode } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 
 import { color } from "../tokens/color.ts";
 import { motion } from "../tokens/motion.ts";
@@ -25,11 +26,6 @@ interface FloatingTabBarProps {
   accessory?: ReactNode;
 }
 
-// The width of the pill: the items, the bar variant's gaps and its padding.
-export function floatingTabBarWidth(count: number): number {
-  return count * layout.tabItemWidth + (count - 1) * spacing.xs + 2 * spacing.xs;
-}
-
 // The space a screen leaves at its bottom so its last item clears the bar:
 // the bar's offset, its height and one section gap of air, plus the
 // accessory's height and its `spacing.md` gap when there is one.
@@ -45,17 +41,16 @@ export function floatingTabBarClearance(bottomInset: number, accessory = false):
 }
 
 export function FloatingTabBar({ tabs, bottomInset, accessory }: FloatingTabBarProps) {
+  const { width } = useWindowDimensions();
+  const barWidth = width - 2 * layout.gutter;
   return (
     <View style={[styles.outer, { bottom: bottomInset + spacing.sm }]} pointerEvents="box-none">
       {accessory === undefined ? null : (
-        <View
-          style={[styles.accessory, { width: floatingTabBarWidth(tabs.length) }]}
-          testID="tab-accessory"
-        >
+        <View style={[styles.accessory, { width: barWidth }]} testID="tab-accessory">
           {accessory}
         </View>
       )}
-      <View accessibilityRole="tablist">
+      <View accessibilityRole="tablist" style={{ width: barWidth }} testID="tab-pill">
         <GlassSurface variant="bar">
           {tabs.map((tab) => (
             <Pressable
@@ -88,7 +83,7 @@ const styles = StyleSheet.create({
   },
   accessory: { marginBottom: spacing.md },
   item: {
-    width: layout.tabItemWidth,
+    flex: 1,
     height: layout.controlHeight,
     borderRadius: radius.full,
     alignItems: "center",

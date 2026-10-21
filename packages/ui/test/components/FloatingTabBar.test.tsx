@@ -4,11 +4,12 @@
 //
 // Tested:
 // - FloatingTabBar
-// - floatingTabBarClearance, floatingTabBarWidth
+// - floatingTabBarClearance
 //
 // What is covered:
 // - icon-only tabs with roles and labels, the selected one, the press, the clearance formula
-// - the width formula and the accessory drawn above the tabs at that width, with its md gap
+// - the accessory and the pill at the same width, the window width minus the gutter on each side; the tabs
+//   sharing it evenly at the control height; the accessory's md gap
 //
 // Run with: pnpm --filter @beatly/ui test -- FloatingTabBar
 //
@@ -16,13 +17,9 @@
 
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import { Text } from "react-native";
+import { Dimensions, Text } from "react-native";
 
-import {
-  FloatingTabBar,
-  floatingTabBarClearance,
-  floatingTabBarWidth,
-} from "../../src/components/FloatingTabBar.tsx";
+import { FloatingTabBar, floatingTabBarClearance } from "../../src/components/FloatingTabBar.tsx";
 import { color } from "../../src/tokens/color.ts";
 import { layout, spacing } from "../../src/tokens/spacing.ts";
 
@@ -74,27 +71,44 @@ describe("FloatingTabBar", () => {
 });
 
 describe("accessory", () => {
-  it("draws the accessory above the tabs inside a view of the pill's width", async () => {
+  it("draws the accessory above the tabs at the window width minus the gutters", async () => {
     await render(
       <FloatingTabBar tabs={makeTabs()} bottomInset={0} accessory={<Text>mini</Text>} />,
     );
     expect(screen.getByText("mini")).toBeTruthy();
     expect(screen.getByTestId("tab-accessory")).toHaveStyle({
-      width: floatingTabBarWidth(2),
+      width: Dimensions.get("window").width - 2 * layout.gutter,
       marginBottom: spacing.md,
+    });
+  });
+
+  it("draws the pill at the accessory's width, the tabs sharing it evenly", async () => {
+    await render(
+      <FloatingTabBar tabs={makeTabs()} bottomInset={10} accessory={<Text>mini</Text>} />,
+    );
+    const barWidth = Dimensions.get("window").width - 2 * layout.gutter;
+    expect(screen.getByTestId("tab-pill")).toHaveStyle({ width: barWidth });
+    expect(screen.getByTestId("tab-accessory")).toHaveStyle({ width: barWidth });
+    for (const name of ["Home", "Search"]) {
+      expect(screen.getByRole("tab", { name })).toHaveStyle({
+        flex: 1,
+        height: layout.controlHeight,
+      });
+    }
+    const outer = screen.getByTestId("tab-accessory").parent;
+    expect(outer).toHaveStyle({ bottom: 10 + spacing.sm });
+  });
+
+  it("draws the pill at the window width minus the gutters without an accessory", async () => {
+    await render(<FloatingTabBar tabs={makeTabs()} bottomInset={0} />);
+    expect(screen.getByTestId("tab-pill")).toHaveStyle({
+      width: Dimensions.get("window").width - 2 * layout.gutter,
     });
   });
 
   it("draws no accessory view without one", async () => {
     await render(<FloatingTabBar tabs={makeTabs()} bottomInset={0} />);
     expect(screen.queryByTestId("tab-accessory")).toBeNull();
-  });
-});
-
-describe("floatingTabBarWidth", () => {
-  it("adds the items, the gaps between them and the padding", () => {
-    expect(floatingTabBarWidth(2)).toBe(2 * layout.tabItemWidth + spacing.xs + 2 * spacing.xs);
-    expect(floatingTabBarWidth(4)).toBe(4 * layout.tabItemWidth + 3 * spacing.xs + 2 * spacing.xs);
   });
 });
 
