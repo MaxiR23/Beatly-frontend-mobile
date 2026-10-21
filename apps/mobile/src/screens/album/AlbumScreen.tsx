@@ -267,6 +267,7 @@ export function AlbumScreen() {
       bottomInset={tabBarClearance}
     >
       <DetailScreen
+        reduceMotion={nowPlaying.reduceMotion}
         testID="album"
         body={body}
         backLabel={t("back")}

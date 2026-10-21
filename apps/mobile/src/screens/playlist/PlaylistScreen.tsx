@@ -387,6 +387,7 @@ export function PlaylistScreen() {
       bottomInset={tabBarClearance}
     >
       <DetailScreen
+        reduceMotion={nowPlaying.reduceMotion}
         testID="playlist"
         body={body}
         backLabel={t("back")}

@@ -1,4 +1,4 @@
-// INFO: motion tokens: the duration scale, the one spring used app-wide, the opacity a pressed control drops to, the scale a paused player cover drops to, the scale the player drops to behind the open sheet, the scale a control enters from, the detail play button's fade, shrink and scale-in durations, the now playing bars' fall, loop periods and static heights, the points the sheet handle rises in each bounce of its nudge, the thresholds of the vertical drag (the player's close, the sheet's open and close), the speed and rest of a scrolling title, the edge zone and speed of a reorder list's auto-scroll, and how long a brief notice stays.
+// INFO: motion tokens: the duration scale, the one spring used app-wide, the opacity a pressed control drops to, the scale a paused player cover drops to, the scale the player drops to behind the open sheet, the scale a control enters from, the detail play button's fade, shrink and scale-in durations, the now playing bars' fall, loop periods and static heights, the points the sheet handle rises in each bounce of its nudge, the thresholds of the vertical drag (the player's close, the sheet's open and close), the speed and rest of a scrolling title, the edge zone and speed of a reorder list's auto-scroll, the scroll each detail header layer takes to fade, the scale the hero cover shrinks to, the share of a fade the top bar leads by, and how long a brief notice stays.
 export const motion = {
   duration: {
     fast: 150,
@@ -54,5 +54,14 @@ export const motion = {
     edge: 64,
     // Points per second a reorder list auto-scrolls while a row is held at its edge.
     speed: 800,
+  },
+  detailCollapse: {
+    // Points of scroll each layer of the detail header takes to fade (floating buttons, title, top bar).
+    fade: 40,
+    // Scale the detail hero cover shrinks to as it scrolls away.
+    coverScale: 0.42,
+    // Share of a fade the top bar starts before the title is fully under it.
+    // Must stay <= 1: above 1 the bar and the floating buttons would both take touches at once.
+    barLead: 0.5,
   },
 } as const;
