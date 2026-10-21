@@ -4,7 +4,7 @@
 // over it. Four bodies: loading skeleton, error with retry, unavailable,
 // ready. The cover is a mosaic, an image, an accent tile or the placeholder;
 // the ready body is a list: the hero, the title and the children on top,
-// optional rows under them paged by onEndReached. It draws statically:
+// optional rows under them paged by onEndReached two screens before the end, with skeleton rows under them while the next page loads. It draws statically:
 // nothing moves with the scroll.
 import type { ReactNode } from "react";
 import { FlatList, Image, StyleSheet, useWindowDimensions, View } from "react-native";
@@ -12,7 +12,7 @@ import { FlatList, Image, StyleSheet, useWindowDimensions, View } from "react-na
 import { color } from "../tokens/color.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
 import { Cover } from "./Cover.tsx";
-import { DetailSkeleton } from "./DetailSkeleton.tsx";
+import { DetailSkeleton, SkeletonRow } from "./DetailSkeleton.tsx";
 import { EmptyState } from "./EmptyState.tsx";
 import { ErrorState } from "./ErrorState.tsx";
 import { GlassSurface } from "./GlassSurface.tsx";
@@ -20,6 +20,9 @@ import { GradientFill } from "./GradientFill.tsx";
 import type { IconName } from "./Icon.tsx";
 import { IconButton } from "./IconButton.tsx";
 import { Text } from "./Text.tsx";
+
+// How far from the end, in visible lengths, the list asks for its next page: two screens before it.
+const END_REACHED_THRESHOLD = 2;
 
 export interface DetailRow {
   key: string;
@@ -39,6 +42,8 @@ export type DetailBody =
       children: ReactNode;
       rows?: readonly DetailRow[];
       onEndReached?: (() => void) | undefined;
+      // Present while the next page loads: skeleton rows under the rows, announced by the label.
+      loadingMore?: { label: string } | undefined;
     };
 
 interface DetailScreenProps {
@@ -90,6 +95,21 @@ export function DetailScreen({
           keyExtractor={(row) => row.key}
           renderItem={({ item }) => <>{item.element}</>}
           onEndReached={body.onEndReached}
+          onEndReachedThreshold={END_REACHED_THRESHOLD}
+          ListFooterComponent={
+            body.loadingMore ? (
+              <View
+                style={styles.loadingMore}
+                accessibilityRole="progressbar"
+                accessibilityLabel={body.loadingMore.label}
+                testID={testID ? `${testID}-loading-more` : "detail-loading-more"}
+              >
+                {Array.from({ length: layout.skeletonRows }, (_, row) => (
+                  <SkeletonRow key={row} />
+                ))}
+              </View>
+            ) : null
+          }
           contentContainerStyle={{ paddingBottom: bottomInset }}
           ListHeaderComponent={
             <>
@@ -183,6 +203,7 @@ const styles = StyleSheet.create({
   fade: StyleSheet.absoluteFill,
   imageTitle: { paddingHorizontal: layout.gutter, paddingBottom: spacing.lg },
   title: { paddingHorizontal: layout.gutter, paddingTop: spacing.lg },
+  loadingMore: { gap: spacing.md, paddingHorizontal: layout.gutter, paddingTop: spacing.md },
   buttons: { position: "absolute", left: layout.gutter, right: layout.gutter },
   buttonsRow: { flexDirection: "row", justifyContent: "space-between" },
 });

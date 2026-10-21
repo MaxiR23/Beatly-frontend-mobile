@@ -1,15 +1,13 @@
 // INFO: the static loading skeleton of a detail screen: a cover block, a
-// title bar, a meta bar and six track rows, in the skeleton base color. The
+// title bar, a meta bar and `layout.skeletonRows` track rows, in the skeleton base color. The
 // image variant swaps the centered cover for a full-width hero block with the
-// title bar at its bottom left. It draws no motion.
+// title bar at its bottom left. It draws no motion. Its row is exported for the detail list's next-page footer.
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 
 import { color } from "../tokens/color.ts";
 import { radius } from "../tokens/radius.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
 import { typography } from "../tokens/typography.ts";
-
-const ROWS = [0, 1, 2, 3, 4, 5] as const;
 
 interface DetailSkeletonProps {
   label: string;
@@ -35,7 +33,7 @@ export function DetailSkeleton({ label, topInset, hero }: DetailSkeletonProps) {
         </View>
         <View style={styles.imageBody}>
           <View style={styles.metaBar} />
-          {ROWS.map((row) => (
+          {Array.from({ length: layout.skeletonRows }, (_, row) => (
             <SkeletonRow key={row} />
           ))}
         </View>
@@ -52,16 +50,16 @@ export function DetailSkeleton({ label, topInset, hero }: DetailSkeletonProps) {
       <View style={styles.cover} />
       <View style={styles.titleBar} />
       <View style={styles.metaBar} />
-      {ROWS.map((row) => (
+      {Array.from({ length: layout.skeletonRows }, (_, row) => (
         <SkeletonRow key={row} />
       ))}
     </View>
   );
 }
 
-function SkeletonRow() {
+export function SkeletonRow() {
   return (
-    <View style={styles.row}>
+    <View style={styles.row} testID="detail-skeleton-row">
       <View style={styles.number} />
       <View style={styles.rowText}>
         <View style={styles.rowTitle} />

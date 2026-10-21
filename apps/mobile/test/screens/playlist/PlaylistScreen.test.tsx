@@ -8,6 +8,7 @@
 // What is covered:
 // - the header of an own (its mosaic), a liked and a genre playlist: cover, title, creator, description, meta line
 // - the tracks, each with a more button, infinite scroll for own and liked, a genre playlist's tracks from its header
+// - skeleton rows while the next page loads, replaced by its tracks, none with no next page
 // - the empty message under the header, not found from the header or the tracks, the generic error with retry
 // - starting a list registers an own, a liked and a genre playlist as a recent with its kind
 // - the track menu: remove from an own playlist calls the service and refetches the tracks, none for the liked and genre playlists
@@ -342,6 +343,47 @@ describe("PlaylistScreen", () => {
     await fireEvent(screen.getByTestId("playlist-list"), "onEndReached");
     expect(await screen.findByText("Second Song")).toBeTruthy();
     expect(ctx.listPlaylistTracks).toHaveBeenLastCalledWith("p1", "c1");
+  });
+
+  it("draws skeleton rows while the next page loads and replaces them with its tracks", async () => {
+    let release: (outcome: HttpOutcome<PageResult<PlaylistTrack>>) => void = () => undefined;
+    const pending = new Promise<HttpOutcome<PageResult<PlaylistTrack>>>((resolve) => {
+      release = resolve;
+    });
+    await setup({
+      listPlaylistTracks: (_id, cursor) =>
+        cursor === null
+          ? Promise.resolve(pageOf([first], { has_more: true, next_cursor: "c1" }))
+          : pending,
+    });
+    await screen.findByText("First Song");
+    await fireEvent(screen.getByTestId("playlist-list"), "onEndReached");
+    const footer = await screen.findByTestId("playlist-loading-more");
+    expect(footer.props.accessibilityLabel).toBe(en.common.loading);
+    expect(screen.queryByText("Second Song")).toBeNull();
+    await act(async () => {
+      release(pageOf([second]));
+      await pending;
+    });
+    expect(await screen.findByText("Second Song")).toBeTruthy();
+    expect(screen.queryByTestId("playlist-loading-more")).toBeNull();
+  });
+
+  it("draws no footer when there is no next page", async () => {
+    const ctx = await setup({ listPlaylistTracks: tracksOf([first]) });
+    await screen.findByText("First Song");
+    await fireEvent(screen.getByTestId("playlist-list"), "onEndReached");
+    expect(screen.queryByTestId("playlist-loading-more")).toBeNull();
+    expect(ctx.listPlaylistTracks).toHaveBeenCalledTimes(1);
+  });
+
+  it("draws no footer on a genre playlist", async () => {
+    mockParams = { id: "gp1", source: "genre" };
+    await setup({
+      getGenrePlaylist: detail({ ...publicGenrePlaylistFixture, tracks: two }),
+    });
+    await screen.findByText("Second Song");
+    expect(screen.queryByTestId("playlist-loading-more")).toBeNull();
   });
 
   it("loads the next page of liked at the end of the list", async () => {

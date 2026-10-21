@@ -8,6 +8,7 @@
 // What is covered:
 // - the rows under the children, onEndReached, the mosaic and the tile covers
 // - the four bodies: the skeleton, the error with retry, the unavailable message, the ready hero with its title and children
+// - the next-page footer of skeleton rows, its count and label, none without it, the end-reached threshold, the loading skeleton's row count
 // - the hero title in typography.title
 // - the image hero: full width at the hero image ratio, the title over it in typography.display, the fade, the placeholder without an image, no centered cover or wash
 // - the floating back button, the more button only when given, the neutral wash and the gradient wash
@@ -119,6 +120,41 @@ describe("DetailScreen", () => {
     });
     await fireEvent(screen.getByTestId("detail-list"), "onEndReached");
     expect(onEndReached).toHaveBeenCalledTimes(1);
+  });
+
+  it("draws skeleton rows under the rows while the next page loads", async () => {
+    await draw({
+      ...(ready() as Extract<DetailBody, { kind: "ready" }>),
+      rows: [{ key: "a", element: <Text>row a</Text> }],
+      loadingMore: { label: "Loading more" },
+    });
+    const footer = screen.getByTestId("detail-loading-more");
+    expect(screen.getByLabelText("Loading more")).toBeTruthy();
+    expect(within(footer).getAllByTestId("detail-skeleton-row")).toHaveLength(layout.skeletonRows);
+    expect(screen.getByText("row a")).toBeTruthy();
+  });
+
+  it("draws no footer when the next page is not loading", async () => {
+    await draw({
+      ...(ready() as Extract<DetailBody, { kind: "ready" }>),
+      rows: [{ key: "a", element: <Text>row a</Text> }],
+    });
+    expect(screen.queryByTestId("detail-loading-more")).toBeNull();
+    expect(screen.queryAllByTestId("detail-skeleton-row")).toHaveLength(0);
+  });
+
+  it("asks for the next page two screens before the end", async () => {
+    await draw({
+      ...(ready() as Extract<DetailBody, { kind: "ready" }>),
+      rows: [{ key: "a", element: <Text>row a</Text> }],
+    });
+    expect(screen.getByTestId("detail-list").props.onEndReachedThreshold).toBe(2);
+  });
+
+  it("draws the token's count of rows in the loading skeleton", async () => {
+    await draw({ kind: "loading", label: "Loading" });
+    expect(screen.getAllByTestId("detail-skeleton-row")).toHaveLength(layout.skeletonRows);
+    expect(layout.skeletonRows).toBe(6);
   });
 
   it("draws a mosaic cover with four urls", async () => {
