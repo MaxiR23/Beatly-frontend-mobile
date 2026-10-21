@@ -6,9 +6,11 @@
 // - DetailActions
 //
 // What is covered:
-// - centered: shuffle, play and save in order, a group centered with `layout.actionGap`; no save without save; the save toggle state and label
+// - centered: shuffle, play and save in order, a group centered with `layout.gap`; no save without save; the save toggle state and label
 // - a press on an idle play starts, on a playing or paused one toggles
 // - the start buttons disabled with no playable track, while pages load for either one, and play alone while its stream loads
+// - the side buttons following the shrink value toward the center, `layout.controlHeight` square, starting at the circle when mounted playing
+// - the side buttons stacked above the play slot (`layout.sideButtonStack`)
 // - the presses, and a disabled save ignoring them
 // - wide (liked): play and shuffle pills filling the row with `layout.gap`, the play pill's glyph and label per state with no animation, its presses and the disabled and busy states
 // - the options node after play (centered), and none without it, still pressable with no playable track
@@ -18,7 +20,7 @@
 // SEE: packages/ui/src/components/DetailActions.tsx
 
 import { describe, expect, it, jest } from "@jest/globals";
-import { fireEvent, render, screen, within } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { Animated, Pressable } from "react-native";
 
 import { DetailActions } from "../../src/components/DetailActions.tsx";
@@ -57,14 +59,88 @@ const labels = () =>
   screen.getAllByRole("button").map((b) => b.props.accessibilityLabel as unknown);
 
 describe("DetailActions", () => {
-  it("draws shuffle, play and save in order, centered with the action gap", async () => {
+  it("draws shuffle, play and save in order, centered with the gap", async () => {
     await render(<DetailActions {...props()} />);
     expect(labels()).toEqual(["Shuffle", "Play", "Save"]);
     expect(screen.getByTestId("actions")).toHaveStyle({
       flexDirection: "row",
       justifyContent: "center",
-      gap: layout.actionGap,
+      gap: layout.gap,
     });
+  });
+
+  it("moves the side buttons with the shrink value toward the center", async () => {
+    const travel = (layout.playButtonPill - layout.playButtonMedium) / 2;
+    const p = props({ reduceMotion: true });
+    const view = await render(<DetailActions {...p} />);
+    expect(screen.getByTestId("detail-actions-leading")).toHaveStyle({
+      transform: [{ translateX: 0 }],
+    });
+    expect(screen.getByTestId("detail-actions-trailing")).toHaveStyle({
+      transform: [{ translateX: 0 }],
+    });
+    await view.unmount();
+    await render(<DetailActions {...p} play={{ ...p.play, state: "playing" }} />);
+    expect(screen.getByTestId("detail-actions-leading")).toHaveStyle({
+      transform: [{ translateX: travel }],
+    });
+    expect(screen.getByTestId("detail-actions-trailing")).toHaveStyle({
+      transform: [{ translateX: -travel }],
+    });
+    for (const name of ["Shuffle", "Save"]) {
+      expect(screen.getByRole("button", { name })).toHaveStyle({
+        width: layout.controlHeight,
+        height: layout.controlHeight,
+      });
+    }
+  });
+
+  it("stacks the side buttons above the play slot so their taps win during the shrink", async () => {
+    await render(<DetailActions {...props()} />);
+    for (const id of ["detail-actions-leading", "detail-actions-trailing"]) {
+      expect(screen.getByTestId(id)).toHaveStyle({ zIndex: layout.sideButtonStack });
+    }
+  });
+
+  it("starts the side buttons at the circle when it mounts playing", async () => {
+    const travel = (layout.playButtonPill - layout.playButtonMedium) / 2;
+    const p = props();
+    await render(<DetailActions {...p} play={{ ...p.play, state: "paused" }} />);
+    expect(screen.getByTestId("detail-actions-leading")).toHaveStyle({
+      transform: [{ translateX: travel }],
+    });
+  });
+
+  it("drives the side buttons with the value the play button shrinks", async () => {
+    const travel = (layout.playButtonPill - layout.playButtonMedium) / 2;
+    const timing = jest.spyOn(Animated, "timing");
+    const held: { finish: ((r: { finished: boolean }) => void) | undefined }[] = [];
+    timing.mockImplementation(() => {
+      const entry: (typeof held)[number] = { finish: undefined };
+      held.push(entry);
+      return {
+        start: (done?: (r: { finished: boolean }) => void) => {
+          entry.finish = done;
+        },
+        stop: jest.fn(),
+      } as unknown as Animated.CompositeAnimation;
+    });
+    const p = props();
+    const view = await render(<DetailActions {...p} />);
+    await view.rerender(<DetailActions {...p} play={{ ...p.play, busy: true }} />);
+    await act(() => {
+      held[0]?.finish?.({ finished: true });
+    });
+    const shrinkValue = timing.mock.calls[1]?.[0];
+    expect(shrinkValue).toBeInstanceOf(Animated.Value);
+    await act(() => {
+      (shrinkValue as Animated.Value).setValue(1);
+    });
+    await view.rerender(<DetailActions {...p} play={{ ...p.play, busy: true }} />);
+    expect(screen.getByTestId("detail-actions-leading")).toHaveStyle({
+      transform: [{ translateX: travel }],
+    });
+    timing.mockRestore();
   });
 
   it("draws shuffle and play only without save", async () => {

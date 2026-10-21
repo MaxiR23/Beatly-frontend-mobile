@@ -8,13 +8,13 @@
 // What is covered:
 // - the four states: idle pill with glyph and label, loading circle with a spinner, playing pause, paused play, and their labels
 // - the disabled pill on the control surface, loading ignoring presses, the press in idle, playing and paused
-// - the pill `layout.playButtonPill` wide; leaving idle, the label fade then the eased shrink to the circle with the motion.playButton tokens, with no measurement, the play glyph alone while shrinking, never cut by a state change, then the spinner or the pause glyph with its scale-in; back to the pill when it returns to idle mid-way; nothing animates under reduce motion
+// - the pill `layout.playButtonPill` wide; leaving idle, the label fade then the pill drawn from two caps and a bridge on one shrink value, the eased shrink on the native driver with the motion.playButton tokens, no width animated, the touch target the pill then the circle, the play glyph alone while shrinking, never cut by a state change, then the spinner or the pause glyph with its scale-in; back to the pill when it returns to idle mid-way; nothing animates under reduce motion
 //
 // Run with: pnpm --filter @beatly/ui test -- PlayButton
 //
 // SEE: packages/ui/src/components/PlayButton.tsx
 
-import { afterEach, describe, expect, it, jest } from "@jest/globals";
+import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { Animated } from "react-native";
 
@@ -24,6 +24,12 @@ import { motion } from "../../src/tokens/motion.ts";
 import { layout } from "../../src/tokens/spacing.ts";
 
 const timing = jest.spyOn(Animated, "timing");
+const travel = (layout.playButtonPill - layout.playButtonMedium) / 2;
+
+let shrink = new Animated.Value(0);
+beforeEach(() => {
+  shrink = new Animated.Value(0);
+});
 
 afterEach(() => {
   timing.mockClear();
@@ -57,6 +63,7 @@ const element = (
     pauseLabel="Pause"
     disabled={options.disabled ?? false}
     reduceMotion={options.reduceMotion ?? false}
+    shrink={shrink}
     onPress={options.onPress ?? jest.fn()}
   />
 );
@@ -69,8 +76,10 @@ describe("PlayButton", () => {
     expect(screen.getByTestId("play-button-pill")).toHaveStyle({
       width: layout.playButtonPill,
       height: layout.playButtonMedium,
-      backgroundColor: color.accent.primary,
     });
+    for (const id of ["play-button-cap-start", "play-button-bridge", "play-button-cap-end"]) {
+      expect(screen.getByTestId(id)).toHaveStyle({ backgroundColor: color.accent.primary });
+    }
     expect(button.props.accessibilityState).toEqual({ disabled: false, busy: false });
   });
 
@@ -102,9 +111,9 @@ describe("PlayButton", () => {
     const onPress = jest.fn();
     await render(element("idle", { disabled: true, onPress }));
     const button = screen.getByRole("button", { name: "Play" });
-    expect(screen.getByTestId("play-button-pill")).toHaveStyle({
-      backgroundColor: color.surface.control,
-    });
+    for (const id of ["play-button-cap-start", "play-button-bridge", "play-button-cap-end"]) {
+      expect(screen.getByTestId(id)).toHaveStyle({ backgroundColor: color.surface.control });
+    }
     expect(button.props.accessibilityState).toMatchObject({ disabled: true });
     await fireEvent.press(button);
     expect(onPress).not.toHaveBeenCalled();
@@ -127,7 +136,7 @@ describe("PlayButton", () => {
   it("fades the label, then shrinks the pill to the circle, with no measurement", async () => {
     const view = await render(element("idle"));
     const fade = hold();
-    const shrink = hold();
+    const shrinkRun = hold();
     await view.rerender(element("loading"));
     expect(timing).toHaveBeenCalledTimes(1);
     expect(timing).toHaveBeenCalledWith(
@@ -146,21 +155,75 @@ describe("PlayButton", () => {
       fade.finish?.({ finished: true });
     });
     expect(timing).toHaveBeenCalledWith(
-      expect.anything(),
+      shrink,
       expect.objectContaining({
-        toValue: layout.playButtonMedium,
+        toValue: 1,
         duration: motion.playButton.shrink,
         easing: expect.any(Function),
-        useNativeDriver: false,
+        useNativeDriver: true,
       }),
     );
     expect(screen.getByTestId("play-button-shrink")).toBeTruthy();
     expect(screen.queryByText("Play")).toBeNull();
     expect(screen.queryByTestId("play-button-busy")).toBeNull();
     await act(() => {
-      shrink.finish?.({ finished: true });
+      shrinkRun.finish?.({ finished: true });
     });
     expect(screen.getByTestId("play-button-busy")).toBeTruthy();
+  });
+
+  it("runs every animation of the chain on the native driver", async () => {
+    const view = await render(element("idle"));
+    const fade = hold();
+    const shrinkRun = hold();
+    await view.rerender(element("playing"));
+    expect(screen.getByTestId("play-button-pill")).toHaveStyle({ width: layout.playButtonPill });
+    await act(() => {
+      fade.finish?.({ finished: true });
+    });
+    expect(screen.getByTestId("play-button-pill")).toHaveStyle({ width: layout.playButtonPill });
+    await act(() => {
+      shrinkRun.finish?.({ finished: true });
+    });
+    expect(timing).toHaveBeenCalledTimes(3);
+    for (const call of timing.mock.calls) {
+      expect(call[1]).toEqual(expect.objectContaining({ useNativeDriver: true }));
+    }
+    expect(screen.getByTestId("play-button-pill")).toHaveStyle({ width: layout.playButtonMedium });
+  });
+
+  it("draws the pill from the caps and the bridge at the shrink value", async () => {
+    const view = await render(element("playing"));
+    expect(screen.getByTestId("play-button-cap-start")).toHaveStyle({
+      transform: [{ translateX: travel }],
+    });
+    expect(screen.getByTestId("play-button-cap-end")).toHaveStyle({
+      transform: [{ translateX: -travel }],
+    });
+    expect(screen.getByTestId("play-button-bridge")).toHaveStyle({ transform: [{ scaleX: 0 }] });
+    await view.rerender(element("idle"));
+    expect(screen.getByTestId("play-button-cap-start")).toHaveStyle({
+      transform: [{ translateX: 0 }],
+    });
+    expect(screen.getByTestId("play-button-cap-end")).toHaveStyle({
+      transform: [{ translateX: 0 }],
+    });
+    expect(screen.getByTestId("play-button-bridge")).toHaveStyle({ transform: [{ scaleX: 1 }] });
+  });
+
+  it("keeps the touch target the pill until the shrink ends", async () => {
+    const view = await render(element("idle"));
+    const fade = hold();
+    const shrinkRun = hold();
+    await view.rerender(element("loading"));
+    await act(() => {
+      fade.finish?.({ finished: true });
+    });
+    expect(screen.getByTestId("play-button-pill")).toHaveStyle({ width: layout.playButtonPill });
+    await act(() => {
+      shrinkRun.finish?.({ finished: true });
+    });
+    expect(screen.getByTestId("play-button-pill")).toHaveStyle({ width: layout.playButtonMedium });
   });
 
   it("scales in from enterScale when it starts playing", async () => {
@@ -185,6 +248,9 @@ describe("PlayButton", () => {
     await view.rerender(element("playing", { reduceMotion: true }));
     expect(timing).not.toHaveBeenCalled();
     expect(screen.getByTestId("play-button-pill")).toHaveStyle({ width: layout.playButtonMedium });
+    expect(screen.getByTestId("play-button-cap-start")).toHaveStyle({
+      transform: [{ translateX: travel }],
+    });
     expect(screen.getByRole("button", { name: "Pause" }).children[0]).toHaveStyle({
       transform: [{ scale: 1 }],
     });
@@ -193,7 +259,7 @@ describe("PlayButton", () => {
   it("does not cut the chain when loading turns to playing, and scales in only after it", async () => {
     const view = await render(element("idle"));
     const fade = hold();
-    const shrink = hold();
+    const shrinkRun = hold();
     await view.rerender(element("loading"));
     await view.rerender(element("playing"));
     expect(timing).toHaveBeenCalledTimes(1);
@@ -204,7 +270,7 @@ describe("PlayButton", () => {
     expect(timing).toHaveBeenCalledTimes(2);
     expect(screen.queryByTestId("play-button-pause")).toBeNull();
     await act(() => {
-      shrink.finish?.({ finished: true });
+      shrinkRun.finish?.({ finished: true });
     });
     expect(screen.getByTestId("play-button-pause")).toBeTruthy();
     expect(timing).toHaveBeenCalledWith(
@@ -220,13 +286,13 @@ describe("PlayButton", () => {
   it("runs the chain even when it goes straight from idle to playing", async () => {
     const view = await render(element("idle"));
     const fade = hold();
-    const shrink = hold();
+    const shrinkRun = hold();
     await view.rerender(element("playing"));
     await act(() => {
       fade.finish?.({ finished: true });
     });
     await act(() => {
-      shrink.finish?.({ finished: true });
+      shrinkRun.finish?.({ finished: true });
     });
     expect(screen.getByTestId("play-button-pause")).toBeTruthy();
     expect(timing).toHaveBeenCalledTimes(3);

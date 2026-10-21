@@ -1,11 +1,11 @@
-// INFO: the action row of a detail screen. Centered (own, album, genre): shuffle, the play button and a side button (save or the options node) as a group centered with layout.actionGap, so the side buttons follow the play pill as it shrinks. Wide (liked): a play pill and a shuffle pill sharing the row with layout.gap; the play pill swaps its glyph and label with the state and never shrinks. The play control starts when idle and toggles when this list plays or is paused; while either start loads the list's pages both are disabled, so a second start cannot race the first.
-import type { ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
+// INFO: the action row of a detail screen. Centered (own, album, genre): shuffle, the play button and a side button (save or the options node) as a group centered with layout.gap around the play button's fixed slot, the side buttons following its shrink toward the center on the native driver, ending layout.gap from the circle, drawn above the play slot (layout.sideButtonStack) so a tap on them wins over the pill's box while they slide over it. Wide (liked): a play pill and a shuffle pill sharing the row with layout.gap; the play pill swaps its glyph and label with the state and never shrinks. The play control starts when idle and toggles when this list plays or is paused; while either start loads the list's pages both are disabled, so a second start cannot race the first.
+import { useState, type ReactNode } from "react";
+import { Animated, StyleSheet, View } from "react-native";
 
 import { layout } from "../tokens/spacing.ts";
 import { Button } from "./Button.tsx";
 import { IconButton } from "./IconButton.tsx";
-import { PlayButton, type PlayButtonState } from "./PlayButton.tsx";
+import { PlayButton, shrinkOffset, type PlayButtonState } from "./PlayButton.tsx";
 
 interface DetailActionsProps {
   play: {
@@ -41,6 +41,7 @@ export function DetailActions({
   variant = "centered",
   testID,
 }: DetailActionsProps) {
+  const [shrink] = useState(() => new Animated.Value(play.busy || play.state !== "idle" ? 1 : 0));
   const startDisabled = disabled || play.busy || shuffle.busy;
   const playState: PlayButtonState = play.busy ? "loading" : play.state;
   if (variant === "wide") {
@@ -69,32 +70,51 @@ export function DetailActions({
   }
   return (
     <View style={styles.row} testID={testID}>
-      <IconButton
-        icon="shuffle"
-        accessibilityLabel={shuffle.label}
-        busy={shuffle.busy}
-        disabled={startDisabled}
-        onPress={shuffle.onPress}
-      />
+      <Animated.View
+        style={{
+          zIndex: layout.sideButtonStack,
+          transform: [{ translateX: shrinkOffset(shrink, "leading") }],
+        }}
+        testID="detail-actions-leading"
+      >
+        <IconButton
+          icon="shuffle"
+          accessibilityLabel={shuffle.label}
+          busy={shuffle.busy}
+          disabled={startDisabled}
+          onPress={shuffle.onPress}
+        />
+      </Animated.View>
       <PlayButton
         state={playState}
         playLabel={play.label}
         pauseLabel={play.pauseLabel}
         disabled={startDisabled}
         reduceMotion={reduceMotion}
+        shrink={shrink}
         onPress={playState === "idle" ? play.onStart : play.onToggle}
       />
-      {save !== undefined ? (
-        <IconButton
-          icon={save.saved ? "check" : "plus"}
-          accessibilityLabel={save.label}
-          selected={save.saved}
-          disabled={save.disabled}
-          onPress={save.onPress}
-        />
-      ) : (
-        options
-      )}
+      {save !== undefined || options != null ? (
+        <Animated.View
+          style={{
+            zIndex: layout.sideButtonStack,
+            transform: [{ translateX: shrinkOffset(shrink, "trailing") }],
+          }}
+          testID="detail-actions-trailing"
+        >
+          {save !== undefined ? (
+            <IconButton
+              icon={save.saved ? "check" : "plus"}
+              accessibilityLabel={save.label}
+              selected={save.saved}
+              disabled={save.disabled}
+              onPress={save.onPress}
+            />
+          ) : (
+            options
+          )}
+        </Animated.View>
+      ) : null}
     </View>
   );
 }
@@ -105,7 +125,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: layout.gutter,
-    gap: layout.actionGap,
+    gap: layout.gap,
   },
   wide: {
     flexDirection: "row",
