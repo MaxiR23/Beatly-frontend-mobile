@@ -7,7 +7,8 @@
 //
 // What is covered:
 // - the stop colors and offsets for two and three colors, the gradient direction,
-//   the stop alpha taken from the color (a transparent stop stays transparent)
+//   the stop alpha taken from the color (a transparent stop stays transparent),
+//   one color at explicit offsets and opacities, the opacity scaled by the color's own alpha
 //
 // Run with: pnpm --filter @beatly/ui test -- GradientFill
 //
@@ -80,5 +81,47 @@ describe("GradientFill", () => {
     const alphaAt = (i: number) => (Number(flat[i]) >>> 24) & 0xff;
     expect([flat[0], flat[2], flat[4]]).toEqual([0, 0.5, 1]);
     expect([alphaAt(1), alphaAt(3), alphaAt(5)]).toEqual([0, 0, 255]);
+  });
+
+  it("draws one color at the given offsets and opacities", async () => {
+    await render(
+      <GradientFill
+        direction="vertical"
+        color="#112233"
+        stops={[
+          { offset: 0, opacity: 1 },
+          { offset: 0.3, opacity: 0.5 },
+          { offset: 1, opacity: 0 },
+        ]}
+      />,
+    );
+    const [gradient] = nodesWithProp(screen.toJSON(), "gradient");
+    const flat = gradient?.props.gradient;
+    if (!Array.isArray(flat)) throw new Error("gradient is not an array");
+    expect([flat[0], flat[2], flat[4]]).toEqual([0, 0.3, 1]);
+    const rgb = argb("#112233") & 0xffffff;
+    expect([1, 3, 5].map((i) => Number(flat[i]) & 0xffffff)).toEqual([rgb, rgb, rgb]);
+    expect([1, 3, 5].map((i) => (Number(flat[i]) >>> 24) & 0xff)).toEqual([255, 128, 0]);
+    expect(gradient?.props).toMatchObject({ x2: "0", y2: "1" });
+  });
+
+  it("scales the stop opacity by the color's own alpha", async () => {
+    await render(
+      <GradientFill
+        direction="vertical"
+        color="rgba(255, 255, 255, 0.5)"
+        stops={[
+          { offset: 0, opacity: 1 },
+          { offset: 1, opacity: 0.5 },
+        ]}
+      />,
+    );
+    const [gradient] = nodesWithProp(screen.toJSON(), "gradient");
+    const flat = gradient?.props.gradient;
+    if (!Array.isArray(flat)) throw new Error("gradient is not an array");
+    expect([1, 3].map((i) => (Number(flat[i]) >>> 24) & 0xff)).toEqual([
+      Math.round(0.5 * 255),
+      Math.round(0.25 * 255),
+    ]);
   });
 });

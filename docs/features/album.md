@@ -11,6 +11,8 @@ pushes a new album in the same tab. Pressing an available track plays the album 
 
 ## Layout
 
+- Collapse: the header collapses into the top bar on scroll (`DESIGN.md`, "Detail screen base"): the cover shrinks and fades, the bar is drawn on the dominant color. On iOS the floating back stays fixed and the bar is a strip with no back of its own, reaching from the top edge to `spacing.sm` past `spacing.xs` under the back's bottom edge, with no background: the dominant color and a light shade, both fading to transparent at its bottom edge.
+
 Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), except
 the body:
 
@@ -45,13 +47,13 @@ the body:
 ## Platform differences
 
 - iOS: the floating buttons use native glass on iOS 26+, `GlassSurface`'s solid
-  fallback elsewhere.
+  fallback elsewhere. The back's native glass never fades (the back stays fixed); the top bar has no glass on any platform.
 - Android: the solid fallback draws the buttons.
 - Expo Go: the native color module is missing, so the wash stays neutral.
 
 ## States
 
-The floating back button is drawn in every state.
+The floating back button is drawn in every state; with data, on Android it fades out on scroll and the top bar's back takes over; on iOS it stays fixed over the top bar.
 
 | State            | What is drawn                                                                                  | i18n keys                                                                                                                                                                                                                     |
 | ---------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -97,7 +99,7 @@ Back pops the stack, or replaces with `/` when there is nothing to go back to.
 ## Checked by hand
 
 The action row centered on iOS and Android, the shrink without dropped frames while playback starts, on iOS and Android, and a tap on shuffle and on the side button right after the shrink and at the middle of it (taps reach them, not play); the label fading and the play pill shrinking to a circle with shuffle and save following it, then scaling in as pause, the now playing bars moving, freezing on pause and static under reduce motion, a mid-track buffer on a slow network; saving, closing and reopening the album and finding it on the library screen; screenshots of the album at the top and scrolled, on iOS and Android, with the
-floating buttons fixed over the hero; the native glass on iOS 26+; the real
+collapsed header and top bar; the header collapse on scroll (the cover shrinking and fading, then the floating buttons, the title and the top bar, in that order, without dropped frames on iOS and Android); on iOS the floating back staying fixed and tappable at every scroll position, the title never under it, and the strip's fade matching the top of the wash and ending with no edge under the back, and the strip's transparent bottom catching taps over the first visible row (album, playlist); TalkBack focus moving from the floating buttons to the top bar after a scroll, and VoiceOver reaching the fixed back and the bar's title once collapsed; the bar title's legibility over bright dominant colors and the bar matching the top of the wash; the native glass on iOS 26+; the real
 dominant color on a development build and the neutral fallback in Expo Go;
 swipe-back per tab; and the native tab bar on iOS 26+ with the renamed tab
 groups.

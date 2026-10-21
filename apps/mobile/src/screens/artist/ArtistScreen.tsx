@@ -200,6 +200,7 @@ export function ArtistScreen() {
       bottomInset={tabBarClearance}
     >
       <DetailScreen
+        reduceMotion={nowPlaying.reduceMotion}
         testID="artist"
         body={body}
         backLabel={t("back")}

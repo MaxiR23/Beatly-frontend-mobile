@@ -12,6 +12,8 @@ source (`player.md`). Every track ends with a more button that opens the track m
 
 ## Layout
 
+- Collapse: the header collapses into the top bar on scroll (`DESIGN.md`, "Detail screen base"): the cover shrinks and fades, the bar is drawn on the dominant color (neutral for liked). On iOS the floating back stays fixed and the bar is a strip with no back of its own, reaching from the top edge to `spacing.sm` past `spacing.xs` under the back's bottom edge, with no background: the dominant color and a light shade, both fading to transparent at its bottom edge (the base surface for liked).
+
 Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), except
 the info block:
 
@@ -95,7 +97,7 @@ the info block:
 ## Platform differences
 
 - iOS: the floating buttons use native glass on iOS 26+, `GlassSurface`'s solid
-  fallback elsewhere.
+  fallback elsewhere. The back's native glass never fades (the back stays fixed); the top bar has no glass on any platform.
 - Android: the solid fallback draws the buttons.
 - Expo Go: the native color module is missing, so the wash stays neutral.
 - Edit tracks: iOS with the `ExpoUI` module draws `NativeEditList` (the system list); Android, Expo Go
@@ -103,7 +105,7 @@ the info block:
 
 ## States
 
-The floating back button is drawn in every state.
+The floating back button is drawn in every state; with data, on Android it fades out on scroll and the top bar's back takes over; on iOS it stays fixed over the top bar.
 
 | State                         | What is drawn                                                                                                 | i18n keys                                                                                                                                                                                                                                                        |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -198,3 +200,4 @@ Home; real covers, the dominant-color wash
 and the brand mark at `layout.creatorMark`; swipe-back per tab and the native tab
 bar on iOS 26+; and the album screen scrolled to its carousels after its list moved
 to a `FlatList`; the next-page skeleton rows on a real own or liked playlist of more than 50 tracks with a slow network, and the next page asked for early enough that a normal scroll rarely reaches them.
+Also: the header collapse on scroll (the cover shrinking and fading, then the floating buttons, the title and the top bar, in that order, without dropped frames on iOS and Android); on iOS the floating back staying fixed and tappable at every scroll position, the title never under it, and the strip's fade matching the top of the wash and ending with no edge under the back, and the strip's transparent bottom catching taps over the first visible row (album, playlist); TalkBack focus moving from the floating buttons to the top bar after a scroll, and VoiceOver reaching the fixed back and the bar's title once collapsed; the bar title's legibility over bright dominant colors and the bar matching the top of the wash.

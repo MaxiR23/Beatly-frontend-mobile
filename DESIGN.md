@@ -12,62 +12,63 @@ value: the value lives once, in the token file.
 
 ## Color (`color`)
 
-| Role                                                                                                                             | Token                                                                                        |
-| -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Base background of every screen                                                                                                  | `color.surface.base`                                                                         |
-| Sheet, modal, dialog and form `Card` background (the `ui` `Card` is only this raised card; a list card is a different component) | `color.surface.raised`                                                                       |
-| List card, input and image-placeholder background                                                                                | `color.surface.card`                                                                         |
-| Secondary control background (secondary button, inactive chip/tab)                                                               | `color.surface.control`                                                                      |
-| Card/sheet/input border, divider, skeleton base                                                                                  | `color.surface.border`                                                                       |
-| Primary text                                                                                                                     | `color.text.primary`                                                                         |
-| Secondary text (subtitles, artist names, descriptions)                                                                           | `color.text.secondary`                                                                       |
-| Tertiary text (meta, captions)                                                                                                   | `color.text.tertiary`                                                                        |
-| Disabled text                                                                                                                    | `color.text.disabled`                                                                        |
-| Text drawn on a light/accent background                                                                                          | `color.text.inverse`                                                                         |
-| The app's single accent (primary buttons, active state)                                                                          | `color.accent.primary`                                                                       |
-| Switch: track and thumb when on, track and thumb when off                                                                        | `color.accent.primary` / `color.text.inverse`, `color.surface.border` / `color.text.primary` |
-| Destructive/error state                                                                                                          | `color.status.error`                                                                         |
-| Success/confirmation state                                                                                                       | `color.status.success`                                                                       |
-| Sheet/modal backdrop                                                                                                             | `color.overlay.backdrop`                                                                     |
-| Scrim over an image (behind a control or text; the now playing scrim over a row cover)                                           | `color.overlay.onImage`                                                                      |
-| Subtle translucent fill (ghost button, translucent chip)                                                                         | `color.overlay.subtle`                                                                       |
-| Muted translucent fill (seek track, icon-button background)                                                                      | `color.overlay.muted`                                                                        |
-| Sheet handle bar on Android                                                                                                      | `color.overlay.handleAndroid`                                                                |
-| Clear start of a fade into the base surface (the detail hero image); the see-through container of the player route               | `color.overlay.clear`                                                                        |
+| Role                                                                                                                                                             | Token                                                                                        |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Base background of every screen and the detail top bar without a dominant color (on iOS the strip's wash without one, and its shade)                             | `color.surface.base`                                                                         |
+| Sheet, modal, dialog and form `Card` background (the `ui` `Card` is only this raised card; a list card is a different component)                                 | `color.surface.raised`                                                                       |
+| List card, input and image-placeholder background                                                                                                                | `color.surface.card`                                                                         |
+| Secondary control background (secondary button, inactive chip/tab)                                                                                               | `color.surface.control`                                                                      |
+| Card/sheet/input border, divider, skeleton base                                                                                                                  | `color.surface.border`                                                                       |
+| Primary text                                                                                                                                                     | `color.text.primary`                                                                         |
+| Secondary text (subtitles, artist names, descriptions)                                                                                                           | `color.text.secondary`                                                                       |
+| Tertiary text (meta, captions)                                                                                                                                   | `color.text.tertiary`                                                                        |
+| Disabled text                                                                                                                                                    | `color.text.disabled`                                                                        |
+| Text drawn on a light/accent background                                                                                                                          | `color.text.inverse`                                                                         |
+| The app's single accent (primary buttons, active state)                                                                                                          | `color.accent.primary`                                                                       |
+| Switch: track and thumb when on, track and thumb when off                                                                                                        | `color.accent.primary` / `color.text.inverse`, `color.surface.border` / `color.text.primary` |
+| Destructive/error state                                                                                                                                          | `color.status.error`                                                                         |
+| Success/confirmation state                                                                                                                                       | `color.status.success`                                                                       |
+| Sheet/modal backdrop                                                                                                                                             | `color.overlay.backdrop`                                                                     |
+| Scrim over an image (behind a control or text; the now playing scrim over a row cover)                                                                           | `color.overlay.onImage`                                                                      |
+| Subtle translucent fill (ghost button, translucent chip)                                                                                                         | `color.overlay.subtle`                                                                       |
+| Muted translucent fill (seek track, icon-button background)                                                                                                      | `color.overlay.muted`                                                                        |
+| Sheet handle bar on Android                                                                                                                                      | `color.overlay.handleAndroid`                                                                |
+| Clear start of a fade into the base surface (the detail hero image); the see-through container of the player route                                               | `color.overlay.clear`                                                                        |
+| Opacity stops of the iOS detail strip: its wash (the dominant color or the base surface) and the base-surface shade over it, both transparent at the bottom edge | `color.gradient.detailStrip.wash` / `.shade`                                                 |
 
 ## Spacing and layout (`spacing`, `layout`)
 
-| Role                                                                                                                                               | Token                                                           |
-| -------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Spacing scale, multiples of four                                                                                                                   | `spacing.xxs` … `spacing.xxl`                                   |
-| Screen edge padding                                                                                                                                | `layout.gutter`                                                 |
-| Gap between items in a list/row                                                                                                                    | `layout.gap`                                                    |
-| Minimum touch target padding (`hitSlop`)                                                                                                           | `layout.hitSlop`                                                |
-| Height of a form control (input, form button) or a floating tab bar item, the height of the player header row, and side of its square touch target | `layout.controlHeight`                                          |
-| Minimum height of a multiline form field                                                                                                           | `layout.textAreaHeight`                                         |
-| Width of a carousel card and side of its cover                                                                                                     | `layout.carouselCard`                                           |
-| Side of the header account avatar                                                                                                                  | `layout.avatar`                                                 |
-| Side of the leading mark (avatar or brand mark) in a detail creator line                                                                           | `layout.creatorMark`                                            |
-| Side of the large avatar of the profile screen                                                                                                     | `layout.profileAvatar`                                          |
-| Height of a filter chip and of a segmented control option                                                                                          | `layout.chipHeight`                                             |
-| Width / height of the genre accent bar in a genre row                                                                                              | `layout.genreBarWidth` / `layout.genreBarHeight`                |
-| Side of the cover in a list row and in the mini player                                                                                             | `layout.rowCover`                                               |
-| Side of the cover in the medium list row (library) and the song row of the player sheet                                                            | `layout.rowCoverMedium`                                         |
-| Side of the cover in the large list row (search top artist)                                                                                        | `layout.rowCoverLarge`                                          |
-| Side of the cover in a detail hero                                                                                                                 | `layout.heroCover`                                              |
-| Width / height ratio of the full-width detail hero image                                                                                           | `layout.heroImageRatio`                                         |
-| Share of the window height the detail hero image may take at most                                                                                  | `layout.heroImageMaxHeightShare`                                |
-| Width of the track-number column in a track row                                                                                                    | `layout.trackNumber`                                            |
-| Width of one bar of the now playing indicator                                                                                                      | `layout.nowPlayingBarWidth`                                     |
-| Side of the large play or pause button of the player                                                                                               | `layout.playButton`                                             |
-| Side of the detail play button's circle and height of its idle pill                                                                                | `layout.playButtonMedium`                                       |
-| Width of the detail play button's idle pill                                                                                                        | `layout.playButtonPill`                                         |
-| Stacking value of the detail action row's side buttons, above the play slot                                                                        | `layout.sideButtonStack`                                        |
-| Height of the seek bar track / side of its thumb                                                                                                   | `layout.seekTrack` / `layout.seekThumb`                         |
-| Width / height of the sheet handle bar                                                                                                             | `layout.handleWidth` / `layout.handleHeight`                    |
-| Width / height of the sheet handle bar on Android                                                                                                  | `layout.handleWidthAndroid` / `layout.handleHeightAndroid`      |
-| Width of a skeleton placeholder bar (title, meta, row title, row meta), as a share of its row                                                      | `layout.skeletonBar.title` / `.meta` / `.rowTitle` / `.rowMeta` |
-| Placeholder track rows of a detail skeleton (first load, next-page footer)                                                                         | `layout.skeletonRows`                                           |
+| Role                                                                                                                                                                         | Token                                                           |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Spacing scale, multiples of four                                                                                                                                             | `spacing.xxs` … `spacing.xxl`                                   |
+| Screen edge padding                                                                                                                                                          | `layout.gutter`                                                 |
+| Gap between items in a list/row                                                                                                                                              | `layout.gap`                                                    |
+| Minimum touch target padding (`hitSlop`)                                                                                                                                     | `layout.hitSlop`                                                |
+| Height of a form control (input, form button) or a floating tab bar item, the height of the player header row, the detail top bar's row, and side of its square touch target | `layout.controlHeight`                                          |
+| Minimum height of a multiline form field                                                                                                                                     | `layout.textAreaHeight`                                         |
+| Width of a carousel card and side of its cover                                                                                                                               | `layout.carouselCard`                                           |
+| Side of the header account avatar                                                                                                                                            | `layout.avatar`                                                 |
+| Side of the leading mark (avatar or brand mark) in a detail creator line                                                                                                     | `layout.creatorMark`                                            |
+| Side of the large avatar of the profile screen                                                                                                                               | `layout.profileAvatar`                                          |
+| Height of a filter chip and of a segmented control option                                                                                                                    | `layout.chipHeight`                                             |
+| Width / height of the genre accent bar in a genre row                                                                                                                        | `layout.genreBarWidth` / `layout.genreBarHeight`                |
+| Side of the cover in a list row and in the mini player                                                                                                                       | `layout.rowCover`                                               |
+| Side of the cover in the medium list row (library) and the song row of the player sheet                                                                                      | `layout.rowCoverMedium`                                         |
+| Side of the cover in the large list row (search top artist)                                                                                                                  | `layout.rowCoverLarge`                                          |
+| Side of the cover in a detail hero                                                                                                                                           | `layout.heroCover`                                              |
+| Width / height ratio of the full-width detail hero image                                                                                                                     | `layout.heroImageRatio`                                         |
+| Share of the window height the detail hero image may take at most                                                                                                            | `layout.heroImageMaxHeightShare`                                |
+| Width of the track-number column in a track row                                                                                                                              | `layout.trackNumber`                                            |
+| Width of one bar of the now playing indicator                                                                                                                                | `layout.nowPlayingBarWidth`                                     |
+| Side of the large play or pause button of the player                                                                                                                         | `layout.playButton`                                             |
+| Side of the detail play button's circle and height of its idle pill                                                                                                          | `layout.playButtonMedium`                                       |
+| Width of the detail play button's idle pill                                                                                                                                  | `layout.playButtonPill`                                         |
+| Stacking value of the detail action row's side buttons, above the play slot                                                                                                  | `layout.sideButtonStack`                                        |
+| Height of the seek bar track / side of its thumb                                                                                                                             | `layout.seekTrack` / `layout.seekThumb`                         |
+| Width / height of the sheet handle bar                                                                                                                                       | `layout.handleWidth` / `layout.handleHeight`                    |
+| Width / height of the sheet handle bar on Android                                                                                                                            | `layout.handleWidthAndroid` / `layout.handleHeightAndroid`      |
+| Width of a skeleton placeholder bar (title, meta, row title, row meta), as a share of its row                                                                                | `layout.skeletonBar.title` / `.meta` / `.rowTitle` / `.rowMeta` |
+| Placeholder track rows of a detail skeleton (first load, next-page footer)                                                                                                   | `layout.skeletonRows`                                           |
 
 ## Floating surfaces
 
@@ -81,8 +82,13 @@ fallback's `color.surface.raised`.
 
 ## Detail screen base
 
-`DetailScreen` from `@beatly/ui/native`. Used by the album, playlist and artist screens. It draws statically: nothing moves with the
-scroll.
+`DetailScreen` from `@beatly/ui/native`. Used by the album, playlist and artist screens. In the ready body the scroll drives, on the
+native driver, the cover shrinking to `motion.detailCollapse.coverScale` and fading, then the floating buttons, the title and the top bar
+fading, each over `motion.detailCollapse.fade` points of scroll, the bar starting `motion.detailCollapse.barLead` of a fade before the
+title is under it. The ranges come from the measured hero and title heights: the title is gone once its bottom (hero plus title on the
+cover hero, the hero on the image hero) passes `topInset + layout.controlHeight`; the title fades in the fade before that, the buttons in
+the fade before the title, the cover shrinks until the title starts. On iOS the floating back is not part of the collapse: it never fades and always takes touches; only the floating more fades over the buttons' range. Before the heights are measured nothing moves. Under reduce motion
+the cover does not scale; the fades stay.
 
 - Hero: a `layout.heroCover` cover in `radius.sm` with `shadow.cover`, centered
   over a wash. The cover follows `Cover`'s rules: a mosaic with four urls, an image, the
@@ -111,8 +117,25 @@ scroll.
   `color.surface.control` with the glyph in `color.text.disabled`. Wide (liked): two `Button` pills with `fill`, `layout.controlHeight` tall and `layout.gap` apart, glyph (`icon.size.lg`) and label `spacing.sm` apart: play `primary` (pause glyph and label while the list plays, the spinner while it loads, no shrink) and shuffle `secondary` (`color.surface.control`).
 - Title: `typography.title` under the hero. The base reserves no space for an action
   row; the screen owns the gap below its own title block.
-- Floating back and more buttons: `GlassSurface` `circle` fixed over the hero, in
-  every state. The more button is drawn only when the screen passes a `more` prop.
+- Top bar, on Android: from the top edge to `topInset + layout.controlHeight`, `layout.gutter` sides, filled with the dominant color or
+  `color.surface.base`, no blur and no glass; an `IconButton` back, the title in `typography.subtitle` on one line centered, and more only
+  with the `more` prop (a `layout.controlHeight` spacer otherwise). It takes touches only once it starts to appear, the floating buttons
+  only until they have faded, neither in between; the faded set is hidden from assistive technology.
+  The bar is a solid surface and catches every touch on its area once active, unlike the floating buttons, which let touches through
+  around them. A three-valued phase owns the touches (floating while `offset < buttons[1]`, bar from `bar[0]`, neither in between);
+  React state changes only when the phase changes. The separation depends on `motion.detailCollapse.barLead <= 1`: a value above 1
+  would make both sets active at once.
+  On iOS: the same strip, fade and range, but it reaches from the top edge to `spacing.sm` past `spacing.xs` under the floating back (`topInset + spacing.xs`,
+  `layout.controlHeight`, `spacing.xs`, `spacing.sm`), so the button sits entirely inside it and the fade ends just under it. It has no background: a vertical
+  `GradientFill` of the dominant color (`color.surface.base` without one) at `color.gradient.detailStrip.wash`, and over it `color.surface.base` at
+  `color.gradient.detailStrip.shade`. Both end transparent, so the list passes under the strip with no edge. Its transparent bottom still catches touches once active. It has no back of its own: a
+  `layout.controlHeight` slot under the fixed floating back, then the title in `typography.subtitle` on one line centered between two
+  `layout.controlHeight` slots, at the back's vertical center, and more only with the `more` prop. The floating back is drawn above the bar,
+  so the bar catches touches on its area without blocking it. The phase hands over only the mores: the floating more while
+  `offset < buttons[1]`, the bar's from `bar[0]`.
+- Platform difference, a design decision of this change: iOS and Android draw different bars. On iOS the native-glass floating back stays fixed in every phase and the fading strip fades in behind it, with no back of its own in the bar; on Android the bar carries its own back and the floating buttons hand over to it.
+- Floating back and more buttons: `GlassSurface` `circle` over the hero in
+  every state; in the ready body, on Android both fade out with the scroll; on iOS the back stays fixed, opaque and touchable in every phase, and only the more fades. The more button is drawn only when the screen passes a `more` prop.
 - Skeleton: `DetailSkeleton`, a static cover block, a title bar, a meta bar and
   `layout.skeletonRows` track rows in `color.surface.border`, bar widths from `layout.skeletonBar`. With
   `hero: "image"` (artist) the cover is a full-width `layout.heroImageRatio` block, capped like the loaded hero, with the
@@ -219,7 +242,7 @@ Roles, not raw sizes. Every role uses the platform's system font (no
 | Brand                   | `typography.brand`    | The Beatly wordmark on the auth screens                                |
 | Title                   | `typography.title`    | Screen title                                                           |
 | Section                 | `typography.section`  | Section heading                                                        |
-| Subtitle                | `typography.subtitle` | Card/sheet subtitle                                                    |
+| Subtitle                | `typography.subtitle` | Card/sheet subtitle, the detail top bar's title                        |
 | Row title               | `typography.rowTitle` | Track/list row title                                                   |
 | Body                    | `typography.body`     | Default paragraph/body text                                            |
 | Link                    | `typography.link`     | Inline link inside body text                                           |
@@ -254,8 +277,11 @@ Roles, not raw sizes. Every role uses the platform's system font (no
 | Speed, in points per millisecond, that commits a vertical drag on release                                                                             | `motion.dragToClose.velocity`                          |
 | Points from the top or bottom of a reorder list where a held row starts the auto-scroll (`ReorderList`)                                               | `motion.reorder.edge`                                  |
 | Points per second a reorder list auto-scrolls while a row is held at its edge (`ReorderList`)                                                         | `motion.reorder.speed`                                 |
+| Points of scroll each detail header layer takes to fade (floating buttons, title, top bar)                                                            | `motion.detailCollapse.fade`                           |
+| Scale the detail hero cover shrinks to as it scrolls away                                                                                             | `motion.detailCollapse.coverScale`                     |
+| Share of a fade the detail top bar starts before the title is under it                                                                                | `motion.detailCollapse.barLead`                        |
 
-`VerticalDrag` (the one vertical drag), `DragToClose` and `PullUpSheet` over it, `PauseScale`, `Marquee`, `NowPlayingBars`, `PlayButton` and `ReorderList` in `@beatly/ui/native` are the only animated components. They use React Native's `Animated` with the native driver and `PanResponder`, and take `reduceMotion` from the app.
+`VerticalDrag` (the one vertical drag), `DragToClose` and `PullUpSheet` over it, `PauseScale`, `Marquee`, `NowPlayingBars`, `PlayButton` and `ReorderList` and `DetailScreen` in `@beatly/ui/native` are the only animated components. They use React Native's `Animated` (and `Animated.event` for the detail scroll) with the native driver and `PanResponder`, and take `reduceMotion` from the app.
 
 ## Icons (`icon`)
 
