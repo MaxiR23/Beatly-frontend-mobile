@@ -51,7 +51,7 @@ export function HomeScreen() {
           ? tp("liked")
           : (recent.metadata.title ?? undefined),
       subtitle: recentLine(recent),
-      urls: recent.metadata.thumbnail_url ? [recent.metadata.thumbnail_url] : [],
+      images: recent.metadata.image ? [recent.metadata.image] : [],
       shape: recent.entity_type === "artist" ? "round" : "square",
       onPress:
         recent.entity_type === "artist"
@@ -77,7 +77,7 @@ export function HomeScreen() {
     key: playlist.id,
     title: playlist.title,
     subtitle: owner ?? undefined,
-    urls: playlist.thumbnail_urls,
+    images: playlist.mosaic,
     shape: "square",
     onPress: () => {
       router.push({ pathname: "/playlist/[id]", params: { id: playlist.id, source: "user" } });

@@ -20,6 +20,12 @@ import type { ComponentProps } from "react";
 import { MiniPlayer } from "../../src/components/MiniPlayer.tsx";
 import { color } from "../../src/tokens/color.ts";
 
+const tiers = (n: string) => ({
+  small: `test://img/${n}/s`,
+  medium: `test://img/${n}/m`,
+  large: `test://img/${n}/l`,
+});
+
 const labels = { open: "Open player", play: "Play", pause: "Pause", next: "Next" };
 
 async function draw(over: Partial<ComponentProps<typeof MiniPlayer>> = {}) {
@@ -29,7 +35,7 @@ async function draw(over: Partial<ComponentProps<typeof MiniPlayer>> = {}) {
       title="Song"
       subtitle="Artist"
       failed={false}
-      coverUrl={null}
+      image={null}
       tint={null}
       playing={false}
       reduceMotion={false}
@@ -43,6 +49,17 @@ async function draw(over: Partial<ComponentProps<typeof MiniPlayer>> = {}) {
 }
 
 describe("MiniPlayer", () => {
+  it("draws the cover at the small tier", async () => {
+    await draw({ image: tiers("1") });
+    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/s" });
+  });
+
+  it("draws the placeholder without an image", async () => {
+    await draw({ image: null });
+    expect(screen.getByTestId("cover-placeholder")).toBeTruthy();
+    expect(screen.queryByTestId("cover-single")).toBeNull();
+  });
+
   it("draws the title and the subtitle", async () => {
     await draw();
     expect(screen.getByText("Song")).toBeTruthy();

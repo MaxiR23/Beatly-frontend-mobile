@@ -25,8 +25,9 @@ Show a genre's playlists in a two-column grid and filter them by category chip.
   gap, over two. Cover `radius.sm` on `color.surface.card`. Title in
   `typography.rowTitle`, the track count in `typography.meta` and
   `color.text.secondary`. Each card is pressable and opens the playlist screen.
-- Cover rule: 4 `thumbnail_urls` draw a 2 x 2 mosaic; 1 to 3 draw the first; with
-  none, `thumbnail_url` if there is one, else the placeholder.
+- Cover rule: 4 `mosaic` entries draw a 2 x 2 mosaic; 1 to 3 draw the first; with
+  none, `image` if there is one, else the placeholder; `medium` on a phone
+  (`DESIGN.md`, "Image tiers").
 - Bottom: the grid clears the floating tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
 ## Platform differences

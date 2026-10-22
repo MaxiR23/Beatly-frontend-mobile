@@ -2,6 +2,7 @@
 import {
   genrePlaylistLibraryInputOf,
   profileName,
+  type ImageTiers,
   type PlayableTrack,
   type PlaylistTrack,
 } from "@beatly/core";
@@ -52,6 +53,7 @@ const toPlayable = (track: PlaylistTrack): PlayableTrack => ({
   album: track.album,
   albumId: track.album_id,
   coverUrl: track.thumbnail_url,
+  image: track.image,
   durationSeconds: track.duration_seconds,
 });
 
@@ -105,18 +107,20 @@ export function PlaylistScreen() {
   const owner = profile.data ? profileName(profile.data) : null;
 
   // The cover of each kind.
-  let cover: { urls: readonly string[]; icon?: "heart" } = { urls: [] };
+  let cover: { images: readonly ImageTiers[]; icon?: "heart" } = { images: [] };
+  // The legacy url the write routes take; never drawn.
+  let coverUrl: string | null = null;
   if (header.data?.source === "genre") {
-    const { thumbnails, thumbnail_url } = header.data.playlist;
-    cover = {
-      urls: thumbnails.length > 0 ? thumbnails : thumbnail_url !== null ? [thumbnail_url] : [],
-    };
+    const { thumbnails, thumbnail_url, mosaic, image } = header.data.playlist;
+    cover = { images: mosaic.length > 0 ? mosaic : image !== null ? [image] : [] };
+    coverUrl = thumbnails[0] ?? thumbnail_url;
   } else if (header.data?.source === "user") {
-    cover = { urls: header.data.playlist.thumbnail_urls };
+    cover = { images: header.data.playlist.mosaic };
+    coverUrl = header.data.playlist.thumbnail_urls[0] ?? null;
   } else if (header.data?.source === "liked") {
-    cover = { urls: [], icon: "heart" };
+    cover = { images: [], icon: "heart" };
   }
-  const wash = useDominantColor(cover.urls[0] ?? null);
+  const wash = useDominantColor(cover.images[0]?.small ?? null);
 
   function goBack() {
     // A deep link has nothing to go back to, so it lands on home.
@@ -228,7 +232,7 @@ export function PlaylistScreen() {
         metadata: {
           title,
           subtitle,
-          thumbnail_url: cover.urls[0] ?? null,
+          thumbnail_url: coverUrl,
           kind: data.source,
         },
       });
@@ -260,7 +264,7 @@ export function PlaylistScreen() {
               ? track.artists.map((a) => a.name).join(t("artistSeparator"))
               : undefined
           }
-          urls={[track.thumbnail_url]}
+          images={track.image !== null ? [track.image] : []}
           onPress={() => {
             start(toQueue(list, position, toPlayable));
           }}
@@ -359,11 +363,7 @@ export function PlaylistScreen() {
                         if (setSaved.isPending) return;
                         setSaved.mutate({
                           saved: saved.data !== true,
-                          input: genrePlaylistLibraryInputOf(
-                            id,
-                            data.playlist.title,
-                            cover.urls[0] ?? null,
-                          ),
+                          input: genrePlaylistLibraryInputOf(id, data.playlist.title, coverUrl),
                         });
                       },
                     },

@@ -96,6 +96,20 @@ describe("LibraryScreen", () => {
     expect(screen.getByLabelText(en.common.loading)).toBeTruthy();
   });
 
+  it("draws the placeholder for a saved album without an image", async () => {
+    await setup({
+      listLibrary: full([
+        likedEntryFixture,
+        { ...savedAlbumEntryFixture, thumbnail_url: null, image: null },
+      ]),
+    });
+    await screen.findByText("Saved album");
+    const row = screen.getAllByTestId("library-entry")[1];
+    if (row === undefined) throw new Error("no album row");
+    expect(within(row).getByTestId("cover-placeholder")).toBeTruthy();
+    expect(within(row).queryByTestId("cover-single")).toBeNull();
+  });
+
   it("draws the liked entry first, then the rest in the API's order", async () => {
     await setup({ listLibrary: full() });
     await screen.findByText(en.library.liked);
@@ -113,6 +127,12 @@ describe("LibraryScreen", () => {
     expect(own.getByText("Road trip")).toBeTruthy();
     expect(await own.findByText("Playlist · maxi_23")).toBeTruthy();
     expect(own.getByTestId("cover-mosaic")).toBeTruthy();
+    const cells = own.getByTestId("cover-mosaic").props.children as {
+      props: { source: unknown };
+    }[];
+    expect(cells.map((cell) => cell.props.source)).toEqual(
+      ownPlaylistEntryFixture.mosaic.map((image) => ({ uri: image.small })),
+    );
     expect(album.getByText("Saved album")).toBeTruthy();
     expect(album.getByText("Album · Some artist")).toBeTruthy();
     expect(album.getByTestId("cover-single")).toBeTruthy();

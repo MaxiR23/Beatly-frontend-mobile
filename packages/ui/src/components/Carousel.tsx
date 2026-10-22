@@ -3,6 +3,7 @@
 import { FlatList, StyleSheet, View } from "react-native";
 
 import { layout, spacing } from "../tokens/spacing.ts";
+import type { ImageTiers } from "./imageTier.ts";
 import { MediaCard } from "./MediaCard.tsx";
 import { Text } from "./Text.tsx";
 
@@ -10,7 +11,7 @@ export interface CarouselItem {
   key: string;
   title?: string | undefined;
   subtitle?: string | undefined;
-  urls: readonly string[];
+  images: readonly ImageTiers[];
   shape: "square" | "round";
   onPress?: (() => void) | undefined;
 }
@@ -40,7 +41,7 @@ export function Carousel({ title, items, onEndReached, testID }: CarouselProps) 
           <MediaCard
             title={item.title}
             subtitle={item.subtitle}
-            urls={item.urls}
+            images={item.images}
             shape={item.shape}
             onPress={item.onPress}
           />

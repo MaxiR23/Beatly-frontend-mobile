@@ -25,6 +25,7 @@ import type { ActivityService } from "../../src/services/activity.ts";
 import { createListeningCounter } from "../../src/services/listening.ts";
 import type { PlayableTrack, PlaybackSource } from "../../src/services/playback.ts";
 import { createPlaybackController } from "../../src/services/playback.ts";
+import { tiers } from "../fakes/images.ts";
 import { createFakeLog } from "../fakes/log.ts";
 import { createFakePlayer } from "../fakes/player.ts";
 import { createFakeStreams } from "../fakes/streams.ts";
@@ -36,6 +37,7 @@ const track = (id: string, patch: Partial<PlayableTrack> = {}): PlayableTrack =>
   album: "Album",
   albumId: "a1",
   coverUrl: "test://img/1",
+  image: tiers("1"),
   durationSeconds: 200,
   ...patch,
 });

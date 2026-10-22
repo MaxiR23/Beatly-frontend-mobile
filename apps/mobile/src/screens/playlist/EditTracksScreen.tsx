@@ -148,7 +148,7 @@ export function EditTracksScreen() {
         key: `${track.track_id}:${String(track.position)}`,
         title: track.title,
         subtitle,
-        urls: [track.thumbnail_url],
+        images: track.image !== null ? [track.image] : [],
         label:
           subtitle !== undefined
             ? t("editTracks.row", { title: track.title, artists: subtitle })

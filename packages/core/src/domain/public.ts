@@ -1,7 +1,8 @@
-// INFO: the schema of GET /public/genre-playlists/{id}: the header and the tracks of a genre playlist, read together.
+// INFO: the schema of GET /public/genre-playlists/{id}: the header and the tracks of a genre playlist, read together; mosaic and image are the tiers of thumbnails and of thumbnail_url.
 import { z } from "zod";
 
 import { playlistTrackSchema } from "./playlist.ts";
+import { imageTiersSchema } from "./image.ts";
 
 export const publicGenrePlaylistSchema = z.object({
   id: z.string(),
@@ -10,7 +11,9 @@ export const publicGenrePlaylistSchema = z.object({
   track_count: z.number().int(),
   total_duration_seconds: z.number().int(),
   thumbnails: z.array(z.string()),
+  mosaic: z.array(imageTiersSchema),
   thumbnail_url: z.string().nullable(),
+  image: imageTiersSchema.nullable(),
   tracks: z.array(playlistTrackSchema),
 });
 

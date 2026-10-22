@@ -46,6 +46,7 @@ import {
   memoryStorage,
   noSheetNudge,
   relatedFixture,
+  tiers,
   upNextFixture,
   Wrapper,
 } from "../../helpers/core.tsx";
@@ -101,6 +102,7 @@ const track = (id: string): PlayableTrack => ({
   album: "Album",
   albumId: "a1",
   coverUrl: null,
+  image: null,
   durationSeconds: 248,
 });
 const album = { kind: "album", id: "a1", name: "Test Album" } as const;
@@ -177,6 +179,18 @@ function captures(testID: string, event: unknown): unknown {
 const panel = () => screen.getByTestId("player-sheet-panel", { includeHiddenElements: true });
 
 describe("the handle and the sheet", () => {
+  it("draws the song row's cover at the small tier", async () => {
+    const ctx = await setup();
+    await act(async () => {
+      await ctx.playback.playList([{ ...track("t1"), image: tiers("t1") }], 0, album);
+    });
+    await openSheet();
+    const sources = screen
+      .getAllByTestId("cover-single")
+      .map((node) => node.props.source as unknown);
+    expect(sources).toContainEqual({ uri: "test://img/t1/s" });
+  });
+
   it("opens the sheet from the handle and loads no tab before it", async () => {
     const ctx = await setup();
     expect(ctx.getUpNext).not.toHaveBeenCalled();

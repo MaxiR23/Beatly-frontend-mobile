@@ -1,5 +1,6 @@
-// INFO: the schemas of GET /search; artists is [] and never null, a song's artists follow the track artists rule (never empty, the first has an id, any other may have a null id); an album's artists have a nullable id and can be [], artist is null when nothing matches, and its thumbnail_url is nullable; an album's playlist_id is not read, the provider leaves it out of some albums.
+// INFO: the schemas of GET /search; image is the tiers of thumbnail_url, null when there is none; artists is [] and never null, a song's artists follow the track artists rule (never empty, the first has an id, any other may have a null id); an album's artists have a nullable id and can be [], artist is null when nothing matches, and its thumbnail_url is nullable; an album's playlist_id is not read, the provider leaves it out of some albums.
 import { z } from "zod";
+import { imageTiersSchema } from "./image.ts";
 
 // The album artist reference (old rule: nullable id, the list may be empty).
 export const searchArtistRefSchema = z.object({ id: z.string().nullable(), name: z.string() });
@@ -19,6 +20,7 @@ export const searchArtistSchema = z.object({
   id: z.string(),
   name: z.string(),
   thumbnail_url: z.string().nullable(),
+  image: imageTiersSchema.nullable(),
 });
 export type SearchArtist = z.infer<typeof searchArtistSchema>;
 
@@ -30,6 +32,7 @@ export const searchSongSchema = z.object({
   album_id: z.string(),
   duration_seconds: z.number().int(),
   thumbnail_url: z.string(),
+  image: imageTiersSchema.nullable(),
 });
 export type SearchSong = z.infer<typeof searchSongSchema>;
 
@@ -39,6 +42,7 @@ export const searchAlbumSchema = z.object({
   artists: z.array(searchArtistRefSchema),
   year: z.string().nullable(),
   thumbnail_url: z.string().nullable(),
+  image: imageTiersSchema.nullable(),
 });
 export type SearchAlbum = z.infer<typeof searchAlbumSchema>;
 

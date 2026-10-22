@@ -34,7 +34,7 @@ export function MediaGrid({ items, bottomPadding, testID }: MediaGridProps) {
         <MediaCard
           title={item.title}
           subtitle={item.subtitle}
-          urls={item.urls}
+          images={item.images}
           shape={item.shape}
           onPress={item.onPress}
           size={size}

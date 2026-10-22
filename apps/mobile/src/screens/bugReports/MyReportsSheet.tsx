@@ -80,7 +80,7 @@ function ReportsBody() {
             icon="flag"
             size="medium"
             shape="square"
-            urls={[]}
+            images={[]}
             title={t(`categories.${item.category}`)}
             subtitle={subtitleOf(item)}
             trailing={

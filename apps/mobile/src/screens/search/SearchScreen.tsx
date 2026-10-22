@@ -46,6 +46,7 @@ const toPlayable = (song: SearchSong): PlayableTrack => ({
   album: song.album,
   albumId: song.album_id,
   coverUrl: song.thumbnail_url,
+  image: song.image,
   durationSeconds: song.duration_seconds,
 });
 
@@ -82,7 +83,7 @@ export function SearchScreen() {
     key: album.id,
     title: album.title,
     subtitle: album.artists.length > 0 ? artistNames(album.artists) : undefined,
-    urls: album.thumbnail_url !== null ? [album.thumbnail_url] : [],
+    images: album.image !== null ? [album.image] : [],
     shape: "square",
     onPress: () => {
       router.push({ pathname: "/album/[id]", params: { id: album.id } });
@@ -203,7 +204,7 @@ export function SearchScreen() {
             testID="search-artist"
             size="large"
             shape="round"
-            urls={artist.thumbnail_url !== null ? [artist.thumbnail_url] : []}
+            images={artist.image !== null ? [artist.image] : []}
             title={artist.name}
             subtitle={t("artist")}
             onPress={() => {
@@ -220,7 +221,7 @@ export function SearchScreen() {
               <MediaRow
                 key={song.track_id}
                 shape="square"
-                urls={[song.thumbnail_url]}
+                images={song.image !== null ? [song.image] : []}
                 title={song.title}
                 subtitle={songMeta(song)}
                 nowPlaying={nowPlaying.of(song.track_id)}

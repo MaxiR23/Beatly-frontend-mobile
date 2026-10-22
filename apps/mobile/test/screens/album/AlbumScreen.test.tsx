@@ -213,6 +213,13 @@ describe("AlbumScreen", () => {
     expect(StyleSheet.flatten(sections.props.style as ViewStyle).paddingBottom).toBeUndefined();
   });
 
+  it("draws the hero cover at the large tier", async () => {
+    await setup();
+    await screen.findByTestId("album-other-versions");
+    const [hero] = screen.getAllByTestId("cover-single");
+    expect(hero?.props.source).toEqual({ uri: "test://img/al1/l" });
+  });
+
   it("draws both carousels with data", async () => {
     await setup();
     expect(await screen.findByTestId("album-other-versions")).toBeTruthy();
@@ -481,6 +488,7 @@ describe("AlbumScreen action row", () => {
           album: null,
           albumId: null,
           coverUrl: null,
+          image: null,
           durationSeconds: 1,
         },
       ],
@@ -625,6 +633,7 @@ describe("AlbumScreen action row", () => {
           album: null,
           albumId: null,
           coverUrl: null,
+          image: null,
           durationSeconds: 1,
         },
       ],

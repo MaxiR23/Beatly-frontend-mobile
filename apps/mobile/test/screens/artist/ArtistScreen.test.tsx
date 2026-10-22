@@ -102,12 +102,12 @@ describe("ArtistScreen", () => {
     expect(ctx.getArtist).toHaveBeenCalledWith("UCar1");
   });
 
-  it("draws the name over the full-width image hero", async () => {
+  it("draws the name over the full-width image hero, the photo at the large tier", async () => {
     await setup();
     const hero = await screen.findByTestId("detail-hero-image");
     expect(within(hero).getByText("Test Artist")).toBeTruthy();
     expect(screen.getByTestId("detail-hero-photo").props.source).toEqual({
-      uri: "test://img/ar1",
+      uri: "test://img/ar1/l",
     });
   });
 

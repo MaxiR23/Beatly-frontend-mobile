@@ -1,5 +1,6 @@
-// INFO: a cover: a 2 x 2 mosaic with four urls, the first url with one to
-// three, a placeholder with none; a square's corner is small or medium; with an icon, an accent tile with the
+// INFO: a cover: a 2 x 2 mosaic with four images, the first image with one to
+// three, a placeholder with none; each image at the tier its drawn side
+// needs (imageTier.ts); a square's corner is small or medium; with an icon, an accent tile with the
 // glyph instead of images. Images are decorative.
 import { Image, StyleSheet, View } from "react-native";
 
@@ -8,11 +9,12 @@ import { radius } from "../tokens/radius.ts";
 import { shadow } from "../tokens/shadow.ts";
 import { layout } from "../tokens/spacing.ts";
 import { Icon, type IconName } from "./Icon.tsx";
+import { imageUri, type ImageTiers } from "./imageTier.ts";
 
 const MOSAIC_SIZE = 4;
 
 interface CoverProps {
-  urls: readonly string[];
+  images: readonly ImageTiers[];
   shape: "square" | "round";
   corner?: "sm" | "md";
   size?: number;
@@ -21,14 +23,14 @@ interface CoverProps {
 }
 
 export function Cover({
-  urls,
+  images,
   shape,
   corner = "sm",
   size = layout.carouselCard,
   icon,
   elevated = false,
 }: CoverProps) {
-  const first = urls[0];
+  const first = images[0];
   const cell = { width: size / 2, height: size / 2 };
   const box = { width: size, height: size };
 
@@ -41,19 +43,24 @@ export function Cover({
         <View style={styles.tile} testID="cover-tile">
           <Icon name={icon} size="lg" tone="inverse" />
         </View>
-      ) : urls.length >= MOSAIC_SIZE ? (
+      ) : images.length >= MOSAIC_SIZE ? (
         <View style={styles.mosaic} testID="cover-mosaic">
-          {urls.slice(0, MOSAIC_SIZE).map((url, index) => (
+          {images.slice(0, MOSAIC_SIZE).map((image, index) => (
             <Image
-              key={`${String(index)}:${url}`}
-              source={{ uri: url }}
+              key={`${String(index)}:${image.small}`}
+              source={{ uri: imageUri(image, size / 2) }}
               style={cell}
               accessible={false}
             />
           ))}
         </View>
       ) : first !== undefined ? (
-        <Image source={{ uri: first }} style={box} accessible={false} testID="cover-single" />
+        <Image
+          source={{ uri: imageUri(first, size) }}
+          style={box}
+          accessible={false}
+          testID="cover-single"
+        />
       ) : (
         <View style={styles.placeholder} testID="cover-placeholder">
           <Icon name="music" size="xl" tone="tertiary" />

@@ -164,7 +164,9 @@ describe("PlaylistScreen", () => {
   });
 
   it("draws the placeholder for an own playlist with no thumbnails", async () => {
-    await setup({ getPlaylist: detail({ ...playlistDetailFixture, thumbnail_urls: [] }) });
+    await setup({
+      getPlaylist: detail({ ...playlistDetailFixture, thumbnail_urls: [], mosaic: [] }),
+    });
     await screen.findByTestId("playlist-info");
     expect(screen.getByTestId("cover-placeholder")).toBeTruthy();
   });
@@ -221,7 +223,7 @@ describe("PlaylistScreen", () => {
   it("draws the genre thumbnail alone when there is no mosaic", async () => {
     mockParams = { id: "gp1", source: "genre" };
     await setup({
-      getGenrePlaylist: detail({ ...publicGenrePlaylistFixture, thumbnails: [] }),
+      getGenrePlaylist: detail({ ...publicGenrePlaylistFixture, thumbnails: [], mosaic: [] }),
     });
     await screen.findByTestId("playlist-info");
     expect(screen.getByTestId("cover-single")).toBeTruthy();
@@ -553,6 +555,7 @@ const otherTrack = {
   album: null,
   albumId: null,
   coverUrl: null,
+  image: null,
   durationSeconds: 1,
 };
 const playingEvent = (ctx: Awaited<ReturnType<typeof setup>>) =>

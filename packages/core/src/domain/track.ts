@@ -1,9 +1,10 @@
-// INFO: the schemas of GET /tracks/{id}/upnext, /lyrics, /related and /credits; not paginated, a song's artists follow the track artists rule, the first upnext track is the requested one, lyrics is null when the track has none, start_ms and end_ms are null on every line of unsynced lyrics, credits has four nullable sections and other_sections, never null.
+// INFO: a track's image is the tiers of thumbnail_url, null when there is none; the schemas of GET /tracks/{id}/upnext, /lyrics, /related and /credits; not paginated, a song's artists follow the track artists rule, the first upnext track is the requested one, lyrics is null when the track has none, start_ms and end_ms are null on every line of unsynced lyrics, credits has four nullable sections and other_sections, never null.
 import { z } from "zod";
 
 import { albumRefSchema } from "./album.ts";
 import { relatedArtistSchema } from "./artist.ts";
 import { trackArtistsSchema } from "./search.ts";
+import { imageTiersSchema } from "./image.ts";
 
 export const trackRefSchema = z.object({
   track_id: z.string(),
@@ -13,6 +14,7 @@ export const trackRefSchema = z.object({
   album_id: z.string().nullable(),
   duration_seconds: z.number().int().nullable(),
   thumbnail_url: z.string().nullable(),
+  image: imageTiersSchema.nullable(),
 });
 export type TrackRef = z.infer<typeof trackRefSchema>;
 

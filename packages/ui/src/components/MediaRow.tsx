@@ -8,13 +8,14 @@ import { radius } from "../tokens/radius.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
 import { Cover } from "./Cover.tsx";
 import type { IconName } from "./Icon.tsx";
+import type { ImageTiers } from "./imageTier.ts";
 import { NowPlayingBars } from "./NowPlayingBars.tsx";
 import { Text } from "./Text.tsx";
 
 interface MediaRowProps {
   title: string;
   subtitle?: string | undefined;
-  urls: readonly string[];
+  images: readonly ImageTiers[];
   shape: "square" | "round";
   size?: "regular" | "medium" | "large";
   icon?: IconName | undefined;
@@ -33,7 +34,7 @@ interface MediaRowProps {
 export function MediaRow({
   title,
   subtitle,
-  urls,
+  images,
   shape,
   size = "regular",
   icon,
@@ -53,7 +54,7 @@ export function MediaRow({
   const content = (
     <>
       <View style={styles.cover}>
-        <Cover urls={urls} shape={shape} size={coverSize} icon={icon} />
+        <Cover images={images} shape={shape} size={coverSize} icon={icon} />
         {marked ? (
           <View
             style={[

@@ -119,7 +119,7 @@ describe("usePlaylists", () => {
 
 describe("useCreatePlaylist", () => {
   const input = { title: "New one", is_public: false };
-  const created: PlaylistListItem = { ...createdPlaylistFixture, thumbnail_urls: [] };
+  const created: PlaylistListItem = { ...createdPlaylistFixture, thumbnail_urls: [], mosaic: [] };
   const newEntry: LibraryEntry = {
     ...ownPlaylistEntryFixture,
     id: created.id,
@@ -351,6 +351,7 @@ describe("the playlist write mutations", () => {
     album: "Album",
     albumId: "al1",
     coverUrl: null,
+    image: null,
     durationSeconds: 200,
   };
 

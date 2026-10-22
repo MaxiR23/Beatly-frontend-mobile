@@ -106,6 +106,8 @@ export {
   genrePlaylistLibraryInputOf,
 } from "./services/library.ts";
 export type { LibraryItemInput, LibraryItemKind, LibraryService } from "./services/library.ts";
+export { imageTiersSchema } from "./domain/image.ts";
+export type { ImageTiers } from "./domain/image.ts";
 export { playEventSchema, recentEntitySchema, recentEntityTypeSchema } from "./domain/activity.ts";
 export type { PlayEvent, RecentEntity } from "./domain/activity.ts";
 export { createActivityService } from "./services/activity.ts";

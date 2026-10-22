@@ -15,7 +15,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { TrackMenuButton } from "../../../src/screens/trackMenu/TrackMenuButton.tsx";
 import { TrackMenuHost } from "../../../src/screens/trackMenu/TrackMenuHost.tsx";
-import { makeCore, Wrapper } from "../../helpers/core.tsx";
+import { makeCore, tiers, Wrapper } from "../../helpers/core.tsx";
 
 export const fullTrack: PlayableTrack = {
   trackId: "t1",
@@ -27,6 +27,7 @@ export const fullTrack: PlayableTrack = {
   album: "Album",
   albumId: "al1",
   coverUrl: "test://img/t1",
+  image: tiers("t1"),
   durationSeconds: 200,
 };
 

@@ -46,6 +46,7 @@ const track = (id: string): PlayableTrack => ({
   album: "Album",
   albumId: "a1",
   coverUrl: null,
+  image: null,
   durationSeconds: 200,
 });
 const list = ["t1", "t2"].map(track);

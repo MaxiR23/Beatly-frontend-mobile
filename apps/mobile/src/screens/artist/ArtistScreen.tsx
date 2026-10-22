@@ -1,5 +1,5 @@
 // INFO: an artist: the detail base with a full-width image hero and the name over it, then popular songs (rows of the detail base under their title), albums, singles and EPs and similar artists (the carousels being the slot after the rows), each hidden when empty, every playable popular song with a menu button, a song without a track id dimmed, unpressable, without menu, and announced as not available; unavailable for an invalid id; the current track's row is marked; starting a list registers it as a recent.
-import type { AlbumRef, Artist, PlayableTrack } from "@beatly/core";
+import type { AlbumRef, Artist, ImageTiers, PlayableTrack } from "@beatly/core";
 import { layout, spacing } from "@beatly/ui";
 import {
   Carousel,
@@ -26,7 +26,7 @@ import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
 import { TrackMenuHost } from "../trackMenu/TrackMenuHost.tsx";
 
-const urlsOf = (url: string | null): string[] => (url === null ? [] : [url]);
+const imagesOf = (image: ImageTiers | null): ImageTiers[] => (image === null ? [] : [image]);
 
 type ArtistSong = Artist["songs"][number];
 
@@ -40,6 +40,7 @@ function toPlayable(song: ArtistSong): PlayableTrack | null {
     album: song.album,
     albumId: song.album_id,
     coverUrl: song.thumbnail_url,
+    image: song.image,
     durationSeconds: song.duration_seconds,
   };
 }
@@ -73,7 +74,7 @@ export function ArtistScreen() {
     key: ref.id,
     title: ref.title,
     subtitle: ref.year ?? undefined,
-    urls: urlsOf(ref.thumbnail_url),
+    images: imagesOf(ref.image),
     shape: "square",
     onPress: openAlbum(ref.id),
   });
@@ -120,7 +121,7 @@ export function ArtistScreen() {
           <View style={styles.song} testID="artist-song">
             <MediaRow
               shape="square"
-              urls={urlsOf(song.thumbnail_url)}
+              images={imagesOf(song.image)}
               title={song.title}
               subtitle={song.album ?? undefined}
               available={playable !== null}
@@ -146,7 +147,7 @@ export function ArtistScreen() {
       kind: "ready",
       hero: "image",
       title: data.name,
-      cover: { urls: urlsOf(data.thumbnail_url) },
+      cover: { images: imagesOf(data.image) },
       washColor: null,
       children:
         data.songs.length > 0 ? (
@@ -175,7 +176,7 @@ export function ArtistScreen() {
                 key: single.id,
                 title: single.title,
                 subtitle: singleMeta(single, t),
-                urls: urlsOf(single.thumbnail_url),
+                images: imagesOf(single.image),
                 shape: "square",
                 onPress: openAlbum(single.id),
               }))}
@@ -188,7 +189,7 @@ export function ArtistScreen() {
               items={data.related.map((related): CarouselItem => ({
                 key: related.id,
                 title: related.name,
-                urls: urlsOf(related.thumbnail_url),
+                images: imagesOf(related.image),
                 shape: "round",
                 onPress: () => {
                   router.push({ pathname: "/artist/[id]", params: { id: related.id } });

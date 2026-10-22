@@ -5,12 +5,13 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { motion } from "../tokens/motion.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
 import { Cover } from "./Cover.tsx";
+import type { ImageTiers } from "./imageTier.ts";
 import { Text } from "./Text.tsx";
 
 interface MediaCardProps {
   title?: string | undefined;
   subtitle?: string | undefined;
-  urls: readonly string[];
+  images: readonly ImageTiers[];
   shape: "square" | "round";
   size?: number;
   onPress?: (() => void) | undefined;
@@ -19,14 +20,14 @@ interface MediaCardProps {
 export function MediaCard({
   title,
   subtitle,
-  urls,
+  images,
   shape,
   size = layout.carouselCard,
   onPress,
 }: MediaCardProps) {
   const content = (
     <>
-      <Cover urls={urls} shape={shape} size={size} />
+      <Cover images={images} shape={shape} size={size} />
       {title !== undefined ? (
         <Text variant="rowTitle" numberOfLines={1}>
           {title}

@@ -19,7 +19,7 @@
 
 import { motion } from "@beatly/ui";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import { act, fireEvent, screen } from "@testing-library/react-native";
+import { act, fireEvent, screen, within } from "@testing-library/react-native";
 
 import { resources } from "../../../src/i18n/resources.ts";
 import { fullTrack, setupMenu } from "./trackMenuHelpers.tsx";
@@ -34,6 +34,15 @@ const openMenu = () => fireEvent.press(screen.getByRole("button", { name: en.tra
 const choose = (label: string) => fireEvent.press(screen.getByRole("button", { name: label }));
 
 describe("the track menu", () => {
+  it("draws the sheet's song row at the small tier", async () => {
+    await setupMenu();
+    await openMenu();
+    const sheet = screen.getByTestId("track-menu-sheet");
+    expect(within(sheet).getByTestId("cover-single").props.source).toEqual({
+      uri: "test://img/t1/s",
+    });
+  });
+
   it("opens the sheet with only the items that apply", async () => {
     await setupMenu({}, { track: { ...fullTrack, coverUrl: null } });
     await openMenu();

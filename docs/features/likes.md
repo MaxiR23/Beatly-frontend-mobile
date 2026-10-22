@@ -21,6 +21,13 @@ Migration 1 (`packages/core/src/db/migrations.ts`) creates two tables.
 - `sync_state`: `name`, `since`. The `likes` row is the server checkpoint of the
   last completed read.
 
+The table stores no `image`, and there is no migration for it: nothing draws
+from a liked row. The mirror answers `isLiked` and re-sends pending
+writes, whose `POST /likes` body cannot carry `image` (conventions.md,
+Image tiers). The liked songs screen draws from
+`GET /playlists/liked/tracks`, which carries `image`, and the player
+draws the tiers of the track it was given.
+
 ## Data
 
 | Route                    | Paginated | Use                                                           |

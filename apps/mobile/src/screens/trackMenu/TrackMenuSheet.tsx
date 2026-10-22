@@ -28,7 +28,7 @@ export function TrackMenuSheet({ track, onClose }: TrackMenuSheetProps) {
       <View style={styles.body} testID="track-menu-sheet">
         <MediaRow
           shape="square"
-          urls={track.coverUrl === null ? [] : [track.coverUrl]}
+          images={track.image === null ? [] : [track.image]}
           title={track.title}
           subtitle={track.artists.map((artist) => artist.name).join(tp("artistSeparator"))}
         />

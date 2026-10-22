@@ -43,6 +43,7 @@ const track = (id: string): PlayableTrack => ({
   album: null,
   albumId: null,
   coverUrl: null,
+  image: null,
   durationSeconds: 100,
 });
 const source: PlaybackSource = { kind: "album", id: "a1", name: "Album" };

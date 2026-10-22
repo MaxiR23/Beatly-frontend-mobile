@@ -73,7 +73,7 @@ export function PlayerScreen() {
   const playback = usePlaybackActions();
   const state = usePlayback((s) => s);
   const { current, source, status } = state;
-  const wash = useDominantColor(current?.coverUrl ?? null);
+  const wash = useDominantColor(current?.image?.small ?? null);
   const reduceMotion = useReduceMotion();
   const [atTop, setAtTop] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -219,7 +219,7 @@ export function PlayerScreen() {
                   testID="player-cover-scale"
                 >
                   <Cover
-                    urls={current.coverUrl === null ? [] : [current.coverUrl]}
+                    images={current.image === null ? [] : [current.image]}
                     shape="square"
                     corner="md"
                     size={coverSize}

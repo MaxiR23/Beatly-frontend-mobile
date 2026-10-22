@@ -25,9 +25,9 @@ sheet with log out from the avatar.
   when the profile has no name, is loading or failed. For a recent it is
   `Artist` for an artist, and `<Kind> · <metadata.subtitle>` or `<Kind>` alone
   for an album or playlist.
-- Cover rule: with 4 `thumbnail_urls`, a 2 x 2 mosaic; with 1 to 3, the first
-  entry; with none, the placeholder. `GET /playlists` has no `thumbnail_url`. A
-  recent draws its `metadata.thumbnail_url`, or the placeholder.
+- Cover rule: own playlists draw their `mosaic` (4: a 2 x 2 mosaic, 1 to 3: the
+  first, none: the placeholder) at `medium`; a recent draws its `metadata.image` at
+  `medium`, or the placeholder. `GET /playlists` has no `image`.
 - Account sheet: on `GlassSurface`, `radius.lg`, `spacing.xl` padding.
 - Bottom: the content clears the floating tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
@@ -71,8 +71,8 @@ shows it the next time Home renders.
 
 Both lists answer "nothing" with `ok: true` and `items: []`: an expected empty
 state, never a retry. The `metadata` keys of a recent (`title`, `subtitle`,
-`thumbnail_url`, and `kind` on a playlist recent) are optional and read leniently: a missing one, or a value
-that is not a string, is treated as absent and omits that line or draws the
+`thumbnail_url`, `image`, and `kind` on a playlist recent) are optional and read leniently: a missing one, or a value
+that is not a string (for `image`, not a valid set of tiers), is treated as absent and omits that line or draws the
 placeholder cover. An absent or unknown `kind` on a playlist recent also reads as
 absent: the card is not pressable. The contract gives `metadata` a fixed shape on write, but it is not
 validated on read and older rows may lack `title`, so a non-string value must

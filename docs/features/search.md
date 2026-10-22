@@ -29,8 +29,7 @@ API returns. An album card opens the album; pressing a song plays the songs from
   albums are a `Carousel`.
 - Bottom: the list clears the floating tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
-The top artist circle draws `data.artist.thumbnail_url`, or the `Cover` placeholder when it is null
-(including responses cached before the field existed, for up to an hour).
+The top artist circle draws `data.artist.image` (`small`), or the `Cover` placeholder when it is null (including responses cached server-side before the field existed, for up to an hour); song rows draw `small` and album cards `medium`.
 
 ## Platform differences
 

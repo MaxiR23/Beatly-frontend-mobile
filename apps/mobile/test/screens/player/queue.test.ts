@@ -18,7 +18,7 @@
 import type { PlayableTrack } from "@beatly/core";
 import { describe, expect, it } from "@jest/globals";
 
-import { upNextFixture } from "../../helpers/core.tsx";
+import { tiers, upNextFixture } from "../../helpers/core.tsx";
 import {
   playableOf,
   suggestionsOf,
@@ -40,6 +40,7 @@ const toPlayable = (item: { id: string; ok: boolean }): PlayableTrack | null =>
         album: null,
         albumId: null,
         coverUrl: null,
+        image: null,
         durationSeconds: null,
       }
     : null;
@@ -92,6 +93,7 @@ describe("playableOf", () => {
         album_id: "al1",
         duration_seconds: 200,
         thumbnail_url: "test://img/t1",
+        image: tiers("t1"),
       }),
     ).toEqual({
       trackId: "t1",
@@ -103,6 +105,7 @@ describe("playableOf", () => {
       album: "Album",
       albumId: "al1",
       coverUrl: "test://img/t1",
+      image: tiers("t1"),
       durationSeconds: 200,
     });
   });
@@ -117,6 +120,7 @@ describe("playableOf", () => {
         album_id: null,
         duration_seconds: null,
         thumbnail_url: null,
+        image: null,
       }),
     ).toEqual({
       trackId: "t1",
@@ -125,6 +129,7 @@ describe("playableOf", () => {
       album: null,
       albumId: null,
       coverUrl: null,
+      image: null,
       durationSeconds: null,
     });
   });

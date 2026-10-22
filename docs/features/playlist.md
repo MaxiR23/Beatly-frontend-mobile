@@ -19,9 +19,10 @@ Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), excep
 the info block:
 
 - Hero: the cover in `layout.heroCover`, `radius.sm`, `shadow.cover`, over the wash
-  from the dominant color (neutral for liked). Own: the mosaic of its
-  `thumbnail_urls`, the single image with one, the placeholder with none. Liked: the accent tile with the heart. Genre:
-  the mosaic of its thumbnails, the single thumbnail with none.
+  from the dominant color (neutral for liked). Own: its
+  `mosaic`, the single image with one, the placeholder with none. Liked: the accent tile with the heart. Genre:
+  its `mosaic`, or `image` with none. The hero cover draws `large` (its mosaic cells `medium`) and the
+  dominant color comes from `small` (`DESIGN.md`, "Image tiers").
 - Info: `layout.gutter` on the sides, `spacing.xs` gap, `spacing.xl` below.
   - Creator row, `spacing.sm` gap: a `layout.creatorMark` mark (the user's avatar for
     an own playlist, the brand mark on `color.accent.primary` in `radius.full` for a
@@ -94,7 +95,7 @@ the info block:
 - The row of every occurrence of the current track (whoever started it) draws the now playing bars
   over its cover on a scrim, with no row background, and is announced as selected; the bars are frozen
   while paused and static under reduce motion.
-- Tracks: one `MediaRow` `regular` per track (`layout.rowCover` cover), in API order.
+- Tracks: one `MediaRow` `regular` per track (`layout.rowCover` cover, the track's `image` at `small`), in API order.
   While the next page of an own or liked playlist loads, `DetailScreen` draws `layout.skeletonRows` skeleton rows (`DetailSkeleton`'s `SkeletonRow`) under the last track, announced as `common:loading`; they give way to the page's tracks when it arrives, and there is no footer when there is no next page. The list asks for the next page at `onEndReachedThreshold` 2 (two screens before the end). The same footer also shows while play or shuffle loads every remaining page, because the next-page loading flag is true between those pages; it is the true state and is drawn on purpose.
   The bottom clears the floating tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
@@ -153,7 +154,7 @@ playlist, so the paged tracks query never runs for it.
 
 Play and shuffle of an own or liked playlist fetch every remaining page of `tracks` through the shared infinite-query hook (`loadAll`) before starting, so the queue holds the whole list in the API's order; a failed page puts the query in error and draws the whole-body error, and the start does not happen. Leaving the screen while the pages load cancels the start: nothing plays. A genre playlist already has every track. `GET /playlists/{id}/track-ids` is not used. Play sets shuffle off and shuffle sets it on before starting; a row press leaves the flag as it is.
 
-Save (genre only, never on own or liked) sends `{ kind: "playlist", source: "genre", external_id, title }` with `thumbnail_url` (the first cover url) when there is one, and no `artist`. The button flips at once and rolls back if the write fails.
+Save (genre only, never on own or liked) sends `{ kind: "playlist", source: "genre", external_id, title }` with `thumbnail_url` (the first legacy cover url, never drawn) when there is one, and no `artist`. The button flips at once and rolls back if the write fails.
 
 Edit sends only the changed fields (an emptied description as `null`) and refreshes the header, `library`, `playlists/mine` and `recents`. Delete counts `playlist_not_found` as deleted, goes back and refreshes `library`, `playlists/mine` and `recents`. Delete is confirmed with React Native's `Alert.alert`, not a `packages/ui` component, so its look is the OS's and not the tokens'. Delete does not refresh the deleted playlist's own queries (header and tracks), so the screen does not flash the unavailable state before it goes back. Neither registers a recent. A saved edit renames the playback source when this playlist is playing, so the player's "playing from" shows the new title; the queue and the track are kept. `useUpdatePlaylist` is the first query hook that writes to playback (`playback.renameSource`, in its `onSuccess`): the rename has to land with the confirmed title of the PATCH response, the same moment the queries refresh, and the playback controller only changes `source.name` when that playlist is the current source. A delete never touches playback, so a deleted playlist that is the playback source keeps playing its queue under its old name.
 
@@ -176,7 +177,7 @@ Every one is stale at once, so each query refetches on mount. The liked title co
 back as an identifier, so the screen draws `playlist:liked` instead. A saved genre
 playlist whose id is not a genre playlist draws the generic error.
 
-A detail without `thumbnail_urls` draws the generic error on purpose: the field is
+A detail without `thumbnail_urls` or `mosaic` draws the generic error on purpose: the field is
 required, so a backend regression surfaces as a schema failure rather than a
 placeholder cover.
 

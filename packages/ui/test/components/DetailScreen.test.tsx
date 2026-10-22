@@ -45,10 +45,16 @@ import { typography } from "../../src/tokens/typography.ts";
 import { DetailScreen, type DetailBody } from "../../src/components/DetailScreen.tsx";
 import { collapseRanges } from "../../src/components/detailCollapse.ts";
 
+const tiers = (n: string) => ({
+  small: `test://img/${n}/s`,
+  medium: `test://img/${n}/m`,
+  large: `test://img/${n}/l`,
+});
+
 const ready = (washColor: string | null = null): DetailBody => ({
   kind: "ready",
   title: "Album title",
-  cover: { urls: ["test://img/cover"] },
+  cover: { images: [tiers("cover")] },
   washColor,
   children: <Text>body content</Text>,
 });
@@ -252,18 +258,29 @@ describe("DetailScreen", () => {
     expect(layout.skeletonRows).toBe(6);
   });
 
-  it("draws a mosaic cover with four urls", async () => {
+  it("draws a mosaic cover with four images, each cell at the medium tier", async () => {
     await draw({
       ...(ready() as Extract<DetailBody, { kind: "ready" }>),
-      cover: { urls: ["a", "b", "c", "d"].map((n) => `test://img/${n}`) },
+      cover: { images: ["a", "b", "c", "d"].map(tiers) },
     });
     expect(screen.getByTestId("cover-mosaic")).toBeTruthy();
+    const cells = screen.getByTestId("cover-mosaic").props.children as {
+      props: { source: unknown };
+    }[];
+    expect(cells.map((cell) => cell.props.source)).toEqual(
+      ["a", "b", "c", "d"].map((n) => ({ uri: `test://img/${n}/m` })),
+    );
+  });
+
+  it("draws the hero cover at the large tier", async () => {
+    await draw(ready());
+    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/cover/l" });
   });
 
   it("draws the accent tile with an icon cover", async () => {
     await draw({
       ...(ready() as Extract<DetailBody, { kind: "ready" }>),
-      cover: { urls: [], icon: "heart" },
+      cover: { images: [], icon: "heart" },
     });
     expect(screen.getByTestId("cover-tile")).toBeTruthy();
   });
@@ -315,16 +332,16 @@ describe("DetailScreen", () => {
   });
 
   describe("image hero", () => {
-    const imageHero = (urls: string[] = ["test://img/artist"]): DetailBody => ({
+    const imageHero = (images = [tiers("artist")]): DetailBody => ({
       kind: "ready",
       hero: "image",
       title: "Artist name",
-      cover: { urls },
+      cover: { images },
       washColor: null,
       children: <Text>body content</Text>,
     });
 
-    it("draws the image hero stretched to the full width at the hero image ratio", async () => {
+    it("draws the image hero at the large tier, stretched to the full width at the hero image ratio", async () => {
       await draw(imageHero());
       const style = StyleSheet.flatten(
         screen.getByTestId("detail-hero-image").props.style as ViewStyle,
@@ -336,7 +353,7 @@ describe("DetailScreen", () => {
       );
       expect(screen.getByTestId("detail-hero-photo").props.resizeMode).toBe("cover");
       expect(screen.getByTestId("detail-hero-photo").props.source).toEqual({
-        uri: "test://img/artist",
+        uri: "test://img/artist/l",
       });
     });
 
@@ -376,7 +393,7 @@ describe("DetailScreen", () => {
       kind: "ready",
       hero: "image",
       title: "Artist name",
-      cover: { urls: [] },
+      cover: { images: [] },
       washColor: null,
       children: <Text>body content</Text>,
     };
@@ -1151,7 +1168,7 @@ describe("DetailScreen", () => {
       kind: "ready",
       ...(hero ? { hero } : {}),
       title: "Album title",
-      cover: { urls: ["test://img/cover"] },
+      cover: { images: [tiers("cover")] },
       washColor: null,
       children: <Text>body content</Text>,
       rows: Array.from({ length: count }, (_, i) => ({

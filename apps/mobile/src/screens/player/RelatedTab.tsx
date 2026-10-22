@@ -1,5 +1,5 @@
 // INFO: the related tab of the player sheet, from GET /tracks/{id}/related: the songs (a press plays them from it), the artists and the albums (a press opens them); an empty section is hidden and three empty lists draw the empty state; every song row ends with the track menu button and the current track's row is marked.
-import type { AlbumRef, RelatedArtist } from "@beatly/core";
+import type { AlbumRef, ImageTiers, RelatedArtist } from "@beatly/core";
 import { layout, spacing } from "@beatly/ui";
 import {
   Carousel,
@@ -27,7 +27,7 @@ interface RelatedTabProps {
   onOpenArtist: (id: string) => void;
 }
 
-const urlsOf = (url: string | null): string[] => (url === null ? [] : [url]);
+const imagesOf = (image: ImageTiers | null): ImageTiers[] => (image === null ? [] : [image]);
 
 export function RelatedTab({ trackId, onAtTopChange, onOpenAlbum, onOpenArtist }: RelatedTabProps) {
   const t = useT("player");
@@ -65,7 +65,7 @@ export function RelatedTab({ trackId, onAtTopChange, onOpenAlbum, onOpenArtist }
   const artistItem = (artist: RelatedArtist): CarouselItem => ({
     key: artist.id,
     title: artist.name,
-    urls: urlsOf(artist.thumbnail_url),
+    images: imagesOf(artist.image),
     shape: "round",
     onPress: () => {
       onOpenArtist(artist.id);
@@ -75,7 +75,7 @@ export function RelatedTab({ trackId, onAtTopChange, onOpenAlbum, onOpenArtist }
     key: album.id,
     title: album.title,
     subtitle: album.year ?? undefined,
-    urls: urlsOf(album.thumbnail_url),
+    images: imagesOf(album.image),
     shape: "square",
     onPress: () => {
       onOpenAlbum(album.id);
@@ -99,7 +99,7 @@ export function RelatedTab({ trackId, onAtTopChange, onOpenAlbum, onOpenArtist }
             <MediaRow
               key={`${String(position)}:${song.track_id}`}
               shape="square"
-              urls={urlsOf(song.thumbnail_url)}
+              images={imagesOf(song.image)}
               title={song.title}
               subtitle={song.artists.map((a) => a.name).join(t("artistSeparator"))}
               nowPlaying={nowPlaying.of(song.track_id)}

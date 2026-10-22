@@ -27,6 +27,7 @@ import { createHttpClient, DEFAULT_TIMEOUT_MS } from "../../src/http/client.ts";
 import { createTracksService } from "../../src/services/tracks.ts";
 import { createFakeAuth } from "../fakes/auth.ts";
 import { createFakeHttp, never, type Handler } from "../fakes/http.ts";
+import { tiers } from "../fakes/images.ts";
 import { createFakeLog } from "../fakes/log.ts";
 
 const BASE_URL = "test://api";
@@ -38,6 +39,7 @@ const ref = (id: string) => ({
   album_id: "MPREb_1",
   duration_seconds: 248,
   thumbnail_url: `test://img/${id}`,
+  image: tiers(id),
 });
 const upNext = { tracks: [ref("t1"), ref("t2")] };
 const synced = {
@@ -59,7 +61,7 @@ const plain = {
 };
 const related = {
   songs: [ref("t3")],
-  artists: [{ id: "UCar2", name: "Justice", thumbnail_url: null }],
+  artists: [{ id: "UCar2", name: "Justice", thumbnail_url: null, image: null }],
   albums: [
     {
       id: "MPREb_2",
@@ -68,6 +70,7 @@ const related = {
       year: "2007",
       audio_playlist_id: "OLAK5uy_2",
       thumbnail_url: "test://img/al2",
+      image: tiers("al2"),
     },
   ],
 };
@@ -107,11 +110,13 @@ describe("getUpNext", () => {
       () => ({ headers: { "cache-control": "max-age=21600" }, body: { ok: true, data: upNext } }),
       route,
     );
-    expect(await service.getUpNext("t1", null)).toEqual({
+    const outcome = await service.getUpNext("t1", null);
+    expect(outcome).toEqual({
       kind: "success",
       data: upNext,
       maxAgeSeconds: 21600,
     });
+    expect(outcome.kind === "success" && outcome.data.tracks[0]?.image).toEqual(tiers("t1"));
     expect(http.requests[0]?.method).toBe("GET");
     expect(http.requests[0]?.url).toBe("test://api/tracks/t1/upnext");
     expect(http.requests[0]?.headers.authorization).toBe("Bearer test-token");
@@ -120,7 +125,14 @@ describe("getUpNext", () => {
   it("keeps a track with null album, album_id, duration and cover", async () => {
     const odd = {
       tracks: [
-        { ...ref("t1"), album: null, album_id: null, duration_seconds: null, thumbnail_url: null },
+        {
+          ...ref("t1"),
+          album: null,
+          album_id: null,
+          duration_seconds: null,
+          thumbnail_url: null,
+          image: null,
+        },
       ],
     };
     const { service } = setup(() => ({ body: { ok: true, data: odd } }), route);
@@ -278,11 +290,15 @@ describe("getRelated", () => {
       () => ({ headers: { "cache-control": "max-age=43200" }, body: { ok: true, data: related } }),
       route,
     );
-    expect(await service.getRelated("t1")).toEqual({
+    const outcome = await service.getRelated("t1");
+    expect(outcome).toEqual({
       kind: "success",
       data: related,
       maxAgeSeconds: 43200,
     });
+    expect(outcome.kind === "success" && outcome.data.songs[0]?.image).toEqual(tiers("t3"));
+    expect(outcome.kind === "success" && outcome.data.artists[0]?.image).toBeNull();
+    expect(outcome.kind === "success" && outcome.data.albums[0]?.image).toEqual(tiers("al2"));
     expect(http.requests[0]?.url).toBe("test://api/tracks/t1/related");
   });
 

@@ -32,6 +32,7 @@ import {
 } from "../../src/services/library.ts";
 import { createFakeAuth } from "../fakes/auth.ts";
 import { createFakeHttp, never, type Handler } from "../fakes/http.ts";
+import { tiers } from "../fakes/images.ts";
 import { createFakeLog } from "../fakes/log.ts";
 
 const BASE_URL = "test://api";
@@ -41,27 +42,33 @@ const liked = {
   id: "liked",
   title: "liked",
   thumbnail_url: null,
+  image: null,
   subtitle: null,
   source: "liked",
   thumbnail_urls: [],
+  mosaic: [],
 };
 const ownPlaylist = {
   kind: "playlist",
   id: "p1",
   title: "Road trip",
   thumbnail_url: null,
+  image: null,
   subtitle: null,
   source: "user",
   thumbnail_urls: ["test://img/1", "test://img/2", "test://img/3", "test://img/4"],
+  mosaic: [tiers("1"), tiers("2"), tiers("3"), tiers("4")],
 };
 const savedAlbum = {
   kind: "album",
   id: "a1",
   title: "Some album",
   thumbnail_url: "test://img/a1",
+  image: tiers("a1"),
   subtitle: "Some artist",
   source: "external",
   thumbnail_urls: [],
+  mosaic: [],
 };
 
 function pageBody(items: unknown[], page: Record<string, unknown>) {
@@ -99,6 +106,9 @@ describe("listLibrary", () => {
       maxAgeSeconds: 0,
       data: { items: [liked, ownPlaylist, savedAlbum], page, restartedFromFirstPage: false },
     });
+    expect(liked).toMatchObject({ image: null, mosaic: [] });
+    expect(ownPlaylist.mosaic).toEqual([tiers("1"), tiers("2"), tiers("3"), tiers("4")]);
+    expect(savedAlbum.image).toEqual(tiers("a1"));
     expect(http.requests).toHaveLength(1);
     expect(http.requests[0]?.url).toBe("test://api/library");
   });
@@ -192,6 +202,7 @@ const storedItem = {
   external_id: "a1",
   title: "Some album",
   thumbnail_url: null,
+  image: null,
   artist: "Some artist",
   artist_id: null,
   album_id: "a1",
@@ -370,6 +381,7 @@ function albumOf(overrides: Partial<Album>): Album {
     duration_seconds: 0,
     audio_playlist_id: null,
     thumbnail_url: "test://img/a1",
+    image: tiers("a1"),
     tracks: [],
     other_versions: [],
     related_recommendations: [],

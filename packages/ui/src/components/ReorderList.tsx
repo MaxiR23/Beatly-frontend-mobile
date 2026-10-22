@@ -165,7 +165,7 @@ function Row({
           if (name === "moveDown") onMove(index, index + 1);
         }}
       >
-        <MediaRow title={item.title} subtitle={item.subtitle} urls={item.urls} shape="square" />
+        <MediaRow title={item.title} subtitle={item.subtitle} images={item.images} shape="square" />
       </View>
       <View
         style={styles.handle}

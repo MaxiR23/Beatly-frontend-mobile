@@ -25,9 +25,25 @@ import { color } from "../../src/tokens/color.ts";
 import { motion } from "../../src/tokens/motion.ts";
 import { radius } from "../../src/tokens/radius.ts";
 
+const tiers = (n: string) => ({
+  small: `test://img/${n}/s`,
+  medium: `test://img/${n}/m`,
+  large: `test://img/${n}/l`,
+});
+
 describe("MediaRow", () => {
+  it.each(["regular", "medium", "large"] as const)(
+    "draws the small tier at the %s size",
+    async (size) => {
+      await render(<MediaRow title="Song" images={[tiers("1")]} shape="square" size={size} />);
+      expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/s" });
+    },
+  );
+
   it("draws the title and subtitle in their tones when available", async () => {
-    await render(<MediaRow title="Song" subtitle="Album" urls={[]} shape="square" testID="row" />);
+    await render(
+      <MediaRow title="Song" subtitle="Album" images={[]} shape="square" testID="row" />,
+    );
     expect(screen.getByText("Song")).toHaveStyle({ color: color.text.primary });
     expect(screen.getByText("Album")).toHaveStyle({ color: color.text.secondary });
     expect(screen.getByTestId("row").props.accessibilityState).toBeUndefined();
@@ -38,7 +54,7 @@ describe("MediaRow", () => {
       <MediaRow
         title="Hidden"
         subtitle="Album"
-        urls={[]}
+        images={[]}
         shape="square"
         available={false}
         testID="row"
@@ -55,7 +71,7 @@ describe("MediaRow", () => {
     await render(
       <MediaRow
         title="Song"
-        urls={[]}
+        images={[]}
         shape="square"
         onPress={onPress}
         trailing={
@@ -72,7 +88,7 @@ describe("MediaRow", () => {
 
   it("never makes an unavailable row a button, even with onPress", async () => {
     await render(
-      <MediaRow title="Hidden" urls={[]} shape="square" available={false} onPress={jest.fn()} />,
+      <MediaRow title="Hidden" images={[]} shape="square" available={false} onPress={jest.fn()} />,
     );
     expect(screen.queryByRole("button")).toBeNull();
   });
@@ -81,7 +97,7 @@ describe("MediaRow", () => {
     await render(
       <MediaRow
         title="Hidden"
-        urls={[]}
+        images={[]}
         shape="square"
         available={false}
         unavailableLabel="Hidden, not available"
@@ -95,7 +111,7 @@ describe("MediaRow", () => {
   });
 
   it("falls back to the title without an unavailable label", async () => {
-    await render(<MediaRow title="Hidden" urls={[]} shape="square" available={false} />);
+    await render(<MediaRow title="Hidden" images={[]} shape="square" available={false} />);
     expect(screen.getByLabelText("Hidden")).toBeTruthy();
   });
 
@@ -104,7 +120,7 @@ describe("MediaRow", () => {
     await render(
       <MediaRow
         title="Hidden"
-        urls={[]}
+        images={[]}
         shape="square"
         available={false}
         onPress={jest.fn()}
@@ -122,7 +138,7 @@ describe("MediaRow", () => {
     await render(
       <MediaRow
         title="Song"
-        urls={[]}
+        images={[]}
         shape="square"
         nowPlaying="playing"
         onPress={jest.fn()}
@@ -137,11 +153,11 @@ describe("MediaRow", () => {
 
   it("draws the scrim over the cover in overlay.onImage, round for a round cover", async () => {
     const view = await render(
-      <MediaRow title="Song" urls={[]} shape="square" nowPlaying="playing" />,
+      <MediaRow title="Song" images={[]} shape="square" nowPlaying="playing" />,
     );
     const scrim = screen.getByTestId("now-playing-bars").parent;
     expect(scrim).toHaveStyle({ backgroundColor: color.overlay.onImage, borderRadius: radius.sm });
-    await view.rerender(<MediaRow title="Song" urls={[]} shape="round" nowPlaying="playing" />);
+    await view.rerender(<MediaRow title="Song" images={[]} shape="round" nowPlaying="playing" />);
     expect(screen.getByTestId("now-playing-bars").parent).toHaveStyle({
       borderRadius: radius.full,
     });
@@ -151,7 +167,7 @@ describe("MediaRow", () => {
     await render(
       <MediaRow
         title="Song"
-        urls={[]}
+        images={[]}
         shape="square"
         nowPlaying="paused"
         onPress={jest.fn()}
@@ -170,7 +186,7 @@ describe("MediaRow", () => {
     const loop = jest.spyOn(Animated, "loop");
     loop.mockClear();
     await render(
-      <MediaRow title="Song" urls={[]} shape="square" nowPlaying="playing" reduceMotion />,
+      <MediaRow title="Song" images={[]} shape="square" nowPlaying="playing" reduceMotion />,
     );
     expect(loop).not.toHaveBeenCalled();
     screen.getAllByTestId("now-playing-bar").forEach((bar, index) => {
@@ -182,14 +198,14 @@ describe("MediaRow", () => {
   });
 
   it("draws no bars without nowPlaying", async () => {
-    await render(<MediaRow title="Song" urls={[]} shape="square" testID="row" />);
+    await render(<MediaRow title="Song" images={[]} shape="square" testID="row" />);
     expect(screen.queryByTestId("now-playing-bars")).toBeNull();
     expect(screen.getByTestId("row")).not.toHaveStyle({ backgroundColor: color.overlay.subtle });
   });
 
   it("ignores nowPlaying on an unavailable row", async () => {
     await render(
-      <MediaRow title="Song" urls={[]} shape="square" available={false} nowPlaying="playing" />,
+      <MediaRow title="Song" images={[]} shape="square" available={false} nowPlaying="playing" />,
     );
     expect(screen.queryByTestId("now-playing-bars")).toBeNull();
   });

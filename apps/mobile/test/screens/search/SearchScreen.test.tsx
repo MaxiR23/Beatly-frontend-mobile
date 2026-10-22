@@ -168,6 +168,7 @@ describe("SearchScreen results", () => {
           album: null,
           albumId: null,
           coverUrl: null,
+          image: null,
           durationSeconds: 225,
         },
       ],
@@ -210,12 +211,12 @@ describe("SearchScreen results", () => {
     expect(screen.getByText(en.search.artist)).toBeTruthy();
   });
 
-  it("draws the top artist's image", async () => {
+  it("draws the top artist's image at the small tier", async () => {
     await setup();
     await fireEvent.changeText(input(), "test");
     await screen.findByText("Test Song");
     const cover = within(screen.getByTestId("search-artist")).getByTestId("cover-single");
-    expect(cover.props.source as unknown).toEqual({ uri: "test://img/ar1" });
+    expect(cover.props.source as unknown).toEqual({ uri: "test://img/ar1/s" });
   });
 
   it("opens the top artist", async () => {
@@ -226,7 +227,7 @@ describe("SearchScreen results", () => {
   });
 
   it("draws the placeholder when the top artist has no image", async () => {
-    const artist = { id: "ar1", name: "Test Artist", thumbnail_url: null };
+    const artist = { id: "ar1", name: "Test Artist", thumbnail_url: null, image: null };
     await setup({
       search: () =>
         Promise.resolve({

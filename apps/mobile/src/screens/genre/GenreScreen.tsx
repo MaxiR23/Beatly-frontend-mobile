@@ -43,11 +43,11 @@ export function GenreScreen() {
       key: playlist.id,
       title: playlist.title,
       subtitle: t("tracks", { count: playlist.track_count }),
-      urls:
-        playlist.thumbnail_urls.length > 0
-          ? playlist.thumbnail_urls
-          : playlist.thumbnail_url !== null
-            ? [playlist.thumbnail_url]
+      images:
+        playlist.mosaic.length > 0
+          ? playlist.mosaic
+          : playlist.image !== null
+            ? [playlist.image]
             : [],
       shape: "square",
       onPress: () => {

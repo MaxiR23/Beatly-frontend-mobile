@@ -342,6 +342,7 @@ describe("EditTracksScreen leaving", () => {
       album: track.album,
       albumId: track.album_id,
       coverUrl: track.thumbnail_url,
+      image: track.image,
       durationSeconds: track.duration_seconds,
     }));
     await act(async () => {

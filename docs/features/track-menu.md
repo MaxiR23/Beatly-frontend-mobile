@@ -21,7 +21,7 @@ Token names only.
 
 - Button: an `IconButton` `ellipsis` (`layout.controlHeight`, `icon.size.lg`) at the end of the row, outside the row's pressable body.
 - Menu sheet: a `Sheet` on a `GlassSurface` `sheet` (`radius.lg`, `spacing.xl` padding, `spacing.lg` gap): a `MediaRow` header
-  with the track, then one `ActionRow` per item (`layout.controlHeight` tall, `layout.gap` between the icon and the label,
+  with the track (its song row draws `image.small`), then one `ActionRow` per item (`layout.controlHeight` tall, `layout.gap` between the icon and the label,
   `typography.body`, the icon at `icon.size.md`; the heart filled when liked; Remove from this playlist in `color.status.error`).
 - Playlist picker: a `Sheet` kept `topInset` below the status bar; `typography.subtitle` title, a New playlist `MediaRow` (`size="medium"`,
   the plus tile), then the playlists as `MediaRow`s of `layout.rowCoverMedium`; a playlist that holds the track has a trailing

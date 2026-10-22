@@ -75,7 +75,7 @@ const item = (n: number): EditListItem => ({
   key: String(n),
   title: `Song ${String(n)}`,
   subtitle: `Artist ${String(n)}`,
-  urls: [],
+  images: [],
   label: `Song ${String(n)}, Artist ${String(n)}`,
   positionLabel: `${String(n)} of ${String(count)}`,
   removeLabel: `Remove Song ${String(n)}`,
@@ -156,7 +156,30 @@ describe("autoScrollStep", () => {
   });
 });
 
+const tiers = (n: string) => ({
+  small: `test://img/${n}/s`,
+  medium: `test://img/${n}/m`,
+  large: `test://img/${n}/l`,
+});
+
 describe("ReorderList", () => {
+  it("draws a row's cover at the small tier", async () => {
+    await render(
+      <ReorderList
+        items={[{ ...item(1), images: [tiers("1")] }]}
+        onMove={jest.fn()}
+        onRemove={jest.fn()}
+        moveUpLabel="Move up"
+        moveDownLabel="Move down"
+        moveHint="Drag to reorder"
+        reduceMotion={false}
+        bottomInset={0}
+        testID="list"
+      />,
+    );
+    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/s" });
+  });
+
   it("calls onRemove with the row's index from its remove button", async () => {
     const { onRemove } = await setup();
     await fireEvent.press(screen.getByLabelText("Remove Song 3"));
