@@ -1,4 +1,4 @@
-// INFO: an album: the detail base with its cover, title, artists, meta line, tracks and the carousels of other versions and recommended albums, the tracks being rows of the detail base and the carousels its slot after the rows; unavailable for an invalid id; every playable track has a menu button; a track without a track id or marked unavailable is dimmed, unpressable, without menu, and announced as not available; a row under the header plays the whole album from its first playable track or shuffled from a random one, and saves it to the library; the play button pauses and resumes the album while it is the playback source and the current track's row is marked; starting a list registers it as a recent.
+// INFO: an album: the detail base with its cover, title, artists, meta line, tracks and the carousels of other versions and recommended albums, the tracks being rows of the detail base and the carousels its slot after the rows; unavailable for an invalid id; every playable track has a menu button; a track without a track id or marked unavailable is dimmed, unpressable, without menu, and announced as not available; a row under the header plays the whole album from its first playable track or shuffled from a random one, shuffle disabled under two playable tracks, and saves it to the library; the play button pauses and resumes the album while it is the playback source and the current track's row is marked; starting a list registers it as a recent.
 import {
   albumLibraryInputOf,
   type Album,
@@ -216,6 +216,8 @@ export function AlbumScreen() {
             shuffle={{
               label: t("shuffle"),
               busy: false,
+              // Shuffle needs two playable tracks; track_count is the provider's count, unavailable ones included.
+              disabled: (wholeQueue(data.tracks, playable, "first")?.tracks.length ?? 0) < 2,
               onPress: () => {
                 start(wholeQueue(data.tracks, playable, "random"), "shuffle");
               },

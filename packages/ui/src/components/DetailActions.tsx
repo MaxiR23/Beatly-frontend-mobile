@@ -1,4 +1,4 @@
-// INFO: the action row of a detail screen. Centered (own, album, genre): shuffle, the play button and a side button (save or the options node) as a group centered with layout.gap around the play button's fixed slot, the side buttons following its shrink toward the center on the native driver, ending layout.gap from the circle, drawn above the play slot (layout.sideButtonStack) so a tap on them wins over the pill's box while they slide over it. Wide (liked): a play pill and a shuffle pill sharing the row with layout.gap; the play pill swaps its glyph and label with the state and never shrinks. The play control starts when idle and toggles when this list plays or is paused; while either start loads the list's pages both are disabled, so a second start cannot race the first.
+// INFO: the action row of a detail screen. Centered (own, album, genre): shuffle, the play button and a side button (save or the options node) as a group centered with layout.gap around the play button's fixed slot, the side buttons following its shrink toward the center on the native driver, ending layout.gap from the circle, drawn above the play slot (layout.sideButtonStack) so a tap on them wins over the pill's box while they slide over it. Wide (liked): a play pill and a shuffle pill sharing the row with layout.gap; the play pill swaps its glyph and label with the state and never shrinks. The play control starts when idle and toggles when this list plays or is paused; while either start loads the list's pages both are disabled, so a second start cannot race the first; shuffle is also disabled on its own when the list has fewer than two playable tracks, and play is not.
 import { useState, type ReactNode } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 
@@ -18,7 +18,13 @@ interface DetailActionsProps {
     onStart: () => void;
     onToggle: () => void;
   };
-  shuffle: { label: string; busy: boolean; onPress: () => void };
+  shuffle: {
+    label: string;
+    busy: boolean;
+    // Fewer than two playable tracks: nothing to shuffle.
+    disabled: boolean;
+    onPress: () => void;
+  };
   // No playable track.
   disabled: boolean;
   // Absent on own and liked playlists; centered only.
@@ -43,6 +49,7 @@ export function DetailActions({
 }: DetailActionsProps) {
   const [shrink] = useState(() => new Animated.Value(play.busy || play.state !== "idle" ? 1 : 0));
   const startDisabled = disabled || play.busy || shuffle.busy;
+  const shuffleDisabled = startDisabled || shuffle.disabled;
   const playState: PlayButtonState = play.busy ? "loading" : play.state;
   if (variant === "wide") {
     return (
@@ -62,7 +69,7 @@ export function DetailActions({
           icon="shuffle"
           label={shuffle.label}
           loading={shuffle.busy}
-          disabled={startDisabled}
+          disabled={shuffleDisabled}
           onPress={shuffle.onPress}
         />
       </View>
@@ -81,7 +88,7 @@ export function DetailActions({
           icon="shuffle"
           accessibilityLabel={shuffle.label}
           busy={shuffle.busy}
-          disabled={startDisabled}
+          disabled={shuffleDisabled}
           onPress={shuffle.onPress}
         />
       </Animated.View>

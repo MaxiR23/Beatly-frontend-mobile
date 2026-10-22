@@ -7,7 +7,7 @@ An album's tracks and its related albums, on the detail screen base (which has a
 Show an album: its cover, title, artists, meta line and tracks, and the albums
 that are other versions of it or recommended with it. Opening another album
 pushes a new album in the same tab. Pressing an available track plays the album from it
-(`player.md`); a track without a `track_id` or with `is_available: false` is unavailable: not pressable, announced as `album:trackUnavailable`, and never enters the queue, so next, previous and shuffle skip it. A row between the info and the tracks plays the whole album from its first playable track with shuffle off, or shuffled from a random playable track with shuffle on; both register the album as a recent like a track press, and the album can be saved to the library from it. Every playable track ends with a more button that opens the track menu (`track-menu.md`); an unavailable track has none.
+(`player.md`); a track without a `track_id` or with `is_available: false` is unavailable: not pressable, announced as `album:trackUnavailable`, and never enters the queue, so next, previous and shuffle skip it. A row between the info and the tracks plays the whole album from its first playable track with shuffle off, or shuffled from a random playable track with shuffle on (shuffle needs two playable tracks); both register the album as a recent like a track press, and the album can be saved to the library from it. Every playable track ends with a more button that opens the track menu (`track-menu.md`); an unavailable track has none.
 
 ## Layout
 
@@ -28,7 +28,7 @@ the body:
   and the duration in hours and minutes, each omitted when the API sends none.
 - Action row: `DetailActions` (`DESIGN.md`, "Detail screen base") between the info and the
   tracks, a centered group `layout.gap` apart: shuffle, play (`PlayButton`) and save (plus, or check when saved), both side buttons `layout.controlHeight`; when the pill shrinks (on the native driver, no layout animated) shuffle and save follow it toward the center and end `layout.gap` from the circle. No share,
-  search or options button yet. Play and shuffle are disabled when no track is playable; save is
+  search or options button yet. Play is disabled when no track is playable, and shuffle when fewer than two are (unavailable tracks are not counted, and `track_count` is not used: it is the provider's count); disabled shuffle looks and is announced like disabled play; save is
   disabled while its state loads or when reading it failed.
 - Play button: idle (the album is not the playback source) it is a pill with the play glyph and
   `album:play`; pressing it plays the album from its first playable track. Pressed, the label fades out (`motion.playButton.labelFade`), then the `layout.playButtonPill` pill, holding the play glyph, shrinks to the circle (`motion.playButton.shrink`, ease in-out), even when the start is instant, and only then draws the spinner while the stream loads, or the pause glyph, scaling in over `motion.playButton.scaleIn`, if it already plays (a mid-track buffer shows the spinner too); playing it is a

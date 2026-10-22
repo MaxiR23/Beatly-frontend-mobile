@@ -8,7 +8,7 @@ Show a playlist: its cover, title, creator, description, meta line and tracks.
 There are three kinds, chosen by the `source` param of the route: `user` (an own
 playlist), `liked` (the liked songs) and `genre` (a curated playlist). Own and liked
 tracks load with infinite scroll, asked for two screens before the end of the list, with skeleton rows under the last track while the next page loads; a genre playlist loads whole with its header, in one request. Pressing a track plays the loaded tracks from it, with the playlist as the
-source (`player.md`). Every track ends with a more button that opens the track menu (`track-menu.md`); in an own playlist the menu also offers Remove from this playlist, which refreshes the header and the tracks, and the liked and genre playlists never offer it. A row under the header plays the whole playlist from its first track with shuffle off, or shuffled from a random track with shuffle on, and registers the recent like a track press; own and liked load every remaining page first, with the pressed button busy. A genre playlist can also be saved to the library; own and liked never can. An own playlist's options button edits its title and description, opens an edit mode to reorder and remove its tracks, or deletes it; sharing is a later issue.
+source (`player.md`). Every track ends with a more button that opens the track menu (`track-menu.md`); in an own playlist the menu also offers Remove from this playlist, which refreshes the header and the tracks, and the liked and genre playlists never offer it. A row under the header plays the whole playlist from its first track with shuffle off, or shuffled from a random track with shuffle on (shuffle needs two tracks), and registers the recent like a track press; own and liked load every remaining page first, with the pressed button busy. A genre playlist can also be saved to the library; own and liked never can. An own playlist's options button edits its title and description, opens an edit mode to reorder and remove its tracks, or deletes it; sharing is a later issue.
 
 ## Layout
 
@@ -31,8 +31,11 @@ the info block:
   - Meta line in `typography.meta` and `color.text.tertiary`: Private or Public (own
     only), the song count and the duration in hours and minutes.
 - Action row: `DetailActions` (`DESIGN.md`, "Detail screen base") between the info and the
-  tracks, `spacing.xl` below it (the info ends with the same gap): play and shuffle always,
-  both disabled when the loaded list is empty (playlist tracks are always playable); save only
+  tracks, `spacing.xl` below it (the info ends with the same gap): play and shuffle always;
+  play disabled when the loaded list is empty, shuffle when the playlist has fewer than two
+  tracks by the backend's count, `total_count` for own and liked (never the loaded pages) and
+  `track_count` for genre (`len(tracks)` on `GET /public/genre-playlists/{id}`); playlist tracks
+  are always playable, so both counts are playable counts; save only
   on a genre playlist, disabled while its state loads or when reading it failed. While play or
   shuffle loads the remaining pages of an own or liked playlist, the pressed button is busy and
   both are disabled. On an own and a genre playlist the row is a centered group, `layout.gap` apart: shuffle, play
