@@ -1,4 +1,4 @@
-// INFO: root layout of the app; wires the core and the providers, holds the splash until the session is known, gates the routes by session status and mounts the player's autoplay while signed in.
+// INFO: root layout of the app; wires the core and the providers, mounts only an empty placeholder under the splash while the session is unknown, gates the routes by session status, hides the splash once the matching screen is mounted and mounts the player's autoplay while signed in.
 import { color } from "@beatly/ui";
 import { Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -20,6 +20,7 @@ function RootNavigator() {
   const { status } = useSession();
   const reduceMotion = useReduceMotion();
 
+  // Runs after the commit that mounts the screen matching the status: the stack computes its new routes in the same render.
   useEffect(() => {
     if (status !== "unknown") void SplashScreen.hideAsync();
   }, [status]);
@@ -32,11 +33,14 @@ function RootNavigator() {
           contentStyle: { backgroundColor: color.surface.base },
         }}
       >
+        <Stack.Protected guard={status === "unknown"}>
+          <Stack.Screen name="session-pending" />
+        </Stack.Protected>
         <Stack.Protected guard={status === "signed_in"}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="player" options={playerRouteOptions(reduceMotion)} />
         </Stack.Protected>
-        <Stack.Protected guard={status !== "signed_in"}>
+        <Stack.Protected guard={status === "signed_out"}>
           <Stack.Screen name="login" />
           <Stack.Screen name="sign-up" />
         </Stack.Protected>
