@@ -4,14 +4,24 @@ The first feature doc: the routes the auth screens use and the states they draw.
 
 ## Screens and routes
 
-| Route            | Screen                               | Guard                                                       |
-| ---------------- | ------------------------------------ | ----------------------------------------------------------- |
-| `/login`         | `LoginScreen`                        | signed out only (`Stack.Protected`, signed in lands on `/`) |
-| `/sign-up`       | `SignUpScreen`                       | signed out only                                             |
-| `/auth/callback` | `AuthCallbackScreen`                 | none: the email link opens it before a session exists       |
-| `/`              | `HomeScreen` (first tab of `(tabs)`) | signed in only; see `home.md`                               |
+| Route              | Screen                               | Guard                                                                                    |
+| ------------------ | ------------------------------------ | ---------------------------------------------------------------------------------------- |
+| `/login`           | `LoginScreen`                        | signed out only (`Stack.Protected` on `status === "signed_out"`; signed in lands on `/`) |
+| `/sign-up`         | `SignUpScreen`                       | signed out only                                                                          |
+| `/auth/callback`   | `AuthCallbackScreen`                 | none: reachable in `unknown`, `signed_out` and `signed_in`                               |
+| `/session-pending` | `SessionPendingScreen`               | `unknown` only: the app background under the splash while the stored session is read     |
+| `/`                | `HomeScreen` (first tab of `(tabs)`) | signed in only; see `home.md`                                                            |
 
-The root layout keeps the native splash up until the session status is known.
+While the status is `unknown`, only `session-pending` and `auth/callback` are available and the
+native splash stays up. `session-pending` is the one shown; `auth/callback` mounts only when an
+email link opens it. On `signed_out`, `login` and `sign-up` mount. On `signed_in`, `(tabs)`
+and `player` mount. The splash hides in an effect after the commit that mounts the matching
+screen.
+
+`session-pending` must be declared first in the root `Stack`. When the current route stops
+being available, the stack falls back to the first available route name. If `auth/callback`
+came first, a cold start on `/` while `unknown` would land on the callback's invalid-link
+state and stay there.
 
 ## Layout
 
@@ -73,7 +83,8 @@ timeout, is a typed `AuthFailure`.
   and the send, sign operations are wrapped in the same budget, and queries do not
   retry automatically.
 - Known edge: with an expired session, a dead network and an unreadable store at
-  the same time, the splash can stay up. It is logged as `session.status_unreadable`.
+  the same time, the splash can stay up over the placeholder, not over the login. It is logged as `session.status_unreadable`.
+- Known edge: a cold start on /sign-up while signed out lands on the login, not on sign up. While the status is unknown only session-pending and auth/callback exist, so on signed_out the stack falls back to its first route. Nothing outside the app links to /sign-up; the login's "sign up" link reaches it.
 
 ## Provider dashboard requirements
 
@@ -92,3 +103,7 @@ timeout, is a typed `AuthFailure`.
 - The session persists across a restart, the token refreshes, and with an expired
   session and a network that never answers the screen reaches its error state in
   about 15 seconds.
+- Cold start on iOS with a saved session: no frame of the login between the splash and the
+  home. Cold start signed out: the splash goes straight to the login.
+- The swap from the placeholder to the home does not show the home sliding in as the splash
+  fades (the native stack's replace animation); if it does, it is fixed in the same change before merging.
