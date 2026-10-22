@@ -13,7 +13,7 @@
 // - starting a list registers an own, a liked and a genre playlist as a recent with its kind
 // - the track menu: remove from an own playlist calls the service and refetches the tracks, none for the liked and genre playlists
 // - the liked playlist's play and shuffle pills
-// - the action row: play and shuffle of the whole list (after loading every page for own and liked), busy until the pages load, a failed page drawing the error, leaving the screen cancelling the start, disabled when empty, registering the recent, turning shuffle off on play after another list was shuffled, the play button idle, loading, playing, pausing and resuming, every row of the playing track marked
+// - the action row: play and shuffle of the whole list (after loading every page for own and liked), busy until the pages load, a failed page drawing the error, leaving the screen cancelling the start, registering the recent, turning shuffle off on play after another list was shuffled, shuffle disabled under two tracks by total_count (own, liked, whatever pages are loaded) or track_count (genre) while play is disabled only when empty, the play button idle, loading, playing, pausing and resuming, every row of the playing track marked
 // - save only on a genre playlist: its state, its body, rolling back, disabled while loading or failing, none on own and liked
 // - the options button only on an own playlist, after play, opening the sheet with edit, edit tracks and delete in that order, edit tracks opening the edit mode without asking; a saved rename shown as the player's source with the queue kept; the edit sheet prefilled, Save disabled unchanged or invalid, only changed fields, empty description as null, a failed save keeping the sheet and input, a saved edit closing it and redrawing the header; delete asking first, cancel doing nothing, confirm going back, a failed delete showing the notice and staying, playback untouched; no recent registered by an edit or a delete
 // - the list playing under its own source kind: playlist, genre_playlist and liked
@@ -673,7 +673,10 @@ describe("PlaylistScreen action row", () => {
   it("shuffles the liked playlist from a random track", async () => {
     jest.spyOn(Math, "random").mockReturnValue(0.99);
     mockParams = { id: "liked", source: "liked" };
-    const ctx = await setup({ listLikedTracks: tracksOf(two) });
+    const ctx = await setup({
+      getLikedPlaylist: detail({ ...likedDetailFixture, total_count: 2 }),
+      listLikedTracks: tracksOf(two),
+    });
     await screen.findByText("First Song");
     await fireEvent.press(screen.getByRole("button", { name: en.playlist.shuffle }));
     await waitFor(() => {
@@ -894,6 +897,82 @@ describe("PlaylistScreen action row", () => {
       await fireEvent.press(button);
     }
     expect(ctx.playback.getState().queue).toEqual([]);
+  });
+});
+
+describe("PlaylistScreen shuffle under two tracks", () => {
+  const cases: [string, Record<string, string>, (n: number) => Parameters<typeof makeCore>[0]][] = [
+    [
+      "own",
+      { id: "p1", source: "user" },
+      (n) => ({
+        getPlaylist: detail({ ...playlistDetailFixture, total_count: n }),
+        listPlaylistTracks: tracksOf(two.slice(0, n)),
+      }),
+    ],
+    [
+      "liked",
+      { id: "liked", source: "liked" },
+      (n) => ({
+        getLikedPlaylist: detail({ ...likedDetailFixture, total_count: n }),
+        listLikedTracks: tracksOf(two.slice(0, n)),
+      }),
+    ],
+    [
+      "genre",
+      { id: "gp1", source: "genre" },
+      (n) => ({
+        getGenrePlaylist: detail({
+          ...publicGenrePlaylistFixture,
+          track_count: n,
+          tracks: two.slice(0, n),
+        }),
+      }),
+    ],
+  ];
+
+  describe.each(cases)("%s", (_kind, params, options) => {
+    it.each([0, 1, 2])("disables shuffle by the count: %i tracks", async (n) => {
+      mockParams = params;
+      const ctx = await setup(options(n));
+      await screen.findByTestId("playlist-actions");
+      if (n > 0) await screen.findByText("First Song");
+      const shuffle = screen.getByRole("button", { name: en.playlist.shuffle });
+      const play = screen.getByRole("button", { name: en.playlist.play });
+      expect(stateFlag(shuffle, "disabled")).toBe(n < 2);
+      expect(stateFlag(play, "disabled")).toBe(n === 0);
+      if (n < 2) {
+        await fireEvent.press(shuffle);
+        expect(ctx.playback.getState().queue).toEqual([]);
+        expect(ctx.playback.getState().shuffle).toBe(false);
+      }
+      if (n === 1) {
+        await fireEvent.press(play);
+        await waitFor(() => {
+          expect(ids(ctx)).toEqual(["t1"]);
+        });
+        expect(ctx.playback.getState().shuffle).toBe(false);
+      }
+    });
+  });
+
+  it("enables shuffle by total_count with only the first page loaded, then queues both", async () => {
+    const ctx = await setup({
+      getPlaylist: detail({ ...playlistDetailFixture, total_count: 2 }),
+      listPlaylistTracks: (_id, cursor) =>
+        cursor === null
+          ? Promise.resolve(pageOf([first], { has_more: true, next_cursor: "c1" }))
+          : Promise.resolve(pageOf([second])),
+    });
+    await screen.findByText("First Song");
+    const shuffle = screen.getByRole("button", { name: en.playlist.shuffle });
+    expect(stateFlag(shuffle, "disabled")).toBe(false);
+    await fireEvent.press(shuffle);
+    await waitFor(() => {
+      expect(ctx.playback.getState().queue).toHaveLength(2);
+    });
+    expect(new Set(ids(ctx))).toEqual(new Set(["t1", "t2"]));
+    expect(ctx.playback.getState().shuffle).toBe(true);
   });
 });
 

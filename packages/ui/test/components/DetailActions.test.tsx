@@ -11,6 +11,7 @@
 // - the start buttons disabled with no playable track, while pages load for either one, and play alone while its stream loads
 // - the side buttons following the shrink value toward the center, `layout.controlHeight` square, starting at the circle when mounted playing
 // - the side buttons stacked above the play slot (`layout.sideButtonStack`)
+// - shuffle disabled on its own (fewer than two tracks) in both variants, in the disabled tone, ignoring presses and announced, with play unchanged
 // - the presses, and a disabled save ignoring them
 // - wide (liked): play and shuffle pills filling the row with `layout.gap`, the play pill's glyph and label per state with no animation, its presses and the disabled and busy states
 // - the options node after play (centered), and none without it, still pressable with no playable track
@@ -27,6 +28,28 @@ import { DetailActions } from "../../src/components/DetailActions.tsx";
 import { color } from "../../src/tokens/color.ts";
 import { layout } from "../../src/tokens/spacing.ts";
 
+interface JsonNode {
+  props: Record<string, unknown>;
+  children: unknown;
+}
+
+function isJsonNode(value: unknown): value is JsonNode {
+  return typeof value === "object" && value !== null && "props" in value;
+}
+
+// Collects, from the rendered tree, every svg root (an icon glyph), in order.
+function glyphs(tree: unknown): JsonNode[] {
+  const found: JsonNode[] = [];
+  const visit = (node: unknown) => {
+    if (Array.isArray(node)) node.forEach(visit);
+    if (!isJsonNode(node)) return;
+    if ("xmlns" in node.props) found.push(node);
+    visit(node.children);
+  };
+  visit(tree);
+  return found;
+}
+
 type Props = Parameters<typeof DetailActions>[0];
 
 function propsWithoutSave(overrides: Partial<Props> = {}): Props {
@@ -39,7 +62,7 @@ function propsWithoutSave(overrides: Partial<Props> = {}): Props {
       onStart: jest.fn(),
       onToggle: jest.fn(),
     },
-    shuffle: { label: "Shuffle", busy: false, onPress: jest.fn() },
+    shuffle: { label: "Shuffle", busy: false, disabled: false, onPress: jest.fn() },
     disabled: false,
     reduceMotion: false,
     testID: "actions",
@@ -215,6 +238,46 @@ describe("DetailActions", () => {
     });
     expect(screen.getByRole("button", { name: "Shuffle" }).props.accessibilityState).toMatchObject({
       disabled: false,
+    });
+  });
+
+  it("disables shuffle alone when it has fewer than two tracks", async () => {
+    const p = props();
+    await render(<DetailActions {...p} shuffle={{ ...p.shuffle, disabled: true }} />);
+    const shuffle = screen.getByRole("button", { name: "Shuffle" });
+    const play = screen.getByRole("button", { name: "Play" });
+    expect(shuffle.props.accessibilityState).toMatchObject({ disabled: true });
+    expect(play.props.accessibilityState).toMatchObject({ disabled: false });
+    expect(glyphs(screen.toJSON())[0]?.props.stroke).toBe(color.text.disabled);
+    expect(glyphs(screen.toJSON())[1]?.props.stroke).not.toBe(color.text.disabled);
+    await fireEvent.press(shuffle);
+    await fireEvent.press(play);
+    await fireEvent.press(screen.getByRole("button", { name: "Save" }));
+    expect(p.shuffle.onPress).not.toHaveBeenCalled();
+    expect(p.play.onStart).toHaveBeenCalledTimes(1);
+    expect(p.save.onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it("disables the wide shuffle pill alone when it has fewer than two tracks", async () => {
+    const p = props({ variant: "wide" });
+    await render(<DetailActions {...p} shuffle={{ ...p.shuffle, disabled: true }} />);
+    const shuffle = screen.getByRole("button", { name: "Shuffle" });
+    const play = screen.getByRole("button", { name: "Play" });
+    expect(shuffle.props.accessibilityState).toMatchObject({ disabled: true });
+    expect(play.props.accessibilityState).toMatchObject({ disabled: false });
+    expect(within(shuffle).getByText("Shuffle")).toHaveStyle({ color: color.text.disabled });
+    expect(shuffle).toHaveStyle({ backgroundColor: color.surface.control });
+    await fireEvent.press(shuffle);
+    await fireEvent.press(play);
+    expect(p.shuffle.onPress).not.toHaveBeenCalled();
+    expect(p.play.onStart).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps shuffle disabled by the shared flags", async () => {
+    const p = props({ disabled: true });
+    await render(<DetailActions {...p} shuffle={{ ...p.shuffle, disabled: false }} />);
+    expect(screen.getByRole("button", { name: "Shuffle" }).props.accessibilityState).toMatchObject({
+      disabled: true,
     });
   });
 

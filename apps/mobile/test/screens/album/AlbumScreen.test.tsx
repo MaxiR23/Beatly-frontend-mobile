@@ -14,7 +14,7 @@
 // - starting a list registers the album as a recent and keeps playing when that fails
 // - a more button on each playable track and none on an unavailable one
 // - an unavailable track (no track id, or is_available false) dimmed, not a button, without menu and announced; next, previous and shuffle never reach it
-// - the action row: the play button idle, loading, playing, pausing and resuming, idle while another list plays, the playing track's row marked; play from the first playable track with the whole album, shuffle from a random one, play after shuffle, both registering the recent, disabled with no playable track
+// - the action row: the play button idle, loading, playing, pausing and resuming, idle while another list plays, the playing track's row marked; play from the first playable track with the whole album, shuffle from a random one, play after shuffle, both registering the recent, play disabled with no playable track, shuffle with fewer than two (unavailable tracks not counted)
 // - save: the saved state, saving with its body, removing, rolling back, library_item_not_found, disabled while loading or failing
 // - the generic error with retry for upstream_error and a transport failure, back and its fallback, es
 //
@@ -546,6 +546,33 @@ describe("AlbumScreen action row", () => {
     }
     expect(ctx.playback.getState().queue).toEqual([]);
   });
+
+  it.each([
+    [1, bigAlbum.tracks.slice(0, 2), ["t1"], true],
+    [2, bigAlbum.tracks.slice(0, 3), ["t1", "t3"], false],
+  ])(
+    "counts playable tracks for shuffle: %i playable",
+    async (_n, tracks, ids, shuffleDisabled) => {
+      const ctx = await setup({ getAlbum: albumOf({ ...bigAlbum, tracks }) });
+      await screen.findByText("First Song");
+      const shuffle = screen.getByRole("button", { name: en.album.shuffle });
+      const play = screen.getByRole("button", { name: en.album.play });
+      expect(stateFlag(shuffle, "disabled")).toBe(shuffleDisabled);
+      expect(stateFlag(play, "disabled")).toBe(false);
+      await fireEvent.press(shuffle);
+      if (shuffleDisabled) {
+        expect(ctx.playback.getState().queue).toEqual([]);
+        expect(ctx.playback.getState().shuffle).toBe(false);
+        await fireEvent.press(play);
+        expect(ctx.playback.getState().queue.map((t) => t.trackId)).toEqual(ids);
+        expect(ctx.playback.getState().shuffle).toBe(false);
+      } else {
+        const state = ctx.playback.getState();
+        expect(new Set(state.queue.map((t) => t.trackId))).toEqual(new Set(ids));
+        expect(state.shuffle).toBe(true);
+      }
+    },
+  );
 
   const playingEvent = (ctx: Awaited<ReturnType<typeof setup>>) =>
     act(() => {
