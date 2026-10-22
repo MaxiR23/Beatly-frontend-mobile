@@ -4,7 +4,7 @@
 // over it. Four bodies: loading skeleton, error with retry, unavailable,
 // ready. The cover is a mosaic, an image, an accent tile or the placeholder;
 // the ready body is a list: the hero, the title and the children on top,
-// optional rows under them paged by onEndReached two screens before the end, with skeleton rows under them while the next page loads. In the ready body the scroll drives, on the native driver, the cover's shrink to motion.detailCollapse.coverScale and fade, the floating buttons' fade, the title's fade and a top bar's fade in, over ranges derived from the measured hero and title heights; the floating buttons or the bar take touches, never both, on Android; on iOS the floating back never fades and always takes touches, drawn above a strip with no back of its own, reaching from the top edge to spacing.sm past spacing.xs under the back's bottom edge (topInset + spacing.xs + layout.controlHeight + spacing.xs + spacing.sm), with no background: the dominant color (the base surface without one) and a light base-surface shade over it, both fading to transparent at its bottom edge, and under them, outside the strip's fading parent, a blur of the content (blur.detailStrip) masked opaque to 55% of the strip's height and transparent at its bottom edge, the mask fading in with the strip, mounted once the ranges are measured and visible only through the mask's opacity (0 at the top), and only the floating more and the bar's more hand the touches over; under reduce motion the cover does not scale. In the ready body the content enters once per mount in a top-down cascade on the native driver: the hero, the title, the children, the first motion.detailCascade.firstRows rows and the later rows drawn with them, each from opacity 0 and motion.detailCascade.offset lower, in motion.detailCascade.duration, motion.detailCascade.stagger apart, in wrappers separate from the collapse's layers. It starts at once when the body becomes ready, after motion.detailCascade.navigationDelay when it was ready at mount. Rows drawn later and the floating buttons never animate. Under reduce motion, or when it turns on mid-way, everything is at rest.
+// optional rows under them paged by onEndReached two screens before the end, with skeleton rows under them while the next page loads, and an optional slot after them. In the ready body the scroll drives, on the native driver, the cover's shrink to motion.detailCollapse.coverScale and fade, the floating buttons' fade, the title's fade and a top bar's fade in, over ranges derived from the measured hero and title heights; the floating buttons or the bar take touches, never both, on Android; on iOS the floating back never fades and always takes touches, drawn above a strip with no back of its own, reaching from the top edge to spacing.sm past spacing.xs under the back's bottom edge (topInset + spacing.xs + layout.controlHeight + spacing.xs + spacing.sm), with no background: the dominant color (the base surface without one) and a light base-surface shade over it, both fading to transparent at its bottom edge, and under them, outside the strip's fading parent, a blur of the content (blur.detailStrip) masked opaque to 55% of the strip's height and transparent at its bottom edge, the mask fading in with the strip, mounted once the ranges are measured and visible only through the mask's opacity (0 at the top), and only the floating more and the bar's more hand the touches over; under reduce motion the cover does not scale. In the ready body the content enters once per mount in a top-down cascade on the native driver: the hero, the title, the children, the first motion.detailCascade.firstRows rows and the later rows drawn with them, with the slot after the rows in that same last step, each from opacity 0 and motion.detailCascade.offset lower, in motion.detailCascade.duration, motion.detailCascade.stagger apart, in wrappers separate from the collapse's layers. It starts at once when the body becomes ready, after motion.detailCascade.navigationDelay when it was ready at mount. Rows drawn later and the floating buttons never animate. Under reduce motion, or when it turns on mid-way, everything is at rest.
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Animated,
@@ -58,6 +58,8 @@ export type DetailBody =
       onEndReached?: (() => void) | undefined;
       // Present while the next page loads: skeleton rows under the rows, announced by the label.
       loadingMore?: { label: string } | undefined;
+      // Drawn after the rows (and after the next-page skeleton), entering with the later rows.
+      afterRows?: ReactNode | undefined;
     };
 
 interface DetailScreenProps {
@@ -100,7 +102,7 @@ export function DetailScreen({
       : null;
   const latest = useRef(ranges);
 
-  // The entry cascade: one value per step (hero, title, children, the first rows, the later rows), 0 to 1, on the native driver; at 1 from the start under reduce motion.
+  // The entry cascade: one value per step (hero, title, children, the first rows, the later rows, which also drive the slot after the rows), 0 to 1, on the native driver; at 1 from the start under reduce motion.
   const [cascade] = useState(() => {
     const from = reduceMotion ? 1 : 0;
     return {
@@ -273,17 +275,29 @@ export function DetailScreen({
           onEndReached={body.onEndReached}
           onEndReachedThreshold={END_REACHED_THRESHOLD}
           ListFooterComponent={
-            body.loadingMore ? (
-              <View
-                style={styles.loadingMore}
-                accessibilityRole="progressbar"
-                accessibilityLabel={body.loadingMore.label}
-                testID={testID ? `${testID}-loading-more` : "detail-loading-more"}
-              >
-                {Array.from({ length: layout.skeletonRows }, (_, row) => (
-                  <SkeletonRow key={row} />
-                ))}
-              </View>
+            body.loadingMore || (body.afterRows !== undefined && body.afterRows !== null) ? (
+              <>
+                {body.loadingMore ? (
+                  <View
+                    style={styles.loadingMore}
+                    accessibilityRole="progressbar"
+                    accessibilityLabel={body.loadingMore.label}
+                    testID={testID ? `${testID}-loading-more` : "detail-loading-more"}
+                  >
+                    {Array.from({ length: layout.skeletonRows }, (_, row) => (
+                      <SkeletonRow key={row} />
+                    ))}
+                  </View>
+                ) : null}
+                {body.afterRows !== undefined && body.afterRows !== null ? (
+                  <Animated.View
+                    testID="detail-cascade-after-rows"
+                    style={entering(cascade.laterRows)}
+                  >
+                    {body.afterRows}
+                  </Animated.View>
+                ) : null}
+              </>
             ) : null
           }
           contentContainerStyle={{ paddingBottom: bottomInset }}

@@ -12,7 +12,8 @@ pushes a new album in the same tab. Pressing an available track plays the album 
 ## Layout
 
 - Collapse: the header collapses into the top bar on scroll (`DESIGN.md`, "Detail screen base"): the cover shrinks and fades, the bar is drawn on the dominant color. On iOS the floating back stays fixed and the bar is a strip with no back of its own, reaching from the top edge to `spacing.sm` past `spacing.xs` under the back's bottom edge, with no background: the dominant color and a light shade, both fading to transparent at its bottom edge. Under the strip the content is blurred slightly (`blur.detailStrip`), full at the top and fading to zero at the strip's bottom edge, appearing with the strip (`DESIGN.md`, "Detail screen base").
-- Entry: the content enters in a top-down cascade (`DESIGN.md`, "Detail screen base"): the cover over its wash, the title, then the rest of the body (info, action row, tracks and carousels) as one block, `motion.detailCascade.*`. The tracks are part of the body, not rows of the base, so they have no steps of their own. At once when the album arrives, after the navigation transition when it was cached. Nothing moves under reduce motion.
+- Virtualization: the tracks are rows of the base's `FlatList` (`DESIGN.md`, "Detail screen base"), so a long album is virtualized: rows past the initial window render on scroll, already at rest, and the carousels (the slot after the rows) mount from the first render below a spacer. A fast scroll on a very long list is checked on device for blank rows.
+- Entry: the content enters in a top-down cascade (`DESIGN.md`, "Detail screen base"): the cover over its wash, the title, the info and action row, the first 3 tracks (`motion.detailCascade.firstRows`), then the other tracks on screen with the carousels after them, `motion.detailCascade.*`. The tracks are rows of the base; the carousels are its slot after the rows and enter with the later tracks. At once when the album arrives, after the navigation transition when it was cached. Nothing moves under reduce motion.
 
 Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), except
 the body:
@@ -33,7 +34,7 @@ the body:
   `album:play`; pressing it plays the album from its first playable track. Pressed, the label fades out (`motion.playButton.labelFade`), then the `layout.playButtonPill` pill, holding the play glyph, shrinks to the circle (`motion.playButton.shrink`, ease in-out), even when the start is instant, and only then draws the spinner while the stream loads, or the pause glyph, scaling in over `motion.playButton.scaleIn`, if it already plays (a mid-track buffer shows the spinner too); playing it is a
   circle with the pause glyph, labelled `album:pause`, and pressing it pauses; paused it shows the
   play glyph and pressing it resumes. Once the list has ended (paused on its last track) pressing it restarts the list from position 0 of the current play order: the first track with shuffle off, the first of the shuffled order with shuffle on. Under reduce motion neither the fade, the shrink nor the scale-in animate.
-- Tracks: one `TrackRow` per track in API order, keyed by `track_number`. The
+- Tracks: one `TrackRow` per track in API order, a row of the base keyed by `track_number`. The
   number in a `layout.trackNumber` column, the title in `typography.rowTitle`, the
   artists in `typography.meta`. An unavailable track (no `track_id`, or `is_available: false`) draws in
   `color.text.disabled` and is announced as one element by `album:trackUnavailable`. The row of the
@@ -42,7 +43,7 @@ the body:
   card is `layout.carouselCard` wide with a `radius.sm` cover; its subtitle is the
   artists, or the year when there are none.
 - Sections are `spacing.xl` apart, and that one gap is also the space between the info
-  (the end of the title block) and the tracks: nothing else adds to it. The bottom clears the floating tab bar with
+  (the end of the title block) and the tracks: nothing else adds to it. The action row adds `spacing.xl` under itself when there are tracks and the carousels `spacing.xl` above themselves, so every gap stays `spacing.xl`. The bottom clears the floating tab bar with
   `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
 ## Platform differences
@@ -105,6 +106,6 @@ dominant color on a development build and the neutral fallback in Expo Go;
 swipe-back per tab; and the native tab bar on iOS 26+ with the renamed tab
 groups.
 
-Also: the entry cascade on iOS and Android: its order, the 300 ms and 60 ms feel, the start after the push with cached data (back and reopen) and at once after the skeleton, no animation on rows of a later page, the floating buttons visible from the first frame with the native glass on iOS 26+, nothing moving under reduce motion, the header collapse unchanged after it.
+Also: the entry cascade on iOS and Android: its order, the 300 ms and 60 ms feel, the start after the push with cached data (back and reopen) and at once after the skeleton, no animation on rows of a later page, the floating buttons visible from the first frame with the native glass on iOS 26+, nothing moving under reduce motion, the header collapse unchanged after it. The tracks entering in two steps and the carousels with the second, the album at rest identical to before (with tracks, with no tracks, with no carousels).
 
 Also: the iOS strip blur: absent at the top, fading in with the strip and following the scroll with no flicker or dark flash, full at the top and gone at the strip's bottom edge with no visible border or cut, about 4 points (tune `blur.detailStrip`), no change under reduce motion other than the strip's own, the floating back and the title above it unchanged, a development build rebuilt after the install.

@@ -9,12 +9,13 @@
 // - the rows under the children, onEndReached, the mosaic and the tile covers
 // - the four bodies: the skeleton, the error with retry, the unavailable message, the ready hero with its title and children
 // - the next-page footer of skeleton rows, its count and label, none without it, the end-reached threshold, the loading skeleton's row count
+// - the slot after the rows: under the rows and after the next-page skeleton, none without it, drawn with no rows
 // - the hero title in typography.title
 // - the image hero: full width at the hero image ratio, the title over it in typography.display, the fade, the placeholder without an image, no centered cover or wash
 // - the floating back button, the more button only when given, the neutral wash and the gradient wash
 // - the collapse: one Animated.event on the native driver, the cover's shrink and fade, the order of the fades on both heroes, ranges from the measured heights, the touches handed from the floating buttons to the top bar and back, the bar's geometry and fill, no cover scale under reduce motion, static until measured, the other bodies unchanged, the reset when the ready body leaves
 //
-// - the entry cascade: five steps (hero, title, children, the first motion.detailCascade.firstRows rows, the later rows) in that order with the motion.detailCascade tokens on the native driver, opacity and translateY only, at once from loading and after navigationDelay when ready at mount, once per mount, late rows at rest, reduce motion at mount and turning on mid-way, unmount stopping it, the floating buttons never under a cascade wrapper on iOS and Android, no wrapper in the other bodies, the collapse's layers untouched by it
+// - the entry cascade: five steps (hero, title, children, the first motion.detailCascade.firstRows rows, the later rows) in that order with the motion.detailCascade tokens on the native driver, opacity and translateY only, at once from loading and after navigationDelay when ready at mount, once per mount, late rows at rest, the slot after the rows in the later rows step under exactly one cascade wrapper and at rest when it arrives late, reduce motion at mount and turning on mid-way, unmount stopping it, the floating buttons never under a cascade wrapper on iOS and Android, no wrapper in the other bodies, the collapse's layers untouched by it
 //
 // - the iOS blur under the strip: absent before the measure, on Android and in the other bodies; mounted once measured whatever the phase, invisible at the top (mask opacity 0), between the list and the strip, at the strip's box, out of touches; the token's intensity and tint; masked by the blurMask stops on the base surface; the mask's opacity the strip's at every offset, also under reduce motion; no opacity on any parent of the blur
 // - the collapse cases run on Android; on iOS: the floating back fixed, opaque, touchable and announced in every phase and drawn above the bar, the strip's height from the back's tokens plus spacing.sm, no background, its wash stops from the dominant color or the base surface and its shade stops, both from the tokens and transparent at the bottom edge, the title between two control-height slots at the back's vertical center, the mores handed over by the phase, the other bodies
@@ -172,6 +173,69 @@ describe("DetailScreen", () => {
     });
     expect(screen.queryByTestId("detail-loading-more")).toBeNull();
     expect(screen.queryAllByTestId("detail-skeleton-row")).toHaveLength(0);
+  });
+
+  it("draws the slot after the rows", async () => {
+    await draw({
+      ...(ready() as Extract<DetailBody, { kind: "ready" }>),
+      rows: [
+        { key: "a", element: <Text>row a</Text> },
+        { key: "b", element: <Text>row b</Text> },
+      ],
+      afterRows: <Text>after content</Text>,
+    });
+    expect(screen.getByText("after content")).toBeTruthy();
+    expect(
+      screen
+        .queryAllByTestId(/^detail-cascade-(row-a|row-b|after-rows)$/)
+        .map((node) => node.props.testID as string),
+    ).toEqual(["detail-cascade-row-a", "detail-cascade-row-b", "detail-cascade-after-rows"]);
+  });
+
+  it("draws the slot after the next-page skeleton", async () => {
+    await draw({
+      ...(ready() as Extract<DetailBody, { kind: "ready" }>),
+      rows: [{ key: "a", element: <Text>row a</Text> }],
+      loadingMore: { label: "Loading more" },
+      afterRows: <Text>after content</Text>,
+    });
+    expect(
+      screen
+        .queryAllByTestId(/^(detail-loading-more|detail-cascade-after-rows)$/)
+        .map((node) => node.props.testID as string),
+    ).toEqual(["detail-loading-more", "detail-cascade-after-rows"]);
+    expect(
+      within(screen.getByTestId("detail-loading-more")).getAllByTestId("detail-skeleton-row"),
+    ).toHaveLength(layout.skeletonRows);
+  });
+
+  it("draws no slot without one", async () => {
+    const view = await draw({
+      ...(ready() as Extract<DetailBody, { kind: "ready" }>),
+      rows: [{ key: "a", element: <Text>row a</Text> }],
+    });
+    expect(screen.queryByTestId("detail-cascade-after-rows")).toBeNull();
+    await view.rerender(
+      element({
+        ...(ready() as Extract<DetailBody, { kind: "ready" }>),
+        rows: [{ key: "a", element: <Text>row a</Text> }],
+        loadingMore: { label: "Loading more" },
+      }),
+    );
+    expect(screen.queryByTestId("detail-cascade-after-rows")).toBeNull();
+    expect(screen.getByLabelText("Loading more")).toBeTruthy();
+    expect(
+      within(screen.getByTestId("detail-loading-more")).getAllByTestId("detail-skeleton-row"),
+    ).toHaveLength(layout.skeletonRows);
+  });
+
+  it("draws the slot with no rows", async () => {
+    await draw({
+      ...(ready() as Extract<DetailBody, { kind: "ready" }>),
+      afterRows: <Text>after content</Text>,
+    });
+    expect(screen.getByText("body content")).toBeTruthy();
+    expect(screen.getByText("after content")).toBeTruthy();
   });
 
   it("asks for the next page two screens before the end", async () => {
@@ -1070,6 +1134,7 @@ describe("DetailScreen", () => {
       "detail-cascade-children",
       "detail-cascade-row-r0",
       "detail-cascade-row-r3",
+      "detail-cascade-after-rows",
     ];
     // Which wrapper each step drives: rows r0..r2 share the first-rows step, r3..r4 the later one.
     const STEP_WRAPPERS = [
@@ -1077,7 +1142,7 @@ describe("DetailScreen", () => {
       ["detail-cascade-title"],
       ["detail-cascade-children"],
       ["detail-cascade-row-r0", "detail-cascade-row-r1", "detail-cascade-row-r2"],
-      ["detail-cascade-row-r3", "detail-cascade-row-r4"],
+      ["detail-cascade-row-r3", "detail-cascade-row-r4", "detail-cascade-after-rows"],
     ];
     const stubs: { start: jest.Mock; stop: jest.Mock }[] = [];
     let timing: jest.SpiedFunction<typeof Animated.timing>;
@@ -1093,6 +1158,7 @@ describe("DetailScreen", () => {
         key: `r${String(i)}`,
         element: <Text>{`row ${String(i)}`}</Text>,
       })),
+      afterRows: <Text>after content</Text>,
     });
     const at = (id: string) => StyleSheet.flatten(screen.getByTestId(id).props.style as ViewStyle);
     const translateOf = (id: string) => {
@@ -1187,6 +1253,31 @@ describe("DetailScreen", () => {
       await view.rerender(element(rowsBody(8)));
       expect(at("detail-cascade-row-r7").opacity).toBe(1);
       expect(translateOf("detail-cascade-row-r7")).toBe(0);
+      expect(timing).toHaveBeenCalledTimes(5);
+    });
+
+    it("puts the slot under exactly one cascade wrapper", async () => {
+      await draw(rowsBody(5));
+      const wrappers: string[] = [];
+      let node = screen.getByText("after content").parent;
+      while (node) {
+        const id: unknown = node.props.testID;
+        if (typeof id === "string" && id.startsWith("detail-cascade")) wrappers.push(id);
+        node = node.parent;
+      }
+      expect(wrappers.filter((id, i) => wrappers.indexOf(id) === i)).toEqual([
+        "detail-cascade-after-rows",
+      ]);
+    });
+
+    it("draws a slot that arrives later at rest without a new run", async () => {
+      const withoutSlot = { ...(rowsBody(5) as Extract<DetailBody, { kind: "ready" }>) };
+      delete withoutSlot.afterRows;
+      const view = await draw(withoutSlot);
+      await finishAll();
+      await view.rerender(element(rowsBody(5)));
+      expect(at("detail-cascade-after-rows").opacity).toBe(1);
+      expect(translateOf("detail-cascade-after-rows")).toBe(0);
       expect(timing).toHaveBeenCalledTimes(5);
     });
 

@@ -91,7 +91,7 @@ cover hero, the hero on the image hero) passes `topInset + layout.controlHeight`
 the fade before the title, the cover shrinks until the title starts. On iOS the floating back is not part of the collapse: it never fades and always takes touches; only the floating more fades over the buttons' range. Before the heights are measured nothing moves. Under reduce motion
 the cover does not scale; the fades stay.
 
-Entry: in the ready body the content enters once per mount in a top-down cascade on the native driver, in wrappers separate from the collapse's layers: the hero (on the image hero its surface, image and fade), the title, the children, the first `motion.detailCascade.firstRows` rows, then the rows drawn with them. Each goes from opacity 0 and `motion.detailCascade.offset` lower to its place in `motion.detailCascade.duration`, `motion.detailCascade.stagger` after the previous one. It starts at once when the body becomes ready (replacing the skeleton), and after `motion.detailCascade.navigationDelay` when the body is ready at mount. That delay is a fixed estimate (350 ms) of the native stack push, not tied to the end of the transition: if the push timing changes nothing adjusts, so it is tuned on device. Rows drawn later (scroll, next page) and the floating buttons never animate. The buttons stay out so the native glass installs at full opacity. Under reduce motion everything is at rest from the first frame, or as soon as it turns on.
+Entry: in the ready body the content enters once per mount in a top-down cascade on the native driver, in wrappers separate from the collapse's layers: the hero (on the image hero its surface, image and fade), the title, the children, the first `motion.detailCascade.firstRows` rows, then the rows drawn with them, with the slot after the rows (the album's and artist's carousels) in that same last step, under one wrapper. Each goes from opacity 0 and `motion.detailCascade.offset` lower to its place in `motion.detailCascade.duration`, `motion.detailCascade.stagger` after the previous one. It starts at once when the body becomes ready (replacing the skeleton), and after `motion.detailCascade.navigationDelay` when the body is ready at mount. That delay is a fixed estimate (350 ms) of the native stack push, not tied to the end of the transition: if the push timing changes nothing adjusts, so it is tuned on device. Rows drawn later (scroll, next page) and the floating buttons never animate. The buttons stay out so the native glass installs at full opacity. Under reduce motion everything is at rest from the first frame, or as soon as it turns on.
 
 - Hero: a `layout.heroCover` cover in `radius.sm` with `shadow.cover`, centered
   over a wash. The cover follows `Cover`'s rules: a mosaic with four urls, an image, the
@@ -105,6 +105,8 @@ Entry: in the ready body the content enters once per mount in a top-down cascade
   No wash. `color.overlay.clear` is `color.surface.base` at zero alpha, so the two must change together.
 - Body: a `FlatList`; the hero, the title and the children are its header, and optional
   rows follow, paged with `onEndReached`.
+- Slot after the rows: an optional block the screen passes (`afterRows`), drawn under the rows and the next-page skeleton; it enters with the later rows and is at rest when it mounts after the cascade.
+- Virtualization: the rows are the `FlatList`'s items, so a long album or popular list is virtualized: rows past the initial window render on scroll, already at rest. The slot after the rows is the list footer and mounts from the first render, below a spacer, whatever the list's length. A fast scroll on a very long list is checked on device for blank rows.
 - Creator line (playlist): a `layout.creatorMark` mark (avatar or brand mark on
   `color.accent.primary`, `radius.full`) with the name in `typography.rowTitle`, gap
   `spacing.sm`.
@@ -215,7 +217,7 @@ Entry: in the ready body the content enters once per mount in a top-down cascade
 - `AvatarRow`: the `ActionRow` row (`layout.controlHeight`, `spacing.sm` vertical, `layout.gap`), the header `Avatar`, `typography.rowTitle` over `typography.meta` in `color.text.secondary`, and a trailing `chevronRight` at `icon.size.md` in `color.text.tertiary`.
 - The profile avatar: `layout.profileAvatar`, initials in `typography.display`, or the `user` icon at `icon.size.xl`.
 - `ProfileSkeleton`: `SkeletonCircle` at `layout.profileAvatar`, a `typography.title` bar at `layout.skeletonBar.title` and a `typography.body` bar at `.meta`, then a `Card` with two `typography.label` / `typography.body` bar pairs at `.rowMeta` / `.rowTitle`. All in `color.surface.border`, bars `radius.sm`, circles `radius.full`, no motion.
-- New skeletons build on the exported `SkeletonBar` and `SkeletonCircle` of `Skeleton.tsx`; `DetailSkeleton` keeps its private bars and exports its `SkeletonRow` for the detail list's footer.
+- New skeletons build on the exported `SkeletonBar` and `SkeletonCircle` of `Skeleton.tsx`; `DetailSkeleton` keeps its private bars and exports its `SkeletonRow` for the detail list's footer, which draws it before the slot after the rows when the screen passes one.
 - `AvatarRow` with no identity: `SkeletonCircle` at `layout.avatar` and a `typography.rowTitle` bar at `.rowTitle`.
 
 ## Radius (`radius`)

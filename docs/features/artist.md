@@ -11,20 +11,21 @@ another artist in the same tab. Pressing a popular song with a `track_id` plays 
 ## Layout
 
 - Collapse: the header collapses into the top bar on scroll (`DESIGN.md`, "Detail screen base"): the image hero has no cover to scale, and the bar is always neutral (`color.surface.base`) because the artist has no dominant color. On iOS the floating back stays fixed and the bar is a strip with no back of its own, reaching from the top edge to `spacing.sm` past `spacing.xs` under the back's bottom edge, with no background: the base surface and a light shade, both fading to transparent at its bottom edge (no dominant color). Under the strip the content is blurred slightly (`blur.detailStrip`), full at the top and fading to zero at the strip's bottom edge, appearing with the strip (`DESIGN.md`, "Detail screen base").
-- Entry: the content enters in a top-down cascade (`DESIGN.md`, "Detail screen base"): the image, the name, then the sections (popular songs and carousels) as one block, `motion.detailCascade.*`. The tracks are part of the body, not rows of the base, so they have no steps of their own. At once when the artist arrives, after the navigation transition when it was cached. Nothing moves under reduce motion.
+- Entry: the content enters in a top-down cascade (`DESIGN.md`, "Detail screen base"): the image, the name, the popular title, the first 3 songs, then the other songs on screen with the carousels after them, `motion.detailCascade.*`. The songs are rows of the base; the carousels its slot after the rows. At once when the artist arrives, after the navigation transition when it was cached. Nothing moves under reduce motion.
 
 Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), except the body:
 
 - Hero: the image variant, full width at `layout.heroImageRatio` on `color.surface.card`, faded into
   `color.surface.base`, the name over it in `typography.display`.
-- Popular songs: a `spacing.md` column under a `typography.section` title with `layout.gutter` on
+- Popular songs: rows of the base, each `spacing.md` under the previous one or the title, under a `typography.section` title with `layout.gutter` on
   the sides; one `MediaRow` per song in API order, a `layout.rowCover` cover, the title in
   `typography.rowTitle`, the album in `typography.meta`. A song without `track_id` draws in
   `color.text.disabled`.
 - Albums, singles and EPs, similar artists: a `Carousel` each, a card `layout.carouselCard` wide;
   square covers with `radius.sm`, round for similar artists. The album subtitle is the year; the
   single subtitle is the kind and the year, each omitted when the API sends none.
-- Sections are `spacing.xl` apart, and each empty one is hidden. The bottom clears the floating tab
+- Virtualization: the songs are rows of the base's `FlatList` (`DESIGN.md`, "Detail screen base"), so a long popular list is virtualized: rows past the initial window render on scroll, already at rest, and the carousels (the slot after the rows) mount from the first render below a spacer. A fast scroll on a very long list is checked on device for blank rows.
+- Sections are `spacing.xl` apart (the carousels `spacing.xl` after the last song, right under the hero when there are no songs), and each empty one is hidden. The bottom clears the floating tab
   bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
 ## Platform differences
@@ -80,6 +81,6 @@ legibility over bright images and the floating back button over the image; no wh
 push and a swipe-back in every tab, on the JS tab bar and on NativeTabs (iOS 26+); the now playing bars on a popular song, moving, frozen on pause and static under reduce motion.
 Also: the header collapse on scroll (the hero image fading, then the floating buttons, the title and the top bar, in that order, without dropped frames on iOS and Android); on iOS the floating back staying fixed and tappable at every scroll position, the title never under it, and the strip's fade matching the top of the wash and ending with no edge under the back, and the strip's transparent bottom catching taps over the first visible row; TalkBack focus moving from the floating buttons to the top bar after a scroll, and VoiceOver reaching the fixed back and the bar's title once collapsed.
 
-Also: the entry cascade on iOS and Android: its order, the 300 ms and 60 ms feel, the start after the push with cached data (back and reopen) and at once after the skeleton, no animation on rows of a later page, the floating buttons visible from the first frame with the native glass on iOS 26+, nothing moving under reduce motion, the header collapse unchanged after it.
+Also: the entry cascade on iOS and Android: its order, the 300 ms and 60 ms feel, the start after the push with cached data (back and reopen) and at once after the skeleton, no animation on rows of a later page, the floating buttons visible from the first frame with the native glass on iOS 26+, nothing moving under reduce motion, the header collapse unchanged after it. The songs entering in two steps and the carousels with the second, the artist at rest identical to before (with songs, with no songs, with no carousels).
 
 Also: the iOS strip blur: absent at the top, fading in with the strip and following the scroll with no flicker or dark flash, full at the top and gone at the strip's bottom edge with no visible border or cut, about 4 points (tune `blur.detailStrip`), no change under reduce motion other than the strip's own, the floating back and the title above it unchanged, a development build rebuilt after the install.
