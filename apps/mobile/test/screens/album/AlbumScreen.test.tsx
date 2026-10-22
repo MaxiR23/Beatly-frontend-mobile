@@ -7,7 +7,8 @@
 //
 // What is covered:
 // - the skeleton, the title, artists and meta line with plural forms, null year and count omitted
-// - one spacing token between the title block and the tracks
+// - one spacing token between the title block, the action row, the tracks and the carousels
+// - the tracks as rows of the detail base in API order, the carousels in the slot after the rows, the empty message in the body with no rows
 // - the tracks with an unavailable one disabled, the empty tracks message, hidden empty carousels
 // - opening another album from a carousel, opening an artist from the artist names, an artist without an id as plain text, not available for invalid_request without retry
 // - starting a list registers the album as a recent and keeps playing when that fails
@@ -139,11 +140,45 @@ describe("AlbumScreen", () => {
       screen.getByTestId("album-info").props.style as ViewStyle,
     );
     expect(sections.gap).toBe(spacing.xl);
+    expect(sections.paddingBottom).toBe(spacing.xl);
+    // The row wrapper carries only the cascade's opacity and translation: no layout of its own.
+    const wrapper: ViewStyle = StyleSheet.flatten(
+      screen.getByTestId("detail-cascade-row-1").props.style as ViewStyle,
+    );
+    expect(Object.keys(wrapper).sort()).toEqual(["opacity", "transform"]);
     // The info block adds no padding or margin below itself: a second one would double the gap.
     expect(info.paddingBottom).toBeUndefined();
     expect(info.marginBottom).toBeUndefined();
     expect(info.paddingVertical).toBeUndefined();
     expect(info.padding).toBeUndefined();
+  });
+
+  it("draws the tracks as rows of the detail base in API order", async () => {
+    await setup();
+    await screen.findByText("First Song");
+    expect(within(screen.getByTestId("detail-cascade-row-1")).getByText("First Song")).toBeTruthy();
+    expect(
+      within(screen.getByTestId("detail-cascade-row-2")).getByText("Hidden Song"),
+    ).toBeTruthy();
+    expect(
+      screen.queryAllByTestId(/^detail-cascade-row-/).map((node) => node.props.testID as string),
+    ).toEqual(["detail-cascade-row-1", "detail-cascade-row-2"]);
+    expect(within(screen.getByTestId("album-sections")).queryByText("First Song")).toBeNull();
+  });
+
+  it("draws the carousels after the tracks, in the slot after the rows", async () => {
+    await setup();
+    const slot = await screen.findByTestId("detail-cascade-after-rows");
+    const after = within(slot).getByTestId("album-after-tracks");
+    expect(
+      within(after)
+        .queryAllByTestId(/^album-(other-versions|recommended)$/)
+        .map((node) => node.props.testID as string),
+    ).toEqual(["album-other-versions", "album-recommended"]);
+    expect(StyleSheet.flatten(after.props.style as ViewStyle)).toEqual({
+      gap: spacing.xl,
+      paddingTop: spacing.xl,
+    });
   });
 
   it("draws a singular song count", async () => {
@@ -172,6 +207,10 @@ describe("AlbumScreen", () => {
     expect(await screen.findByText(en.album.empty)).toBeTruthy();
     expect(screen.getAllByText("Test Album").length).toBeGreaterThan(0);
     expect(screen.queryByText(en.common.retry)).toBeNull();
+    expect(screen.queryAllByTestId(/^detail-cascade-row-/)).toHaveLength(0);
+    const sections = screen.getByTestId("album-sections");
+    expect(within(sections).getByText(en.album.empty)).toBeTruthy();
+    expect(StyleSheet.flatten(sections.props.style as ViewStyle).paddingBottom).toBeUndefined();
   });
 
   it("draws both carousels with data", async () => {
@@ -189,6 +228,8 @@ describe("AlbumScreen", () => {
     await screen.findByText("First Song");
     expect(screen.queryByTestId("album-other-versions")).toBeNull();
     expect(screen.queryByTestId("album-recommended")).toBeNull();
+    expect(screen.queryByTestId("album-after-tracks")).toBeNull();
+    expect(screen.queryByTestId("detail-cascade-after-rows")).toBeNull();
   });
 
   it("opens another album from a carousel card", async () => {

@@ -1,4 +1,4 @@
-// INFO: an album: the detail base with its cover, title, artists, meta line, tracks and the carousels of other versions and recommended albums; unavailable for an invalid id; every playable track has a menu button; a track without a track id or marked unavailable is dimmed, unpressable, without menu, and announced as not available; a row under the header plays the whole album from its first playable track or shuffled from a random one, and saves it to the library; the play button pauses and resumes the album while it is the playback source and the current track's row is marked; starting a list registers it as a recent.
+// INFO: an album: the detail base with its cover, title, artists, meta line, tracks and the carousels of other versions and recommended albums, the tracks being rows of the detail base and the carousels its slot after the rows; unavailable for an invalid id; every playable track has a menu button; a track without a track id or marked unavailable is dimmed, unpressable, without menu, and announced as not available; a row under the header plays the whole album from its first playable track or shuffled from a random one, and saves it to the library; the play button pauses and resumes the album while it is the playback source and the current track's row is marked; starting a list registers it as a recent.
 import {
   albumLibraryInputOf,
   type Album,
@@ -17,6 +17,7 @@ import {
   TrackRow,
   type CarouselItem,
   type DetailBody,
+  type DetailRow,
 } from "@beatly/ui/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Fragment } from "react";
@@ -132,13 +133,44 @@ export function AlbumScreen() {
         },
       });
     };
+    const rows: DetailRow[] = data.tracks.map((track, index) => {
+      const playableTrack = playable(track);
+      return {
+        key: String(track.track_number),
+        element: (
+          <TrackRow
+            number={track.track_number}
+            title={track.title}
+            subtitle={track.artists.length > 0 ? artistNames(track.artists) : undefined}
+            available={playableTrack !== null}
+            unavailableLabel={t("trackUnavailable", { title: track.title })}
+            nowPlaying={nowPlaying.of(playableTrack?.trackId ?? null)}
+            reduceMotion={nowPlaying.reduceMotion}
+            trailing={
+              playableTrack !== null ? <TrackMenuButton track={playableTrack} /> : undefined
+            }
+            onPress={
+              playableTrack !== null
+                ? () => {
+                    start(toQueue(data.tracks, index, playable));
+                  }
+                : undefined
+            }
+          />
+        ),
+      };
+    });
+    const hasCarousels = data.other_versions.length > 0 || data.related_recommendations.length > 0;
     body = {
       kind: "ready",
       title: data.title,
       cover: { urls: data.thumbnail_url === null ? [] : [data.thumbnail_url] },
       washColor: wash,
       children: (
-        <View style={styles.sections} testID="album-sections">
+        <View
+          style={[styles.sections, data.tracks.length > 0 ? styles.beforeRows : null]}
+          testID="album-sections"
+        >
           <View style={styles.info} testID="album-info">
             {data.artists.length > 0 ? (
               <Text variant="rowTitle" tone="secondary">
@@ -206,37 +238,12 @@ export function AlbumScreen() {
               },
             }}
           />
-          {data.tracks.length === 0 ? (
-            <EmptyState icon="music" message={t("empty")} />
-          ) : (
-            <View>
-              {data.tracks.map((track, index) => {
-                const playableTrack = playable(track);
-                return (
-                  <TrackRow
-                    key={track.track_number}
-                    number={track.track_number}
-                    title={track.title}
-                    subtitle={track.artists.length > 0 ? artistNames(track.artists) : undefined}
-                    available={playableTrack !== null}
-                    unavailableLabel={t("trackUnavailable", { title: track.title })}
-                    nowPlaying={nowPlaying.of(playableTrack?.trackId ?? null)}
-                    reduceMotion={nowPlaying.reduceMotion}
-                    trailing={
-                      playableTrack !== null ? <TrackMenuButton track={playableTrack} /> : undefined
-                    }
-                    onPress={
-                      playableTrack !== null
-                        ? () => {
-                            start(toQueue(data.tracks, index, playable));
-                          }
-                        : undefined
-                    }
-                  />
-                );
-              })}
-            </View>
-          )}
+          {data.tracks.length === 0 ? <EmptyState icon="music" message={t("empty")} /> : null}
+        </View>
+      ),
+      rows,
+      afterRows: hasCarousels ? (
+        <View style={styles.afterTracks} testID="album-after-tracks">
           {data.other_versions.length > 0 ? (
             <Carousel
               testID="album-other-versions"
@@ -252,7 +259,7 @@ export function AlbumScreen() {
             />
           ) : null}
         </View>
-      ),
+      ) : undefined,
     };
   }
 
@@ -280,7 +287,10 @@ export function AlbumScreen() {
 }
 
 // The gap between the title block and the tracks is `sections.gap`, chosen once; `info` adds none.
+// `beforeRows` gives the same gap between the action row and the first track, `afterTracks` the one before the carousels.
 const styles = StyleSheet.create({
   sections: { gap: spacing.xl },
+  beforeRows: { paddingBottom: spacing.xl },
+  afterTracks: { gap: spacing.xl, paddingTop: spacing.xl },
   info: { paddingHorizontal: layout.gutter, gap: spacing.xs },
 });

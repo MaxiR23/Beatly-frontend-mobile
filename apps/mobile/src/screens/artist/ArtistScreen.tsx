@@ -1,4 +1,4 @@
-// INFO: an artist: the detail base with a full-width image hero and the name over it, then popular songs, albums, singles and EPs and similar artists, each hidden when empty, every playable popular song with a menu button, a song without a track id dimmed, unpressable, without menu, and announced as not available; unavailable for an invalid id; the current track's row is marked; starting a list registers it as a recent.
+// INFO: an artist: the detail base with a full-width image hero and the name over it, then popular songs (rows of the detail base under their title), albums, singles and EPs and similar artists (the carousels being the slot after the rows), each hidden when empty, every playable popular song with a menu button, a song without a track id dimmed, unpressable, without menu, and announced as not available; unavailable for an invalid id; the current track's row is marked; starting a list registers it as a recent.
 import type { AlbumRef, Artist, PlayableTrack } from "@beatly/core";
 import { layout, spacing } from "@beatly/ui";
 import {
@@ -8,6 +8,7 @@ import {
   Text,
   type CarouselItem,
   type DetailBody,
+  type DetailRow,
 } from "@beatly/ui/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StyleSheet, View } from "react-native";
@@ -111,45 +112,54 @@ export function ArtistScreen() {
         });
       }
     };
+    const rows: DetailRow[] = data.songs.map((song, index) => {
+      const playable = toPlayable(song);
+      return {
+        key: `${String(index)}:${song.track_id ?? song.title}`,
+        element: (
+          <View style={styles.song} testID="artist-song">
+            <MediaRow
+              shape="square"
+              urls={urlsOf(song.thumbnail_url)}
+              title={song.title}
+              subtitle={song.album ?? undefined}
+              available={playable !== null}
+              unavailableLabel={t("trackUnavailable", { title: song.title })}
+              nowPlaying={nowPlaying.of(playable?.trackId ?? null)}
+              reduceMotion={nowPlaying.reduceMotion}
+              trailing={playable !== null ? <TrackMenuButton track={playable} /> : undefined}
+              onPress={
+                playable !== null
+                  ? () => {
+                      playSong(index);
+                    }
+                  : undefined
+              }
+            />
+          </View>
+        ),
+      };
+    });
+    const hasCarousels =
+      data.albums.length > 0 || data.singles.length > 0 || data.related.length > 0;
     body = {
       kind: "ready",
       hero: "image",
       title: data.name,
       cover: { urls: urlsOf(data.thumbnail_url) },
       washColor: null,
-      children: (
-        <View style={styles.sections} testID="artist-sections">
-          {data.songs.length > 0 ? (
-            <View style={styles.songs} testID="artist-popular">
-              <View style={styles.sectionHeader}>
-                <Text variant="section">{t("popular")}</Text>
-              </View>
-              {data.songs.map((song, index) => {
-                const playable = toPlayable(song);
-                return (
-                  <MediaRow
-                    key={`${String(index)}:${song.track_id ?? song.title}`}
-                    shape="square"
-                    urls={urlsOf(song.thumbnail_url)}
-                    title={song.title}
-                    subtitle={song.album ?? undefined}
-                    available={playable !== null}
-                    unavailableLabel={t("trackUnavailable", { title: song.title })}
-                    nowPlaying={nowPlaying.of(playable?.trackId ?? null)}
-                    reduceMotion={nowPlaying.reduceMotion}
-                    trailing={playable !== null ? <TrackMenuButton track={playable} /> : undefined}
-                    onPress={
-                      playable !== null
-                        ? () => {
-                            playSong(index);
-                          }
-                        : undefined
-                    }
-                  />
-                );
-              })}
-            </View>
-          ) : null}
+      children:
+        data.songs.length > 0 ? (
+          <View style={styles.sectionHeader} testID="artist-popular">
+            <Text variant="section">{t("popular")}</Text>
+          </View>
+        ) : null,
+      rows,
+      afterRows: hasCarousels ? (
+        <View
+          style={[styles.sections, data.songs.length > 0 ? styles.afterSongs : null]}
+          testID="artist-sections"
+        >
           {data.albums.length > 0 ? (
             <Carousel
               testID="artist-albums"
@@ -187,7 +197,7 @@ export function ArtistScreen() {
             />
           ) : null}
         </View>
-      ),
+      ) : undefined,
     };
   }
 
@@ -214,6 +224,8 @@ export function ArtistScreen() {
 
 const styles = StyleSheet.create({
   sections: { gap: spacing.xl },
-  songs: { gap: spacing.md },
+  // The popular title and the songs keep their spacing.md column gap; the carousels keep spacing.xl after the last song.
+  afterSongs: { paddingTop: spacing.xl },
+  song: { paddingTop: spacing.md },
   sectionHeader: { paddingHorizontal: layout.gutter },
 });

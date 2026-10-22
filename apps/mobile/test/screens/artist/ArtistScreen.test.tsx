@@ -8,6 +8,7 @@
 // What is covered:
 // - the skeleton, the request for the route's artist, the name over the full-width image hero
 // - the four sections with their titles, a song without track_id dimmed, a more button and no pressable song
+// - the popular songs as rows of the detail base under their title, spacing.md apart; the carousels in the slot after the rows, in order, spacing.xl after the last song and none without songs
 // - the year under an album, the kind and year under a single, each empty section hidden, only the hero when all are empty
 // - a song without track_id announced as not available; next, previous and shuffle never reach it
 // - starting the popular songs registers the artist as a recent
@@ -23,9 +24,10 @@
 import type { Artist, HttpOutcome } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
+import { StyleSheet, type ViewStyle } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { color } from "@beatly/ui";
+import { color, spacing } from "@beatly/ui";
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { ArtistScreen } from "../../../src/screens/artist/ArtistScreen.tsx";
@@ -242,6 +244,47 @@ describe("ArtistScreen", () => {
     for (const id of sectionIds.filter((s) => s !== hiddenId)) {
       expect(screen.getByTestId(id)).toBeTruthy();
     }
+    if (hiddenId === "artist-popular") {
+      expect(screen.queryAllByTestId(/^detail-cascade-row-/)).toHaveLength(0);
+      const style = StyleSheet.flatten(
+        screen.getByTestId("artist-sections").props.style as ViewStyle,
+      );
+      expect(style.paddingTop).toBeUndefined();
+    }
+  });
+
+  it("draws the popular songs as rows of the detail base", async () => {
+    await setup();
+    await screen.findByText("Popular Song");
+    expect(
+      within(screen.getByTestId("detail-cascade-row-0:t1")).getByText("Popular Song"),
+    ).toBeTruthy();
+    expect(
+      within(screen.getByTestId("detail-cascade-row-1:Hidden Song")).getByText("Hidden Song"),
+    ).toBeTruthy();
+    const popular = screen.getByTestId("artist-popular");
+    expect(within(popular).queryByText("Popular Song")).toBeNull();
+    expect(within(popular).getByText(en.artist.popular)).toBeTruthy();
+    for (const song of screen.getAllByTestId("artist-song")) {
+      expect(StyleSheet.flatten(song.props.style as ViewStyle)).toEqual({
+        paddingTop: spacing.md,
+      });
+    }
+  });
+
+  it("draws the carousels after the songs, in the slot after the rows", async () => {
+    await setup();
+    const slot = await screen.findByTestId("detail-cascade-after-rows");
+    const sections = within(slot).getByTestId("artist-sections");
+    expect(
+      within(sections)
+        .queryAllByTestId(/^artist-(albums|singles|similar)$/)
+        .map((node) => node.props.testID as string),
+    ).toEqual(["artist-albums", "artist-singles", "artist-similar"]);
+    expect(StyleSheet.flatten(sections.props.style as ViewStyle)).toEqual({
+      gap: spacing.xl,
+      paddingTop: spacing.xl,
+    });
   });
 
   it("draws only the hero when every section is empty", async () => {
@@ -250,6 +293,8 @@ describe("ArtistScreen", () => {
     });
     expect(await screen.findByText("Test Artist")).toBeTruthy();
     for (const id of sectionIds) expect(screen.queryByTestId(id)).toBeNull();
+    expect(screen.queryByTestId("detail-cascade-after-rows")).toBeNull();
+    expect(screen.queryAllByTestId(/^detail-cascade-row-/)).toHaveLength(0);
     expect(screen.queryByText(en.common.retry)).toBeNull();
   });
 
