@@ -41,12 +41,7 @@ export function LibraryScreen() {
       title: liked ? t("liked") : entry.title,
       subtitle: owner !== null ? t("meta", { kind, owner }) : kind,
       icon: liked ? ("heart" as const) : undefined,
-      urls:
-        entry.source === "user"
-          ? entry.thumbnail_urls
-          : entry.thumbnail_url !== null
-            ? [entry.thumbnail_url]
-            : [],
+      images: entry.source === "user" ? entry.mosaic : entry.image !== null ? [entry.image] : [],
       onPress:
         entry.kind === "album"
           ? () => {

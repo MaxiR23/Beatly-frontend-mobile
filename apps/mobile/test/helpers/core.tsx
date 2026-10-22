@@ -69,6 +69,13 @@ import type { Core } from "../../src/createCore.ts";
 import { CoreProvider } from "../../src/providers/CoreProvider.tsx";
 import { createTestQueryClient } from "./queryClient.ts";
 
+// The tiers of one picture, as the API sends them: three ready test URLs named by tier.
+export const tiers = (name: string) => ({
+  small: `test://img/${name}/s`,
+  medium: `test://img/${name}/m`,
+  large: `test://img/${name}/l`,
+});
+
 export const profileFixture: Profile = {
   id: "00000000-0000-0000-0000-000000000001",
   role: "user",
@@ -83,7 +90,12 @@ export const recentFixture: RecentEntity = {
   entity_type: "album",
   entity_id: "a1",
   played_at: "2026-01-01T00:00:00Z",
-  metadata: { title: "Recent album", subtitle: "Some artist", thumbnail_url: "test://img/r1" },
+  metadata: {
+    title: "Recent album",
+    subtitle: "Some artist",
+    thumbnail_url: "test://img/r1",
+    image: tiers("r1"),
+  },
 };
 
 export const bugReportFixture: BugReport = {
@@ -137,6 +149,7 @@ export const playlistFixture: PlaylistListItem = {
   created_at: "2026-01-01T00:00:00Z",
   updated_at: "2026-01-02T00:00:00Z",
   thumbnail_urls: ["test://img/1", "test://img/2", "test://img/3", "test://img/4"],
+  mosaic: [tiers("1"), tiers("2"), tiers("3"), tiers("4")],
 };
 
 export const playlistDetailFixture: PlaylistDetail = {
@@ -150,6 +163,7 @@ export const playlistDetailFixture: PlaylistDetail = {
   total_count: 2,
   total_duration_seconds: 4440,
   thumbnail_urls: ["test://img/1", "test://img/2", "test://img/3", "test://img/4"],
+  mosaic: [tiers("1"), tiers("2"), tiers("3"), tiers("4")],
 };
 
 // The liked route sends no thumbnail_urls.
@@ -172,7 +186,9 @@ export const publicGenrePlaylistFixture: PublicGenrePlaylist = {
   track_count: 12,
   total_duration_seconds: 2400,
   thumbnails: ["test://img/1", "test://img/2", "test://img/3", "test://img/4"],
+  mosaic: [tiers("1"), tiers("2"), tiers("3"), tiers("4")],
   thumbnail_url: "test://img/cover",
+  image: tiers("cover"),
   tracks: [],
 };
 
@@ -184,6 +200,7 @@ export const playlistTrackFixture: PlaylistTrack = {
   album_id: "al1",
   duration_seconds: 248,
   thumbnail_url: "test://img/t1",
+  image: tiers("t1"),
   position: 1,
 };
 
@@ -192,9 +209,11 @@ export const likedEntryFixture: LibraryEntry = {
   id: "liked",
   title: "liked",
   thumbnail_url: null,
+  image: null,
   subtitle: null,
   source: "liked",
   thumbnail_urls: [],
+  mosaic: [],
 };
 
 export const ownPlaylistEntryFixture: LibraryEntry = {
@@ -202,9 +221,11 @@ export const ownPlaylistEntryFixture: LibraryEntry = {
   id: "p1",
   title: "Road trip",
   thumbnail_url: null,
+  image: null,
   subtitle: null,
   source: "user",
   thumbnail_urls: ["test://img/1", "test://img/2", "test://img/3", "test://img/4"],
+  mosaic: [tiers("1"), tiers("2"), tiers("3"), tiers("4")],
 };
 
 export const savedAlbumEntryFixture: LibraryEntry = {
@@ -212,9 +233,11 @@ export const savedAlbumEntryFixture: LibraryEntry = {
   id: "a1",
   title: "Saved album",
   thumbnail_url: "test://img/a1",
+  image: tiers("a1"),
   subtitle: "Some artist",
   source: "external",
   thumbnail_urls: [],
+  mosaic: [],
 };
 
 export const savedPlaylistEntryFixture: LibraryEntry = {
@@ -222,9 +245,11 @@ export const savedPlaylistEntryFixture: LibraryEntry = {
   id: "gp1",
   title: "Saved playlist",
   thumbnail_url: null,
+  image: null,
   subtitle: null,
   source: "genre",
   thumbnail_urls: [],
+  mosaic: [],
 };
 
 export const libraryItemFixture: LibraryItem = {
@@ -232,6 +257,7 @@ export const libraryItemFixture: LibraryItem = {
   external_id: "MPREb_1",
   title: "Test Album",
   thumbnail_url: "test://img/al1",
+  image: tiers("al1"),
   artist: "Test Artist",
   artist_id: "ar1",
   album_id: "MPREb_1",
@@ -258,13 +284,15 @@ export const genrePlaylistFixture: GenrePlaylistListItem = {
   title: "Pop hits",
   description: null,
   thumbnail_url: "test://img/cover",
+  image: tiers("cover"),
   track_count: 12,
   category: "Hits",
   thumbnail_urls: ["test://img/1", "test://img/2", "test://img/3", "test://img/4"],
+  mosaic: [tiers("1"), tiers("2"), tiers("3"), tiers("4")],
 };
 
 export const searchResultFixture: SearchResult = {
-  artist: { id: "ar1", name: "Test Artist", thumbnail_url: "test://img/ar1" },
+  artist: { id: "ar1", name: "Test Artist", thumbnail_url: "test://img/ar1", image: tiers("ar1") },
   songs: [
     {
       track_id: "t1",
@@ -274,6 +302,7 @@ export const searchResultFixture: SearchResult = {
       album_id: "al1",
       duration_seconds: 225,
       thumbnail_url: "test://img/t1",
+      image: tiers("t1"),
     },
   ],
   albums: [
@@ -283,6 +312,7 @@ export const searchResultFixture: SearchResult = {
       artists: [{ id: "ar1", name: "Test Artist" }],
       year: "2024",
       thumbnail_url: null,
+      image: null,
     },
   ],
 };
@@ -291,6 +321,7 @@ export const artistFixture: Artist = {
   id: "UCar1",
   name: "Test Artist",
   thumbnail_url: "test://img/ar1",
+  image: tiers("ar1"),
   songs: [
     {
       track_id: "t1",
@@ -300,6 +331,7 @@ export const artistFixture: Artist = {
       album_id: "MPREb_1",
       duration_seconds: 248,
       thumbnail_url: "test://img/t1",
+      image: tiers("t1"),
     },
     {
       track_id: null,
@@ -309,6 +341,7 @@ export const artistFixture: Artist = {
       album_id: null,
       duration_seconds: null,
       thumbnail_url: null,
+      image: null,
     },
   ],
   albums: [
@@ -319,13 +352,21 @@ export const artistFixture: Artist = {
       year: "2013",
       audio_playlist_id: null,
       thumbnail_url: null,
+      image: null,
     },
   ],
   singles: [
-    { id: "MPREb_4", title: "A Single", year: "2024", type: "Single", thumbnail_url: null },
-    { id: "MPREb_5", title: "An EP", year: "2023", type: "EP", thumbnail_url: null },
+    {
+      id: "MPREb_4",
+      title: "A Single",
+      year: "2024",
+      type: "Single",
+      thumbnail_url: null,
+      image: null,
+    },
+    { id: "MPREb_5", title: "An EP", year: "2023", type: "EP", thumbnail_url: null, image: null },
   ],
-  related: [{ id: "UCar2", name: "Similar Artist", thumbnail_url: null }],
+  related: [{ id: "UCar2", name: "Similar Artist", thumbnail_url: null, image: null }],
 };
 
 export const albumFixture: Album = {
@@ -337,6 +378,7 @@ export const albumFixture: Album = {
   duration_seconds: 4440,
   audio_playlist_id: "OLAK5uy_1",
   thumbnail_url: "test://img/al1",
+  image: tiers("al1"),
   tracks: [
     {
       track_id: "t1",
@@ -363,6 +405,7 @@ export const albumFixture: Album = {
       year: "2014",
       audio_playlist_id: "OLAK5uy_2",
       thumbnail_url: "test://img/al2",
+      image: tiers("al2"),
     },
   ],
   related_recommendations: [
@@ -373,6 +416,7 @@ export const albumFixture: Album = {
       year: null,
       audio_playlist_id: null,
       thumbnail_url: null,
+      image: null,
     },
   ],
 };
@@ -385,6 +429,7 @@ const trackRef = (id: string) => ({
   album_id: "al1",
   duration_seconds: 200,
   thumbnail_url: `test://img/${id}`,
+  image: tiers(id),
 });
 
 // The first track is the requested one, as the route sends it.
@@ -406,7 +451,7 @@ export const lyricsFixture: TrackLyrics = {
 
 export const relatedFixture: TrackRelated = {
   songs: [trackRef("r1")],
-  artists: [{ id: "UCar2", name: "Similar Artist", thumbnail_url: null }],
+  artists: [{ id: "UCar2", name: "Similar Artist", thumbnail_url: null, image: null }],
   albums: [
     {
       id: "MPREb_2",
@@ -415,6 +460,7 @@ export const relatedFixture: TrackRelated = {
       year: "2014",
       audio_playlist_id: null,
       thumbnail_url: null,
+      image: null,
     },
   ],
 };

@@ -51,6 +51,7 @@ function toPlayable(album: Album, track: AlbumTrack): PlayableTrack | null {
     album: album.title,
     albumId: album.id,
     coverUrl: album.thumbnail_url,
+    image: album.image,
     durationSeconds: track.duration_seconds,
   };
 }
@@ -69,7 +70,7 @@ export function AlbumScreen() {
   const setSaved = useSetSaved("album", id);
   const nowPlaying = useNowPlaying();
   const listPlayback = useListPlayback("album", album.data?.id ?? null);
-  const wash = useDominantColor(album.data?.thumbnail_url ?? null);
+  const wash = useDominantColor(album.data?.image?.small ?? null);
 
   function goBack() {
     // A deep link has nothing to go back to, so it lands on home.
@@ -84,7 +85,7 @@ export function AlbumScreen() {
     key: ref.id,
     title: ref.title,
     subtitle: ref.artists.length > 0 ? artistNames(ref.artists) : (ref.year ?? undefined),
-    urls: ref.thumbnail_url !== null ? [ref.thumbnail_url] : [],
+    images: ref.image !== null ? [ref.image] : [],
     shape: "square",
     onPress: () => {
       router.push({ pathname: "/album/[id]", params: { id: ref.id } });
@@ -164,7 +165,7 @@ export function AlbumScreen() {
     body = {
       kind: "ready",
       title: data.title,
-      cover: { urls: data.thumbnail_url === null ? [] : [data.thumbnail_url] },
+      cover: { images: data.image === null ? [] : [data.image] },
       washColor: wash,
       children: (
         <View

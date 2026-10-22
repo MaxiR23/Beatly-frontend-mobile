@@ -43,6 +43,7 @@ export function playableOf(ref: TrackRef): PlayableTrack {
     album: ref.album,
     albumId: ref.album_id,
     coverUrl: ref.thumbnail_url,
+    image: ref.image,
     durationSeconds: ref.duration_seconds,
   };
 }

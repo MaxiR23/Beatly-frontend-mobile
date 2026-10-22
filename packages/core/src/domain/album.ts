@@ -1,7 +1,8 @@
-// INFO: the schemas of GET /album/{id}; tracks, other_versions and related_recommendations come whole, a track marked unavailable has null track_id and duration, album artist ids are nullable and the list can be [], a track's artists follow the track artists rule.
+// INFO: the schemas of GET /album/{id}; image is the tiers of thumbnail_url; tracks, other_versions and related_recommendations come whole, a track marked unavailable has null track_id and duration, album artist ids are nullable and the list can be [], a track's artists follow the track artists rule.
 import { z } from "zod";
 
 import { searchArtistRefSchema, trackArtistsSchema } from "./search.ts";
+import { imageTiersSchema } from "./image.ts";
 
 export const albumTrackSchema = z.object({
   track_id: z.string().nullable(),
@@ -20,6 +21,7 @@ export const albumRefSchema = z.object({
   year: z.string().nullable(),
   audio_playlist_id: z.string().nullable(),
   thumbnail_url: z.string().nullable(),
+  image: imageTiersSchema.nullable(),
 });
 export type AlbumRef = z.infer<typeof albumRefSchema>;
 
@@ -32,6 +34,7 @@ export const albumSchema = z.object({
   duration_seconds: z.number().int(),
   audio_playlist_id: z.string().nullable(),
   thumbnail_url: z.string().nullable(),
+  image: imageTiersSchema.nullable(),
   tracks: z.array(albumTrackSchema),
   other_versions: z.array(albumRefSchema),
   related_recommendations: z.array(albumRefSchema),

@@ -13,7 +13,7 @@ inside the current queue, keeping its order, shuffle and source; a tap on a sugg
 
 ## Layout
 
-- Mini player: `GlassSurface` `bar` tinted with the cover's dominant color, a round `Cover` of `layout.rowCover`,
+- Mini player: `GlassSurface` `bar` tinted with the cover's dominant color, a round `Cover` of `layout.rowCover` (`small`; the tint reads `small` too),
   the title in `typography.rowTitle` (scrolling with `Marquee` unless reduce motion is on) and the artists in `typography.meta`, play or pause and next as `IconButton`s.
   No progress line. `spacing.md` above the floating tab bar.
 - Player screen: `spacing.xl` sides; a `layout.controlHeight` header with the chevron-down close (`icon.size.lg`), "Playing from" in
@@ -29,7 +29,7 @@ inside the current queue, keeping its order, shuffle and source; a tap on a sugg
   centered in a `layout.controlHeight` row above the bottom inset) bounces twice (up `motion.handleNudge.first`, down, up
   `motion.handleNudge.second`, each leg `motion.duration.fast`, settling with `motion.spring`) the first time the player opens on each track in the app's session; the player darkens to `color.overlay.backdrop` and drops to `motion.behindSheetScale` with the
   sheet's position; the thresholds are `motion.dragToClose.*`; the panel has `radius.lg` top corners, `shadow.floating` and the
-  wash from the dominant color to `color.surface.base`; the song row is a `layout.rowCoverMedium` cover (`radius.sm`),
+  wash from the dominant color to `color.surface.base`; the song row is a `layout.rowCoverMedium` cover (`radius.sm`, `small`),
   `typography.title`, `typography.body` in `color.text.secondary` and an `IconButton` `primaryCompact`; then a `SegmentedControl`;
   rows are `MediaRow`s; lyrics lines are `typography.title`, `color.text.primary` for the playing one and `color.text.tertiary`
   for the others; related artists and albums are `Carousel`s. Under reduce motion the sheet and the dim fade, nothing moves
@@ -63,6 +63,8 @@ A failed like draws a floating `Notice` with `common:error.generic` above the bo
 | Related | `LoadingState`                                                | `player:sheet.songs`, `player:sheet.artists`, `player:sheet.albums`                                                                                        | `player:sheet.relatedEmpty` | `ErrorState`: `common:error.generic`, `common:retry`                                                |
 
 Autoplay: the switch is a `SwitchRow` at the top of up next, `layout.gutter` sides, `spacing.sm` above and below. A failed read of the setting draws `ErrorState` with `common:error.generic` and `common:retry` in its place and leaves autoplay off; a failed write draws a `common:error.generic` line under the row. It is on by default on a fresh install and stored on the device under `beatly-autoplay` (`on` or `off`; anything else reads as on and is logged). With autoplay on, the end of the last track of the play order starts the suggestions as a new source, like a tap on the first one, under the track source of the track the previous source started on. Each new source brings its own suggestions, so autoplay goes on while there are any. With autoplay off, with no suggestions (`data.tracks: []` or only the requested track), while they are still loading (they are requested when the last track starts, so a last track that ends before they arrive pauses) or after they failed, the end pauses at 0 as below. Repeat one replays and never autoplays. With shuffle on, autoplay starts once every track of the shuffled order has played; the first suggestion plays first and the rest follow shuffled. Next at the last track does what the end of the last track does: with autoplay on and the suggestions loaded it starts the first one under the same track source; with autoplay off or no suggestions loaded it does nothing. Next ignores repeat one, as on any other track. With autoplay off the tab draws only the rest of the queue: no divider, no suggestions, nor their loading or error; the request is unchanged, and nothing left in the queue draws the expected empty state. The divider is a `border.hairline` line in `color.surface.border`, `layout.gutter` from the sides and `spacing.sm` above and below, drawn only when both the rest and the suggestions have rows. Previous at the first suggestion restarts it, because the finished source is no longer the queue.
+
+The player cover draws the track's `image` at `large`; the up next and related rows draw `small`, the related carousels `medium`, and the dominant color comes from `small` (`DESIGN.md`, "Image tiers"). `PlayableTrack.coverUrl` is only the legacy URL the write routes take (likes, plays, playlist adds); it is never drawn.
 
 Play after the list ended: when the last track ends the controller pauses on it at position 0; `toggle` (the detail play button, the player sheet and the mini player alike) then restarts the list from position 0 of the current play order (list order with shuffle off, the shuffled order with shuffle on) instead of replaying only the last track. A pause while the list is still running resumes in place.
 

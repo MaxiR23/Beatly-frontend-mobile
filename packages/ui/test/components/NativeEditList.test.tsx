@@ -110,7 +110,7 @@ const item = (key: string, title: string, subtitle?: string): EditListItem => ({
   key,
   title,
   subtitle,
-  urls: [],
+  images: [],
   label: subtitle === undefined ? title : `${title}, ${subtitle}`,
   positionLabel: `${key} of 3`,
   removeLabel: `Remove ${title}`,

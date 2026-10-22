@@ -43,6 +43,7 @@ import type { PlayableTrack } from "../../src/services/playback.ts";
 import { createFakeAuth } from "../fakes/auth.ts";
 import { createFakeDb, type FakeDb } from "../fakes/db.ts";
 import { createFakeHttp, never, type FakeResponse, type Handler } from "../fakes/http.ts";
+import { tiers } from "../fakes/images.ts";
 import { createFakeLog } from "../fakes/log.ts";
 
 const BASE_URL = "test://api";
@@ -66,6 +67,7 @@ const likeData = (id: string, patch: Record<string, unknown> = {}) => ({
   album: "Album",
   album_id: "al1",
   thumbnail_url: `test://img/${id}`,
+  image: tiers(id),
   duration_seconds: 248,
   created_at: "2026-01-01T00:00:00Z",
   updated_at: "2026-01-01T00:05:00.123456+00:00",
@@ -194,6 +196,12 @@ describe("sync", () => {
     expect(service.isLiked("t1")).toBe(true);
     expect(service.isLiked("t2")).toBe(true);
     expect(watermark(db)).toBe(CHECKPOINT);
+    // The tiers are never stored: the row keeps the migration's columns.
+    const stored = z
+      .record(z.string(), z.unknown())
+      .parse(db.raw.prepare("SELECT * FROM likes").get());
+    expect(Object.keys(stored)).not.toContain("image");
+    expect(Object.keys(stored)).toHaveLength(11);
   });
 
   it("sends the stored checkpoint unchanged as since and stores the new one", async () => {
@@ -854,6 +862,7 @@ describe("likeInputOf", () => {
     album: "Album",
     albumId: "al1",
     coverUrl: "test://img/t1",
+    image: tiers("t1"),
     durationSeconds: 200,
   };
 

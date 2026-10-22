@@ -30,6 +30,7 @@ const full: PlayableTrack = {
   album: "Album",
   albumId: "al1",
   coverUrl: "test://img/t1",
+  image: null,
   durationSeconds: 200,
 };
 

@@ -35,7 +35,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { PlayerScreen } from "../../../src/screens/player/PlayerScreen.tsx";
-import { makeCore, stateFlag, Wrapper } from "../../helpers/core.tsx";
+import { makeCore, stateFlag, tiers, Wrapper } from "../../helpers/core.tsx";
 
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
@@ -44,8 +44,11 @@ jest.mock("expo-router", () => ({
   useRouter: () => ({ back: mockBack, replace: mockReplace, canGoBack: () => mockCanGoBack }),
 }));
 const mockPeek: { current: unknown } = { current: undefined };
+const mockGet = jest.fn<(url: string) => Promise<{ kind: string }>>(() =>
+  Promise.resolve({ kind: "unavailable" }),
+);
 jest.mock("../../../src/adapters/imageColors.ts", () => ({
-  getDominantColor: () => Promise.resolve({ kind: "unavailable" }),
+  getDominantColor: (url: string) => mockGet(url),
   peekDominantColor: () => mockPeek.current,
 }));
 
@@ -80,6 +83,7 @@ const track = (id: string, coverUrl: string | null = null): PlayableTrack => ({
   album: "Album",
   albumId: "a1",
   coverUrl,
+  image: coverUrl === null ? null : tiers(id),
   durationSeconds: 248,
 });
 const album: PlaybackSource = { kind: "album", id: "a1", name: "Test Album" };
@@ -190,6 +194,22 @@ describe("PlayerScreen", () => {
     expect(screen.getByText("Ann, Bob")).toBeTruthy();
     expect(screen.getByText("0:30")).toBeTruthy();
     expect(screen.getByText("-3:38")).toBeTruthy();
+  });
+
+  it("draws the cover at the large tier", async () => {
+    const ctx = await setup();
+    await act(async () => {
+      await ctx.playback.playList([track("1", "test://img/1")], 0, album);
+    });
+    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/l" });
+  });
+
+  it("reads the dominant color from the small tier", async () => {
+    const ctx = await setup();
+    await act(async () => {
+      await ctx.playback.playList([track("1", "test://img/1")], 0, album);
+    });
+    expect(mockGet).toHaveBeenCalledWith("test://img/1/s");
   });
 
   it("lays out the header, the full-width cover and the spec's gaps", async () => {

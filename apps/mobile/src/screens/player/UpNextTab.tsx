@@ -106,7 +106,7 @@ export function UpNextTab({ seed, onAtTopChange }: UpNextTabProps) {
         ) : (
           <MediaRow
             shape="square"
-            urls={item.track.coverUrl === null ? [] : [item.track.coverUrl]}
+            images={item.track.image === null ? [] : [item.track.image]}
             title={item.track.title}
             subtitle={item.track.artists.map((artist) => artist.name).join(t("artistSeparator"))}
             onPress={() => {

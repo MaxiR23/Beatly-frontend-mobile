@@ -18,7 +18,7 @@ pushes a new album in the same tab. Pressing an available track plays the album 
 Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), except
 the body:
 
-- Hero: the cover (its single url passed as `cover.urls`) in `layout.heroCover`, `radius.sm`, `shadow.cover`, over the
+- Hero: the cover (its `image` passed as `cover.images`, drawn at `large`) in `layout.heroCover`, `radius.sm`, `shadow.cover`, over the
   wash from the dominant color. Then the title in `typography.title`.
 - Info: `layout.gutter` on the sides, `spacing.xs` gap, no padding below. The
   artist names in `typography.rowTitle` and `color.text.secondary` (a name with an id is a `Link`
@@ -40,7 +40,7 @@ the body:
   `color.text.disabled` and is announced as one element by `album:trackUnavailable`. The row of the
   current track (whoever started it) draws the now playing bars in place of its number, with no row background, and is announced as selected; the bars are frozen while paused and static under reduce motion.
 - Carousels: other versions and recommended albums, each hidden when empty. A
-  card is `layout.carouselCard` wide with a `radius.sm` cover; its subtitle is the
+  card is `layout.carouselCard` wide with a `radius.sm` cover at `medium`; its subtitle is the
   artists, or the year when there are none.
 - Sections are `spacing.xl` apart, and that one gap is also the space between the info
   (the end of the title block) and the tracks: nothing else adds to it. The action row adds `spacing.xl` under itself when there are tracks and the carousels `spacing.xl` above themselves, so every gap stays `spacing.xl`. The bottom clears the floating tab bar with
@@ -79,10 +79,10 @@ The back button is labeled `album:back`.
 
 A well-formed id that does not exist comes back as `upstream_error`, so it draws
 the generic error. `tracks: []` with the album populated is `ok: true`: an
-expected empty state, never a retry. The dominant color comes from the cover
+expected empty state, never a retry. The dominant color comes from the cover's `image.small`
 through `adapters/imageColors.ts` (ADR 019), not from the API.
 
-Save sends `{ kind: "album", source: "external", external_id, title, album_id, album_name }` with `thumbnail_url`, `artist` (the names joined by `album:artistSeparator`) and `artist_id` (the first artist's) only when the album has them. The button flips at once and rolls back if the write fails; a write settling refetches `library` and the saved state. Play sets shuffle off and shuffle sets it on before starting; a row press leaves the shuffle flag as it is.
+Save sends `{ kind: "album", source: "external", external_id, title, album_id, album_name }` with `thumbnail_url` (the legacy URL, never `image`), `artist` (the names joined by `album:artistSeparator`) and `artist_id` (the first artist's) only when the album has them. The button flips at once and rolls back if the write fails; a write settling refetches `library` and the saved state. Play sets shuffle off and shuffle sets it on before starting; a row press leaves the shuffle flag as it is.
 
 Starting a list from a track registers it with `POST /recents`, and a failure never stops the music.
 

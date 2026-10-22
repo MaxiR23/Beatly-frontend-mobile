@@ -15,14 +15,14 @@ another artist in the same tab. Pressing a popular song with a `track_id` plays 
 
 Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), except the body:
 
-- Hero: the image variant, full width at `layout.heroImageRatio` on `color.surface.card`, faded into
+- Hero: the image variant (`image.large`), full width at `layout.heroImageRatio` on `color.surface.card`, faded into
   `color.surface.base`, the name over it in `typography.display`.
 - Popular songs: rows of the base, each `spacing.md` under the previous one or the title, under a `typography.section` title with `layout.gutter` on
-  the sides; one `MediaRow` per song in API order, a `layout.rowCover` cover, the title in
+  the sides; one `MediaRow` per song in API order, a `layout.rowCover` cover (`small`), the title in
   `typography.rowTitle`, the album in `typography.meta`. A song without `track_id` draws in
   `color.text.disabled`.
 - Albums, singles and EPs, similar artists: a `Carousel` each, a card `layout.carouselCard` wide;
-  square covers with `radius.sm`, round for similar artists. The album subtitle is the year; the
+  square covers with `radius.sm`, round for similar artists, all at `medium`. The album subtitle is the year; the
   single subtitle is the kind and the year, each omitted when the API sends none.
 - Virtualization: the songs are rows of the base's `FlatList` (`DESIGN.md`, "Detail screen base"), so a long popular list is virtualized: rows past the initial window render on scroll, already at rest, and the carousels (the slot after the rows) mount from the first render below a spacer. A fast scroll on a very long list is checked on device for blank rows.
 - Sections are `spacing.xl` apart (the carousels `spacing.xl` after the last song, right under the hero when there are no songs), and each empty one is hidden. The bottom clears the floating tab

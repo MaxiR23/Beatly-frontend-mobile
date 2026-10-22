@@ -6,7 +6,7 @@
 // - Cover
 //
 // What is covered:
-// - the 2 x 2 mosaic with four urls, the first url with one to three, the placeholder with none, the accent tile with an icon, the round shape, the small and medium corners of a square, the size of the box and the mosaic cells
+// - the 2 x 2 mosaic with four images, the first image with one to three, the placeholder with none, each image at the tier its drawn side needs (a row's small, a card's and a hero mosaic cell's medium, a hero's large), the accent tile with an icon, the round shape, the small and medium corners of a square, the size of the box and the mosaic cells
 //
 // Run with: pnpm --filter @beatly/ui test -- Cover
 //
@@ -22,7 +22,12 @@ import { shadow } from "../../src/tokens/shadow.ts";
 import { layout } from "../../src/tokens/spacing.ts";
 import { StyleSheet } from "react-native";
 
-const urls = ["test://img/1", "test://img/2", "test://img/3", "test://img/4"];
+const tiers = (n: string) => ({
+  small: `test://img/${n}/s`,
+  medium: `test://img/${n}/m`,
+  large: `test://img/${n}/l`,
+});
+const images = ["1", "2", "3", "4"].map(tiers);
 
 interface JsonNode {
   props: Record<string, unknown>;
@@ -48,7 +53,7 @@ function nodesWithProp(tree: unknown, key: string): JsonNode[] {
 
 describe("Cover", () => {
   it("puts the shadow on an unclipped outer view, not on the clipping one", async () => {
-    await render(<Cover urls={[]} shape="square" corner="md" elevated />);
+    await render(<Cover images={[]} shape="square" corner="md" elevated />);
     const outer: unknown = StyleSheet.flatten(screen.getByTestId("cover-shadow").props.style);
     const inner: unknown = StyleSheet.flatten(
       screen.getByTestId("cover-placeholder").parent?.props.style,
@@ -61,31 +66,58 @@ describe("Cover", () => {
   });
 
   it("draws no shadow view when not elevated", async () => {
-    await render(<Cover urls={[]} shape="square" />);
+    await render(<Cover images={[]} shape="square" />);
     expect(screen.queryByTestId("cover-shadow")).toBeNull();
   });
 
-  it("draws a 2 x 2 mosaic of four images with four urls", async () => {
-    await render(<Cover urls={urls} shape="square" />);
+  it("draws a 2 x 2 mosaic of four images with four images", async () => {
+    await render(<Cover images={images} shape="square" />);
     expect(screen.getByTestId("cover-mosaic")).toBeTruthy();
     expect(nodesWithProp(screen.toJSON(), "source")).toHaveLength(4);
     expect(screen.queryByTestId("cover-single")).toBeNull();
   });
 
-  it.each([1, 2, 3])("draws the first url alone with %i urls", async (count) => {
-    await render(<Cover urls={urls.slice(0, count)} shape="square" />);
-    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1" });
+  it.each([1, 2, 3])("draws the first image alone with %i images", async (count) => {
+    await render(<Cover images={images.slice(0, count)} shape="square" />);
+    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/m" });
     expect(screen.queryByTestId("cover-mosaic")).toBeNull();
   });
 
-  it("draws the placeholder with no urls", async () => {
-    await render(<Cover urls={[]} shape="square" />);
+  it("draws the small tier at a row's side", async () => {
+    await render(<Cover images={images.slice(0, 1)} shape="square" size={layout.rowCover} />);
+    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/s" });
+  });
+
+  it("draws the medium tier at a card's side", async () => {
+    await render(<Cover images={images.slice(0, 1)} shape="square" />);
+    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/m" });
+  });
+
+  it("draws the large tier at the hero's side", async () => {
+    await render(<Cover images={images.slice(0, 1)} shape="square" size={layout.heroCover} />);
+    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/l" });
+  });
+
+  it("draws each mosaic cell of a hero cover at the medium tier", async () => {
+    await render(<Cover images={images} shape="square" size={layout.heroCover} />);
+    const sources = nodesWithProp(screen.toJSON(), "source").map((node) => node.props.source);
+    expect(sources).toEqual(images.map((image) => ({ uri: image.medium })));
+  });
+
+  it("draws each mosaic cell of a row at the small tier", async () => {
+    await render(<Cover images={images} shape="square" size={layout.rowCover} />);
+    const sources = nodesWithProp(screen.toJSON(), "source").map((node) => node.props.source);
+    expect(sources).toEqual(images.map((image) => ({ uri: image.small })));
+  });
+
+  it("draws the placeholder with no images", async () => {
+    await render(<Cover images={[]} shape="square" />);
     expect(screen.getByTestId("cover-placeholder")).toBeTruthy();
     expect(nodesWithProp(screen.toJSON(), "source")).toHaveLength(0);
   });
 
   it("draws the accent tile with its icon instead of images when given an icon", async () => {
-    await render(<Cover urls={urls} shape="square" icon="heart" />);
+    await render(<Cover images={images} shape="square" icon="heart" />);
     const tile = screen.getByTestId("cover-tile");
     expect(tile.props.style).toEqual(
       expect.objectContaining({ backgroundColor: color.accent.primary }),
@@ -95,7 +127,7 @@ describe("Cover", () => {
   });
 
   it("rounds the box for the round shape", async () => {
-    await render(<Cover urls={[]} shape="round" />);
+    await render(<Cover images={[]} shape="round" />);
     const box = screen.getByTestId("cover-placeholder").parent;
     expect(box?.props.style).toEqual(
       expect.arrayContaining([expect.objectContaining({ borderRadius: radius.full })]),
@@ -103,19 +135,19 @@ describe("Cover", () => {
   });
 
   it("uses the small corner on a square by default and the medium one when asked", async () => {
-    const view = await render(<Cover urls={[]} shape="square" />);
+    const view = await render(<Cover images={[]} shape="square" />);
     const corner = (): unknown => screen.getByTestId("cover-placeholder").parent?.props.style;
     expect(corner()).toEqual(
       expect.arrayContaining([expect.objectContaining({ borderRadius: radius.sm })]),
     );
-    await view.rerender(<Cover urls={[]} shape="square" corner="md" />);
+    await view.rerender(<Cover images={[]} shape="square" corner="md" />);
     expect(corner()).toEqual(
       expect.arrayContaining([expect.objectContaining({ borderRadius: radius.md })]),
     );
   });
 
   it("sizes the box and the mosaic cells from size", async () => {
-    await render(<Cover urls={urls} shape="square" size={100} />);
+    await render(<Cover images={images} shape="square" size={100} />);
     const box = screen.getByTestId("cover-mosaic").parent;
     expect(box?.props.style).toEqual(
       expect.arrayContaining([expect.objectContaining({ width: 100, height: 100 })]),
@@ -125,7 +157,7 @@ describe("Cover", () => {
   });
 
   it("defaults to the carousel card size", async () => {
-    await render(<Cover urls={[]} shape="square" />);
+    await render(<Cover images={[]} shape="square" />);
     const box = screen.getByTestId("cover-placeholder").parent;
     expect(box?.props.style).toEqual(
       expect.arrayContaining([

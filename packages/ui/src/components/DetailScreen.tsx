@@ -2,7 +2,7 @@
 // back and optional more buttons over a hero and a title. The hero is
 // either a centered cover over a wash or a full-width image with the title
 // over it. Four bodies: loading skeleton, error with retry, unavailable,
-// ready. The cover is a mosaic, an image, an accent tile or the placeholder;
+// ready. The cover is a mosaic, an image (drawn at the tier of the window width), an accent tile or the placeholder;
 // the ready body is a list: the hero, the title and the children on top,
 // optional rows under them paged by onEndReached two screens before the end, with skeleton rows under them while the next page loads, and an optional slot after them. In the ready body the scroll drives, on the native driver, the cover's shrink to motion.detailCollapse.coverScale and fade, the floating buttons' fade, the title's fade and a top bar's fade in, over ranges derived from the measured hero and title heights; the floating buttons or the bar take touches, never both, on Android; on iOS the floating back never fades and always takes touches, drawn above a strip with no back of its own, reaching from the top edge to spacing.sm past spacing.xs under the back's bottom edge (topInset + spacing.xs + layout.controlHeight + spacing.xs + spacing.sm), with no background: the dominant color (the base surface without one) and a light base-surface shade over it, both fading to transparent at its bottom edge, and under them, outside the strip's fading parent, a blur of the content (blur.detailStrip) masked opaque to 55% of the strip's height and transparent at its bottom edge, the mask fading in with the strip, mounted once the ranges are measured and visible only through the mask's opacity (0 at the top), and only the floating more and the bar's more hand the touches over; under reduce motion the cover does not scale. In the ready body the content enters once per mount in a top-down cascade on the native driver: the hero, the title, the children, the first motion.detailCascade.firstRows rows and the later rows drawn with them, with the slot after the rows in that same last step, each from opacity 0 and motion.detailCascade.offset lower, in motion.detailCascade.duration, motion.detailCascade.stagger apart, in wrappers separate from the collapse's layers. It starts at once when the body becomes ready, after motion.detailCascade.navigationDelay when it was ready at mount. Rows drawn later and the floating buttons never animate. Under reduce motion, or when it turns on mid-way, everything is at rest.
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -33,6 +33,7 @@ import { GlassSurface } from "./GlassSurface.tsx";
 import { GradientFill } from "./GradientFill.tsx";
 import type { IconName } from "./Icon.tsx";
 import { IconButton } from "./IconButton.tsx";
+import { imageUri, type ImageTiers } from "./imageTier.ts";
 import { Text } from "./Text.tsx";
 
 // How far from the end, in visible lengths, the list asks for its next page: two screens before it.
@@ -51,7 +52,7 @@ export type DetailBody =
       kind: "ready";
       hero?: "cover" | "image" | undefined;
       title: string;
-      cover: { urls: readonly string[]; icon?: IconName | undefined };
+      cover: { images: readonly ImageTiers[]; icon?: IconName | undefined };
       washColor: string | null;
       children: ReactNode;
       rows?: readonly DetailRow[];
@@ -84,7 +85,7 @@ export function DetailScreen({
   testID,
   reduceMotion,
 }: DetailScreenProps) {
-  const { height: windowHeight } = useWindowDimensions();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const heroMaxHeight = { maxHeight: windowHeight * layout.heroImageMaxHeightShare };
   const buttonsPosition = { top: topInset + spacing.xs };
   const belowButtons = { paddingTop: topInset + layout.controlHeight };
@@ -315,9 +316,9 @@ export function DetailScreen({
                     testID="detail-cascade-hero"
                     style={[styles.imageLayer, entering(cascade.hero)]}
                   >
-                    {body.cover.urls[0] !== undefined ? (
+                    {body.cover.images[0] !== undefined ? (
                       <Image
-                        source={{ uri: body.cover.urls[0] }}
+                        source={{ uri: imageUri(body.cover.images[0], windowWidth) }}
                         style={StyleSheet.absoluteFill}
                         resizeMode="cover"
                         accessible={false}
@@ -375,7 +376,7 @@ export function DetailScreen({
                         }
                       >
                         <Cover
-                          urls={body.cover.urls}
+                          images={body.cover.images}
                           icon={body.cover.icon}
                           shape="square"
                           size={layout.heroCover}

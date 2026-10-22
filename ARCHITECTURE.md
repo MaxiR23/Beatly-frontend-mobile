@@ -43,7 +43,11 @@ enforced by ESLint (`eslint.config.js`), not by habit.
          └──────────────────────────────┘
 
 Arrows mean "depends on". `core` depends on nothing in the repo. `ui`
-depends on `core` for types only. `apps/mobile` depends on both. A
+depends on `core` for types only, and today imports none: a shape both
+need (`ImageTiers`, in `packages/ui/src/components/imageTier.ts`) is declared
+structurally in `ui` instead of imported from `core`, and TypeScript checks
+assignability at every call site, so the two cannot drift silently. A new
+shared type follows the same rule. `apps/mobile` depends on both. A
 workspace is imported by its package name (`@beatly/core`,
 `@beatly/ui`), never by a relative path into another workspace's `src`.
 Inside a workspace, a relative import carries the file's real

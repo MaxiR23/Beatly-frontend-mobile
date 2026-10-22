@@ -122,6 +122,7 @@ describe("SessionProvider", () => {
             album: null,
             albumId: null,
             coverUrl: null,
+            image: null,
             durationSeconds: 100,
           },
         ],

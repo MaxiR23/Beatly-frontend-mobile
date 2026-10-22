@@ -22,12 +22,15 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { MiniPlayerBar } from "../../../src/screens/player/MiniPlayerBar.tsx";
-import { makeCore, Wrapper } from "../../helpers/core.tsx";
+import { makeCore, tiers, Wrapper } from "../../helpers/core.tsx";
 
 const mockPush = jest.fn();
 jest.mock("expo-router", () => ({ useRouter: () => ({ push: mockPush }) }));
+const mockGet = jest.fn<(url: string) => Promise<{ kind: string }>>(() =>
+  Promise.resolve({ kind: "unavailable" }),
+);
 jest.mock("../../../src/adapters/imageColors.ts", () => ({
-  getDominantColor: () => Promise.resolve({ kind: "unavailable" }),
+  getDominantColor: (url: string) => mockGet(url),
   peekDominantColor: () => undefined,
 }));
 
@@ -52,6 +55,7 @@ const track = (id: string): PlayableTrack => ({
   album: "Album",
   albumId: "a1",
   coverUrl: null,
+  image: null,
   durationSeconds: 200,
 });
 const source = { kind: "album", id: "a1", name: "Album" } as const;
@@ -74,7 +78,32 @@ async function start(ctx: Awaited<ReturnType<typeof setup>>) {
   });
 }
 
+const withImage = (id: string): PlayableTrack => ({ ...track(id), image: tiers(id) });
+
 describe("MiniPlayerBar", () => {
+  it("draws the cover at the small tier", async () => {
+    const ctx = await setup();
+    await act(async () => {
+      await ctx.playback.playList([withImage("1")], 0, source);
+    });
+    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/s" });
+  });
+
+  it("reads the dominant color from the small tier", async () => {
+    const ctx = await setup();
+    await act(async () => {
+      await ctx.playback.playList([withImage("1")], 0, source);
+    });
+    expect(mockGet).toHaveBeenCalledWith("test://img/1/s");
+  });
+
+  it("draws the placeholder when the track has no image", async () => {
+    const ctx = await setup();
+    await start(ctx);
+    expect(screen.getByTestId("cover-placeholder")).toBeTruthy();
+    expect(screen.queryByTestId("cover-single")).toBeNull();
+  });
+
   it("draws nothing while no track is loaded", async () => {
     await setup();
     expect(screen.queryByTestId("mini-player")).toBeNull();

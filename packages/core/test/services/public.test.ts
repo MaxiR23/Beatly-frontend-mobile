@@ -22,6 +22,7 @@ import { createHttpClient, DEFAULT_TIMEOUT_MS } from "../../src/http/client.ts";
 import { createPublicService } from "../../src/services/public.ts";
 import { createFakeAuth } from "../fakes/auth.ts";
 import { createFakeHttp, never, type Handler } from "../fakes/http.ts";
+import { tiers } from "../fakes/images.ts";
 import { createFakeLog } from "../fakes/log.ts";
 
 const BASE_URL = "test://api";
@@ -49,6 +50,7 @@ const track = {
   album_id: "al1",
   duration_seconds: 248,
   thumbnail_url: "test://img/t1",
+  image: tiers("t1"),
   position: 1,
 };
 
@@ -59,7 +61,9 @@ const header = {
   track_count: 12,
   total_duration_seconds: 2400,
   thumbnails: ["test://img/1", "test://img/2", "test://img/3", "test://img/4"],
+  mosaic: [tiers("1"), tiers("2"), tiers("3"), tiers("4")],
   thumbnail_url: "test://img/cover",
+  image: tiers("cover"),
   tracks: [track],
 };
 
@@ -77,6 +81,14 @@ describe("getGenrePlaylist", () => {
     expect(http.requests[0]?.url).toBe("test://api/public/genre-playlists/gp1");
     const outcome = await service.getGenrePlaylist("gp1");
     expect(outcome.kind === "success" && outcome.data.tracks).toEqual([track]);
+    expect(outcome.kind === "success" && outcome.data.mosaic).toEqual([
+      tiers("1"),
+      tiers("2"),
+      tiers("3"),
+      tiers("4"),
+    ]);
+    expect(outcome.kind === "success" && outcome.data.image).toEqual(tiers("cover"));
+    expect(outcome.kind === "success" && outcome.data.tracks[0]?.image).toEqual(tiers("t1"));
   });
 
   it("returns a genre playlist with no tracks, zero duration and no mosaic as a success", async () => {
@@ -86,7 +98,9 @@ describe("getGenrePlaylist", () => {
       track_count: 0,
       total_duration_seconds: 0,
       thumbnails: [],
+      mosaic: [],
       thumbnail_url: null,
+      image: null,
       tracks: [],
     };
     const { service } = setup(() => ({ body: { ok: true, data: empty } }));

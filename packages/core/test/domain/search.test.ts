@@ -50,7 +50,7 @@ describe("trackArtistsSchema", () => {
 });
 
 describe("searchAlbumSchema", () => {
-  const album = { id: "al1", title: "Album", year: null, thumbnail_url: null };
+  const album = { id: "al1", title: "Album", year: null, thumbnail_url: null, image: null };
 
   it("keeps album artists on the old rule", () => {
     const empty = { ...album, artists: [] };

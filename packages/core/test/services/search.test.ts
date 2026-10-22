@@ -24,6 +24,7 @@ import { createHttpClient, DEFAULT_TIMEOUT_MS } from "../../src/http/client.ts";
 import { createSearchService } from "../../src/services/search.ts";
 import { createFakeAuth } from "../fakes/auth.ts";
 import { createFakeHttp, never, type Handler } from "../fakes/http.ts";
+import { tiers } from "../fakes/images.ts";
 import { createFakeLog } from "../fakes/log.ts";
 
 const BASE_URL = "test://api";
@@ -33,9 +34,10 @@ const albumFields = {
   artists: [{ id: "ar1", name: "Daft Punk" }],
   year: "2013",
   thumbnail_url: "test://img/al1",
+  image: tiers("al1"),
 };
 const data = {
-  artist: { id: "ar1", name: "Daft Punk", thumbnail_url: "test://img/ar1" },
+  artist: { id: "ar1", name: "Daft Punk", thumbnail_url: "test://img/ar1", image: tiers("ar1") },
   songs: [
     {
       track_id: "t1",
@@ -45,6 +47,7 @@ const data = {
       album_id: "al1",
       duration_seconds: 248,
       thumbnail_url: "test://img/t1",
+      image: tiers("t1"),
     },
   ],
   albums: [albumFields],
@@ -73,11 +76,15 @@ describe("search", () => {
       headers: { "cache-control": "max-age=3600" },
       body: { ok: true, data: body },
     }));
-    expect(await service.search("daft punk")).toEqual({
+    const outcome = await service.search("daft punk");
+    expect(outcome).toEqual({
       kind: "success",
       data,
       maxAgeSeconds: 3600,
     });
+    expect(outcome.kind === "success" && outcome.data.artist?.image).toEqual(tiers("ar1"));
+    expect(outcome.kind === "success" && outcome.data.songs[0]?.image).toEqual(tiers("t1"));
+    expect(outcome.kind === "success" && outcome.data.albums[0]?.image).toEqual(tiers("al1"));
     expect(http.requests).toHaveLength(1);
     expect(http.requests[0]?.method).toBe("GET");
     expect(http.requests[0]?.url).toBe("test://api/search?q=daft%20punk");
@@ -95,14 +102,14 @@ describe("search", () => {
 
   it("keeps an artist without an image, a secondary song artist without an id and an album without artists, year or cover", async () => {
     const odd = {
-      artist: { ...data.artist, thumbnail_url: null },
+      artist: { ...data.artist, thumbnail_url: null, image: null },
       songs: [
         {
           ...data.songs[0],
           artists: [data.songs[0]?.artists[0], { id: null, name: "Various" }],
         },
       ],
-      albums: [{ ...data.albums[0], artists: [], year: null, thumbnail_url: null }],
+      albums: [{ ...data.albums[0], artists: [], year: null, thumbnail_url: null, image: null }],
     };
     const { service } = setup(() => ({ body: { ok: true, data: odd } }));
     expect(await service.search("x")).toEqual({ kind: "success", data: odd, maxAgeSeconds: 0 });

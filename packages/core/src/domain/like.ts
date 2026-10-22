@@ -1,7 +1,8 @@
-// INFO: the item of GET /likes and GET /likes/sync and the data of POST /likes; deleted_at is null on GET /likes and set on an unliked row of GET /likes/sync; duration_seconds can be null; both lists also carry the checkpoint; artists follow the track artists rule.
+// INFO: image is the tiers of thumbnail_url, null when it is empty; the item of GET /likes and GET /likes/sync and the data of POST /likes; deleted_at is null on GET /likes and set on an unliked row of GET /likes/sync; duration_seconds can be null; both lists also carry the checkpoint; artists follow the track artists rule.
 import { z } from "zod";
 
 import { trackArtistsSchema } from "./search.ts";
+import { imageTiersSchema } from "./image.ts";
 
 export const likeSchema = z.object({
   track_id: z.string(),
@@ -10,6 +11,7 @@ export const likeSchema = z.object({
   album: z.string(),
   album_id: z.string(),
   thumbnail_url: z.string(),
+  image: imageTiersSchema.nullable(),
   duration_seconds: z.number().int().nullable(),
   created_at: z.string(),
   updated_at: z.string(),

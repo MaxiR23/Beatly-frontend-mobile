@@ -1,4 +1,5 @@
 // INFO: the playback controller: the queue, the play order (shuffle), repeat one, the current track, a jump to a position of the queue, a rename of the current source, the seed of the source with its suggestions, autoplay at the end of the queue and on next at the last track, whether the source's suggestions are wanted (its last track started or the up next tab asked) and the status over the player port; an immutable snapshot plus subscribe.
+import type { ImageTiers } from "../domain/image.ts";
 import type { TrackArtistRef } from "../domain/search.ts";
 import type { LogPort } from "../ports/log.ts";
 import type { PlayerEvent, PlayerPort } from "../ports/player.ts";
@@ -10,7 +11,10 @@ export interface PlayableTrack {
   // The album as POST /plays takes it; null when the screen has none, and then no play is registered.
   readonly album: string | null;
   readonly albumId: string | null;
+  // The thumbnail_url the write routes take (likes, plays, playlist adds); never drawn.
   readonly coverUrl: string | null;
+  // The tiers the screens draw: large in the player, small in rows and the mini player, and the source of the dominant color; null draws the placeholder.
+  readonly image: ImageTiers | null;
   readonly durationSeconds: number | null;
 }
 

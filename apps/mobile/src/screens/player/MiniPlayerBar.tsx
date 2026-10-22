@@ -13,7 +13,7 @@ export function MiniPlayerBar({ surface = "glass" }: { surface?: "glass" | "bare
   const playback = usePlaybackActions();
   const current = usePlayback((state) => state.current);
   const status = usePlayback((state) => state.status);
-  const tint = useDominantColor(current?.coverUrl ?? null);
+  const tint = useDominantColor(current?.image?.small ?? null);
   const reduceMotion = useReduceMotion();
 
   if (current === null) return null;
@@ -28,7 +28,7 @@ export function MiniPlayerBar({ surface = "glass" }: { surface?: "glass" | "bare
           : current.artists.map((artist) => artist.name).join(t("artistSeparator"))
       }
       failed={failed}
-      coverUrl={current.coverUrl}
+      image={current.image}
       tint={tint}
       surface={surface}
       playing={status === "playing"}

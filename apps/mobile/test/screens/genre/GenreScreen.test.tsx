@@ -16,12 +16,13 @@
 import type { GenrePlaylistListItem, HttpOutcome, PageResult } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
+import { Dimensions } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { GenreScreen } from "../../../src/screens/genre/GenreScreen.tsx";
-import { genrePlaylistFixture, makeCore, pageOf, Wrapper } from "../../helpers/core.tsx";
+import { genrePlaylistFixture, makeCore, pageOf, tiers, Wrapper } from "../../helpers/core.tsx";
 
 const mockPush = jest.fn();
 const mockBack = jest.fn();
@@ -158,38 +159,50 @@ describe("GenreScreen", () => {
     expect(screen.queryByRole("button", { name: en.genre.all })).toBeNull();
   });
 
-  it("draws each cover by the Home rule", async () => {
-    const mosaic = { ...genrePlaylistFixture, id: "m", title: "Mosaic" };
-    const two = {
-      ...genrePlaylistFixture,
-      id: "t",
-      title: "Two",
-      thumbnail_urls: ["test://img/a", "test://img/b"],
-    };
-    const curated = {
-      ...genrePlaylistFixture,
-      id: "u",
-      title: "Curated",
-      thumbnail_urls: [],
-      thumbnail_url: "test://img/curated",
-    };
-    const bare = {
-      ...genrePlaylistFixture,
-      id: "b",
-      title: "Bare",
-      thumbnail_urls: [],
-      thumbnail_url: null,
-    };
-    await setup({ listGenrePlaylists: playlistsOf([mosaic, two, curated, bare]) });
-    await screen.findByText("Mosaic");
-    expect(screen.getAllByTestId("cover-mosaic")).toHaveLength(1);
-    const singles = screen.getAllByTestId("cover-single");
-    expect(singles.map((node) => node.props.source as unknown)).toEqual([
-      { uri: "test://img/a" },
-      { uri: "test://img/curated" },
-    ]);
-    expect(screen.getAllByTestId("cover-placeholder")).toHaveLength(1);
-    expect(within(screen.getByTestId("genre-playlists")).getByText("Bare")).toBeTruthy();
+  it("draws each cover by the Home rule, at the medium tier on a phone", async () => {
+    const original = { window: Dimensions.get("window"), screen: Dimensions.get("screen") };
+    const phone = { width: 390, height: 844, scale: 3, fontScale: 1 };
+    Dimensions.set({ window: phone, screen: phone });
+    try {
+      const mosaic = { ...genrePlaylistFixture, id: "m", title: "Mosaic" };
+      const two = {
+        ...genrePlaylistFixture,
+        id: "t",
+        title: "Two",
+        thumbnail_urls: ["test://img/a", "test://img/b"],
+        mosaic: [tiers("a"), tiers("b")],
+      };
+      const curated = {
+        ...genrePlaylistFixture,
+        id: "u",
+        title: "Curated",
+        thumbnail_urls: [],
+        mosaic: [],
+        thumbnail_url: "test://img/curated",
+        image: tiers("curated"),
+      };
+      const bare = {
+        ...genrePlaylistFixture,
+        id: "b",
+        title: "Bare",
+        thumbnail_urls: [],
+        mosaic: [],
+        thumbnail_url: null,
+        image: null,
+      };
+      await setup({ listGenrePlaylists: playlistsOf([mosaic, two, curated, bare]) });
+      await screen.findByText("Mosaic");
+      expect(screen.getAllByTestId("cover-mosaic")).toHaveLength(1);
+      const singles = screen.getAllByTestId("cover-single");
+      expect(singles.map((node) => node.props.source as unknown)).toEqual([
+        { uri: "test://img/a/m" },
+        { uri: "test://img/curated/m" },
+      ]);
+      expect(screen.getAllByTestId("cover-placeholder")).toHaveLength(1);
+      expect(within(screen.getByTestId("genre-playlists")).getByText("Bare")).toBeTruthy();
+    } finally {
+      Dimensions.set(original);
+    }
   });
 
   it("draws the track count with plural forms", async () => {

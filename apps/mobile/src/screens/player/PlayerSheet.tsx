@@ -66,7 +66,7 @@ export function PlayerSheet({
           testID="player-sheet-song"
         >
           <Cover
-            urls={current.coverUrl === null ? [] : [current.coverUrl]}
+            images={current.image === null ? [] : [current.image]}
             shape="square"
             size={layout.rowCoverMedium}
           />

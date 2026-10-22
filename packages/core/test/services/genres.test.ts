@@ -22,6 +22,7 @@ import { createHttpClient, DEFAULT_TIMEOUT_MS } from "../../src/http/client.ts";
 import { createGenresService } from "../../src/services/genres.ts";
 import { createFakeAuth } from "../fakes/auth.ts";
 import { createFakeHttp, never, type Handler } from "../fakes/http.ts";
+import { tiers } from "../fakes/images.ts";
 import { createFakeLog } from "../fakes/log.ts";
 
 const BASE_URL = "test://api";
@@ -50,9 +51,11 @@ const playlist = {
   title: "Pop hits",
   description: null,
   thumbnail_url: "test://img/cover",
+  image: tiers("cover"),
   track_count: 12,
   category: "Hits",
   thumbnail_urls: ["test://img/1", "test://img/2", "test://img/3", "test://img/4"],
+  mosaic: [tiers("1"), tiers("2"), tiers("3"), tiers("4")],
 };
 
 describe("listGenres", () => {
@@ -121,7 +124,10 @@ describe("listGenrePlaylists", () => {
   const route = "/genres/pop/playlists";
 
   it("returns a genre's playlists with their covers and categories", async () => {
-    const items = [playlist, { ...playlist, id: "gp2", thumbnail_urls: [], category: null }];
+    const items = [
+      playlist,
+      { ...playlist, id: "gp2", thumbnail_urls: [], mosaic: [], category: null },
+    ];
     const { service, http } = setup(route, () => ({
       body: { ok: true, data: { items, page: page(2) } },
     }));

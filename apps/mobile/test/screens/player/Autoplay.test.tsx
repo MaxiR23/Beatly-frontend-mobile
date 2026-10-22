@@ -29,6 +29,7 @@ import {
   makeCore,
   memoryStorage,
   noSheetNudge,
+  tiers,
   upNextFixture,
   Wrapper,
 } from "../../helpers/core.tsx";
@@ -64,6 +65,7 @@ const track = (id: string): PlayableTrack => ({
   album: "Album",
   albumId: "a1",
   coverUrl: null,
+  image: null,
   durationSeconds: 248,
 });
 const album = { kind: "album", id: "a1", name: "Test Album" } as const;
@@ -80,6 +82,7 @@ const refOf = (id: string) => ({
   album_id: "a1",
   duration_seconds: 248,
   thumbnail_url: null,
+  image: null,
 });
 // The up next answer of a track: the track itself first, then its own suggestions.
 const answerFor = (trackId: string): UpNext =>
@@ -249,6 +252,7 @@ describe("the end of the queue", () => {
     await ended(ctx);
     const state = ctx.playback.getState();
     expect(state.current?.trackId).toBe("u2");
+    expect(state.current?.image).toEqual(tiers("u2"));
     expect(state.source).toEqual({ kind: "track", id: "t1", name: "Song t1" });
     expect(ctx.resolve).toHaveBeenLastCalledWith("u2");
     expect(ctx.getUpNext).toHaveBeenCalledTimes(1);

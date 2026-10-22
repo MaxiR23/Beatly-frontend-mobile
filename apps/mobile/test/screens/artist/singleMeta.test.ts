@@ -25,6 +25,7 @@ const single = (over: Partial<ArtistSingle>): ArtistSingle => ({
   year: "2024",
   type: "Single",
   thumbnail_url: null,
+  image: null,
   ...over,
 });
 

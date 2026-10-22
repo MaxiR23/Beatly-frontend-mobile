@@ -23,6 +23,7 @@ import { createHttpClient, DEFAULT_TIMEOUT_MS } from "../../src/http/client.ts";
 import { createArtistsService } from "../../src/services/artists.ts";
 import { createFakeAuth } from "../fakes/auth.ts";
 import { createFakeHttp, never, type Handler } from "../fakes/http.ts";
+import { tiers } from "../fakes/images.ts";
 import { createFakeLog } from "../fakes/log.ts";
 
 const BASE_URL = "test://api";
@@ -30,6 +31,7 @@ const data = {
   id: "UCar1",
   name: "Daft Punk",
   thumbnail_url: "test://img/ar1",
+  image: tiers("ar1"),
   songs: [
     {
       track_id: "t1",
@@ -39,6 +41,7 @@ const data = {
       album_id: "MPREb_1",
       duration_seconds: 248,
       thumbnail_url: "test://img/t1",
+      image: tiers("t1"),
     },
   ],
   albums: [
@@ -49,13 +52,28 @@ const data = {
       year: "2013",
       audio_playlist_id: "OLAK5uy_1",
       thumbnail_url: "test://img/al1",
+      image: tiers("al1"),
     },
   ],
   singles: [
-    { id: "MPREb_4", title: "Lose Yourself", year: "2014", type: "Single", thumbnail_url: null },
-    { id: "MPREb_5", title: "Alive", year: "2007", type: "EP", thumbnail_url: "test://img/s5" },
+    {
+      id: "MPREb_4",
+      title: "Lose Yourself",
+      year: "2014",
+      type: "Single",
+      thumbnail_url: null,
+      image: null,
+    },
+    {
+      id: "MPREb_5",
+      title: "Alive",
+      year: "2007",
+      type: "EP",
+      thumbnail_url: "test://img/s5",
+      image: tiers("s5"),
+    },
   ],
-  related: [{ id: "UCar2", name: "Justice", thumbnail_url: "test://img/ar2" }],
+  related: [{ id: "UCar2", name: "Justice", thumbnail_url: "test://img/ar2", image: tiers("ar2") }],
 };
 
 function setup(handler: Handler, route = "GET /artist/UCar1") {
@@ -84,11 +102,18 @@ describe("getArtist", () => {
       headers: { "cache-control": "max-age=43200" },
       body: { ok: true, data },
     }));
-    expect(await service.getArtist("UCar1")).toEqual({
+    const outcome = await service.getArtist("UCar1");
+    expect(outcome).toEqual({
       kind: "success",
       data,
       maxAgeSeconds: 43200,
     });
+    expect(outcome.kind === "success" && outcome.data.image).toEqual(tiers("ar1"));
+    expect(outcome.kind === "success" && outcome.data.songs[0]?.image).toEqual(tiers("t1"));
+    expect(outcome.kind === "success" && outcome.data.albums[0]?.image).toEqual(tiers("al1"));
+    expect(outcome.kind === "success" && outcome.data.singles[0]?.image).toBeNull();
+    expect(outcome.kind === "success" && outcome.data.singles[1]?.image).toEqual(tiers("s5"));
+    expect(outcome.kind === "success" && outcome.data.related[0]?.image).toEqual(tiers("ar2"));
     expect(http.requests).toHaveLength(1);
     expect(http.requests[0]?.method).toBe("GET");
     expect(http.requests[0]?.url).toBe("test://api/artist/UCar1");
@@ -99,6 +124,7 @@ describe("getArtist", () => {
     const odd = {
       ...data,
       thumbnail_url: null,
+      image: null,
       songs: [
         {
           track_id: null,
@@ -108,9 +134,12 @@ describe("getArtist", () => {
           album_id: null,
           duration_seconds: null,
           thumbnail_url: null,
+          image: null,
         },
       ],
-      singles: [{ id: "MPREb_4", title: "Odd", year: null, type: null, thumbnail_url: null }],
+      singles: [
+        { id: "MPREb_4", title: "Odd", year: null, type: null, thumbnail_url: null, image: null },
+      ],
     };
     const { service } = setup(() => ({ body: { ok: true, data: odd } }));
     expect(await service.getArtist("UCar1")).toEqual({

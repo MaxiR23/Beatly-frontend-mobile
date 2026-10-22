@@ -23,6 +23,7 @@ import { createHttpClient, DEFAULT_TIMEOUT_MS } from "../../src/http/client.ts";
 import { createAlbumService } from "../../src/services/album.ts";
 import { createFakeAuth } from "../fakes/auth.ts";
 import { createFakeHttp, never, type Handler } from "../fakes/http.ts";
+import { tiers } from "../fakes/images.ts";
 import { createFakeLog } from "../fakes/log.ts";
 
 const BASE_URL = "test://api";
@@ -33,6 +34,7 @@ const ref = {
   year: "2013",
   audio_playlist_id: "OLAK5uy_2",
   thumbnail_url: "test://img/al2",
+  image: tiers("al2"),
 };
 const data = {
   id: "MPREb_1",
@@ -43,6 +45,7 @@ const data = {
   duration_seconds: 4440,
   audio_playlist_id: "OLAK5uy_1",
   thumbnail_url: "test://img/al1",
+  image: tiers("al1"),
   tracks: [
     {
       track_id: "t1",
@@ -91,6 +94,8 @@ describe("getAlbum", () => {
       data,
       maxAgeSeconds: 86400,
     });
+    expect(data.image).toEqual(tiers("al1"));
+    expect(data.other_versions[0]?.image).toEqual(tiers("al2"));
     expect(http.requests).toHaveLength(1);
     expect(http.requests[0]?.method).toBe("GET");
     expect(http.requests[0]?.url).toBe("test://api/album/MPREb_1");
@@ -103,6 +108,7 @@ describe("getAlbum", () => {
       year: null,
       track_count: null,
       thumbnail_url: null,
+      image: null,
       tracks: [
         {
           track_id: null,

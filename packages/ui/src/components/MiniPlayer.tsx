@@ -6,6 +6,7 @@ import { layout, spacing } from "../tokens/spacing.ts";
 import { Cover } from "./Cover.tsx";
 import { GlassSurface } from "./GlassSurface.tsx";
 import { IconButton } from "./IconButton.tsx";
+import type { ImageTiers } from "./imageTier.ts";
 import { Marquee } from "./Marquee.tsx";
 import { Text } from "./Text.tsx";
 
@@ -13,7 +14,7 @@ interface MiniPlayerProps {
   title: string;
   subtitle: string;
   failed: boolean;
-  coverUrl: string | null;
+  image: ImageTiers | null;
   tint: string | null;
   surface?: "glass" | "bare";
   playing: boolean;
@@ -29,7 +30,7 @@ export function MiniPlayer({
   title,
   subtitle,
   failed,
-  coverUrl,
+  image,
   tint,
   surface = "glass",
   playing,
@@ -48,7 +49,7 @@ export function MiniPlayer({
         onPress={onOpen}
         style={({ pressed }) => [styles.body, pressed && styles.pressed]}
       >
-        <Cover urls={coverUrl === null ? [] : [coverUrl]} shape="round" size={layout.rowCover} />
+        <Cover images={image === null ? [] : [image]} shape="round" size={layout.rowCover} />
         <View style={styles.text}>
           <Marquee text={title} variant="rowTitle" reduceMotion={reduceMotion} />
           <Text variant="meta" tone={failed ? "error" : "secondary"} numberOfLines={1}>

@@ -71,6 +71,25 @@ value: the value lives once, in the token file.
 | Width of a skeleton placeholder bar (title, meta, row title, row meta), as a share of its row                                                                                | `layout.skeletonBar.title` / `.meta` / `.rowTitle` / `.rowMeta` |
 | Placeholder track rows of a detail skeleton (first load, next-page footer)                                                                                                   | `layout.skeletonRows`                                           |
 
+## Image tiers
+
+Every remote image is one of the three tiers the API sends (`image`, `mosaic`). The tier is the smallest whose side covers the drawn side at 3 pixels per point: `small` up to 64 pt, `medium` up to 200 pt, `large` above. `Cover` and the detail image hero apply it from the side they draw (`packages/ui/src/components/imageTier.ts`); a screen never picks a tier and never builds or edits a URL. With no image (`image: null`, `mosaic: []`) the cover draws the placeholder. The dominant color reads `small`.
+
+| Place                                                                                | Drawn side                                   | Tier                                      |
+| ------------------------------------------------------------------------------------ | -------------------------------------------- | ----------------------------------------- |
+| Row cover (songs, up next, related, edit list, track menu sheet) and the mini player | `layout.rowCover`                            | `small`                                   |
+| Medium row (library, playlist picker) and the player sheet's song row                | `layout.rowCoverMedium`                      | `small`                                   |
+| Large row (search top artist)                                                        | `layout.rowCoverLarge`                       | `small`                                   |
+| Mosaic cell of any row                                                               | half the row cover                           | `small`                                   |
+| Carousel card                                                                        | `layout.carouselCard`                        | `medium`                                  |
+| Mosaic cell of a carousel card                                                       | half `layout.carouselCard`                   | `medium`                                  |
+| Grid card (genre)                                                                    | `gridCardSize(window width)`                 | `medium` on a phone, `large` above 200 pt |
+| Mosaic cell of the detail hero cover                                                 | half `layout.heroCover`                      | `medium`                                  |
+| Detail hero cover (album, playlist)                                                  | `layout.heroCover`                           | `large`                                   |
+| Player cover                                                                         | window width minus `spacing.xl` on each side | `large`                                   |
+| Detail image hero (artist photo)                                                     | window width                                 | `large`                                   |
+| Dominant color (player, mini player, album and playlist washes)                      | n/a                                          | `small`                                   |
+
 ## Floating surfaces
 
 `GlassSurface` from `@beatly/ui/native`, the only importer of

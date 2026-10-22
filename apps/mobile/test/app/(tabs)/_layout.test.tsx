@@ -99,6 +99,7 @@ describe("the tabs layout", () => {
             album: "Album",
             albumId: "a1",
             coverUrl: null,
+            image: null,
             durationSeconds: 100,
           },
         ],

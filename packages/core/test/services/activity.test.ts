@@ -28,6 +28,7 @@ import {
 } from "../../src/services/activity.ts";
 import { createFakeAuth } from "../fakes/auth.ts";
 import { createFakeHttp, never, type Handler } from "../fakes/http.ts";
+import { tiers } from "../fakes/images.ts";
 import { createFakeLog } from "../fakes/log.ts";
 
 const BASE_URL = "test://api";
@@ -67,6 +68,7 @@ describe("listRecents", () => {
                 title: "Album",
                 subtitle: "Artist",
                 thumbnail_url: "test://img/1",
+                image: tiers("1"),
                 extra: "dropped",
               },
             },
@@ -96,7 +98,12 @@ describe("listRecents", () => {
             entity_type: "album",
             entity_id: "a1",
             played_at: "2026-01-01T00:00:00Z",
-            metadata: { title: "Album", subtitle: "Artist", thumbnail_url: "test://img/1" },
+            metadata: {
+              title: "Album",
+              subtitle: "Artist",
+              thumbnail_url: "test://img/1",
+              image: tiers("1"),
+            },
           },
           {
             entity_type: "artist",
@@ -309,7 +316,12 @@ const savedRecent = {
   entity_type: "album",
   entity_id: "a1",
   played_at: "2026-01-01T00:00:00Z",
-  metadata: { title: "Album", subtitle: "Artist", thumbnail_url: "test://img/1" },
+  metadata: {
+    title: "Album",
+    subtitle: "Artist",
+    thumbnail_url: "test://img/1",
+    image: tiers("1"),
+  },
 };
 
 describe("registerRecent", () => {
@@ -326,6 +338,7 @@ describe("registerRecent", () => {
     expect(http.requests[0]?.method).toBe("POST");
     expect(http.requests[0]?.url).toBe("test://api/recents");
     expect(JSON.parse(http.requests[0]?.body ?? "null")).toEqual(recentInput);
+    expect(http.requests[0]?.body).not.toContain("image");
   });
 
   it("surfaces upstream_error as an api failure", async () => {

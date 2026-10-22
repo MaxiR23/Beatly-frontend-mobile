@@ -55,6 +55,7 @@ import {
 import type { PlayableTrack } from "../../src/services/playback.ts";
 import { createFakeAuth } from "../fakes/auth.ts";
 import { createFakeHttp, never, type Handler } from "../fakes/http.ts";
+import { tiers } from "../fakes/images.ts";
 import { createFakeLog } from "../fakes/log.ts";
 
 const BASE_URL = "test://api";
@@ -68,6 +69,7 @@ const withCover = {
   created_at: "2026-01-01T00:00:00Z",
   updated_at: "2026-01-02T00:00:00Z",
   thumbnail_urls: ["test://img/1", "test://img/2", "test://img/3", "test://img/4"],
+  mosaic: [tiers("1"), tiers("2"), tiers("3"), tiers("4")],
 };
 const withoutCover = {
   ...withCover,
@@ -75,6 +77,7 @@ const withoutCover = {
   title: "Empty one",
   description: null,
   thumbnail_urls: [],
+  mosaic: [],
 };
 
 function pageBody(items: unknown[], page: Record<string, unknown>) {
@@ -297,6 +300,7 @@ const track = {
   album_id: "al1",
   duration_seconds: 248,
   thumbnail_url: "test://img/t1",
+  image: tiers("t1"),
   position: 1,
 };
 const notFound = () => ({ status: 404, body: { ok: false, reason: "playlist_not_found" } });
@@ -318,7 +322,13 @@ describe("getPlaylist", () => {
   });
 
   it("returns an empty playlist with zero count and duration as a success", async () => {
-    const empty = { ...detail, thumbnail_urls: [], total_count: 0, total_duration_seconds: 0 };
+    const empty = {
+      ...detail,
+      thumbnail_urls: [],
+      mosaic: [],
+      total_count: 0,
+      total_duration_seconds: 0,
+    };
     const { service } = setupDetail(route, () => ({ body: { ok: true, data: empty } }));
     const outcome = await service.getPlaylist("p1");
     expect(outcome.kind === "success" && outcome.data.thumbnail_urls).toEqual([]);
@@ -614,6 +624,7 @@ const addedTrack = {
   album_id: "al1",
   duration_seconds: 200,
   thumbnail_url: "test://img/t1",
+  image: tiers("t1"),
   position: 3,
 };
 
@@ -1222,6 +1233,7 @@ describe("addTrackInputOf", () => {
     album: "Album",
     albumId: "al1",
     coverUrl: "test://img/t1",
+    image: tiers("t1"),
     durationSeconds: 200,
   };
 

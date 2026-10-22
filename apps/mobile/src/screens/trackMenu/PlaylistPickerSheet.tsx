@@ -131,7 +131,7 @@ function PickerBody({ track, onClose }: PlaylistPickerSheetProps) {
             <MediaRow
               size="medium"
               shape="square"
-              urls={item.thumbnail_urls}
+              images={item.mosaic}
               title={item.title}
               trailing={
                 <View accessible accessibilityLabel={t("picker.inPlaylist")} style={styles.held}>
@@ -144,7 +144,7 @@ function PickerBody({ track, onClose }: PlaylistPickerSheetProps) {
             <MediaRow
               size="medium"
               shape="square"
-              urls={item.thumbnail_urls}
+              images={item.mosaic}
               title={item.title}
               onPress={() => {
                 addTo(item);
@@ -200,7 +200,7 @@ function PickerBody({ track, onClose }: PlaylistPickerSheetProps) {
           icon="plus"
           size="medium"
           shape="square"
-          urls={[]}
+          images={[]}
           title={t("picker.newPlaylist")}
           onPress={() => {
             setNaming(true);
