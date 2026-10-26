@@ -54,7 +54,7 @@ inside the current queue, keeping its order, shuffle and source; a tap on a sugg
 | Expected empty   | player: `EmptyState` with the close button; mini player: not drawn                             | `player:empty`                                                                 |
 | Error with retry | mini player: the error line; player: `ErrorState` in place of the seek bar and controls, retry | `player:error.unplayable`, `common:retry`                                      |
 
-A failed like draws a floating `Notice` with `common:error.generic` above the bottom inset for `motion.duration.notice`. The with-data row also draws a track source as `player:trackSource`. The sheet's three tabs each draw their own four states:
+A failed like draws a floating `Notice` (the Material 3 snackbar on Android, ADR 027) with `common:error.generic` above the bottom inset for `motion.duration.notice`. The with-data row also draws a track source as `player:trackSource`. The sheet's three tabs each draw their own four states:
 
 | Tab     | Loading                                                       | With data                                                                                                                                                  | Expected empty              | Error with retry                                                                                    |
 | ------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | --------------------------------------------------------------------------------------------------- |

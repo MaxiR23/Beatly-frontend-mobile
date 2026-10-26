@@ -1,5 +1,7 @@
-// INFO: corner radius tokens, a short scale plus the fully-round pill.
+// INFO: corner radius tokens, a short scale, from Material's extra-small, plus the fully-round pill.
 export const radius = {
+  // Material 3 extra-small shape: the Android snackbar.
+  xs: 4,
   sm: 8,
   md: 12,
   lg: 16,

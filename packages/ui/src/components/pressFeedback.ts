@@ -7,7 +7,7 @@ import { radius } from "../tokens/radius.ts";
 import { isAndroidVariant } from "./platform.ts";
 
 interface PressFeedbackOptions {
-  // The fill under the content: the white accent, or anything else.
+  // The fill under the content: a light one (the white accent, the Android snackbar's inverse surface), or anything else.
   on?: "surface" | "accent";
   // "bounds" clips the ripple to the pressable's own corners (a rectangle without them); "round" rounds it fully: a circle on a square, a pill otherwise.
   shape?: "bounds" | "round";

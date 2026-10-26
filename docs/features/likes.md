@@ -86,11 +86,11 @@ watermark are deleted, and a sweep in flight stops writing.
 
 ## States
 
-| State   | What is drawn                                                                                                              | i18n keys                |
-| ------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| Liked   | the heart filled (the player), Remove from Liked (the menu)                                                                | `trackMenu:items.unlike` |
-| Unliked | the heart outlined, Like                                                                                                   | `trackMenu:items.like`   |
-| Failed  | a floating notice for a `rejected` or `storage_failure` outcome; a `pending` one shows nothing, the service sends it again | `common:error.generic`   |
+| State   | What is drawn                                                                                                                                        | i18n keys                |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| Liked   | the heart filled (the player), Remove from Liked (the menu)                                                                                          | `trackMenu:items.unlike` |
+| Unliked | the heart outlined, Like                                                                                                                             | `trackMenu:items.like`   |
+| Failed  | a floating notice (the snackbar on Android) for a `rejected` or `storage_failure` outcome; a `pending` one shows nothing, the service sends it again | `common:error.generic`   |
 
 The heart reads `useIsLiked`, which follows the mirror, so it flips at once and is not held by the network; the mirror reverts on a rejection. No screen branches on a `reason`.
 

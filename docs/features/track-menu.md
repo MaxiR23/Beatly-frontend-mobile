@@ -29,10 +29,12 @@ Token names only.
 - Report item: the `flag` glyph in the `ActionRow` and the SF Symbol `flag` in the iOS menu; it opens the report form (`bug-reports.md`) with the track's title.
 - Credits: a `Sheet` with `typography.subtitle` title and a scrolling list: each section title in `typography.rowTitle` and its names in `typography.body`, `color.text.secondary`, `spacing.lg` between sections.
 - Notice: a `Notice`, a check or an x (`icon.size.md`, `color.status.success` or `color.status.error`) and one `typography.meta` line,
-  floating on a `GlassSurface` `bar` `layout.gutter` from the sides and `spacing.md` above the bottom inset, for `motion.duration.notice`.
+  floating on a `GlassSurface` `bar` `layout.gutter` from the sides and `spacing.md` above the bottom inset, for `motion.duration.notice`. On Android: the Material 3 snackbar (inverse surface, extra-small corners, no glyph, the message from the start), at the same place and for the same time (ADR 027).
 - The title of the player and of the mini player scrolls with `Marquee` (`motion.marquee.speed`, `motion.marquee.pause`) only when it does not fit.
 
 ## Platform differences
+
+- Android: the notice is the Material 3 snackbar (`color.surface.inverse`, `radius.xs`, no glyph); iOS keeps the glass bar with the check or the x (ADR 027).
 
 - iOS with the `ExpoUI` native module: the system menu (`NativeMenu`, `@expo/ui`, ADR 023), one button per item with an SF Symbol, the remove item destructive (red). The three dots take `color.text.primary` through the `Host` seed color, like the other icons, never the system tint.
 - Android, and any build without the `ExpoUI` module (Expo Go, an old development build): the `Sheet` with `ActionRow`s; the button draws three vertical dots on Android and the horizontal ellipsis on iOS without the module (ADR 027).
@@ -92,4 +94,4 @@ The iOS system menu opening from the button with its SF Symbols and the destruct
 the marquee's real motion and its ellipsis under the system Reduce Motion setting; a sheet opened from inside the player route, including that the sheets mount on open and unmount on close, and the swap from the menu to the picker, the credits or the report form (ADR 023);
 the notice above the iOS 26 tab accessory and the Android floating bar; screenshots of the heart, the menu, the picker and the credits on iOS and Android.
 
-The three vertical dots on Android (ADR 027).
+The three vertical dots on Android (ADR 027). The Android snackbar's look over the floating bar, with and without the mini player.

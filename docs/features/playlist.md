@@ -55,7 +55,7 @@ the info block:
   nothing changed or the title is empty or over 200 characters, and sends only the changed fields.
 - Delete: the native `Alert` (destructive Delete and Cancel) asks first. A failed delete shows the
   floating error `Notice` (`layout.gutter` sides, `spacing.md` above the tab bar clearance, shown for
-  `motion.duration.notice`; each failure restarts the timer).
+  `motion.duration.notice`; each failure restarts the timer; drawn as the Material 3 snackbar on Android, ADR 027).
 - Edit tracks (`EditTracksScreen`, route `/playlist-edit/[id]`): a header in a `SafeAreaView` (top edge)
   with a back `IconButton` (`back`, `playlist:back`), the title (`typography.title`) and a ghost
   Done button, `layout.gutter` on the sides and `spacing.sm` between. It loads every page of the tracks
@@ -104,6 +104,7 @@ the info block:
 - iOS: the floating buttons use native glass on iOS 26+, `GlassSurface`'s solid
   fallback elsewhere. The back's native glass never fades (the back stays fixed); the top bar has no glass on any platform. On iOS the content under the top strip is blurred; Android has no blur.
 - Android: the solid fallback draws the buttons.
+- Android: the floating error notice is the Material 3 snackbar (inverse surface, extra-small corners, no glyph); iOS keeps the glass bar (ADR 027).
 - Android: the back buttons (floating, top bar, Edit tracks) draw an arrow and the more and options buttons three vertical dots (ADR 027); iOS keeps the chevron and the horizontal ellipsis.
 - Expo Go: the native color module is missing, so the wash stays neutral.
 - Edit tracks: iOS with the `ExpoUI` module draws `NativeEditList` (the system list); Android, Expo Go
@@ -212,4 +213,4 @@ Also: the entry cascade on iOS and Android: its order, the 300 ms and 60 ms feel
 
 Also: the iOS strip blur: absent at the top, fading in with the strip and following the scroll with no flicker or dark flash, full at the top and gone at the strip's bottom edge with no visible border or cut, about 4 points (tune `blur.detailStrip`), no change under reduce motion other than the strip's own, the floating back and the title above it unchanged, a development build rebuilt after the install.
 
-The arrow and the three vertical dots on Android (floating, top bar, options, Edit tracks), and the chevron and horizontal ellipsis unchanged on iOS (ADR 027).
+The arrow and the three vertical dots on Android (floating, top bar, options, Edit tracks), and the chevron and horizontal ellipsis unchanged on iOS (ADR 027). The snackbar on Android for a failed delete or edit.

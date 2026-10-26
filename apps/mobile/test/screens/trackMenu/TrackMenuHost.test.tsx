@@ -7,7 +7,7 @@
 //
 // What is covered:
 // - the sheet with only the items that apply, closing on a choice
-// - like through the likes service with the mapped input, the error notice for a rejected like and for a storage failure, hiding after its time, nothing for a pending one
+// - like through the likes service with the mapped input, the error notice for a rejected like and for a storage failure, hiding after its time, the error notice on Android at the bottom inset, hiding after its time, nothing for a pending one
 // - a secondary artist without an id drawn by name in the sheet header, never linked
 // - go to artist and go to album closing the sheet and calling the screen
 // - remove calling the service for an own playlist, and the error notice when it fails
@@ -17,9 +17,10 @@
 //
 // SEE: apps/mobile/src/screens/trackMenu/TrackMenuHost.tsx
 
-import { motion } from "@beatly/ui";
+import { color, motion, spacing } from "@beatly/ui";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, screen, within } from "@testing-library/react-native";
+import { Platform, StyleSheet } from "react-native";
 
 import { resources } from "../../../src/i18n/resources.ts";
 import { fullTrack, setupMenu } from "./trackMenuHelpers.tsx";
@@ -27,6 +28,7 @@ import { fullTrack, setupMenu } from "./trackMenuHelpers.tsx";
 const en = resources.en;
 
 afterEach(() => {
+  Platform.OS = "ios";
   jest.useRealTimers();
 });
 
@@ -100,6 +102,29 @@ describe("the track menu", () => {
     await openMenu();
     await choose(en.trackMenu.items.like);
     expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    await act(() => {
+      jest.advanceTimersByTime(motion.duration.notice + 1);
+    });
+    expect(screen.queryByText(en.common.error.generic)).toBeNull();
+  });
+
+  it("shows the error notice as the snackbar on Android above the bottom inset, then hides it", async () => {
+    Platform.OS = "android";
+    jest.useFakeTimers({ advanceTimers: true });
+    await setupMenu({
+      likeOutcome: () => Promise.resolve({ kind: "rejected", reason: "invalid_request" }),
+    });
+    await openMenu();
+    await choose(en.trackMenu.items.like);
+    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    const wrapper = within(screen.getByTestId("track-menu-notice"));
+    const message = wrapper.getByText(en.common.error.generic);
+    // The snackbar draws its message in the inverse tone; the inline row uses the primary one.
+    expect(StyleSheet.flatten(message.props.style)).toMatchObject({ color: color.text.inverse });
+    expect(StyleSheet.flatten(screen.getByTestId("track-menu-notice").props.style)).toMatchObject({
+      position: "absolute",
+      bottom: 0 + spacing.md,
+    });
     await act(() => {
       jest.advanceTimersByTime(motion.duration.notice + 1);
     });
