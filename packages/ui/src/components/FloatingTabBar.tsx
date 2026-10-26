@@ -6,11 +6,11 @@ import type { ReactNode } from "react";
 import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 
 import { color } from "../tokens/color.ts";
-import { motion } from "../tokens/motion.ts";
 import { radius } from "../tokens/radius.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
 import { GlassSurface } from "./GlassSurface.tsx";
 import { Icon, type IconName } from "./Icon.tsx";
+import { pressFeedback } from "./pressFeedback.ts";
 
 interface FloatingTab {
   key: string;
@@ -43,6 +43,7 @@ export function floatingTabBarClearance(bottomInset: number, accessory = false):
 export function FloatingTabBar({ tabs, bottomInset, accessory }: FloatingTabBarProps) {
   const { width } = useWindowDimensions();
   const barWidth = width - 2 * layout.gutter;
+  const press = pressFeedback();
   return (
     <View style={[styles.outer, { bottom: bottomInset + spacing.sm }]} pointerEvents="box-none">
       {accessory === undefined ? null : (
@@ -54,6 +55,7 @@ export function FloatingTabBar({ tabs, bottomInset, accessory }: FloatingTabBarP
         <GlassSurface variant="bar">
           {tabs.map((tab) => (
             <Pressable
+              android_ripple={press.android_ripple}
               key={tab.key}
               accessibilityRole="tab"
               accessibilityLabel={tab.label}
@@ -62,7 +64,7 @@ export function FloatingTabBar({ tabs, bottomInset, accessory }: FloatingTabBarP
               style={({ pressed }) => [
                 styles.item,
                 tab.selected && styles.selected,
-                pressed && styles.pressed,
+                press.style(pressed),
               ]}
             >
               <Icon name={tab.icon} size="lg" tone={tab.selected ? "primary" : "secondary"} />
@@ -90,5 +92,4 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   selected: { backgroundColor: color.overlay.muted },
-  pressed: { opacity: motion.pressOpacity },
 });

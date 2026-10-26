@@ -2,11 +2,11 @@
 // a button when given onPress, a plain view otherwise.
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { motion } from "../tokens/motion.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
 import { Cover } from "./Cover.tsx";
 import type { ImageTiers } from "./imageTier.ts";
 import { Text } from "./Text.tsx";
+import { pressFeedback } from "./pressFeedback.ts";
 
 interface MediaCardProps {
   title?: string | undefined;
@@ -25,6 +25,8 @@ export function MediaCard({
   size = layout.carouselCard,
   onPress,
 }: MediaCardProps) {
+  const press = pressFeedback();
+
   const content = (
     <>
       <Cover images={images} shape={shape} size={size} />
@@ -47,10 +49,11 @@ export function MediaCard({
 
   return (
     <Pressable
+      android_ripple={press.android_ripple}
       accessibilityRole="button"
       accessibilityLabel={title}
       onPress={onPress}
-      style={({ pressed }) => [styles.card, { width: size }, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, { width: size }, press.style(pressed)]}
     >
       {content}
     </Pressable>
@@ -59,5 +62,4 @@ export function MediaCard({
 
 const styles = StyleSheet.create({
   card: { gap: spacing.xs },
-  pressed: { opacity: motion.pressOpacity },
 });

@@ -4,10 +4,10 @@
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { motion } from "../tokens/motion.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
 import { NowPlayingBars } from "./NowPlayingBars.tsx";
 import { Text } from "./Text.tsx";
+import { pressFeedback } from "./pressFeedback.ts";
 
 interface TrackRowProps {
   number: number;
@@ -38,6 +38,7 @@ export function TrackRow({
   testID,
 }: TrackRowProps) {
   const onPress = available ? onPressProp : undefined;
+  const press = pressFeedback();
   const marked = available && nowPlaying !== undefined;
   const state = marked ? { disabled: false, selected: true } : { disabled: !available };
   const still = available
@@ -83,11 +84,12 @@ export function TrackRow({
         </View>
       ) : (
         <Pressable
+          android_ripple={press.android_ripple}
           accessibilityRole="button"
           accessibilityLabel={title}
           accessibilityState={state}
           onPress={onPress}
-          style={({ pressed }) => [styles.body, pressed && styles.pressed]}
+          style={({ pressed }) => [styles.body, press.style(pressed)]}
         >
           {content}
         </Pressable>
@@ -110,11 +112,12 @@ export function TrackRow({
 
   return (
     <Pressable
+      android_ripple={press.android_ripple}
       accessibilityRole="button"
       accessibilityLabel={title}
       accessibilityState={state}
       onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.row, press.style(pressed)]}
       testID={testID}
     >
       {content}
@@ -143,7 +146,6 @@ const styles = StyleSheet.create({
     paddingLeft: layout.gutter,
     gap: layout.gap,
   },
-  pressed: { opacity: motion.pressOpacity },
   number: { width: layout.trackNumber },
   text: { flex: 1, gap: spacing.xxs },
 });

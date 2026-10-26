@@ -1,10 +1,10 @@
 // INFO: a pressable action: an icon and a label at control height, in the error tone when destructive; the icon can be filled.
 import { Pressable, StyleSheet } from "react-native";
 
-import { motion } from "../tokens/motion.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
 import { Icon, type IconName } from "./Icon.tsx";
 import { Text } from "./Text.tsx";
+import { pressFeedback } from "./pressFeedback.ts";
 
 interface ActionRowProps {
   icon: IconName;
@@ -24,12 +24,14 @@ export function ActionRow({
   testID,
 }: ActionRowProps) {
   const tone = destructive ? "error" : "primary";
+  const press = pressFeedback();
   return (
     <Pressable
+      android_ripple={press.android_ripple}
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.row, press.style(pressed)]}
       testID={testID}
     >
       <Icon name={icon} size="md" tone={tone} filled={filled} />
@@ -48,5 +50,4 @@ const styles = StyleSheet.create({
     gap: layout.gap,
     paddingVertical: spacing.sm,
   },
-  pressed: { opacity: motion.pressOpacity },
 });

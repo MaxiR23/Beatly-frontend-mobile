@@ -1,7 +1,6 @@
 // INFO: the mini player pill: a round cover, a title that scrolls when it does not fit and a subtitle line, play or pause and next; tinted, with no progress line, or bare inside a surface the system draws (the iOS 26+ tab accessory); tapping the body opens the player.
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { motion } from "../tokens/motion.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
 import { Cover } from "./Cover.tsx";
 import { GlassSurface } from "./GlassSurface.tsx";
@@ -9,6 +8,8 @@ import { IconButton } from "./IconButton.tsx";
 import type { ImageTiers } from "./imageTier.ts";
 import { Marquee } from "./Marquee.tsx";
 import { Text } from "./Text.tsx";
+import { isAndroidVariant } from "./platform.ts";
+import { pressFeedback } from "./pressFeedback.ts";
 
 interface MiniPlayerProps {
   title: string;
@@ -41,13 +42,17 @@ export function MiniPlayer({
   onToggle,
   onNext,
 }: MiniPlayerProps) {
+  const press = pressFeedback({ shape: "round" });
+  const android = isAndroidVariant();
+
   const children = (
     <>
       <Pressable
+        android_ripple={press.android_ripple}
         accessibilityRole="button"
         accessibilityLabel={labels.open}
         onPress={onOpen}
-        style={({ pressed }) => [styles.body, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.body, android && styles.bodyClipped, press.style(pressed)]}
       >
         <Cover images={image === null ? [] : [image]} shape="round" size={layout.rowCover} />
         <View style={styles.text}>
@@ -93,6 +98,7 @@ const styles = StyleSheet.create({
     gap: layout.gap,
     paddingHorizontal: spacing.xs,
   },
-  pressed: { opacity: motion.pressOpacity },
+  // The round clip of the Android ripple cuts the corners of the text block inside the right cap of the pill: the text ends where the cap is still full height.
+  bodyClipped: { paddingRight: spacing.md },
   text: { flex: 1, gap: spacing.xxs },
 });

@@ -2,10 +2,10 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { color } from "../tokens/color.ts";
-import { motion } from "../tokens/motion.ts";
 import { radius } from "../tokens/radius.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
 import { Text } from "./Text.tsx";
+import { pressFeedback } from "./pressFeedback.ts";
 
 interface SegmentedControlProps<K extends string> {
   options: readonly { key: K; label: string }[];
@@ -20,12 +20,14 @@ export function SegmentedControl<K extends string>({
   onChange,
   testID,
 }: SegmentedControlProps<K>) {
+  const press = pressFeedback();
   return (
     <View accessibilityRole="tablist" style={styles.container} testID={testID}>
       {options.map((option) => {
         const isSelected = option.key === selected;
         return (
           <Pressable
+            android_ripple={press.android_ripple}
             key={option.key}
             accessibilityRole="tab"
             accessibilityLabel={option.label}
@@ -36,7 +38,7 @@ export function SegmentedControl<K extends string>({
             style={({ pressed }) => [
               styles.option,
               isSelected && styles.selected,
-              pressed && styles.pressed,
+              press.style(pressed),
             ]}
           >
             <Text variant="button" tone={isSelected ? "primary" : "secondary"}>
@@ -64,5 +66,4 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   selected: { backgroundColor: color.overlay.muted },
-  pressed: { opacity: motion.pressOpacity },
 });

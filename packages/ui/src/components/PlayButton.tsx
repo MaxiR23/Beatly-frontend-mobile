@@ -9,6 +9,7 @@ import { layout, spacing } from "../tokens/spacing.ts";
 import { Icon } from "./Icon.tsx";
 import { Text } from "./Text.tsx";
 import { toneColor, type Tone } from "./tone.ts";
+import { pressFeedback } from "./pressFeedback.ts";
 
 export type PlayButtonState = "idle" | "loading" | "playing" | "paused";
 
@@ -128,15 +129,17 @@ export function PlayButton({
   const fill = disabled ? styles.inactive : styles.active;
   const tone: Tone = disabled ? "disabled" : "inverse";
 
+  const press = pressFeedback({ on: "accent", shape: "round" });
   return (
     <View style={styles.slot} pointerEvents="box-none">
       <Pressable
+        android_ripple={press.android_ripple}
         accessibilityRole="button"
         accessibilityLabel={state === "playing" ? pauseLabel : playLabel}
         accessibilityState={{ disabled: inactive, busy: state === "loading" }}
         disabled={inactive}
         onPress={onPress}
-        style={({ pressed }) => pressed && styles.pressed}
+        style={({ pressed }) => press.style(pressed)}
         testID={testID}
       >
         <Animated.View style={{ transform: [{ scale }] }}>
@@ -252,5 +255,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
   },
-  pressed: { opacity: motion.pressOpacity },
 });
