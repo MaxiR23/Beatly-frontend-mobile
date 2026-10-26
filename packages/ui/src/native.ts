@@ -23,6 +23,7 @@ export { EmptyState } from "./components/EmptyState.tsx";
 export { ErrorState } from "./components/ErrorState.tsx";
 export type { Tone } from "./components/tone.ts";
 export { GlassSurface, isGlassAvailable } from "./components/GlassSurface.tsx";
+export { isAndroidVariant } from "./components/platform.ts";
 export { FloatingTabBar, floatingTabBarClearance } from "./components/FloatingTabBar.tsx";
 export { SwitchRow } from "./components/SwitchRow.tsx";
 export { Sheet } from "./components/Sheet.tsx";

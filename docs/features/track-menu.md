@@ -19,7 +19,7 @@ Every screen with track rows (album, playlist, artist, search, the player's up n
 
 Token names only.
 
-- Button: an `IconButton` `ellipsis` (`layout.controlHeight`, `icon.size.lg`) at the end of the row, outside the row's pressable body.
+- Button: an `IconButton` `more` (three vertical dots on Android, the horizontal ellipsis on iOS without the native module; `layout.controlHeight`, `icon.size.lg`) at the end of the row, outside the row's pressable body.
 - Menu sheet: a `Sheet` on a `GlassSurface` `sheet` (`radius.lg`, `spacing.xl` padding, `spacing.lg` gap): a `MediaRow` header
   with the track (its song row draws `image.small`), then one `ActionRow` per item (`layout.controlHeight` tall, `layout.gap` between the icon and the label,
   `typography.body`, the icon at `icon.size.md`; the heart filled when liked; Remove from this playlist in `color.status.error`).
@@ -35,7 +35,7 @@ Token names only.
 ## Platform differences
 
 - iOS with the `ExpoUI` native module: the system menu (`NativeMenu`, `@expo/ui`, ADR 023), one button per item with an SF Symbol, the remove item destructive (red). The three dots take `color.text.primary` through the `Host` seed color, like the other icons, never the system tint.
-- Android, and any build without the `ExpoUI` module (Expo Go, an old development build): the `Sheet` with `ActionRow`s.
+- Android, and any build without the `ExpoUI` module (Expo Go, an old development build): the `Sheet` with `ActionRow`s; the button draws three vertical dots on Android and the horizontal ellipsis on iOS without the module (ADR 027).
 - The sheets open from inside the player route, which is a native `transparentModal`.
 
 ## States
@@ -91,3 +91,5 @@ Go to artist and Go to album push `/artist/[id]` and `/album/[id]` in the curren
 The iOS system menu opening from the button with its SF Symbols and the destructive red; the three dots in the icon color, not the system blue; whether Expo Go ships the `ExpoUI` module (the sheet is the fallback);
 the marquee's real motion and its ellipsis under the system Reduce Motion setting; a sheet opened from inside the player route, including that the sheets mount on open and unmount on close, and the swap from the menu to the picker, the credits or the report form (ADR 023);
 the notice above the iOS 26 tab accessory and the Android floating bar; screenshots of the heart, the menu, the picker and the credits on iOS and Android.
+
+The three vertical dots on Android (ADR 027).

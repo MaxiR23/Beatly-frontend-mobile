@@ -132,7 +132,7 @@ export function GenreScreen() {
   return (
     <SafeAreaView testID="genre" edges={["top"]} style={styles.screen}>
       <View style={styles.header}>
-        <IconButton icon="chevronLeft" accessibilityLabel={t("back")} onPress={goBack} />
+        <IconButton icon="back" accessibilityLabel={t("back")} onPress={goBack} />
         <Text variant="title" numberOfLines={1}>
           {name ?? ""}
         </Text>

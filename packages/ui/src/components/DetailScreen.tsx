@@ -9,7 +9,6 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Animated,
   Image,
-  Platform,
   StyleSheet,
   useWindowDimensions,
   View,
@@ -34,6 +33,7 @@ import { GradientFill } from "./GradientFill.tsx";
 import type { IconName } from "./Icon.tsx";
 import { IconButton } from "./IconButton.tsx";
 import { imageUri, type ImageTiers } from "./imageTier.ts";
+import { isAndroidVariant } from "./platform.ts";
 import { Text } from "./Text.tsx";
 
 // How far from the end, in visible lengths, the list asks for its next page: two screens before it.
@@ -226,7 +226,7 @@ export function DetailScreen({
   const floatingActive = ranges === null || phase === "expanded";
   const barActive = ranges !== null && phase === "collapsed";
   // On iOS the floating back stays fixed over a gradient strip; only the floating more follows the phase.
-  const ios = Platform.OS === "ios";
+  const ios = !isAndroidVariant();
   const floatingContainerActive = ios || floatingActive;
   // On iOS the strip ends spacing.xs under the back plus spacing.sm of fade, so the button sits inside it; the row shares the button's vertical center.
   const barHeight = ios
@@ -470,7 +470,7 @@ export function DetailScreen({
             {ios ? (
               <View style={styles.barSpacer} testID="detail-top-bar-back-slot" />
             ) : (
-              <IconButton icon="chevronLeft" accessibilityLabel={backLabel} onPress={onBack} />
+              <IconButton icon="back" accessibilityLabel={backLabel} onPress={onBack} />
             )}
             <View style={styles.barTitle}>
               <Text variant="subtitle" align="center" numberOfLines={1}>
@@ -478,7 +478,7 @@ export function DetailScreen({
               </Text>
             </View>
             {more ? (
-              <IconButton icon="ellipsis" accessibilityLabel={more.label} onPress={more.onPress} />
+              <IconButton icon="more" accessibilityLabel={more.label} onPress={more.onPress} />
             ) : (
               <View style={styles.barSpacer} />
             )}
@@ -498,7 +498,7 @@ export function DetailScreen({
       >
         <View style={styles.buttonsRow} pointerEvents="box-none">
           <GlassSurface variant="circle">
-            <IconButton icon="chevronLeft" accessibilityLabel={backLabel} onPress={onBack} />
+            <IconButton icon="back" accessibilityLabel={backLabel} onPress={onBack} />
           </GlassSurface>
           {more ? (
             ios ? (
@@ -510,20 +510,12 @@ export function DetailScreen({
                 importantForAccessibility={floatingActive ? "auto" : "no-hide-descendants"}
               >
                 <GlassSurface variant="circle">
-                  <IconButton
-                    icon="ellipsis"
-                    accessibilityLabel={more.label}
-                    onPress={more.onPress}
-                  />
+                  <IconButton icon="more" accessibilityLabel={more.label} onPress={more.onPress} />
                 </GlassSurface>
               </Animated.View>
             ) : (
               <GlassSurface variant="circle">
-                <IconButton
-                  icon="ellipsis"
-                  accessibilityLabel={more.label}
-                  onPress={more.onPress}
-                />
+                <IconButton icon="more" accessibilityLabel={more.label} onPress={more.onPress} />
               </GlassSurface>
             )
           ) : null}

@@ -110,7 +110,7 @@ export function AllReportsScreen() {
   return (
     <SafeAreaView testID="all-reports" edges={["top"]} style={styles.screen}>
       <View style={styles.header}>
-        <IconButton icon="chevronLeft" accessibilityLabel={t("triage.back")} onPress={goBack} />
+        <IconButton icon="back" accessibilityLabel={t("triage.back")} onPress={goBack} />
         <Text variant="title" numberOfLines={1}>
           {t("triage.title")}
         </Text>

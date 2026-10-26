@@ -18,7 +18,7 @@ interface GlassSurfaceProps {
   testID?: string;
 }
 
-// The single platform test: native glass exists on iOS 26 and later only.
+// The glass test: native glass exists on iOS 26 and later only; the Android branches use isAndroidVariant (ADR 027).
 export function isGlassAvailable(): boolean {
   return Platform.OS === "ios" && isLiquidGlassAvailable();
 }

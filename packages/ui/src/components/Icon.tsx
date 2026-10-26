@@ -1,7 +1,8 @@
 // INFO: the only importer of lucide-react-native. Named imports only, to
 // keep the bundle small; the glyph set grows by one entry per screen that
-// needs an icon.
+// needs an icon; back and more draw the Material 3 glyph on Android (ADR 027).
 import {
+  ArrowLeft,
   Check,
   ChevronDown,
   ChevronLeft,
@@ -9,6 +10,7 @@ import {
   Clock,
   Compass,
   Ellipsis,
+  EllipsisVertical,
   Eye,
   EyeOff,
   Flag,
@@ -35,16 +37,15 @@ import {
 } from "lucide-react-native";
 
 import { icon } from "../tokens/icon.ts";
+import { isAndroidVariant } from "./platform.ts";
 import { toneColor, type Tone } from "./tone.ts";
 
 const glyphs = {
   check: Check,
   chevronDown: ChevronDown,
-  chevronLeft: ChevronLeft,
   chevronRight: ChevronRight,
   clock: Clock,
   compass: Compass,
-  ellipsis: Ellipsis,
   eye: Eye,
   eyeOff: EyeOff,
   flag: Flag,
@@ -70,7 +71,19 @@ const glyphs = {
   x: X,
 } as const;
 
-export type IconName = keyof typeof glyphs;
+// The action glyphs follow the platform (ADR 027): Material 3's arrow_back and more_vert on Android, today's chevron and ellipsis on iOS.
+const platformGlyphs = {
+  back: { ios: ChevronLeft, android: ArrowLeft },
+  more: { ios: Ellipsis, android: EllipsisVertical },
+} as const;
+
+type PlatformGlyphName = keyof typeof platformGlyphs;
+
+export type IconName = keyof typeof glyphs | PlatformGlyphName;
+
+function isPlatformGlyph(name: IconName): name is PlatformGlyphName {
+  return Object.hasOwn(platformGlyphs, name);
+}
 
 interface IconProps {
   name: IconName;
@@ -80,7 +93,9 @@ interface IconProps {
 }
 
 export function Icon({ name, size = "md", tone = "primary", filled }: IconProps) {
-  const Glyph = glyphs[name];
+  const Glyph = isPlatformGlyph(name)
+    ? platformGlyphs[name][isAndroidVariant() ? "android" : "ios"]
+    : glyphs[name];
   return (
     <Glyph
       size={icon.size[size]}

@@ -112,6 +112,14 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
   `025-swiftui-edit-list-through-a-single-expo-ui-loader.md` it is the
   loader `components/swiftUI.ts`, and `NativeMenu` and `NativeEditList`
   draw through it.
+- `017-native-tabs-and-glass-surfaces.md` says Android and older iOS draw
+  `FloatingTabBar`, rejects native tabs on Android, draws every floating
+  surface (the bar, the sheet) with `GlassSurface` and calls
+  `isGlassAvailable()` the single platform test. Since
+  `027-android-variants-follow-material-3.md` its Android part is replaced:
+  Android follows Material 3 element by element, and the Android branches
+  are decided by `isAndroidVariant()`, with `isGlassAvailable()` left as the
+  glass test. 017 stays in force for iOS.
 
 ## Files
 
@@ -201,3 +209,7 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
   strip's blur is `expo-blur` under a masked view, each behind one
   `packages/ui` importer, and why it fades through its mask instead of its
   parent's opacity.
+- `027-android-variants-follow-material-3.md` — why Android follows
+  Material 3 with only brand adjustments while iOS does not change, why one
+  helper decides the Android branches, and in what order the Android
+  variants land.

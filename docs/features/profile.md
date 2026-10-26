@@ -11,7 +11,7 @@ from a sheet. The avatars stay initials; photos, a language selector and deletin
 
 Token names only.
 
-- Screen: `color.surface.base`, a header row of an `IconButton` `chevronLeft` and a `typography.title` title (`layout.gutter` sides, `spacing.xs` gap, `spacing.sm` vertical), then a scroll with `layout.gutter` sides and `spacing.xl` between the parts, clear of the tab bar.
+- Screen: `color.surface.base`, a header row of an `IconButton` `back` and a `typography.title` title (`layout.gutter` sides, `spacing.xs` gap, `spacing.sm` vertical), then a scroll with `layout.gutter` sides and `spacing.xl` between the parts, clear of the tab bar.
 - Identity: `Avatar` at `layout.profileAvatar` (initials in `typography.display`, or the `user` icon at `icon.size.xl`), `spacing.sm` apart: the name in `typography.title`, `@username` in `typography.body` and `color.text.secondary`, both centered, and the role `Badge` (`primary` tone) for every role but user.
 - Card: a `Card` (`color.surface.raised`) with the email and Member since pairs, each a `typography.label` caption in `color.text.secondary` over a `typography.body` value, `spacing.xxs` apart. Under it, Edit profile as a `Button` of variant `secondary` and shape `field`.
 - `ProfileSkeleton` and `SkeletonBar`: a `SkeletonCircle` at `layout.profileAvatar`, bars at `layout.skeletonBar` with the line height of their text role, in `color.surface.border`, bars `radius.sm`, circles `radius.full`, no motion. The email row's placeholder is a `typography.body` bar at `layout.skeletonBar.rowTitle`.
@@ -19,7 +19,7 @@ Token names only.
 
 ## Platform differences
 
-None in the code. The sheet glass and the keyboard lift over the fields are checked by hand, as in `library.md`.
+In the code, only the back button: an arrow on Android, the chevron on iOS (ADR 027). The sheet glass and the keyboard lift over the fields are checked by hand, as in `library.md`.
 
 ## States
 
@@ -70,3 +70,5 @@ The email is `getEmail()` on the auth port, read from the stored session without
 Saving a name and a username against the real API, including a real 409, and seeing the header avatar, the account row and the screen change without reopening the app; the real stored session yielding the email in airplane mode;
 Member since on Hermes in both languages with the database's microsecond timestamp; the sheet closing and the push to `/profile` on iOS 26 native tabs and on Android; the sheet above the keyboard; the `@` prefix alignment and the 96 avatar's look;
 the skeleton blocks against the glass and the base surface, and their handoff to content on a throttled network; screen reader reading of the profile row, the badge and the prefixed field.
+
+The Android back arrow, and the chevron unchanged on iOS (ADR 027).

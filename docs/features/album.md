@@ -50,7 +50,7 @@ the body:
 
 - iOS: the floating buttons use native glass on iOS 26+, `GlassSurface`'s solid
   fallback elsewhere. The back's native glass never fades (the back stays fixed); the top bar has no glass on any platform. On iOS the content under the top strip is blurred; Android has no blur.
-- Android: the solid fallback draws the buttons.
+- Android: the solid fallback draws the buttons; the back buttons (floating and top bar) draw an arrow (ADR 027).
 - Expo Go: the native color module is missing, so the wash stays neutral.
 
 ## States
@@ -109,3 +109,5 @@ groups.
 Also: the entry cascade on iOS and Android: its order, the 300 ms and 60 ms feel, the start after the push with cached data (back and reopen) and at once after the skeleton, no animation on rows of a later page, the floating buttons visible from the first frame with the native glass on iOS 26+, nothing moving under reduce motion, the header collapse unchanged after it. The tracks entering in two steps and the carousels with the second, the album at rest identical to before (with tracks, with no tracks, with no carousels).
 
 Also: the iOS strip blur: absent at the top, fading in with the strip and following the scroll with no flicker or dark flash, full at the top and gone at the strip's bottom edge with no visible border or cut, about 4 points (tune `blur.detailStrip`), no change under reduce motion other than the strip's own, the floating back and the title above it unchanged, a development build rebuilt after the install.
+
+The Android back arrow, and the chevron unchanged on iOS (ADR 027).

@@ -344,7 +344,7 @@ export function PlaylistScreen() {
                 ? {
                     options: (
                       <IconButton
-                        icon="ellipsis"
+                        icon="more"
                         accessibilityLabel={t("options.more")}
                         onPress={() => {
                           setSheet("options");

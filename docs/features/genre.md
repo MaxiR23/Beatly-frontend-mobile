@@ -9,7 +9,7 @@ Show a genre's playlists in a two-column grid and filter them by category chip.
 ## Layout
 
 - Header: `layout.gutter` on the sides, `spacing.sm` vertical, `spacing.xs` gap.
-  A back `IconButton`, a `layout.controlHeight` square with a `chevronLeft` icon
+  A back `IconButton`, a `layout.controlHeight` square with the `back` icon (a chevron on iOS, an arrow on Android)
   in `icon.size.lg`, then the genre name in `typography.title`, one line. The
   name comes from the route param; without it (a deep link) no title is drawn.
 - Chips: a horizontal row from `layout.gutter`, `spacing.sm` apart,
@@ -32,7 +32,7 @@ Show a genre's playlists in a two-column grid and filter them by category chip.
 
 ## Platform differences
 
-None beyond the tab bar described in `tabs.md`.
+The back button draws an arrow on Android (ADR 027); otherwise none beyond the tab bar described in `tabs.md`.
 
 ## States
 
@@ -74,3 +74,5 @@ the stack, or replaces with `/explore` when there is nothing to go back to.
 The grid clearing the floating tab bar, the plural forms on Hermes, and the
 swipe-back gesture. Screenshots with data, empty and the empty category, in es
 and en, on iOS and Android, are in the pull request.
+
+The Android back arrow, and the chevron unchanged on iOS (ADR 027).

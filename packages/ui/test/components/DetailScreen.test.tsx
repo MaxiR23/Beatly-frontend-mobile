@@ -12,6 +12,7 @@
 // - the slot after the rows: under the rows and after the next-page skeleton, none without it, drawn with no rows
 // - the hero title in typography.title
 // - the image hero: full width at the hero image ratio, the title over it in typography.display, the fade, the placeholder without an image, no centered cover or wash
+// - the back and more glyphs of each platform on the floating buttons and the top bar
 // - the floating back button, the more button only when given, the neutral wash and the gradient wash
 // - the collapse: one Animated.event on the native driver, the cover's shrink and fade, the order of the fades on both heroes, ranges from the measured heights, the touches handed from the floating buttons to the top bar and back, the bar's geometry and fill, no cover scale under reduce motion, static until measured, the other bodies unchanged, the reset when the ready body leaves
 //
@@ -85,11 +86,59 @@ async function draw(body: DetailBody, extra: DrawExtra = {}) {
   return render(element(body, extra));
 }
 
+interface JsonNode {
+  props: Record<string, unknown>;
+  children: unknown;
+}
+
+function isJsonNode(value: unknown): value is JsonNode {
+  return typeof value === "object" && value !== null && "props" in value;
+}
+
+// Every svg root (it carries xmlns) in the rendered tree.
+function svgRoots(tree: unknown): JsonNode[] {
+  const found: JsonNode[] = [];
+  const visit = (node: unknown) => {
+    if (Array.isArray(node)) node.forEach(visit);
+    if (!isJsonNode(node)) return;
+    if ("xmlns" in node.props) found.push(node);
+    visit(node.children);
+  };
+  visit(tree);
+  return found;
+}
+
+// How many drawn glyphs carry the whole lucide class token.
+function glyphCount(name: string): number {
+  return svgRoots(screen.toJSON()).filter((node) =>
+    String(node.props.className).split(/\s+/).includes(`lucide-${name}`),
+  ).length;
+}
+
 function fail(): never {
   throw new Error("expected ranges");
 }
 
 describe("DetailScreen", () => {
+  describe("platform glyphs", () => {
+    afterEach(() => {
+      Platform.OS = "ios";
+    });
+
+    it.each(["ios", "android"] as const)(
+      "draws the back and more glyphs of %s on the floating buttons and the top bar",
+      async (platform) => {
+        Platform.OS = platform;
+        await draw(ready(), { more: { label: "More", onPress: () => undefined } });
+        const android = platform === "android";
+        expect(glyphCount("arrow-left")).toBe(android ? 2 : 0);
+        expect(glyphCount("ellipsis-vertical")).toBe(android ? 2 : 0);
+        expect(glyphCount("chevron-left")).toBe(android ? 0 : 1);
+        expect(glyphCount("ellipsis")).toBe(android ? 0 : 2);
+      },
+    );
+  });
+
   it("draws the skeleton and the back button while loading", async () => {
     await draw({ kind: "loading", label: "Loading" });
     expect(screen.getByTestId("detail-skeleton")).toBeTruthy();
