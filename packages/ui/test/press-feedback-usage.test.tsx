@@ -1,9 +1,9 @@
 // packages/ui/test/press-feedback-usage.test.tsx
 //
-// Cross-cutting test: the 15 pressable components take their press feedback from pressFeedback.
+// Cross-cutting test: the 16 pressable components take their press feedback from pressFeedback.
 //
 // Tested:
-// - ActionRow, Avatar, AvatarRow, Button, Chip, FloatingTabBar, GenreRow, IconButton, MediaCard, MediaRow, MiniPlayer, PlayButton, RecentRow, SegmentedControl, TrackRow
+// - ActionRow, Avatar, AvatarRow, Button, Chip, FloatingTabBar, GenreRow, IconButton, MediaCard, MediaRow, MiniPlayer, Notice, PlayButton, RecentRow, SegmentedControl, TrackRow
 //
 // What is covered:
 // - iOS: no ripple prop on the pressable, no opacity while unpressed, motion.pressOpacity while pressed
@@ -36,6 +36,7 @@ import { IconButton } from "../src/components/IconButton.tsx";
 import { MediaCard } from "../src/components/MediaCard.tsx";
 import { MediaRow } from "../src/components/MediaRow.tsx";
 import { MiniPlayer } from "../src/components/MiniPlayer.tsx";
+import { Notice } from "../src/components/Notice.tsx";
 import { PlayButton } from "../src/components/PlayButton.tsx";
 import { RecentRow } from "../src/components/RecentRow.tsx";
 import { SegmentedControl } from "../src/components/SegmentedControl.tsx";
@@ -73,6 +74,8 @@ interface Site {
   find: () => PressableNode;
   on: "surface" | "accent";
   shape: "rect" | "round" | "own";
+  // The pressable exists on Android only.
+  androidOnly?: true;
 }
 
 const sites: readonly Site[] = [
@@ -252,6 +255,16 @@ const sites: readonly Site[] = [
     shape: "rect",
   },
   {
+    name: "Notice action",
+    element: () => (
+      <Notice floating tone="error" message="Failed" action={{ label: "Undo", onPress: noop }} />
+    ),
+    find: () => screen.getByRole("button", { name: "Undo" }),
+    on: "accent",
+    shape: "round",
+    androidOnly: true,
+  },
+  {
     name: "TrackRow with trailing",
     element: () => <TrackRow number={1} title="Track" available onPress={noop} trailing={null} />,
     find: () => screen.getByRole("button", { name: "Track" }),
@@ -260,13 +273,15 @@ const sites: readonly Site[] = [
   },
 ];
 
+const iosSites = sites.filter((s) => s.androidOnly !== true);
+
 function flat(node: PressableNode): ViewStyle {
   // An unstyled pressable (PlayButton at rest) has no style: flatten gives undefined and assign skips it.
   return Object.assign({}, StyleSheet.flatten(node.props.style as StyleProp<ViewStyle>));
 }
 
 describe("press feedback usage", () => {
-  it.each(sites)("$name has no ripple and does not fade at rest on iOS", async (site) => {
+  it.each(iosSites)("$name has no ripple and does not fade at rest on iOS", async (site) => {
     Platform.OS = "ios";
     await render(site.element());
     const node = site.find();
@@ -275,7 +290,7 @@ describe("press feedback usage", () => {
     expect(flat(node)).not.toHaveProperty("opacity");
   });
 
-  it.each(sites)("$name fades to motion.pressOpacity while pressed on iOS", async (site) => {
+  it.each(iosSites)("$name fades to motion.pressOpacity while pressed on iOS", async (site) => {
     Platform.OS = "ios";
     await render(site.element());
     await fireEvent(site.find(), "responderGrant", {

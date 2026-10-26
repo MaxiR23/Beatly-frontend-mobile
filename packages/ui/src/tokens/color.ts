@@ -1,4 +1,4 @@
-// INFO: color tokens. Surface levels, text levels, the white accent, the
+// INFO: color tokens. Surface levels (and the inverse surface of the Android snackbar), text levels, the white accent, the
 // semantic error/success colors, and the black/white overlays used over
 // images and controls, the clear start of a fade, the sheet handle bar on Android, the press ripple on Android over a dark fill and over the accent, and the opacity stops of the iOS detail strip's wash and shade and of the mask of its blur. Values are the legacy inventory's, named by role.
 export const color = {
@@ -8,6 +8,8 @@ export const color = {
     card: "#1a1a1a",
     control: "#1e1e1e",
     border: "#2a2a2a",
+    // Material 3 inverse surface: the Android snackbar's light fill on the dark theme (the neutral at tone 90).
+    inverse: "#e2e2e2",
   },
   text: {
     primary: "#ffffff",
