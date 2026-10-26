@@ -1,6 +1,6 @@
 // INFO: spacing tokens, a multiples-of-four scale, plus the layout
 // constants (gutter, gap, hitSlop, control height, text area height, and the carousel card,
-// avatar, creator mark, profile avatar, tab item, chip, genre bar, row cover, detail hero cover,
+// avatar, creator mark, profile avatar, tab item, chip (and the Android chip), genre bar, row cover, detail hero cover,
 // track-number column, now playing bar width, large and medium play button, the detail play pill's width, the side buttons' stacking value, seek bar and sheet handle sizes (iOS and Android), and the skeleton bar widths and row count).
 export const spacing = {
   xxs: 2,
@@ -25,6 +25,8 @@ export const layout = {
   // Side of the large avatar of the profile screen.
   profileAvatar: 96,
   chipHeight: 36,
+  // Height of a filter chip on Android (Material 3 filter chip).
+  chipHeightAndroid: 32,
   genreBarWidth: 6,
   genreBarHeight: 28,
   rowCover: 40,

@@ -17,8 +17,8 @@ value: the value lives once, in the token file.
 | Base background of every screen and the detail top bar without a dominant color (on iOS the strip's wash without one, and its shade)                             | `color.surface.base`                                                                         |
 | Sheet, modal, dialog and form `Card` background (the `ui` `Card` is only this raised card; a list card is a different component)                                 | `color.surface.raised`                                                                       |
 | List card, input and image-placeholder background                                                                                                                | `color.surface.card`                                                                         |
-| Secondary control background (secondary button, inactive chip/tab)                                                                                               | `color.surface.control`                                                                      |
-| Card/sheet/input border, divider, skeleton base                                                                                                                  | `color.surface.border`                                                                       |
+| Secondary control background (secondary button, inactive iOS chip/tab)                                                                                           | `color.surface.control`                                                                      |
+| Card/sheet/input border, divider, skeleton base, the outline of an unselected Android chip                                                                       | `color.surface.border`                                                                       |
 | Inverse surface: the Android snackbar's light fill (Material 3 inverse surface)                                                                                  | `color.surface.inverse`                                                                      |
 | Primary text                                                                                                                                                     | `color.text.primary`                                                                         |
 | Secondary text (subtitles, artist names, descriptions)                                                                                                           | `color.text.secondary`                                                                       |
@@ -32,10 +32,10 @@ value: the value lives once, in the token file.
 | Sheet/modal backdrop                                                                                                                                             | `color.overlay.backdrop`                                                                     |
 | Scrim over an image (behind a control or text; the now playing scrim over a row cover)                                                                           | `color.overlay.onImage`                                                                      |
 | Subtle translucent fill (ghost button, translucent chip)                                                                                                         | `color.overlay.subtle`                                                                       |
-| Muted translucent fill (seek track, icon-button background)                                                                                                      | `color.overlay.muted`                                                                        |
+| Muted translucent fill (seek track, icon-button background, the selected Android chip)                                                                           | `color.overlay.muted`                                                                        |
 | Sheet handle bar on Android                                                                                                                                      | `color.overlay.handleAndroid`                                                                |
 | Press ripple on Android over every fill but the accent (Material 3 pressed state layer)                                                                          | `color.overlay.ripple`                                                                       |
-| Press ripple on Android over the white accent fill (primary button, primary icon button, selected chip, detail play button, the Android snackbar's action)       | `color.overlay.rippleOnAccent`                                                               |
+| Press ripple on Android over the white accent fill (primary button, primary icon button, detail play button, the Android snackbar's action)                      | `color.overlay.rippleOnAccent`                                                               |
 | Clear start of a fade into the base surface (the detail hero image); the see-through container of the player route                                               | `color.overlay.clear`                                                                        |
 | Opacity stops of the iOS detail strip: its wash (the dominant color or the base surface) and the base-surface shade over it, both transparent at the bottom edge | `color.gradient.detailStrip.wash` / `.shade`                                                 |
 | Opacity stops of the mask of the iOS detail strip's blur: opaque to 55% of the strip's height, transparent at its bottom edge                                    | `color.gradient.detailStrip.blurMask`                                                        |
@@ -54,7 +54,8 @@ value: the value lives once, in the token file.
 | Side of the header account avatar                                                                                                                                            | `layout.avatar`                                                 |
 | Side of the leading mark (avatar or brand mark) in a detail creator line                                                                                                     | `layout.creatorMark`                                            |
 | Side of the large avatar of the profile screen                                                                                                                               | `layout.profileAvatar`                                          |
-| Height of a filter chip and of a segmented control option                                                                                                                    | `layout.chipHeight`                                             |
+| Height of a filter chip on iOS and of a segmented control option                                                                                                             | `layout.chipHeight`                                             |
+| Height of a filter chip on Android (Material 3)                                                                                                                              | `layout.chipHeightAndroid`                                      |
 | Width / height of the genre accent bar in a genre row                                                                                                                        | `layout.genreBarWidth` / `layout.genreBarHeight`                |
 | Side of the cover in a list row and in the mini player                                                                                                                       | `layout.rowCover`                                               |
 | Side of the cover in the medium list row (library) and the song row of the player sheet                                                                                      | `layout.rowCoverMedium`                                         |
@@ -242,15 +243,23 @@ Entry: in the ready body the content enters once per mount in a top-down cascade
 - New skeletons build on the exported `SkeletonBar` and `SkeletonCircle` of `Skeleton.tsx`; `DetailSkeleton` keeps its private bars and exports its `SkeletonRow` for the detail list's footer, which draws it before the slot after the rows when the screen passes one.
 - `AvatarRow` with no identity: `SkeletonCircle` at `layout.avatar` and a `typography.rowTitle` bar at `.rowTitle`.
 
+## Filter chip
+
+iOS: `layout.chipHeight` high, `radius.full`, `spacing.lg` at the sides, `typography.button`; selected on `color.accent.primary` with `color.text.inverse`, otherwise on `color.surface.control` with `color.text.primary`.
+
+Android (ADR 027, the Material 3 filter chip): `layout.chipHeightAndroid` high, `radius.sm`, `spacing.lg` at the sides. Unselected: a `border.width` outline in `color.surface.border`, no fill, `color.text.secondary`. Selected: `color.overlay.muted`, no outline, an `icon.size.sm` `check` in `color.text.primary` `spacing.sm` before the label and `spacing.sm` from the start. The ripple is `color.overlay.ripple` in both states, clipped to the `radius.sm` corners.
+
+Two deliberate departures from Material 3, not to be "fixed": the Android chip has no `hitSlop`, so its touch target is 32 tall instead of 48dp, because vertical slop would make the two stacked chip rows of Genre overlap; and the check is drawn at `icon.size.sm` (16) instead of 18, the closest step of the icon scale.
+
 ## Radius (`radius`)
 
 | Role                                                                    | Token         |
 | ----------------------------------------------------------------------- | ------------- |
 | Extra-small radius (the Android snackbar, Material 3 extra-small shape) | `radius.xs`   |
-| Small radius (badges, covers)                                           | `radius.sm`   |
+| Small radius (badges, covers, the Android chip)                         | `radius.sm`   |
 | Medium radius (cards, inputs, form buttons, the player cover)           | `radius.md`   |
 | Large radius (sheets, large cards, form card, brand mark)               | `radius.lg`   |
-| Fully round (pills, chips, circular avatars/buttons)                    | `radius.full` |
+| Fully round (pills, iOS chips, circular avatars/buttons)                | `radius.full` |
 
 ## Border (`border`)
 

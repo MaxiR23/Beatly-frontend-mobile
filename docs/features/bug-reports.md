@@ -13,12 +13,12 @@ A developer or an admin also sees every report in All reports, filtered by all, 
 Token names only.
 
 - Form: a `Sheet` kept `topInset` below the status bar; `typography.subtitle` title, `spacing.lg` between the parts. With a track, its title as
-  a `typography.meta` line in `color.text.secondary`. The category as a `typography.label` caption over `Chip`s that wrap, `spacing.sm` apart;
+  a `typography.meta` line in `color.text.secondary`. The category as a `typography.label` caption over `Chip`s (the Material 3 filter chip on Android, see `DESIGN.md` Filter chip) that wrap, `spacing.sm` apart;
   the description as a multiline `Input` at least `layout.textAreaHeight` tall; the counter and the inline error as `typography.meta` lines
   (`color.text.secondary` or `color.status.error`); Cancel and Send as `Button`s of shape `field`, `spacing.md` apart.
 - List: a `Sheet` with a `typography.subtitle` title and a scrolling list of `MediaRow`s (`size="medium"`) with the `flag` tile; the subtitle joins the date,
   what it is about and the description; the `Badge` sits trailing (`typography.label` on `color.overlay.subtle`, `radius.sm`; open in `color.text.primary`, closed in `color.text.tertiary`).
-- All reports: a full-screen route; a header with a back `IconButton` (`back`) and a `typography.title` title, a row of `Chip`s (`spacing.sm` apart, `layout.gutter` inset)
+- All reports: a full-screen route; a header with a back `IconButton` (`back`) and a `typography.title` title, a row of `Chip`s (the Material 3 filter chip on Android, see `DESIGN.md` Filter chip; `spacing.sm` apart, `layout.gutter` inset)
   and a list of `MediaRow`s as in My reports, the subtitle joining the reporter, the date and the description, with the `Badge` trailing.
 - Report detail: a `Sheet` kept `topInset` below the status bar; `typography.subtitle` title with the status `Badge`, `typography.label` captions in `color.text.secondary`
   over `typography.body` values (`spacing.xxs` apart, `spacing.lg` between pairs), a `Button` of shape `field` to close or reopen, and an inline `typography.meta` line in `color.status.error` for a failure.
@@ -95,6 +95,8 @@ Dates: the first date drawn in the app is the report date in My reports. It uses
 `bugReports` (`form.*`, `list.*`, `triage.*`), `common` (`account.report`, `account.myReports`, `account.allReports`) and `trackMenu` (`items.report`).
 
 ## Checked by hand
+
+The Android chip on a phone: 32 tall, 8 corners, outline, the check, the ripple inside the corners, TalkBack reading selected.
 
 All reports against the backend with its status filter: the three filters, `forbidden` after a role change, closing and reopening, the role gate for user, tester, developer and admin accounts, the `eye` glyph in the account sheet, and VoiceOver/TalkBack on the chips, rows, badge and action.
 

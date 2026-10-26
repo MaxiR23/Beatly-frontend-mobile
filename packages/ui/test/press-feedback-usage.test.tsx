@@ -125,7 +125,8 @@ const sites: readonly Site[] = [
     name: "Chip selected",
     element: () => <Chip label="Hits" selected onPress={noop} />,
     find: () => screen.getByRole("button", { name: "Hits" }),
-    on: "accent",
+    // On Android the selected chip sits on color.overlay.muted, not the accent (issue 118).
+    on: "surface",
     shape: "own",
   },
   {
