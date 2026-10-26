@@ -3,12 +3,12 @@
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 
 import { color } from "../tokens/color.ts";
-import { motion } from "../tokens/motion.ts";
 import { radius } from "../tokens/radius.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
 import { Icon, type IconName } from "./Icon.tsx";
 import { Text } from "./Text.tsx";
 import { toneColor, type Tone } from "./tone.ts";
+import { pressFeedback } from "./pressFeedback.ts";
 
 interface ButtonProps {
   label: string;
@@ -36,8 +36,10 @@ export function Button({
   const inactive = disabled || loading;
   const labelTone: Tone = disabled ? "disabled" : variant === "primary" ? "inverse" : "primary";
 
+  const press = pressFeedback({ on: variant === "primary" ? "accent" : "surface" });
   return (
     <Pressable
+      android_ripple={press.android_ripple}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: inactive, busy: loading }}
@@ -49,7 +51,7 @@ export function Button({
         fill && styles.fill,
         styles[variant],
         disabled && styles.disabled,
-        pressed && styles.pressed,
+        press.style(pressed),
       ]}
     >
       {loading ? (
@@ -85,5 +87,4 @@ const styles = StyleSheet.create({
   secondary: { backgroundColor: color.surface.control },
   ghost: { backgroundColor: color.overlay.subtle },
   disabled: { backgroundColor: color.surface.control },
-  pressed: { opacity: motion.pressOpacity },
 });

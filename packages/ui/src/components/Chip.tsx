@@ -2,10 +2,10 @@
 import { Pressable, StyleSheet } from "react-native";
 
 import { color } from "../tokens/color.ts";
-import { motion } from "../tokens/motion.ts";
 import { radius } from "../tokens/radius.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
 import { Text } from "./Text.tsx";
+import { pressFeedback } from "./pressFeedback.ts";
 
 interface ChipProps {
   label: string;
@@ -14,8 +14,10 @@ interface ChipProps {
 }
 
 export function Chip({ label, selected, onPress }: ChipProps) {
+  const press = pressFeedback({ on: selected ? "accent" : "surface" });
   return (
     <Pressable
+      android_ripple={press.android_ripple}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ selected }}
@@ -23,7 +25,7 @@ export function Chip({ label, selected, onPress }: ChipProps) {
       style={({ pressed }) => [
         styles.base,
         selected ? styles.selected : styles.unselected,
-        pressed && styles.pressed,
+        press.style(pressed),
       ]}
     >
       <Text variant="button" tone={selected ? "inverse" : "primary"}>
@@ -43,5 +45,4 @@ const styles = StyleSheet.create({
   },
   selected: { backgroundColor: color.accent.primary },
   unselected: { backgroundColor: color.surface.control },
-  pressed: { opacity: motion.pressOpacity },
 });

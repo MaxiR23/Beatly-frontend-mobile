@@ -1,13 +1,13 @@
 // INFO: a genre row: the genre's palette bar, its name and a chevron.
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { motion } from "../tokens/motion.ts";
 import { radius } from "../tokens/radius.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
 import { genreGradient } from "./genreGradient.ts";
 import { GradientFill } from "./GradientFill.tsx";
 import { Icon } from "./Icon.tsx";
 import { Text } from "./Text.tsx";
+import { pressFeedback } from "./pressFeedback.ts";
 
 interface GenreRowProps {
   slug: string;
@@ -18,12 +18,14 @@ interface GenreRowProps {
 export function GenreRow({ slug, name, onPress }: GenreRowProps) {
   const [from, via, to] = genreGradient(slug);
 
+  const press = pressFeedback();
   return (
     <Pressable
+      android_ripple={press.android_ripple}
       accessibilityRole="button"
       accessibilityLabel={name}
       onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.row, press.style(pressed)]}
     >
       <View style={styles.bar}>
         <GradientFill colors={[from, via, to]} direction="vertical" />
@@ -55,5 +57,4 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   name: { flex: 1 },
-  pressed: { opacity: motion.pressOpacity },
 });

@@ -5,13 +5,13 @@
 // the profile size, for the profile screen, layout.profileAvatar.
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { motion } from "../tokens/motion.ts";
 import { radius } from "../tokens/radius.ts";
 import { layout } from "../tokens/spacing.ts";
 import { avatarGradient, initialsOf } from "./avatarIdentity.ts";
 import { GradientFill } from "./GradientFill.tsx";
 import { Icon } from "./Icon.tsx";
 import { Text } from "./Text.tsx";
+import { pressFeedback } from "./pressFeedback.ts";
 
 interface AvatarProps {
   name: string | null;
@@ -33,6 +33,8 @@ export function Avatar({ name, accessibilityLabel, onPress, size = "header" }: A
     size === "profile" ? "display" : size === "creator" ? "label" : "rowTitle";
   const iconSize = size === "profile" ? "xl" : size === "creator" ? "sm" : "md";
   const box = { width: side, height: side };
+
+  const press = pressFeedback();
 
   const content = (
     <>
@@ -57,11 +59,12 @@ export function Avatar({ name, accessibilityLabel, onPress, size = "header" }: A
 
   return (
     <Pressable
+      android_ripple={press.android_ripple}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       hitSlop={layout.hitSlop}
       onPress={onPress}
-      style={({ pressed }) => [styles.box, box, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.box, box, press.style(pressed)]}
     >
       {content}
     </Pressable>
@@ -75,5 +78,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  pressed: { opacity: motion.pressOpacity },
 });

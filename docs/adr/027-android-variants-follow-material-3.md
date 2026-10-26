@@ -46,7 +46,8 @@ Android draws like iOS (21 elements) found most of them differ from Material 3
   0. This record and the platform helper.
   1. Android action icons: `more` and `back`.
   2. Ripple instead of opacity on press, a shared press helper in `ui` and a
-     ripple color token, across the pressable components.
+     ripple color token (two: `color.overlay.ripple`, and
+     `color.overlay.rippleOnAccent` for the white accent fill), across the pressable components.
   3. Notices as a snackbar: an inverse surface, extra-small corners, no pill.
   4. Material 3 filter chips: 32 tall, 8 corners, an outline and a check.
   5. Detail top bar: the title aligned to the start on Android.

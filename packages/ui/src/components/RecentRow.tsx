@@ -1,11 +1,11 @@
 // INFO: a pressable recent-query row: a clock icon, the query in one line and a remove button as a sibling of the pressable part, so both are reachable by screen readers; control height tall.
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { motion } from "../tokens/motion.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
 import { Icon } from "./Icon.tsx";
 import { IconButton } from "./IconButton.tsx";
 import { Text } from "./Text.tsx";
+import { pressFeedback } from "./pressFeedback.ts";
 
 interface RecentRowProps {
   label: string;
@@ -15,13 +15,15 @@ interface RecentRowProps {
 }
 
 export function RecentRow({ label, onPress, removeLabel, onRemove }: RecentRowProps) {
+  const press = pressFeedback();
   return (
     <View style={styles.row}>
       <Pressable
+        android_ripple={press.android_ripple}
         accessibilityRole="button"
         accessibilityLabel={label}
         onPress={onPress}
-        style={({ pressed }) => [styles.main, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.main, press.style(pressed)]}
       >
         <Icon name="clock" size="md" tone="tertiary" />
         <View style={styles.text}>
@@ -44,6 +46,5 @@ const styles = StyleSheet.create({
     gap: layout.gap,
   },
   main: { flex: 1, flexDirection: "row", alignItems: "center", gap: layout.gap },
-  pressed: { opacity: motion.pressOpacity },
   text: { flex: 1 },
 });

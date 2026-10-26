@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { color } from "../tokens/color.ts";
-import { motion } from "../tokens/motion.ts";
 import { radius } from "../tokens/radius.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
 import { Cover } from "./Cover.tsx";
@@ -11,6 +10,7 @@ import type { IconName } from "./Icon.tsx";
 import type { ImageTiers } from "./imageTier.ts";
 import { NowPlayingBars } from "./NowPlayingBars.tsx";
 import { Text } from "./Text.tsx";
+import { pressFeedback } from "./pressFeedback.ts";
 
 interface MediaRowProps {
   title: string;
@@ -47,6 +47,7 @@ export function MediaRow({
   testID,
 }: MediaRowProps) {
   const onPress = available ? onPressProp : undefined;
+  const press = pressFeedback();
   const marked = available && nowPlaying !== undefined;
   const large = size === "large";
   const medium = size === "medium";
@@ -106,11 +107,12 @@ export function MediaRow({
         </View>
       ) : (
         <Pressable
+          android_ripple={press.android_ripple}
           accessibilityRole="button"
           accessibilityLabel={title}
           accessibilityState={marked ? { selected: true } : undefined}
           onPress={onPress}
-          style={({ pressed }) => [styles.body, pressed && styles.pressed]}
+          style={({ pressed }) => [styles.body, press.style(pressed)]}
         >
           {content}
         </Pressable>
@@ -133,6 +135,7 @@ export function MediaRow({
 
   return (
     <Pressable
+      android_ripple={press.android_ripple}
       accessibilityRole="button"
       accessibilityLabel={title}
       accessibilityState={marked ? { selected: true } : undefined}
@@ -140,7 +143,7 @@ export function MediaRow({
       style={({ pressed }) => [
         styles.row,
         medium ? styles.rowMedium : undefined,
-        pressed && styles.pressed,
+        press.style(pressed),
       ]}
       testID={testID}
     >
@@ -179,6 +182,5 @@ const styles = StyleSheet.create({
   },
   scrimRound: { borderRadius: radius.full },
   scrimSquare: { borderRadius: radius.sm },
-  pressed: { opacity: motion.pressOpacity },
   text: { flex: 1, gap: spacing.xxs },
 });

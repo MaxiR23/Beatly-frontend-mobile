@@ -3,11 +3,11 @@ import { ActivityIndicator, Pressable, StyleSheet } from "react-native";
 
 import { color } from "../tokens/color.ts";
 import type { icon as iconTokens } from "../tokens/icon.ts";
-import { motion } from "../tokens/motion.ts";
 import { radius } from "../tokens/radius.ts";
 import { layout } from "../tokens/spacing.ts";
 import { Icon, type IconName } from "./Icon.tsx";
 import { toneColor, type Tone } from "./tone.ts";
+import { pressFeedback } from "./pressFeedback.ts";
 
 interface IconButtonProps {
   icon: IconName;
@@ -50,8 +50,10 @@ export function IconButton({
   if (selected !== undefined) state.selected = selected;
   if (busy !== undefined) state.busy = busy;
   if (disabled !== undefined) state.disabled = disabled;
+  const press = pressFeedback({ on: accent ? "accent" : "surface", shape: "round" });
   return (
     <Pressable
+      android_ripple={press.android_ripple}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityState={
@@ -64,7 +66,7 @@ export function IconButton({
         primary && styles.primary,
         compact && styles.compact,
         accent && disabled === true && styles.inactive,
-        pressed && styles.pressed,
+        press.style(pressed),
       ]}
     >
       {busy === true ? (
@@ -91,5 +93,4 @@ const styles = StyleSheet.create({
   },
   compact: { borderRadius: radius.full, backgroundColor: color.accent.primary },
   inactive: { backgroundColor: color.surface.control },
-  pressed: { opacity: motion.pressOpacity },
 });
