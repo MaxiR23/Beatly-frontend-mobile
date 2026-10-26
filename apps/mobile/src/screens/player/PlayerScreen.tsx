@@ -8,6 +8,7 @@ import {
   ErrorState,
   GradientFill,
   IconButton,
+  isAndroidVariant,
   Marquee,
   PauseScale,
   SeekBar,
@@ -15,14 +16,7 @@ import {
 } from "@beatly/ui/native";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import {
-  BackHandler,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { BackHandler, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
@@ -102,12 +96,11 @@ export function PlayerScreen() {
     router.push({ pathname, params: { id } });
   }
 
-  const leading =
-    Platform.OS === "ios" ? (
-      <View style={styles.balance} />
-    ) : (
-      <IconButton icon="chevronDown" accessibilityLabel={t("close")} onPress={close} />
-    );
+  const leading = isAndroidVariant() ? (
+    <IconButton icon="chevronDown" accessibilityLabel={t("close")} onPress={close} />
+  ) : (
+    <View style={styles.balance} />
+  );
   const top = { paddingTop: insets.top };
   const bottom = { paddingBottom: spacing.xl };
 

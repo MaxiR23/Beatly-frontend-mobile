@@ -1,11 +1,12 @@
 // INFO: a bottom modal sheet on a GlassSurface, closed by its backdrop or
 // the system back action, lifted above the keyboard on iOS; it shrinks to the room left so a long list scrolls inside it, and a topInset keeps it clear of the status bar. The caller passes the close label translated.
 import type { ReactNode } from "react";
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, Modal, Pressable, StyleSheet, View } from "react-native";
 
 import { color } from "../tokens/color.ts";
 import { layout } from "../tokens/spacing.ts";
 import { GlassSurface } from "./GlassSurface.tsx";
+import { isAndroidVariant } from "./platform.ts";
 
 interface SheetProps {
   visible: boolean;
@@ -29,7 +30,7 @@ export function Sheet({
     <Modal transparent animationType="slide" visible={visible} onRequestClose={onClose}>
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={isAndroidVariant() ? undefined : "padding"}
       >
         <Pressable
           accessibilityRole="button"

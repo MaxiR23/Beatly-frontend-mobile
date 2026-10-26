@@ -1,5 +1,7 @@
 # 017. Native tabs and glass surfaces
 
+> Superseded in part by `027-android-variants-follow-material-3.md`: its Android part (the pill tab bar and the floating sheet on Android) is replaced there; the rest stays in force for iOS. This note is an owner exception to the no-edit rule of `README.md`.
+
 Why the tab bar is native on iOS 26+ and ours elsewhere, and why every
 floating surface goes through one component.
 

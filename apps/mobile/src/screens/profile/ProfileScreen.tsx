@@ -136,7 +136,7 @@ export function ProfileScreen() {
   return (
     <SafeAreaView testID="profile" edges={["top"]} style={styles.screen}>
       <View style={styles.header}>
-        <IconButton icon="chevronLeft" accessibilityLabel={t("back")} onPress={goBack} />
+        <IconButton icon="back" accessibilityLabel={t("back")} onPress={goBack} />
         <Text variant="title" numberOfLines={1}>
           {t("title")}
         </Text>

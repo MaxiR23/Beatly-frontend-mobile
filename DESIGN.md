@@ -132,7 +132,7 @@ Entry: in the ready body the content enters once per mount in a top-down cascade
 - Action row: `DetailActions`, `layout.gutter` sides. Centered (own, album, genre): a group centered with `layout.gap` between the buttons and the play button's fixed `layout.playButtonPill` slot; as the pill shrinks the side buttons move toward the center with it and end `layout.gap` from the circle:
   `DetailActions` owns the shared shrink value and passes it to `PlayButton` and the side buttons; the play slot keeps the fixed `layout.playButtonPill` width, and its touch area switches from the pill to the circle in the commit that ends the shrink, so nothing moves on screen when it does; the side buttons carry `layout.sideButtonStack`, above the play slot, so a tap on them wins while they slide over it.
   shuffle (`IconButton` plain), play (`PlayButton`), and save (`IconButton` plain, plus or check,
-  selected when saved) on albums and genre playlists and, on an own playlist only, the options button after play (`IconButton` plain `ellipsis`, opening a sheet). `PlayButton`: idle, a `layout.playButtonPill` × `layout.playButtonMedium`
+  selected when saved) on albums and genre playlists and, on an own playlist only, the options button after play (`IconButton` plain `more`, opening a sheet). `PlayButton`: idle, a `layout.playButtonPill` × `layout.playButtonMedium`
   pill in `color.accent.primary`, the play glyph (`icon.size.lg`) and the
   label in `typography.button` `color.text.inverse`, `spacing.sm` apart; loading, playing and paused,
   a `layout.playButtonMedium` circle with a spinner, the pause glyph or the play glyph. Leaving idle
@@ -142,7 +142,7 @@ Entry: in the ready body the content enters once per mount in a top-down cascade
 - Title: `typography.title` under the hero. The base reserves no space for an action
   row; the screen owns the gap below its own title block.
 - Top bar, on Android: from the top edge to `topInset + layout.controlHeight`, `layout.gutter` sides, filled with the dominant color or
-  `color.surface.base`, no blur and no glass; an `IconButton` back, the title in `typography.subtitle` on one line centered, and more only
+  `color.surface.base`, no blur and no glass; an `IconButton` `back` (the Android arrow), the title in `typography.subtitle` on one line centered, and more only
   with the `more` prop (a `layout.controlHeight` spacer otherwise). It takes touches only once it starts to appear, the floating buttons
   only until they have faded, neither in between; the faded set is hidden from assistive technology.
   The bar is a solid surface and catches every touch on its area once active, unlike the floating buttons, which let touches through
@@ -158,7 +158,7 @@ Entry: in the ready body the content enters once per mount in a top-down cascade
   so the bar catches touches on its area without blocking it. The phase hands over only the mores: the floating more while
   `offset < buttons[1]`, the bar's from `bar[0]`.
 - Platform difference, a design decision of this change: iOS and Android draw different bars. On iOS the native-glass floating back stays fixed in every phase and the fading strip fades in behind it, with no back of its own in the bar; on Android the bar carries its own back and the floating buttons hand over to it.
-- Floating back and more buttons: `GlassSurface` `circle` over the hero in
+- Floating back and more buttons (`IconButton` `back` and `more`): `GlassSurface` `circle` over the hero in
   every state; in the ready body, on Android both fade out with the scroll; on iOS the back stays fixed, opaque and touchable in every phase, and only the more fades. The more button is drawn only when the screen passes a `more` prop.
 - Skeleton: `DetailSkeleton`, a static cover block, a title bar, a meta bar and
   `layout.skeletonRows` track rows in `color.surface.border`, bar widths from `layout.skeletonBar`. With
@@ -213,7 +213,7 @@ Entry: in the ready body the content enters once per mount in a top-down cascade
 
 ## Track menu
 
-- More button: an `IconButton` `ellipsis` (`layout.controlHeight`, `icon.size.lg`) at the end of a row, outside the pressable body of `MediaRow` and `TrackRow` (their `trailing` slot).
+- More button: an `IconButton` `more` (three vertical dots on Android; `layout.controlHeight`, `icon.size.lg`) at the end of a row, outside the pressable body of `MediaRow` and `TrackRow` (their `trailing` slot).
 - `ActionRow`: `layout.controlHeight` tall, `spacing.sm` vertical padding, `layout.gap` between the icon (`icon.size.md`) and the label (`typography.body`), `color.text.primary`, or `color.status.error` when destructive; pressed `motion.pressOpacity`.
 - `Notice`: `spacing.sm` between the glyph (`icon.size.md`, `color.status.success` or `color.status.error`) and the line (`typography.meta`, `color.text.primary`); floating, it sits on a `GlassSurface` `bar`, `layout.gutter` from the sides and `spacing.md` above the bottom inset, for `motion.duration.notice`.
 - `Marquee`: one line of any `typography` role that scrolls to its end and back, resting `motion.marquee.pause` at each end at `motion.marquee.speed`, only when it does not fit; under reduce motion it is a static line with a tail ellipsis.
@@ -326,7 +326,7 @@ only importer of `lucide-react-native`.
 | Hero icon (empty states, the auth brand mark) | `icon.size.hero` |
 | Stroke width                                  | `icon.stroke`    |
 
-`Icon` draws a glyph filled in its tone with `filled`; `IconButton` takes an `iconSize`.
+`Icon` draws a glyph filled in its tone with `filled`; `IconButton` takes an `iconSize`. Two role names follow the platform (ADR 027): `back` draws a chevron left on iOS and an arrow left (Material 3 arrow_back) on Android; `more` draws a horizontal ellipsis on iOS and three vertical dots (more_vert) on Android. `Icon` decides them through `isAndroidVariant()`, the one Android test of `ui`, with the same size, stroke and tone on both.
 
 ## Shadows (`shadow`)
 

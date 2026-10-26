@@ -41,7 +41,7 @@ the info block:
   shuffle loads the remaining pages of an own or liked playlist, the pressed button is busy and
   both are disabled. On an own and a genre playlist the row is a centered group, `layout.gap` apart: shuffle, play
   (`PlayButton`), and a side button, `layout.controlHeight` like shuffle: save on a genre playlist, or
-  the options button on an own playlist (an `IconButton` `ellipsis` opening a `Sheet` of `ActionRow`s
+  the options button on an own playlist (an `IconButton` `more` opening a `Sheet` of `ActionRow`s
   on both platforms) with Edit details (`pencil`), Edit tracks (`gripVertical`) and Delete playlist (`trash`, destructive); never
   on liked, genre or albums; no share or search button yet. The options open the sheet on iOS too,
   unlike the track menu's system menu (ADR 023): the iOS menu is anchored to the button, and a
@@ -57,7 +57,7 @@ the info block:
   floating error `Notice` (`layout.gutter` sides, `spacing.md` above the tab bar clearance, shown for
   `motion.duration.notice`; each failure restarts the timer).
 - Edit tracks (`EditTracksScreen`, route `/playlist-edit/[id]`): a header in a `SafeAreaView` (top edge)
-  with a back `IconButton` (`chevronLeft`, `playlist:back`), the title (`typography.title`) and a ghost
+  with a back `IconButton` (`back`, `playlist:back`), the title (`typography.title`) and a ghost
   Done button, `layout.gutter` on the sides and `spacing.sm` between. It loads every page of the tracks
   first (the same `loadAll` that play uses, waiting for the refetch of the cached pages to end so the
   edit starts from the server's order) and draws the loading state meanwhile. Then the list, on a
@@ -104,6 +104,7 @@ the info block:
 - iOS: the floating buttons use native glass on iOS 26+, `GlassSurface`'s solid
   fallback elsewhere. The back's native glass never fades (the back stays fixed); the top bar has no glass on any platform. On iOS the content under the top strip is blurred; Android has no blur.
 - Android: the solid fallback draws the buttons.
+- Android: the back buttons (floating, top bar, Edit tracks) draw an arrow and the more and options buttons three vertical dots (ADR 027); iOS keeps the chevron and the horizontal ellipsis.
 - Expo Go: the native color module is missing, so the wash stays neutral.
 - Edit tracks: iOS with the `ExpoUI` module draws `NativeEditList` (the system list); Android, Expo Go
   and an iOS build without the module draw `ReorderList`.
@@ -210,3 +211,5 @@ Also: the header collapse on scroll (the cover shrinking and fading, then the fl
 Also: the entry cascade on iOS and Android: its order, the 300 ms and 60 ms feel, the start after the push with cached data (back and reopen) and at once after the skeleton, no animation on rows of a later page, the floating buttons visible from the first frame with the native glass on iOS 26+, nothing moving under reduce motion, the header collapse unchanged after it.
 
 Also: the iOS strip blur: absent at the top, fading in with the strip and following the scroll with no flicker or dark flash, full at the top and gone at the strip's bottom edge with no visible border or cut, about 4 points (tune `blur.detailStrip`), no change under reduce motion other than the strip's own, the floating back and the title above it unchanged, a development build rebuilt after the install.
+
+The arrow and the three vertical dots on Android (floating, top bar, options, Edit tracks), and the chevron and horizontal ellipsis unchanged on iOS (ADR 027).

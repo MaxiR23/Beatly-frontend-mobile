@@ -30,7 +30,7 @@ export function TrackMenuButton({ track }: { track: PlayableTrack }) {
   }
   return (
     <IconButton
-      icon="ellipsis"
+      icon="more"
       accessibilityLabel={t("more")}
       onPress={() => {
         openMenu(track);

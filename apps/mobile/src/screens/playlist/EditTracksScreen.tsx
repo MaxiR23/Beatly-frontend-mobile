@@ -184,7 +184,7 @@ export function EditTracksScreen() {
   return (
     <SafeAreaView testID="edit-tracks" edges={["top"]} style={styles.screen}>
       <View style={styles.header}>
-        <IconButton icon="chevronLeft" accessibilityLabel={t("back")} onPress={goBack} />
+        <IconButton icon="back" accessibilityLabel={t("back")} onPress={goBack} />
         <View style={styles.title}>
           <Text variant="title">{t("editTracks.title")}</Text>
         </View>

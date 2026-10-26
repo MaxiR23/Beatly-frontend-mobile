@@ -18,14 +18,14 @@ Token names only.
   (`color.text.secondary` or `color.status.error`); Cancel and Send as `Button`s of shape `field`, `spacing.md` apart.
 - List: a `Sheet` with a `typography.subtitle` title and a scrolling list of `MediaRow`s (`size="medium"`) with the `flag` tile; the subtitle joins the date,
   what it is about and the description; the `Badge` sits trailing (`typography.label` on `color.overlay.subtle`, `radius.sm`; open in `color.text.primary`, closed in `color.text.tertiary`).
-- All reports: a full-screen route; a header with a back `IconButton` and a `typography.title` title, a row of `Chip`s (`spacing.sm` apart, `layout.gutter` inset)
+- All reports: a full-screen route; a header with a back `IconButton` (`back`) and a `typography.title` title, a row of `Chip`s (`spacing.sm` apart, `layout.gutter` inset)
   and a list of `MediaRow`s as in My reports, the subtitle joining the reporter, the date and the description, with the `Badge` trailing.
 - Report detail: a `Sheet` kept `topInset` below the status bar; `typography.subtitle` title with the status `Badge`, `typography.label` captions in `color.text.secondary`
   over `typography.body` values (`spacing.xxs` apart, `spacing.lg` between pairs), a `Button` of shape `field` to close or reopen, and an inline `typography.meta` line in `color.status.error` for a failure.
 
 ## Platform differences
 
-None in the code. The swap of sheets and the keyboard over the multiline field are checked by hand.
+In the code, only All reports' back button: an arrow on Android, the chevron on iOS (ADR 027). The swap of sheets and the keyboard over the multiline field are checked by hand.
 
 ## States
 
@@ -101,3 +101,5 @@ All reports against the backend with its status filter: the three filters, `forb
 Sending a report from the account sheet and from a track's menu against the real API, then opening My reports and seeing both, newest first, the second marked as a track;
 the sheet swaps (account sheet to form or list, track menu to form, including from the player route); the multiline field above the keyboard on iOS and Android;
 the `flag` SF Symbol in the iOS system menu; the date in both languages on Hermes and that the database's microsecond timestamps are read; screen reader reading of the chips, the counter and the badge.
+
+The Android back arrow on All reports, and the chevron unchanged on iOS (ADR 027).
