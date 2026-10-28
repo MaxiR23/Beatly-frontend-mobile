@@ -36,7 +36,6 @@ import {
   Dimensions,
   FlatList,
   Platform,
-  StyleSheet,
   type StyleProp,
   type ViewStyle,
 } from "react-native";
@@ -54,6 +53,7 @@ import {
   upNextFixture,
   Wrapper,
 } from "../../helpers/core.tsx";
+import { flatStyle } from "../../helpers/flatStyle.ts";
 
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
@@ -438,11 +438,11 @@ describe("the tabs", () => {
     Platform.OS = "android";
     const ctx = await setup();
     await openSheet();
-    const row = StyleSheet.flatten(
+    const row = flatStyle(
       screen.getByTestId("player-sheet-tabs-row").props.style as StyleProp<ViewStyle>,
     );
     expect(row.paddingHorizontal).toBe(0);
-    const tabs = StyleSheet.flatten(
+    const tabs = flatStyle(
       screen.getByTestId("player-sheet-tabs").props.style as StyleProp<ViewStyle>,
     );
     expect(tabs.borderBottomWidth).toBe(border.width);
@@ -456,11 +456,11 @@ describe("the tabs", () => {
   it("keeps the pill with the gutter on iOS", async () => {
     await setup();
     await openSheet();
-    const row = StyleSheet.flatten(
+    const row = flatStyle(
       screen.getByTestId("player-sheet-tabs-row").props.style as StyleProp<ViewStyle>,
     );
     expect(row.paddingHorizontal).toBe(layout.gutter);
-    const pill = StyleSheet.flatten(
+    const pill = flatStyle(
       screen.getByTestId("player-sheet-tabs").props.style as StyleProp<ViewStyle>,
     );
     expect(pill.backgroundColor).toBe(color.overlay.subtle);
@@ -473,9 +473,7 @@ describe("up next", () => {
     await openSheet();
     await screen.findByText("Up u2");
     expect(drawnOrder()).toEqual(["Song t2", "Song t3", "divider", "Up u2", "Up u3"]);
-    expect(
-      StyleSheet.flatten(screen.getByTestId("player-sheet-upnext-divider").props.style),
-    ).toMatchObject({
+    expect(flatStyle(screen.getByTestId("player-sheet-upnext-divider").props.style)).toMatchObject({
       borderBottomWidth: border.hairline,
       borderBottomColor: color.surface.border,
     });

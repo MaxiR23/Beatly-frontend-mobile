@@ -32,8 +32,17 @@ Three runners, chosen by what the code imports, not by preference:
   explicit `@jest/globals` imports in each test file, not from ambient
   types, so `tsconfig.base.json` keeps `"types": []`.
   `@testing-library/react-native` is on 14.x with `test-renderer` 1.2
-  (the React 19.2 line); `render`, `fireEvent`, `act` and
+  (the React 19.3 line); `render`, `fireEvent`, `act` and
   `renderRouter` are async and are awaited.
+  React Native 0.88's global types dropped a few things the tests used,
+  and strict types allow no opt-out, so: flatten styles with the
+  `flatStyle` helper (`apps/mobile/test/helpers/` and
+  `packages/ui/test/helpers/`), not `StyleSheet.flatten`, which is
+  nullable; do not use the `TextEncoder` or `queueMicrotask` globals in
+  tests (see the hand-written replacements in
+  `test/auth/chunkedStorage.test.ts` and `test/setup/queryNotify.ts`);
+  and `test/setup/nodeGlobals.d.ts` declares `process.on` and
+  `process.off`.
 
 - **node --test** for the repo scripts under `scripts/`, with the
   cases in `scripts/test/*.test.mjs` (plain Node, no dependencies). The

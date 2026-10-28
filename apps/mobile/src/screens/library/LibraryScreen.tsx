@@ -87,7 +87,9 @@ export function LibraryScreen() {
         )}
         onEndReached={library.loadMore}
         contentContainerStyle={[clearance, styles.list]}
-        ListFooterComponent={onlyLiked ? <EmptyState icon="library" message={t("empty")} /> : null}
+        ListFooterComponent={
+          onlyLiked ? <EmptyState icon="library" message={t("empty")} /> : undefined
+        }
       />
     );
   }

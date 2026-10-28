@@ -23,7 +23,6 @@ import {
   Button,
   Dimensions,
   Platform,
-  StyleSheet,
   Text,
   type StyleProp,
   type ViewStyle,
@@ -34,6 +33,7 @@ import { color } from "../../src/tokens/color.ts";
 import { motion } from "../../src/tokens/motion.ts";
 import { radius } from "../../src/tokens/radius.ts";
 import { layout, spacing } from "../../src/tokens/spacing.ts";
+import { flatStyle } from "../helpers/flatStyle.ts";
 
 // A single-touch history the PanResponder reads, as DragToClose.test.tsx does.
 const touch = (from: number, to: number, t: number, dt = 16, x = 0) => ({
@@ -82,7 +82,7 @@ const spring = jest.spyOn(Animated, "spring");
 const height = Dimensions.get("window").height;
 
 function flat(testID: string): ViewStyle {
-  return StyleSheet.flatten(screen.getByTestId(testID).props.style as StyleProp<ViewStyle>);
+  return flatStyle(screen.getByTestId(testID).props.style as StyleProp<ViewStyle>);
 }
 
 afterEach(() => {
@@ -174,7 +174,7 @@ describe("Sheet", () => {
     expect(screen.getByTestId("sheet-modal").props.animationType).toBe("slide");
     const styles: ViewStyle[] = [];
     for (let node = screen.getByText("inside").parent; node !== null; node = node.parent) {
-      styles.push(StyleSheet.flatten(node.props.style as StyleProp<ViewStyle>));
+      styles.push(flatStyle(node.props.style as StyleProp<ViewStyle>));
     }
     expect(styles).toContainEqual(
       expect.objectContaining({ borderRadius: radius.lg, padding: spacing.xl }),
@@ -218,7 +218,7 @@ describe("Sheet on Android", () => {
     expect(surface).not.toHaveProperty("borderBottomRightRadius");
     expect(surface).not.toHaveProperty("borderRadius");
     expect(surface).not.toHaveProperty("borderWidth");
-    const frame = StyleSheet.flatten(
+    const frame = flatStyle(
       screen.getByTestId("sheet-surface").parent?.props.style as StyleProp<ViewStyle>,
     );
     expect(frame).not.toHaveProperty("paddingHorizontal");

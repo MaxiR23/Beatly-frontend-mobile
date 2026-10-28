@@ -15,14 +15,7 @@
 
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import {
-  Animated,
-  Platform,
-  StyleSheet,
-  processColor,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
+import { Animated, Platform, processColor, type StyleProp, type ViewStyle } from "react-native";
 import type { ReactElement } from "react";
 
 import { ActionRow } from "../src/components/ActionRow.tsx";
@@ -46,6 +39,7 @@ import { motion } from "../src/tokens/motion.ts";
 import { spacing } from "../src/tokens/spacing.ts";
 import { color } from "../src/tokens/color.ts";
 import { radius } from "../src/tokens/radius.ts";
+import { flatStyle } from "./helpers/flatStyle.ts";
 
 interface ReactNativeView {
   View: unknown;
@@ -309,8 +303,8 @@ const sites: readonly Site[] = [
 const iosSites = sites.filter((s) => s.androidOnly !== true);
 
 function flat(node: PressableNode): ViewStyle {
-  // An unstyled pressable (PlayButton at rest) has no style: flatten gives undefined and assign skips it.
-  return Object.assign({}, StyleSheet.flatten(node.props.style as StyleProp<ViewStyle>));
+  // An unstyled pressable (PlayButton at rest) has no style: flatStyle gives {}.
+  return Object.assign({}, flatStyle(node.props.style as StyleProp<ViewStyle>));
 }
 
 describe("press feedback usage", () => {

@@ -14,7 +14,7 @@ interface PressFeedbackOptions {
 }
 
 export interface PressFeedback {
-  android_ripple: PressableAndroidRippleConfig | null;
+  android_ripple: PressableAndroidRippleConfig | undefined;
   style: (pressed: boolean) => ViewStyle | null;
 }
 
@@ -24,7 +24,7 @@ export function pressFeedback({
   shape = "bounds",
 }: PressFeedbackOptions = {}): PressFeedback {
   if (!isAndroidVariant()) {
-    return { android_ripple: null, style: (pressed) => (pressed ? styles.faded : null) };
+    return { android_ripple: undefined, style: (pressed) => (pressed ? styles.faded : null) };
   }
   const clip = shape === "round" ? styles.clipRound : styles.clip;
   return {

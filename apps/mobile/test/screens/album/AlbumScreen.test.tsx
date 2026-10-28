@@ -25,7 +25,7 @@
 import type { Album, HttpOutcome } from "@beatly/core";
 import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
-import { Animated, StyleSheet, type ViewStyle } from "react-native";
+import { Animated, type ViewStyle } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { color, motion, spacing } from "@beatly/ui";
@@ -33,6 +33,7 @@ import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { AlbumScreen } from "../../../src/screens/album/AlbumScreen.tsx";
 import { albumFixture, makeCore, stateFlag, Wrapper } from "../../helpers/core.tsx";
+import { flatStyle } from "../../helpers/flatStyle.ts";
 
 const mockPush = jest.fn();
 const mockBack = jest.fn();
@@ -135,16 +136,12 @@ describe("AlbumScreen", () => {
   it("leaves exactly one spacing token between the title block and the tracks", async () => {
     await setup();
     const sectionsNode = await screen.findByTestId("album-sections");
-    const sections: ViewStyle = StyleSheet.flatten(sectionsNode.props.style as ViewStyle);
-    const info: ViewStyle = StyleSheet.flatten(
-      screen.getByTestId("album-info").props.style as ViewStyle,
-    );
+    const sections = flatStyle(sectionsNode.props.style as ViewStyle);
+    const info = flatStyle(screen.getByTestId("album-info").props.style as ViewStyle);
     expect(sections.gap).toBe(spacing.xl);
     expect(sections.paddingBottom).toBe(spacing.xl);
     // The row wrapper carries only the cascade's opacity and translation: no layout of its own.
-    const wrapper: ViewStyle = StyleSheet.flatten(
-      screen.getByTestId("detail-cascade-row-1").props.style as ViewStyle,
-    );
+    const wrapper = flatStyle(screen.getByTestId("detail-cascade-row-1").props.style as ViewStyle);
     expect(Object.keys(wrapper).sort()).toEqual(["opacity", "transform"]);
     // The info block adds no padding or margin below itself: a second one would double the gap.
     expect(info.paddingBottom).toBeUndefined();
@@ -175,7 +172,7 @@ describe("AlbumScreen", () => {
         .queryAllByTestId(/^album-(other-versions|recommended)$/)
         .map((node) => node.props.testID as string),
     ).toEqual(["album-other-versions", "album-recommended"]);
-    expect(StyleSheet.flatten(after.props.style as ViewStyle)).toEqual({
+    expect(flatStyle(after.props.style as ViewStyle)).toEqual({
       gap: spacing.xl,
       paddingTop: spacing.xl,
     });
@@ -210,7 +207,7 @@ describe("AlbumScreen", () => {
     expect(screen.queryAllByTestId(/^detail-cascade-row-/)).toHaveLength(0);
     const sections = screen.getByTestId("album-sections");
     expect(within(sections).getByText(en.album.empty)).toBeTruthy();
-    expect(StyleSheet.flatten(sections.props.style as ViewStyle).paddingBottom).toBeUndefined();
+    expect(flatStyle(sections.props.style as ViewStyle).paddingBottom).toBeUndefined();
   });
 
   it("draws the hero cover at the large tier", async () => {
@@ -519,7 +516,7 @@ describe("AlbumScreen action row", () => {
       entity_type: "album",
       entity_id: "MPREb_1",
       metadata: { title: "Test Album", subtitle: "Test Artist", thumbnail_url: "test://img/al1" },
-    };
+    } as const;
     await fireEvent.press(screen.getByRole("button", { name: en.album.play }));
     expect(ctx.registerRecent).toHaveBeenLastCalledWith(body);
     await fireEvent.press(screen.getByRole("button", { name: en.album.shuffle }));

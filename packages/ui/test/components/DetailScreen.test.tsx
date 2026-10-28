@@ -33,7 +33,6 @@ import {
   Dimensions,
   Platform,
   processColor,
-  StyleSheet,
   Text,
   type TextStyle,
   type ViewStyle,
@@ -46,6 +45,7 @@ import { layout, spacing } from "../../src/tokens/spacing.ts";
 import { typography } from "../../src/tokens/typography.ts";
 import { DetailScreen, type DetailBody } from "../../src/components/DetailScreen.tsx";
 import { collapseRanges } from "../../src/components/detailCollapse.ts";
+import { flatStyle } from "../helpers/flatStyle.ts";
 
 const tiers = (n: string) => ({
   small: `test://img/${n}/s`,
@@ -151,9 +151,7 @@ describe("DetailScreen", () => {
     await draw({ kind: "loading", label: "Loading", hero: "image" });
     expect(screen.getByTestId("detail-skeleton")).toBeTruthy();
     expect(screen.getByTestId("detail-skeleton-image")).toBeTruthy();
-    const style = StyleSheet.flatten(
-      screen.getByTestId("detail-skeleton-image").props.style as ViewStyle,
-    );
+    const style = flatStyle(screen.getByTestId("detail-skeleton-image").props.style as ViewStyle);
     expect(style.aspectRatio).toBe(layout.heroImageRatio);
     expect(style.maxHeight).toBe(Dimensions.get("window").height * layout.heroImageMaxHeightShare);
     expect(screen.getByRole("button", { name: "Back" })).toBeTruthy();
@@ -376,7 +374,7 @@ describe("DetailScreen", () => {
     await draw(ready());
     const sizes = screen
       .getAllByText("Album title")
-      .map((node) => StyleSheet.flatten(node.props.style as TextStyle).fontSize);
+      .map((node) => flatStyle(node.props.style as TextStyle).fontSize);
     expect(sizes).toContain(typography.title.fontSize);
     expect(sizes).not.toContain(typography.display.fontSize);
   });
@@ -393,9 +391,7 @@ describe("DetailScreen", () => {
 
     it("draws the image hero at the large tier, stretched to the full width at the hero image ratio", async () => {
       await draw(imageHero());
-      const style = StyleSheet.flatten(
-        screen.getByTestId("detail-hero-image").props.style as ViewStyle,
-      );
+      const style = flatStyle(screen.getByTestId("detail-hero-image").props.style as ViewStyle);
       expect(style.alignSelf).toBe("stretch");
       expect(style.aspectRatio).toBe(layout.heroImageRatio);
       expect(style.maxHeight).toBe(
@@ -410,7 +406,7 @@ describe("DetailScreen", () => {
     it("draws the title over the image in the display role", async () => {
       await draw(imageHero());
       const title = within(screen.getByTestId("detail-hero-image")).getByText("Artist name");
-      const size = StyleSheet.flatten(title.props.style as TextStyle).fontSize;
+      const size = flatStyle(title.props.style as TextStyle).fontSize;
       expect(size).toBe(typography.display.fontSize);
       expect(size).not.toBe(typography.title.fontSize);
     });
@@ -423,9 +419,7 @@ describe("DetailScreen", () => {
     it("draws the image hero on the placeholder surface when there is no image", async () => {
       await draw(imageHero([]));
       expect(screen.queryByTestId("detail-hero-photo")).toBeNull();
-      const style = StyleSheet.flatten(
-        screen.getByTestId("detail-cascade-hero").props.style as ViewStyle,
-      );
+      const style = flatStyle(screen.getByTestId("detail-cascade-hero").props.style as ViewStyle);
       expect(style.backgroundColor).toBe(color.surface.card);
     });
 
@@ -501,12 +495,12 @@ describe("DetailScreen", () => {
       collapseRanges({ hero, heroHeight: h, titleHeight: t, topInset: inset }) ?? fail();
     const mid = (r: readonly [number, number]) => (r[0] + r[1]) / 2;
     const opacityOf = (id: string) =>
-      StyleSheet.flatten(screen.getByTestId(id, hidden).props.style as ViewStyle).opacity;
+      flatStyle(screen.getByTestId(id, hidden).props.style as ViewStyle).opacity;
 
     it("draws the top bar hidden and untouchable at the top, the floating buttons active", async () => {
       await setup(ready());
       const bar = screen.getByTestId("detail-top-bar", hidden);
-      expect(StyleSheet.flatten(bar.props.style as ViewStyle).opacity).toBe(0);
+      expect(flatStyle(bar.props.style as ViewStyle).opacity).toBe(0);
       expect(bar.props.pointerEvents).toBe("none");
       expect(bar.props.accessibilityElementsHidden).toBe(true);
       expect(screen.getByTestId("detail-buttons", hidden).props.pointerEvents).toBe("box-none");
@@ -545,7 +539,7 @@ describe("DetailScreen", () => {
       const { scrollTo } = await setup(ready());
       const r = ranges("cover");
       const cover = () =>
-        StyleSheet.flatten(screen.getByTestId("detail-hero-cover").props.style as ViewStyle);
+        flatStyle(screen.getByTestId("detail-hero-cover").props.style as ViewStyle);
       expect(cover().opacity).toBe(1);
       expect(cover().transform).toEqual([{ scale: 1 }]);
       await scrollTo(r.cover[1] / 2);
@@ -646,21 +640,19 @@ describe("DetailScreen", () => {
     it("draws the bar from the top edge to topInset plus controlHeight", async () => {
       await setup(ready(), { topInset: 20 }, { hero: HERO, title: TITLE });
       const bar = screen.getByTestId("detail-top-bar", hidden);
-      const style = StyleSheet.flatten(bar.props.style as ViewStyle);
+      const style = flatStyle(bar.props.style as ViewStyle);
       expect(style.height).toBe(20 + layout.controlHeight);
       expect(style.paddingTop).toBe(20);
       expect(style.top).toBe(0);
       const title = within(bar).getByText("Album title", hidden);
       expect(title.props.numberOfLines).toBe(1);
-      expect(StyleSheet.flatten(title.props.style as TextStyle).fontSize).toBe(
-        typography.subtitle.fontSize,
-      );
+      expect(flatStyle(title.props.style as TextStyle).fontSize).toBe(typography.subtitle.fontSize);
     });
 
     it("fills the bar with the dominant color, or the base surface without one", async () => {
       await draw(ready("#336699"));
       expect(
-        StyleSheet.flatten(screen.getByTestId("detail-top-bar", hidden).props.style as ViewStyle)
+        flatStyle(screen.getByTestId("detail-top-bar", hidden).props.style as ViewStyle)
           .backgroundColor,
       ).toBe("#336699");
     });
@@ -668,7 +660,7 @@ describe("DetailScreen", () => {
     it("fills the bar with the base surface without a dominant color", async () => {
       await draw(ready());
       expect(
-        StyleSheet.flatten(screen.getByTestId("detail-top-bar", hidden).props.style as ViewStyle)
+        flatStyle(screen.getByTestId("detail-top-bar", hidden).props.style as ViewStyle)
           .backgroundColor,
       ).toBe(color.surface.base);
     });
@@ -683,9 +675,7 @@ describe("DetailScreen", () => {
       const { scrollTo } = await setup(ready(), { reduceMotion: true });
       const r = ranges("cover");
       await scrollTo(r.cover[1]);
-      const style = StyleSheet.flatten(
-        screen.getByTestId("detail-hero-cover").props.style as ViewStyle,
-      );
+      const style = flatStyle(screen.getByTestId("detail-hero-cover").props.style as ViewStyle);
       expect(style.transform).toBeUndefined();
       expect(style.opacity).toBe(0);
       await scrollTo(mid(r.buttons));
@@ -700,7 +690,7 @@ describe("DetailScreen", () => {
       await scrollEvent(1000);
       const buttons = screen.getByTestId("detail-buttons", hidden);
       expect(buttons.props.pointerEvents).toBe("box-none");
-      expect(StyleSheet.flatten(buttons.props.style as ViewStyle).opacity).toBeUndefined();
+      expect(flatStyle(buttons.props.style as ViewStyle).opacity).toBeUndefined();
       expect(screen.getByTestId("detail-top-bar", hidden).props.pointerEvents).toBe("none");
       expect(opacityOf("detail-top-bar")).toBe(0);
     });
@@ -716,7 +706,7 @@ describe("DetailScreen", () => {
         expect(screen.queryByTestId("detail-top-bar", hidden)).toBeNull();
         const buttons = screen.getByTestId("detail-buttons", hidden);
         expect(buttons.props.pointerEvents).toBe("box-none");
-        expect(StyleSheet.flatten(buttons.props.style as ViewStyle).opacity).toBeUndefined();
+        expect(flatStyle(buttons.props.style as ViewStyle).opacity).toBeUndefined();
         await view.unmount();
       }
     });
@@ -741,8 +731,8 @@ describe("DetailScreen", () => {
       );
       await view.rerender(element(ready(), { onBack }));
       expect(
-        StyleSheet.flatten(screen.getByTestId("detail-hero-cover").props.style as ViewStyle | null),
-      ).toBeUndefined();
+        flatStyle(screen.getByTestId("detail-hero-cover").props.style as ViewStyle | null),
+      ).toEqual({});
     });
 
     it("draws the bar's own back and no gradient on Android", async () => {
@@ -753,7 +743,7 @@ describe("DetailScreen", () => {
       expect(screen.queryByTestId("detail-top-bar-shade", hidden)).toBeNull();
       expect(screen.queryByTestId("detail-top-bar-back-slot", hidden)).toBeNull();
       expect(screen.queryByTestId("detail-floating-more", hidden)).toBeNull();
-      expect(StyleSheet.flatten(bar.props.style as ViewStyle).backgroundColor).toBe("#336699");
+      expect(flatStyle(bar.props.style as ViewStyle).backgroundColor).toBe("#336699");
     });
 
     // Each direct child of the bar's row as its accessibility label (an IconButton), its testID or "spacer".
@@ -773,11 +763,11 @@ describe("DetailScreen", () => {
       await setup(ready(), { more: { label: "More", onPress: () => undefined } });
       const bar = screen.getByTestId("detail-top-bar", hidden);
       const title = within(bar).getByText("Album title", hidden);
-      expect(StyleSheet.flatten(title.props.style as TextStyle).textAlign).toBe("left");
+      expect(flatStyle(title.props.style as TextStyle).textAlign).toBe("left");
       expect(title.props.numberOfLines).toBe(1);
       expect(title.props.ellipsizeMode).toBeUndefined();
       const container = screen.getByTestId("detail-top-bar-title", hidden);
-      expect(StyleSheet.flatten(container.props.style as ViewStyle).flex).toBe(1);
+      expect(flatStyle(container.props.style as ViewStyle).flex).toBe(1);
       expect(rowKinds()).toEqual(["Back", "detail-top-bar-title", "More"]);
     });
 
@@ -819,7 +809,7 @@ describe("DetailScreen", () => {
       const argb = (c: string) => Number(processColor(c)) | 0;
       const styleOf = (id: string): ViewStyle => {
         const style = screen.getByTestId(id, hidden).props.style as ViewStyle | undefined;
-        return style ? StyleSheet.flatten(style) : {};
+        return style ? flatStyle(style) : {};
       };
       const gradientOf = (id: string) => {
         const [wash] = find(screen.toJSON(), (node) => node.props.testID === id);
@@ -902,27 +892,27 @@ describe("DetailScreen", () => {
         expect(styleOf("detail-buttons").left).toBe(layout.gutter);
         const title = within(bar).getByText("Album title", hidden);
         expect(title.props.numberOfLines).toBe(1);
-        const titleStyle = StyleSheet.flatten(title.props.style as TextStyle);
+        const titleStyle = flatStyle(title.props.style as TextStyle);
         expect(titleStyle.fontSize).toBe(typography.subtitle.fontSize);
         expect(titleStyle.textAlign).toBe("center");
         let parent = title.parent;
         while (
           parent &&
-          (parent.props.style ? StyleSheet.flatten(parent.props.style as ViewStyle) : {}).flex !== 1
+          (parent.props.style ? flatStyle(parent.props.style as ViewStyle) : {}).flex !== 1
         ) {
           parent = parent.parent;
         }
         expect(parent).not.toBeNull();
         const row = screen.getByTestId("detail-top-bar-back-slot", hidden).parent;
         const last = find(row?.children, () => true).at(-1);
-        expect(StyleSheet.flatten(last?.props.style as ViewStyle).width).toBe(layout.controlHeight);
+        expect(flatStyle(last?.props.style as ViewStyle).width).toBe(layout.controlHeight);
       });
 
       it("keeps the bar's title centered on iOS with a more", async () => {
         await setup(ready(), { more: { ...moreOf, onPress: () => undefined } });
         const bar = screen.getByTestId("detail-top-bar", hidden);
         const title = within(bar).getByText("Album title", hidden);
-        expect(StyleSheet.flatten(title.props.style as TextStyle).textAlign).toBe("center");
+        expect(flatStyle(title.props.style as TextStyle).textAlign).toBe("center");
         expect(rowKinds()).toEqual(["detail-top-bar-back-slot", "detail-top-bar-title", "More"]);
       });
 
@@ -934,7 +924,7 @@ describe("DetailScreen", () => {
         expect(buttons.top).toBe(47 + spacing.xs);
         expect(bar.height).toBe(backBottom + spacing.xs + spacing.sm);
         const slot = screen.getByTestId("detail-top-bar-back-slot", hidden);
-        const row = StyleSheet.flatten(slot.parent?.props.style as ViewStyle);
+        const row = flatStyle(slot.parent?.props.style as ViewStyle);
         expect(row.height).toBe(layout.controlHeight);
         expect(row.alignItems).toBe("center");
         // The row starts at the bar's padding, so its center is the back's center.
@@ -1186,7 +1176,7 @@ describe("DetailScreen", () => {
           }
           let node = screen.getByTestId("detail-top-bar-blur-view", hidden).parent;
           while (node && node.props.testID !== "detail") {
-            const style = node.props.style ? StyleSheet.flatten(node.props.style as ViewStyle) : {};
+            const style = node.props.style ? flatStyle(node.props.style as ViewStyle) : {};
             if (node.props.testID !== "detail-top-bar-blur-fade") {
               expect(style.opacity === undefined || style.opacity === 1).toBe(true);
             }
@@ -1265,7 +1255,7 @@ describe("DetailScreen", () => {
       })),
       afterRows: <Text>after content</Text>,
     });
-    const at = (id: string) => StyleSheet.flatten(screen.getByTestId(id).props.style as ViewStyle);
+    const at = (id: string) => flatStyle(screen.getByTestId(id).props.style as ViewStyle);
     const translateOf = (id: string) => {
       const transform = at(id).transform as readonly { translateY: number }[];
       return transform[0]?.translateY;
@@ -1436,7 +1426,7 @@ describe("DetailScreen", () => {
             const id = node.props.testID as string | undefined;
             expect(id?.startsWith("detail-cascade") ?? false).toBe(false);
             const raw = node.props.style as ViewStyle | undefined;
-            expect(raw ? StyleSheet.flatten(raw).opacity : undefined).not.toBe(0);
+            expect(raw ? flatStyle(raw).opacity : undefined).not.toBe(0);
             node = node.parent;
           }
         }

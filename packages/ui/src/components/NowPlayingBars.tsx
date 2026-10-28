@@ -32,13 +32,13 @@ export function NowPlayingBars({ state, reduceMotion, testID }: NowPlayingBarsPr
           Animated.timing(scale, {
             toValue: 1,
             duration,
-            easing: Easing.linear,
+            easing: (t) => Easing.linear(t),
             useNativeDriver: true,
           }),
           Animated.timing(scale, {
             toValue: motion.nowPlaying.minScale,
             duration,
-            easing: Easing.linear,
+            easing: (t) => Easing.linear(t),
             useNativeDriver: true,
           }),
         ]),

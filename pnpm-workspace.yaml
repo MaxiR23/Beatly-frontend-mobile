@@ -8,11 +8,26 @@ allowBuilds:
   # through its optional @unrs/resolver-binding-* dependencies, so no build
   # script has to run.
   unrs-resolver: false
+  # Pulled by jest-haste-map 30; it falls back to a crawler without the
+  # native build, so no build script has to run.
+  "@parcel/watcher": false
 
-# The conflict is inside Expo SDK 57: react-native-reanimated 4.7 requires
-# react-native-worklets 0.13, while expo-modules-core 57 declares it accepts
-# at most 0.10. Remove this rule when expo-modules-core accepts 0.13 or on
-# the next SDK upgrade.
-peerDependencyRules:
-  allowedVersions:
-    "expo-modules-core>react-native-worklets": "0.13"
+# Exact SDK 58 versions younger than pnpm's minimum release age when SDK 58
+# was installed. Remove each entry once its release passes the age window, or
+# on the next SDK upgrade.
+minimumReleaseAgeExclude:
+  - "@expo/cli@58.1.16"
+  - "@expo/fingerprint@0.21.7"
+  - "@expo/metro-config@58.0.18"
+  - "@expo/router-server@58.0.18"
+  - babel-preset-expo@58.0.21
+  - expo-file-system@58.0.12
+  - expo-modules-cli@0.3.3
+  - expo-modules-core@58.0.27
+  - expo-modules-jsi@58.0.20
+  - expo@58.0.20
+  - "@expo/ui@58.0.24"
+  - expo-router@58.0.27
+
+patchedDependencies:
+  "@react-native-masked-view/masked-view@0.3.2": patches/@react-native-masked-view__masked-view@0.3.2.patch

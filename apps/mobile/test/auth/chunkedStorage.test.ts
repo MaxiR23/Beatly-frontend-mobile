@@ -16,6 +16,16 @@ import { describe, expect, it } from "@jest/globals";
 
 import { createChunkedStorage, type SecureKeyValueStore } from "../../src/auth/chunkedStorage.ts";
 
+// The UTF-8 size of a string; TextEncoder is not in the global types of React Native 0.88.
+function utf8Length(text: string): number {
+  let bytes = 0;
+  for (const character of text) {
+    const point = character.codePointAt(0) ?? 0;
+    bytes += point < 0x80 ? 1 : point < 0x800 ? 2 : point < 0x10000 ? 3 : 4;
+  }
+  return bytes;
+}
+
 function mapStore() {
   const map = new Map<string, string>();
   const store: SecureKeyValueStore = {
@@ -45,7 +55,7 @@ describe("createChunkedStorage", () => {
     await storage.setItem("k", value);
     expect(await storage.getItem("k")).toBe(value);
     for (const stored of map.values()) {
-      expect(new TextEncoder().encode(stored).length).toBeLessThanOrEqual(2048);
+      expect(utf8Length(stored)).toBeLessThanOrEqual(2048);
     }
     expect(map.get("k.count")).toBe("6");
   });

@@ -2,7 +2,7 @@
 import type { PlayableTrack } from "@beatly/core";
 import { color, layout, spacing } from "@beatly/ui";
 import { EmptyState, ErrorState, LoadingState, MediaRow, border } from "@beatly/ui/native";
-import { useEffect } from "react";
+import { useEffect, type ReactElement } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
 
 import { useT } from "../../adapters/i18n.ts";
@@ -76,7 +76,7 @@ export function UpNextTab({ seed, onAtTopChange }: UpNextTabProps) {
     }
   }
 
-  let footer = null;
+  let footer: ReactElement | undefined;
   if (autoplay && upNext.isPending) {
     footer = <LoadingState label={tc("loading")} />;
   } else if (autoplay && upNext.isError) {

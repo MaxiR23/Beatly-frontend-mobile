@@ -2,7 +2,7 @@
 import { color } from "@beatly/ui";
 import { FloatingTabBar, isGlassAvailable } from "@beatly/ui/native";
 import { Tabs, type BottomTabBarProps } from "expo-router/js-tabs";
-import { NativeTabs } from "expo-router/unstable-native-tabs";
+import { NativeTabs } from "expo-router/native-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../src/adapters/i18n.ts";
@@ -31,7 +31,7 @@ const tabs = [
   },
 ] as const;
 
-function TabBar({ state, navigation }: BottomTabBarProps) {
+function TabBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
   const t = useT("tabs");
   const insets = useSafeAreaInsets();
   const hasTrack = usePlayback((state) => state.current !== null);
@@ -47,12 +47,12 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
         label: t(tab.label),
         selected,
         onPress: () => {
-          const event = navigation.emit({
+          const event = emitter.emit({
             type: "tabPress",
             target: route.key,
             canPreventDefault: true,
           });
-          if (!selected && !event.defaultPrevented) navigation.navigate(route.name, route.params);
+          if (!selected && !event.defaultPrevented) navigateToTab(route.key);
         },
       },
     ];

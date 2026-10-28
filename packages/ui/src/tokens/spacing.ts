@@ -1,8 +1,10 @@
-// INFO: spacing tokens, a multiples-of-four scale, plus the layout
+// INFO: spacing tokens, a multiples-of-four scale (and an explicit zero), plus the layout
 // constants (gutter, gap, hitSlop, control height, text area height, and the carousel card,
 // avatar, creator mark, profile avatar, tab item, chip (and the Android chip), the Android tab indicator, the Android switch's track and thumb sizes, genre bar, row cover (and the Android track menu header cover), the Android action row height, detail hero cover,
 // track-number column, now playing bar width, large and medium play button, the detail play pill's width, the side buttons' stacking value, seek bar and sheet handle sizes (iOS and Android) and the Android modal sheet handle zone and width, and the skeleton bar widths and row count).
 export const spacing = {
+  // An explicit zero gap where a native container would otherwise apply a system default.
+  none: 0,
   xxs: 2,
   xs: 4,
   sm: 8,

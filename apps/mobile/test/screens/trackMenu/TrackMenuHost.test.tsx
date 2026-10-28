@@ -22,10 +22,11 @@ import { color, layout, motion, spacing } from "@beatly/ui";
 import { border } from "@beatly/ui/native";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, screen, within } from "@testing-library/react-native";
-import { Platform, StyleSheet } from "react-native";
+import { Platform } from "react-native";
 
 import { resources } from "../../../src/i18n/resources.ts";
 import { fullTrack, setupMenu } from "./trackMenuHelpers.tsx";
+import { flatStyle } from "../../helpers/flatStyle.ts";
 
 const en = resources.en;
 
@@ -52,7 +53,7 @@ describe("the track menu", () => {
     await openMenu();
     expect(screen.queryByTestId("track-menu-sheet-divider")).toBeNull();
     expect(screen.queryByTestId("track-menu-sheet-header")).toBeNull();
-    expect(StyleSheet.flatten(screen.getByTestId("cover-single").props.style)).toMatchObject({
+    expect(flatStyle(screen.getByTestId("cover-single").props.style)).toMatchObject({
       width: layout.rowCover,
       height: layout.rowCover,
     });
@@ -62,18 +63,18 @@ describe("the track menu", () => {
     Platform.OS = "android";
     await setupMenu();
     await openMenu();
-    expect(StyleSheet.flatten(screen.getByTestId("track-menu-sheet-header").props.style)).toEqual({
+    expect(flatStyle(screen.getByTestId("track-menu-sheet-header").props.style)).toEqual({
       marginHorizontal: -spacing.xl,
     });
     expect(
       within(screen.getByTestId("track-menu-sheet-header")).getByTestId("track-menu-sheet-divider"),
     ).toBeTruthy();
-    expect(StyleSheet.flatten(screen.getByTestId("track-menu-sheet-divider").props.style)).toEqual({
+    expect(flatStyle(screen.getByTestId("track-menu-sheet-divider").props.style)).toEqual({
       borderBottomColor: color.surface.border,
       borderBottomWidth: border.hairline,
       marginBottom: spacing.xs,
     });
-    expect(StyleSheet.flatten(screen.getByTestId("cover-single").props.style)).toMatchObject({
+    expect(flatStyle(screen.getByTestId("cover-single").props.style)).toMatchObject({
       width: layout.rowCoverMenu,
       height: layout.rowCoverMenu,
     });
@@ -154,8 +155,8 @@ describe("the track menu", () => {
     const wrapper = within(screen.getByTestId("track-menu-notice"));
     const message = wrapper.getByText(en.common.error.generic);
     // The snackbar draws its message in the inverse tone; the inline row uses the primary one.
-    expect(StyleSheet.flatten(message.props.style)).toMatchObject({ color: color.text.inverse });
-    expect(StyleSheet.flatten(screen.getByTestId("track-menu-notice").props.style)).toMatchObject({
+    expect(flatStyle(message.props.style)).toMatchObject({ color: color.text.inverse });
+    expect(flatStyle(screen.getByTestId("track-menu-notice").props.style)).toMatchObject({
       position: "absolute",
       bottom: 0 + spacing.md,
     });

@@ -14,13 +14,14 @@
 
 import { describe, expect, it } from "@jest/globals";
 import { render, screen } from "@testing-library/react-native";
+import type { StyleProp, ViewStyle } from "react-native";
 
 import { Cover } from "../../src/components/Cover.tsx";
 import { color } from "../../src/tokens/color.ts";
 import { radius } from "../../src/tokens/radius.ts";
 import { shadow } from "../../src/tokens/shadow.ts";
 import { layout } from "../../src/tokens/spacing.ts";
-import { StyleSheet } from "react-native";
+import { flatStyle } from "../helpers/flatStyle.ts";
 
 const tiers = (n: string) => ({
   small: `test://img/${n}/s`,
@@ -54,9 +55,11 @@ function nodesWithProp(tree: unknown, key: string): JsonNode[] {
 describe("Cover", () => {
   it("puts the shadow on an unclipped outer view, not on the clipping one", async () => {
     await render(<Cover images={[]} shape="square" corner="md" elevated />);
-    const outer: unknown = StyleSheet.flatten(screen.getByTestId("cover-shadow").props.style);
-    const inner: unknown = StyleSheet.flatten(
-      screen.getByTestId("cover-placeholder").parent?.props.style,
+    const outer: unknown = flatStyle(
+      screen.getByTestId("cover-shadow").props.style as StyleProp<ViewStyle>,
+    );
+    const inner: unknown = flatStyle(
+      screen.getByTestId("cover-placeholder").parent?.props.style as StyleProp<ViewStyle>,
     );
     expect(outer).toEqual(expect.objectContaining(shadow.cover));
     expect(outer).not.toHaveProperty("overflow");

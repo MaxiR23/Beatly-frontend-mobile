@@ -37,7 +37,7 @@ describe("pressFeedback on iOS", () => {
   it.each(options)("has no ripple and fades while pressed ($on, $shape)", (option) => {
     Platform.OS = "ios";
     const press = pressFeedback(option);
-    expect(press.android_ripple).toBeNull();
+    expect(press.android_ripple).toBeUndefined();
     expect(press.style(true)).toEqual({ opacity: motion.pressOpacity });
     expect(press.style(false)).toBeNull();
   });
@@ -88,7 +88,7 @@ describe("pressFeedback on Android", () => {
 
   it("follows a switch of the platform between calls", () => {
     Platform.OS = "ios";
-    expect(pressFeedback().android_ripple).toBeNull();
+    expect(pressFeedback().android_ripple).toBeUndefined();
     Platform.OS = "android";
     expect(pressFeedback().android_ripple).not.toBeNull();
   });

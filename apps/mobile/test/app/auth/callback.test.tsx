@@ -23,7 +23,11 @@ const mockCore = installCore();
 
 describe("the auth callback route", () => {
   it("draws the callback screen when signed out", async () => {
-    mockCore.set("signed_out");
+    mockCore.set(
+      "signed_out",
+      {},
+      { confirmEmail: jest.fn<AuthPort["confirmEmail"]>(() => new Promise(() => undefined)) },
+    );
     await renderRouter("app", { initialUrl: "/auth/callback?token_hash=abc&type=signup" });
     expect(await screen.findByTestId("authCallback")).toBeTruthy();
   });

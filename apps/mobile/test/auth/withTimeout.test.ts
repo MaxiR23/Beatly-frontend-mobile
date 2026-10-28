@@ -52,7 +52,11 @@ describe("withTimeout", () => {
     expect(await pending).toBe("late");
     reject(new Error("too late"));
     jest.useRealTimers();
-    await new Promise((resolve) => setImmediate(resolve));
+    await new Promise((resolve) =>
+      setImmediate(() => {
+        resolve(undefined);
+      }),
+    );
     process.off("unhandledRejection", unhandled);
     expect(unhandled).not.toHaveBeenCalled();
   });

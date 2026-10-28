@@ -24,7 +24,7 @@
 import type { Artist, HttpOutcome } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
-import { StyleSheet, type ViewStyle } from "react-native";
+import { type ViewStyle } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { color, spacing } from "@beatly/ui";
@@ -32,6 +32,7 @@ import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { ArtistScreen } from "../../../src/screens/artist/ArtistScreen.tsx";
 import { artistFixture, makeCore, stateFlag, Wrapper } from "../../helpers/core.tsx";
+import { flatStyle } from "../../helpers/flatStyle.ts";
 
 const mockPush = jest.fn();
 const mockBack = jest.fn();
@@ -246,9 +247,7 @@ describe("ArtistScreen", () => {
     }
     if (hiddenId === "artist-popular") {
       expect(screen.queryAllByTestId(/^detail-cascade-row-/)).toHaveLength(0);
-      const style = StyleSheet.flatten(
-        screen.getByTestId("artist-sections").props.style as ViewStyle,
-      );
+      const style = flatStyle(screen.getByTestId("artist-sections").props.style as ViewStyle);
       expect(style.paddingTop).toBeUndefined();
     }
   });
@@ -266,7 +265,7 @@ describe("ArtistScreen", () => {
     expect(within(popular).queryByText("Popular Song")).toBeNull();
     expect(within(popular).getByText(en.artist.popular)).toBeTruthy();
     for (const song of screen.getAllByTestId("artist-song")) {
-      expect(StyleSheet.flatten(song.props.style as ViewStyle)).toEqual({
+      expect(flatStyle(song.props.style as ViewStyle)).toEqual({
         paddingTop: spacing.md,
       });
     }
@@ -281,7 +280,7 @@ describe("ArtistScreen", () => {
         .queryAllByTestId(/^artist-(albums|singles|similar)$/)
         .map((node) => node.props.testID as string),
     ).toEqual(["artist-albums", "artist-singles", "artist-similar"]);
-    expect(StyleSheet.flatten(sections.props.style as ViewStyle)).toEqual({
+    expect(flatStyle(sections.props.style as ViewStyle)).toEqual({
       gap: spacing.xl,
       paddingTop: spacing.xl,
     });

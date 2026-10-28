@@ -15,7 +15,7 @@
 
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import { Animated, Platform, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import { Animated, Platform, type ViewStyle } from "react-native";
 
 import { SwitchRow } from "../../src/components/SwitchRow.tsx";
 import { border } from "../../src/tokens/border.ts";
@@ -23,6 +23,7 @@ import { color } from "../../src/tokens/color.ts";
 import { motion } from "../../src/tokens/motion.ts";
 import { radius } from "../../src/tokens/radius.ts";
 import { layout } from "../../src/tokens/spacing.ts";
+import { flatStyle } from "../helpers/flatStyle.ts";
 
 const timing = jest.spyOn(Animated, "timing");
 
@@ -32,7 +33,7 @@ afterEach(() => {
 });
 
 function flat(node: { props: { style?: unknown } }): ViewStyle {
-  return StyleSheet.flatten(node.props.style as StyleProp<ViewStyle>);
+  return flatStyle(node.props.style);
 }
 
 const travel = layout.switchTrackWidthAndroid - layout.switchTrackHeightAndroid;

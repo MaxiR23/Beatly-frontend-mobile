@@ -13,6 +13,7 @@
 // - onMove with the final index, not for a move to its own place or a multi-row move
 // - onRemove with the deleted row's index
 // - each row's label, position value and move hint, and its title and subtitle in order
+// - each row's stack drawn with no gap (spacing.none)
 //
 // Run with: pnpm --filter @beatly/ui test -- NativeEditList
 //
@@ -28,6 +29,7 @@ import {
   isNativeEditListAvailable,
   swiftUIMoveTarget,
 } from "../../src/components/NativeEditList.tsx";
+import { spacing } from "../../src/tokens/spacing.ts";
 
 interface ReactNativeParts {
   Text: unknown;
@@ -66,10 +68,16 @@ jest.mock("@expo/ui/swift-ui", () => {
     VStack: ({
       children,
       modifiers,
+      spacing,
     }: {
       children?: React.ReactNode;
       modifiers?: Record<string, unknown>[];
-    }) => <View {...merged(modifiers)}>{children}</View>,
+      spacing?: number;
+    }) => (
+      <View testID="edit-list-row" spacing={spacing} {...merged(modifiers)}>
+        {children}
+      </View>
+    ),
     Spacer: ({ modifiers }: { modifiers?: Record<string, unknown>[] }) => (
       <View testID="edit-list-spacer" {...merged(modifiers)} />
     ),
@@ -220,6 +228,13 @@ describe("NativeEditList", () => {
     expect(row.props.accessibilityValue).toBe("1 of 3");
     expect(row.props.accessibilityHint).toBe("Drag to reorder");
     expect(screen.getByLabelText("Two")).toBeTruthy();
+  });
+
+  it("draws each row's stack with no gap", async () => {
+    await setup();
+    const rows = screen.getAllByTestId("edit-list-row");
+    expect(rows).toHaveLength(3);
+    for (const row of rows) expect(row.props.spacing).toBe(spacing.none);
   });
 
   it("draws each row's title and subtitle in order", async () => {
