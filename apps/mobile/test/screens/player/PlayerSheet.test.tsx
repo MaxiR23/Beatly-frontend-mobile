@@ -16,6 +16,7 @@
 // - a more button on each up next and related row
 // - the current track's row marked with the now playing bars: a later repeat in up next, and the track among the related songs
 // - the handle's nudge: the first opening on a track bouncing it, a second opening on it and a track change while open not, an opening on another track bouncing it, none under reduce motion
+// - the tabs: primary tabs across the full width on Android switching the panel, the pill with the gutter on iOS
 // - es
 //
 // Run with: pnpm --filter @beatly/mobile test -- PlayerSheet
@@ -24,7 +25,7 @@
 
 import { AUTOPLAY_KEY } from "@beatly/core";
 import type { HttpOutcome, PlayableTrack, TrackLyrics, TrackRelated, UpNext } from "@beatly/core";
-import { color, motion } from "@beatly/ui";
+import { color, layout, motion } from "@beatly/ui";
 import { border } from "@beatly/ui/native";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
@@ -34,7 +35,10 @@ import {
   BackHandler,
   Dimensions,
   FlatList,
+  Platform,
   StyleSheet,
+  type StyleProp,
+  type ViewStyle,
 } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -83,6 +87,7 @@ const metrics = {
 };
 
 afterEach(async () => {
+  Platform.OS = "ios";
   spring.mockClear();
   timing.mockClear();
   scrollToIndex.mockClear();
@@ -427,6 +432,40 @@ function drawnOrder(): string[] {
 
 const autoplayOff = () => memoryStorage({ [AUTOPLAY_KEY]: "off" });
 const flushAll = () => act(() => Promise.resolve());
+
+describe("the tabs", () => {
+  it("draws the tabs across the full width and switches the panel on Android", async () => {
+    Platform.OS = "android";
+    const ctx = await setup();
+    await openSheet();
+    const row = StyleSheet.flatten(
+      screen.getByTestId("player-sheet-tabs-row").props.style as StyleProp<ViewStyle>,
+    );
+    expect(row.paddingHorizontal).toBe(0);
+    const tabs = StyleSheet.flatten(
+      screen.getByTestId("player-sheet-tabs").props.style as StyleProp<ViewStyle>,
+    );
+    expect(tabs.borderBottomWidth).toBe(border.width);
+    await selectTab(en.player.sheet.tabs.lyrics);
+    expect(ctx.getLyrics).toHaveBeenCalledWith("t1");
+    expect(
+      screen.getByRole("tab", { name: en.player.sheet.tabs.lyrics }).props.accessibilityState,
+    ).toEqual({ selected: true });
+  });
+
+  it("keeps the pill with the gutter on iOS", async () => {
+    await setup();
+    await openSheet();
+    const row = StyleSheet.flatten(
+      screen.getByTestId("player-sheet-tabs-row").props.style as StyleProp<ViewStyle>,
+    );
+    expect(row.paddingHorizontal).toBe(layout.gutter);
+    const pill = StyleSheet.flatten(
+      screen.getByTestId("player-sheet-tabs").props.style as StyleProp<ViewStyle>,
+    );
+    expect(pill.backgroundColor).toBe(color.overlay.subtle);
+  });
+});
 
 describe("up next", () => {
   it("draws the rest of the queue, a divider, then the suggestions with autoplay on", async () => {
