@@ -56,6 +56,7 @@ export function CreatePlaylistSheet({ visible, onClose }: CreatePlaylistSheetPro
       <View style={styles.form}>
         <Text variant="subtitle">{t("create.title")}</Text>
         <Input
+          reduceMotion={reduceMotion}
           label={t("create.name")}
           value={name}
           onChangeText={setName}
@@ -65,6 +66,7 @@ export function CreatePlaylistSheet({ visible, onClose }: CreatePlaylistSheetPro
             : {})}
         />
         <Input
+          reduceMotion={reduceMotion}
           label={t("create.description")}
           value={description}
           onChangeText={setDescription}

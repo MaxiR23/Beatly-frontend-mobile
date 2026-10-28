@@ -9,6 +9,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useT } from "../../adapters/i18n.ts";
 import { useSignUp } from "../../queries/useAuth.ts";
 import { AuthLayout } from "../auth/AuthLayout.tsx";
+import { useReduceMotion } from "../player/useReduceMotion.ts";
 import { PasswordRules } from "./PasswordRules.tsx";
 import { canSubmitSignUp, NAME_MAX_LENGTH } from "./signUpRules.ts";
 
@@ -16,6 +17,7 @@ export function SignUpScreen() {
   const t = useT("signUp");
   const tc = useT("common");
   const router = useRouter();
+  const reduceMotion = useReduceMotion();
   const signUp = useSignUp();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -75,6 +77,7 @@ export function SignUpScreen() {
       onSwitch={goToLogin}
     >
       <Input
+        reduceMotion={reduceMotion}
         label={t("name")}
         value={name}
         onChangeText={setName}
@@ -85,6 +88,7 @@ export function SignUpScreen() {
           : {})}
       />
       <Input
+        reduceMotion={reduceMotion}
         label={t("email")}
         value={email}
         onChangeText={setEmail}
@@ -93,6 +97,7 @@ export function SignUpScreen() {
         autoComplete="email"
       />
       <Input
+        reduceMotion={reduceMotion}
         label={t("password")}
         value={password}
         onChangeText={setPassword}

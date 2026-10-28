@@ -76,6 +76,7 @@ export function EditProfileSheet({ profile, onClose }: EditProfileSheetProps) {
       <View style={styles.form}>
         <Text variant="subtitle">{t("edit.title")}</Text>
         <Input
+          reduceMotion={reduceMotion}
           label={t("edit.name")}
           value={name}
           onChangeText={setName}
@@ -87,6 +88,7 @@ export function EditProfileSheet({ profile, onClose }: EditProfileSheetProps) {
             : {})}
         />
         <Input
+          reduceMotion={reduceMotion}
           label={t("edit.username")}
           value={username}
           onChangeText={setUsername}

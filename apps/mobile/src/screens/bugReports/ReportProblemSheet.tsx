@@ -100,6 +100,7 @@ export function ReportProblemSheet({ track, onClose }: ReportProblemSheetProps) 
             </View>
           </View>
           <Input
+            reduceMotion={reduceMotion}
             label={t("form.description")}
             value={description}
             onChangeText={setDescription}

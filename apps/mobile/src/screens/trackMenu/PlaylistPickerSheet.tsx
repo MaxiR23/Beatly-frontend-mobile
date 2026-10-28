@@ -56,6 +56,7 @@ export function PlaylistPickerSheet({ track, onClose }: PlaylistPickerSheetProps
 
 function PickerBody({ track, onClose }: PlaylistPickerSheetProps) {
   const t = useT("trackMenu");
+  const reduceMotion = useReduceMotion();
   const tc = useT("common");
   const playlists = usePlaylists();
   const owned = usePlaylistsWithTrack(track.trackId);
@@ -165,6 +166,7 @@ function PickerBody({ track, onClose }: PlaylistPickerSheetProps) {
       {naming ? (
         <View style={styles.form}>
           <Input
+            reduceMotion={reduceMotion}
             label={t("picker.name")}
             value={name}
             onChangeText={setName}

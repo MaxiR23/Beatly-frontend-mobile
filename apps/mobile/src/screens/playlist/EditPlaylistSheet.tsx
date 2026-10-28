@@ -51,6 +51,7 @@ export function EditPlaylistSheet({ playlist, onClose }: EditPlaylistSheetProps)
       <View style={styles.form}>
         <Text variant="subtitle">{t("edit.title")}</Text>
         <Input
+          reduceMotion={reduceMotion}
           label={t("edit.name")}
           value={name}
           onChangeText={setName}
@@ -60,6 +61,7 @@ export function EditPlaylistSheet({ playlist, onClose }: EditPlaylistSheetProps)
             : {})}
         />
         <Input
+          reduceMotion={reduceMotion}
           label={t("edit.description")}
           value={description}
           onChangeText={setDescription}
