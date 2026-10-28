@@ -6,6 +6,7 @@
 // - Carousel
 //
 // What is covered:
+// - each card's cover keyed by its item's image URL
 // - an item's onPress called and exposed as a button, an item without onPress non-pressable
 //
 // Run with: pnpm --filter @beatly/ui test -- Carousel
@@ -26,7 +27,28 @@ describe("Carousel", () => {
         items={[{ key: "a", title: "First", images: [image], shape: "square" }]}
       />,
     );
-    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/m" });
+    expect(screen.getByTestId("cover-single").props.source).toEqual([{ uri: "test://img/1/m" }]);
+  });
+
+  it("keys each card's image by its item's image URL", async () => {
+    const tier = (n: string) => ({
+      small: `test://img/${n}/s`,
+      medium: `test://img/${n}/m`,
+      large: `test://img/${n}/l`,
+    });
+    await render(
+      <Carousel
+        title="Section"
+        items={[
+          { key: "a", title: "First", images: [tier("1")], shape: "square" },
+          { key: "b", title: "Second", images: [tier("2")], shape: "square" },
+        ]}
+      />,
+    );
+    const keys = screen
+      .getAllByTestId("cover-single")
+      .map((node): unknown => node.props.recyclingKey);
+    expect(keys).toEqual(["test://img/1/m", "test://img/2/m"]);
   });
 
   it("calls an item's onPress and exposes it as a button", async () => {

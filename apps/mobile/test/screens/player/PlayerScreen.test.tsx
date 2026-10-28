@@ -8,7 +8,7 @@
 // What is covered:
 // - the source, title, artists and the elapsed and remaining times, a search source and a track source drawn as their own label
 // - play or pause, next, previous, shuffle, repeat one and the seek bar reaching the controller
-// - the spec's layout: header, full-width cover, gaps, controls row, the wash to the base surface by the middle, the transport icon sizes
+// - the spec's layout: header, full-width cover at high priority, gaps, controls row, the wash to the base surface by the middle, the transport icon sizes
 // - the empty state, the resolution failure with retry, loading, close and its fallback, es
 // - the platform split of the close button, the drag down closing, the scroll gate of the drag
 // - the cover shrinking while paused and springing back, reduce motion keeping the cover and the player still
@@ -195,7 +195,15 @@ describe("PlayerScreen", () => {
     await act(async () => {
       await ctx.playback.playList([track("1", "test://img/1")], 0, album);
     });
-    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/l" });
+    expect(screen.getByTestId("cover-single").props.source).toEqual([{ uri: "test://img/1/l" }]);
+  });
+
+  it("loads the cover at high priority", async () => {
+    const ctx = await setup();
+    await act(async () => {
+      await ctx.playback.playList([track("1", "test://img/1")], 0, album);
+    });
+    expect(screen.getByTestId("cover-single").props.priority).toBe("high");
   });
 
   it("reads the dominant color from the small tier", async () => {

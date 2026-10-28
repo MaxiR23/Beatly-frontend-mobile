@@ -36,6 +36,7 @@ export { GenreRow } from "./components/GenreRow.tsx";
 export { Badge } from "./components/Badge.tsx";
 export { Chip } from "./components/Chip.tsx";
 export { Cover } from "./components/Cover.tsx";
+export { Picture, prefetchPicture, type PictureSource } from "./components/Picture.tsx";
 export { GradientFill } from "./components/GradientFill.tsx";
 export { DetailActions } from "./components/DetailActions.tsx";
 export { IconButton } from "./components/IconButton.tsx";

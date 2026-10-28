@@ -1,8 +1,9 @@
 // INFO: a cover: a 2 x 2 mosaic with four images, the first image with one to
 // three, a placeholder with none; each image at the tier its drawn side
 // needs (imageTier.ts); a square's corner is small or medium; with an icon, an accent tile with the
-// glyph instead of images. Images are decorative.
-import { Image, StyleSheet, View } from "react-native";
+// glyph instead of images. Images are decorative, drawn with Picture; the main
+// cover of a screen loads at high priority.
+import { StyleSheet, View } from "react-native";
 
 import { color } from "../tokens/color.ts";
 import { radius } from "../tokens/radius.ts";
@@ -10,6 +11,7 @@ import { shadow } from "../tokens/shadow.ts";
 import { layout } from "../tokens/spacing.ts";
 import { Icon, type IconName } from "./Icon.tsx";
 import { imageUri, type ImageTiers } from "./imageTier.ts";
+import { Picture } from "./Picture.tsx";
 
 const MOSAIC_SIZE = 4;
 
@@ -20,6 +22,7 @@ interface CoverProps {
   size?: number;
   icon?: IconName | undefined;
   elevated?: boolean;
+  priority?: "normal" | "high";
 }
 
 export function Cover({
@@ -29,6 +32,7 @@ export function Cover({
   size = layout.carouselCard,
   icon,
   elevated = false,
+  priority = "normal",
 }: CoverProps) {
   const first = images[0];
   const cell = { width: size / 2, height: size / 2 };
@@ -46,18 +50,20 @@ export function Cover({
       ) : images.length >= MOSAIC_SIZE ? (
         <View style={styles.mosaic} testID="cover-mosaic">
           {images.slice(0, MOSAIC_SIZE).map((image, index) => (
-            <Image
+            <Picture
               key={`${String(index)}:${image.small}`}
               source={{ uri: imageUri(image, size / 2) }}
               style={cell}
+              priority={priority}
               accessible={false}
             />
           ))}
         </View>
       ) : first !== undefined ? (
-        <Image
+        <Picture
           source={{ uri: imageUri(first, size) }}
           style={box}
+          priority={priority}
           accessible={false}
           testID="cover-single"
         />

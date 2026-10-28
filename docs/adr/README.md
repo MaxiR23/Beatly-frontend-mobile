@@ -220,3 +220,7 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
 - `028-first-pnpm-patch-and-jest-30.md` — why the masked view's type
   declarations carry the repo's first pnpm patch, when to drop it, and why
   jest moved to 30 with Expo SDK 58.
+- `029-images-through-expo-image-behind-a-single-ui-importer.md` — why every
+  image is drawn with `Picture`, the only importer of `expo-image`, with the
+  memory and disk cache, no transition on iOS, a fade on Android only for a network load and a recycling key
+  from the URL.

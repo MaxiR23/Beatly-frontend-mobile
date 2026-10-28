@@ -15,13 +15,14 @@ import {
   IconButton,
   MediaRow,
   Notice,
+  Picture,
   Text,
   type DetailBody,
   type DetailRow,
 } from "@beatly/ui/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Alert, Image, StyleSheet, View } from "react-native";
+import { Alert, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import brandIcon from "../../../assets/brand-icon.png";
@@ -292,10 +293,10 @@ export function PlaylistScreen() {
                   <Avatar name={creator.name} size="creator" />
                 ) : (
                   <View style={styles.brandMark}>
-                    <Image
+                    <Picture
                       source={brandIcon}
                       style={styles.brandMarkImage}
-                      resizeMode="contain"
+                      contentFit="contain"
                       accessibilityIgnoresInvertColors
                       accessible={false}
                     />

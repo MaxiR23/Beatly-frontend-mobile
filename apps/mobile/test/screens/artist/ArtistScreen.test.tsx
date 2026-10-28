@@ -107,9 +107,9 @@ describe("ArtistScreen", () => {
     await setup();
     const hero = await screen.findByTestId("detail-hero-image");
     expect(within(hero).getByText("Test Artist")).toBeTruthy();
-    expect(screen.getByTestId("detail-hero-photo").props.source).toEqual({
-      uri: "test://img/ar1/l",
-    });
+    expect(screen.getByTestId("detail-hero-photo").props.source).toEqual([
+      { uri: "test://img/ar1/l" },
+    ]);
   });
 
   it("draws the four sections with their titles", async () => {

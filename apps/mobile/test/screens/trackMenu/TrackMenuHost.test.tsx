@@ -43,9 +43,9 @@ describe("the track menu", () => {
     await setupMenu();
     await openMenu();
     const sheet = screen.getByTestId("track-menu-sheet");
-    expect(within(sheet).getByTestId("cover-single").props.source).toEqual({
-      uri: "test://img/t1/s",
-    });
+    expect(within(sheet).getByTestId("cover-single").props.source).toEqual([
+      { uri: "test://img/t1/s" },
+    ]);
   });
 
   it("on iOS draws the header with the regular cover and no divider", async () => {

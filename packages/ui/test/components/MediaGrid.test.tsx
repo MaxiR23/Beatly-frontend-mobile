@@ -49,7 +49,7 @@ describe("MediaGrid", () => {
         bottomPadding={0}
       />,
     );
-    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/m" });
+    expect(screen.getByTestId("cover-single").props.source).toEqual([{ uri: "test://img/1/m" }]);
   });
 
   it("draws every item's title and subtitle", async () => {

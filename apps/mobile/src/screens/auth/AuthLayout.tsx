@@ -1,8 +1,8 @@
 // INFO: the layout the login and sign up screens share: brand block, the form card with its switch line, and the footer.
 import { color, icon, layout, radius, spacing } from "@beatly/ui";
-import { Card, Link, Text } from "@beatly/ui/native";
+import { Card, Link, Picture, Text } from "@beatly/ui/native";
 import type { ReactNode } from "react";
-import { Image, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import brandIcon from "../../../assets/brand-icon.png";
@@ -35,10 +35,10 @@ export function AuthLayout({
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
         <View style={styles.brand}>
           <View style={styles.mark}>
-            <Image
+            <Picture
               source={brandIcon}
               style={styles.markImage}
-              resizeMode="contain"
+              contentFit="contain"
               accessibilityIgnoresInvertColors
             />
           </View>

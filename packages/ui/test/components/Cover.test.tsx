@@ -6,7 +6,7 @@
 // - Cover
 //
 // What is covered:
-// - the 2 x 2 mosaic with four images, the first image with one to three, the placeholder with none, each image at the tier its drawn side needs (a row's small, a card's and a hero mosaic cell's medium, a hero's large), the accent tile with an icon, the round shape, the small and medium corners of a square, the size of the box and the mosaic cells
+// - the 2 x 2 mosaic with four images, the first image with one to three, the placeholder with none, each image at the tier its drawn side needs (a row's small, a card's and a hero mosaic cell's medium, a hero's large), every image drawn with the memory and disk cache, each mosaic cell keyed by its own URL, the accent tile with an icon, the round shape, the small and medium corners of a square, the size of the box and the mosaic cells, the priority passed to every image (normal by default)
 //
 // Run with: pnpm --filter @beatly/ui test -- Cover
 //
@@ -68,6 +68,27 @@ describe("Cover", () => {
     expect(inner).not.toHaveProperty("elevation");
   });
 
+  it("loads every image at normal priority by default and high when asked", async () => {
+    const { rerender } = await render(<Cover images={[tiers("1")]} shape="square" />);
+    expect(screen.getByTestId("cover-single").props.priority).toBe("normal");
+    await rerender(<Cover images={[tiers("1")]} shape="square" priority="high" />);
+    expect(screen.getByTestId("cover-single").props.priority).toBe("high");
+    await rerender(<Cover images={images} shape="square" />);
+    expect(nodesWithProp(screen.toJSON(), "priority").map((n) => n.props.priority)).toEqual([
+      "normal",
+      "normal",
+      "normal",
+      "normal",
+    ]);
+    await rerender(<Cover images={images} shape="square" priority="high" />);
+    expect(nodesWithProp(screen.toJSON(), "priority").map((n) => n.props.priority)).toEqual([
+      "high",
+      "high",
+      "high",
+      "high",
+    ]);
+  });
+
   it("draws no shadow view when not elevated", async () => {
     await render(<Cover images={[]} shape="square" />);
     expect(screen.queryByTestId("cover-shadow")).toBeNull();
@@ -82,35 +103,35 @@ describe("Cover", () => {
 
   it.each([1, 2, 3])("draws the first image alone with %i images", async (count) => {
     await render(<Cover images={images.slice(0, count)} shape="square" />);
-    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/m" });
+    expect(screen.getByTestId("cover-single").props.source).toEqual([{ uri: "test://img/1/m" }]);
     expect(screen.queryByTestId("cover-mosaic")).toBeNull();
   });
 
   it("draws the small tier at a row's side", async () => {
     await render(<Cover images={images.slice(0, 1)} shape="square" size={layout.rowCover} />);
-    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/s" });
+    expect(screen.getByTestId("cover-single").props.source).toEqual([{ uri: "test://img/1/s" }]);
   });
 
   it("draws the medium tier at a card's side", async () => {
     await render(<Cover images={images.slice(0, 1)} shape="square" />);
-    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/m" });
+    expect(screen.getByTestId("cover-single").props.source).toEqual([{ uri: "test://img/1/m" }]);
   });
 
   it("draws the large tier at the hero's side", async () => {
     await render(<Cover images={images.slice(0, 1)} shape="square" size={layout.heroCover} />);
-    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/l" });
+    expect(screen.getByTestId("cover-single").props.source).toEqual([{ uri: "test://img/1/l" }]);
   });
 
   it("draws each mosaic cell of a hero cover at the medium tier", async () => {
     await render(<Cover images={images} shape="square" size={layout.heroCover} />);
     const sources = nodesWithProp(screen.toJSON(), "source").map((node) => node.props.source);
-    expect(sources).toEqual(images.map((image) => ({ uri: image.medium })));
+    expect(sources).toEqual(images.map((image) => [{ uri: image.medium }]));
   });
 
   it("draws each mosaic cell of a row at the small tier", async () => {
     await render(<Cover images={images} shape="square" size={layout.rowCover} />);
     const sources = nodesWithProp(screen.toJSON(), "source").map((node) => node.props.source);
-    expect(sources).toEqual(images.map((image) => ({ uri: image.small })));
+    expect(sources).toEqual(images.map((image) => [{ uri: image.small }]));
   });
 
   it("draws the placeholder with no images", async () => {
@@ -147,6 +168,21 @@ describe("Cover", () => {
     expect(corner()).toEqual(
       expect.arrayContaining([expect.objectContaining({ borderRadius: radius.md })]),
     );
+  });
+
+  it("draws every image with the memory and disk cache", async () => {
+    await render(<Cover images={images} shape="square" />);
+    const cells = nodesWithProp(screen.toJSON(), "source");
+    expect(cells).toHaveLength(4);
+    for (const cell of cells) {
+      expect(cell.props.cachePolicy).toBe("memory-disk");
+    }
+  });
+
+  it("keys each mosaic cell by its own URL", async () => {
+    await render(<Cover images={images} shape="square" />);
+    const keys = nodesWithProp(screen.toJSON(), "source").map((node) => node.props.recyclingKey);
+    expect(keys).toEqual(images.map((image) => image.medium));
   });
 
   it("sizes the box and the mosaic cells from size", async () => {

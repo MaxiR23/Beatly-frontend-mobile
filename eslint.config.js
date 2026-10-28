@@ -1,11 +1,12 @@
 // INFO: ESLint flat config. Besides the usual TypeScript rules it encodes
 // the import boundaries of ARCHITECTURE.md: what core may not import,
 // what ui may not import, and which libraries may only be imported from
-// their adapter in apps/mobile. Six libraries have a single importer inside
+// their adapter in apps/mobile. Seven libraries have a single importer inside
 // packages/ui instead: lucide-react-native (Icon.tsx), expo-glass-effect
 // (GlassSurface.tsx), react-native-svg (GradientFill.tsx), @expo/ui
-// (swiftUI.ts), expo-blur (BlurFill.tsx) and
-// @react-native-masked-view/masked-view (AlphaMask.tsx). A boundary is a rule here, not a habit.
+// (swiftUI.ts), expo-blur (BlurFill.tsx),
+// @react-native-masked-view/masked-view (AlphaMask.tsx) and expo-image
+// (Picture.tsx). A boundary is a rule here, not a habit.
 
 import js from "@eslint/js";
 import comments from "@eslint-community/eslint-plugin-eslint-comments/configs";
@@ -94,6 +95,22 @@ const maskLibraryOnlyInAlphaMask = {
   group: ["@react-native-masked-view/masked-view", "@react-native-masked-view/*"],
   message:
     "Masks are drawn with AlphaMask inside packages/ui; packages/ui/src/components/AlphaMask.tsx is the only importer of @react-native-masked-view/masked-view.",
+};
+
+// Images are drawn with Picture of packages/ui; its file is the only
+// importer of the image library (ADR 029).
+const imageLibraryOnlyInPicture = {
+  group: ["expo-image", "expo-image/*"],
+  message:
+    "Images are drawn with Picture of @beatly/ui/native; packages/ui/src/components/Picture.tsx is the only importer of expo-image.",
+};
+
+// React Native's Image is never drawn: images go through Picture (ADR 029).
+const reactNativeImageThroughPicture = {
+  group: ["react-native"],
+  importNames: ["Image", "ImageBackground"],
+  message:
+    "Images are drawn with Picture of @beatly/ui/native (expo-image, memory and disk cache); React Native's Image and ImageBackground are not used.",
 };
 
 // A workspace is imported by its package name, never by a relative path
@@ -255,6 +272,7 @@ export default tseslint.config(
           svgLibraryOnlyInGradientFill,
           expoUILibraryOnlyInSwiftUILoader,
           maskLibraryOnlyInAlphaMask,
+          reactNativeImageThroughPicture,
         ],
       ),
     },
@@ -279,6 +297,7 @@ export default tseslint.config(
           svgLibraryOnlyInGradientFill,
           expoUILibraryOnlyInSwiftUILoader,
           maskLibraryOnlyInAlphaMask,
+          reactNativeImageThroughPicture,
         ],
       ),
     },
@@ -298,6 +317,7 @@ export default tseslint.config(
           svgLibraryOnlyInGradientFill,
           expoUILibraryOnlyInSwiftUILoader,
           maskLibraryOnlyInAlphaMask,
+          reactNativeImageThroughPicture,
           {
             group: ["expo-*", "!expo-glass-effect"],
             message:
@@ -322,7 +342,12 @@ export default tseslint.config(
           ...crossWorkspacePaths,
         ],
         "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
-        [iconLibraryOnlyInIcon, expoUILibraryOnlyInSwiftUILoader, maskLibraryOnlyInAlphaMask],
+        [
+          iconLibraryOnlyInIcon,
+          expoUILibraryOnlyInSwiftUILoader,
+          maskLibraryOnlyInAlphaMask,
+          reactNativeImageThroughPicture,
+        ],
       ),
     },
   },
@@ -341,7 +366,12 @@ export default tseslint.config(
           ...crossWorkspacePaths,
         ],
         "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
-        [iconLibraryOnlyInIcon, svgLibraryOnlyInGradientFill, maskLibraryOnlyInAlphaMask],
+        [
+          iconLibraryOnlyInIcon,
+          svgLibraryOnlyInGradientFill,
+          maskLibraryOnlyInAlphaMask,
+          reactNativeImageThroughPicture,
+        ],
       ),
     },
   },
@@ -359,6 +389,7 @@ export default tseslint.config(
           svgLibraryOnlyInGradientFill,
           expoUILibraryOnlyInSwiftUILoader,
           maskLibraryOnlyInAlphaMask,
+          reactNativeImageThroughPicture,
           {
             group: ["expo-*", "!expo-blur"],
             message:
@@ -383,7 +414,36 @@ export default tseslint.config(
           ...crossWorkspacePaths,
         ],
         "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
-        [iconLibraryOnlyInIcon, svgLibraryOnlyInGradientFill, expoUILibraryOnlyInSwiftUILoader],
+        [
+          iconLibraryOnlyInIcon,
+          svgLibraryOnlyInGradientFill,
+          expoUILibraryOnlyInSwiftUILoader,
+          reactNativeImageThroughPicture,
+        ],
+      ),
+    },
+  },
+
+  // The Picture component is the one file allowed to import the image library.
+  // Same shape as the BlurFill block.
+  {
+    files: ["packages/ui/src/components/Picture.tsx"],
+    rules: {
+      ...restricted(
+        ["@beatly/mobile", "@tanstack/*", ...adapterOnlyLibraries, ...crossWorkspacePaths],
+        "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
+        [
+          iconLibraryOnlyInIcon,
+          svgLibraryOnlyInGradientFill,
+          expoUILibraryOnlyInSwiftUILoader,
+          maskLibraryOnlyInAlphaMask,
+          reactNativeImageThroughPicture,
+          {
+            group: ["expo-*", "!expo-image"],
+            message:
+              "packages/ui never imports the app, a data library or an adapter-only library. It receives data and callbacks as props.",
+          },
+        ],
       ),
     },
   },
@@ -417,6 +477,8 @@ export default tseslint.config(
           expoUILibraryOnlyInSwiftUILoader,
           blurLibraryOnlyInBlurFill,
           maskLibraryOnlyInAlphaMask,
+          imageLibraryOnlyInPicture,
+          reactNativeImageThroughPicture,
         ],
       ),
     },
@@ -444,6 +506,8 @@ export default tseslint.config(
           expoUILibraryOnlyInSwiftUILoader,
           blurLibraryOnlyInBlurFill,
           maskLibraryOnlyInAlphaMask,
+          imageLibraryOnlyInPicture,
+          reactNativeImageThroughPicture,
           {
             group: ["**/queries/queryClient", "**/queries/queryClient.ts"],
             importNames: ["createQueryClient"],

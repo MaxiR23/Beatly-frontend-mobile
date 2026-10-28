@@ -86,7 +86,7 @@ describe("MiniPlayerBar", () => {
     await act(async () => {
       await ctx.playback.playList([withImage("1")], 0, source);
     });
-    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/s" });
+    expect(screen.getByTestId("cover-single").props.source).toEqual([{ uri: "test://img/1/s" }]);
   });
 
   it("reads the dominant color from the small tier", async () => {
