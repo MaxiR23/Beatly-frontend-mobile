@@ -32,8 +32,8 @@ playlist screen; a playlist with another source is not pressable.
   the API sends it as the subtitle.
 - Sheet: `Sheet` on iOS on `GlassSurface`, `spacing.lg` gap, two `Input`s, a
   `SwitchRow` (track and thumb from `color.accent.primary` /
-  `color.text.inverse` on, `color.surface.border` / `color.text.primary` off)
-  and two field-shaped buttons side by side with `spacing.md` gap.
+  `color.text.inverse` on, `color.surface.border` / `color.text.primary` off; on Android the Material 3
+  switch, DESIGN.md, Switch) and two field-shaped buttons side by side with `spacing.md` gap.
 
 ## Platform differences
 
@@ -88,7 +88,7 @@ entry's `id` and `source`; a playlist with another source is not pressable.
 - The row measures 64 with a 56 cover, the liked tile contrast, the last row
   clearing the floating tab bar.
 - The keyboard not covering the sheet inputs on iOS and Android, the native
-  switch colors on both platforms, the native glass on iOS 26+.
+  switch colors on iOS, the native glass on iOS 26+.
 - Infinite scroll against the real API with more than 50 entries, and a created
   playlist reflected on Home after switching tabs.
 
@@ -99,3 +99,5 @@ On Android the `Sheet` is the Material 3 modal bottom sheet (ADR 027, `ui` `Shee
 Left to verify by hand. On an Android phone: the sheet meeting the bottom and side edges and the content ending above the gesture bar, the drag feel and the spring back on a finger, the system back closing it, and the scroll of a long list next to the handle zone.
 
 On Android the `Input`s are the Material 3 outlined text field (ADR 027, `ui` `Input`; see DESIGN.md, Text field): outline, label inside rising onto it on focus or with text, accent outline on focus, error color and the error under the field; iOS unchanged. Left to verify by hand on an Android phone: the label animation feel, the notch over the sheet surface, TalkBack reading the label once and announcing the error.
+
+On Android the public `SwitchRow` is the Material 3 switch (ADR 027, `ui` `SwitchRow`; see DESIGN.md, Switch): a 52×32 track, outlined with a small thumb when off, accent-filled with a large thumb when on, sliding on the native driver and at once under reduce motion; iOS unchanged. Left to verify by hand on an Android phone: the look of the off outline on the sheet surface, the slide and pressed feel, TalkBack reading the label and the state.

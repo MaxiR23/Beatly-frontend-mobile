@@ -77,6 +77,7 @@ export function CreatePlaylistSheet({ visible, onClose }: CreatePlaylistSheetPro
           helper={t("create.publicHelper")}
           value={isPublic}
           onValueChange={setIsPublic}
+          reduceMotion={reduceMotion}
         />
         {create.isError ? (
           <Text variant="meta" tone="error">

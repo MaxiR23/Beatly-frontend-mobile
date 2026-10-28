@@ -1,6 +1,6 @@
 // INFO: spacing tokens, a multiples-of-four scale, plus the layout
 // constants (gutter, gap, hitSlop, control height, text area height, and the carousel card,
-// avatar, creator mark, profile avatar, tab item, chip (and the Android chip), the Android tab indicator, genre bar, row cover (and the Android track menu header cover), the Android action row height, detail hero cover,
+// avatar, creator mark, profile avatar, tab item, chip (and the Android chip), the Android tab indicator, the Android switch's track and thumb sizes, genre bar, row cover (and the Android track menu header cover), the Android action row height, detail hero cover,
 // track-number column, now playing bar width, large and medium play button, the detail play pill's width, the side buttons' stacking value, seek bar and sheet handle sizes (iOS and Android) and the Android modal sheet handle zone and width, and the skeleton bar widths and row count).
 export const spacing = {
   xxs: 2,
@@ -31,6 +31,16 @@ export const layout = {
   chipHeightAndroid: 32,
   // Height of the active indicator under the selected tab on Android (Material 3 primary tabs).
   tabIndicatorHeightAndroid: 3,
+  // Width of the Android switch track (Material 3 switch).
+  switchTrackWidthAndroid: 52,
+  // Height of the Android switch track (Material 3 switch).
+  switchTrackHeightAndroid: 32,
+  // Side of the Android switch thumb when off (Material 3 switch).
+  switchThumbOffAndroid: 16,
+  // Side of the Android switch thumb when on (Material 3 switch).
+  switchThumbOnAndroid: 24,
+  // Side of the Android switch thumb while pressed (Material 3 switch).
+  switchThumbPressedAndroid: 28,
   genreBarWidth: 6,
   genreBarHeight: 28,
   rowCover: 40,

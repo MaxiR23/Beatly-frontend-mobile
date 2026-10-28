@@ -6,7 +6,11 @@ import { StyleSheet, View } from "react-native";
 import { useT } from "../../adapters/i18n.ts";
 import { useAutoplaySetting, useSetAutoplay } from "../../queries/useAutoplay.ts";
 
-export function AutoplaySwitch() {
+interface AutoplaySwitchProps {
+  reduceMotion: boolean;
+}
+
+export function AutoplaySwitch({ reduceMotion }: AutoplaySwitchProps) {
   const t = useT("player");
   const tc = useT("common");
   const setting = useAutoplaySetting();
@@ -33,6 +37,7 @@ export function AutoplaySwitch() {
         onValueChange={(on) => {
           set.mutate(on);
         }}
+        reduceMotion={reduceMotion}
       />
       {set.isError ? (
         <Text variant="meta" tone="error">
