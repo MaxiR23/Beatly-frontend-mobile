@@ -6,11 +6,13 @@ import { useState } from "react";
 import { useT } from "../../adapters/i18n.ts";
 import { useSignIn } from "../../queries/useAuth.ts";
 import { AuthLayout } from "../auth/AuthLayout.tsx";
+import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 export function LoginScreen() {
   const t = useT("login");
   const tc = useT("common");
   const router = useRouter();
+  const reduceMotion = useReduceMotion();
   const signIn = useSignIn();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,6 +48,7 @@ export function LoginScreen() {
       }}
     >
       <Input
+        reduceMotion={reduceMotion}
         label={t("email")}
         value={email}
         onChangeText={setEmail}
@@ -54,6 +57,7 @@ export function LoginScreen() {
         autoComplete="email"
       />
       <Input
+        reduceMotion={reduceMotion}
         label={t("password")}
         value={password}
         onChangeText={setPassword}

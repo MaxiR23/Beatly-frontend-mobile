@@ -107,3 +107,5 @@ timeout, is a typed `AuthFailure`.
   home. Cold start signed out: the splash goes straight to the login.
 - The swap from the placeholder to the home does not show the home sliding in as the splash
   fades (the native stack's replace animation); if it does, it is fixed in the same change before merging.
+
+On Android the `Input`s are the Material 3 outlined text field (ADR 027, `ui` `Input`; see DESIGN.md, Text field): outline, label inside rising onto it on focus or with text, accent outline on focus, error color and the error under the field; iOS unchanged. Left to verify by hand on an Android phone: the label animation feel, the notch over the card surface, TalkBack reading the label once and announcing the error.
