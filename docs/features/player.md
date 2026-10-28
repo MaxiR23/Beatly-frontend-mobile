@@ -30,7 +30,7 @@ inside the current queue, keeping its order, shuffle and source; a tap on a sugg
   `motion.handleNudge.second`, each leg `motion.duration.fast`, settling with `motion.spring`) the first time the player opens on each track in the app's session; the player darkens to `color.overlay.backdrop` and drops to `motion.behindSheetScale` with the
   sheet's position; the thresholds are `motion.dragToClose.*`; the panel has `radius.lg` top corners, `shadow.floating` and the
   wash from the dominant color to `color.surface.base`; the song row is a `layout.rowCoverMedium` cover (`radius.sm`, `small`),
-  `typography.title`, `typography.body` in `color.text.secondary` and an `IconButton` `primaryCompact`; then a `SegmentedControl`;
+  `typography.title`, `typography.body` in `color.text.secondary` and an `IconButton` `primaryCompact`; then a `SegmentedControl` (a pill on iOS, the Material 3 primary tabs on Android);
   rows are `MediaRow`s; lyrics lines are `typography.title`, `color.text.primary` for the playing one and `color.text.tertiary`
   for the others; related artists and albums are `Carousel`s. Under reduce motion the sheet and the dim fade, nothing moves
   or scales, the handle does not nudge, and a bounce under way stops when reduce motion turns on.
@@ -43,6 +43,7 @@ inside the current queue, keeping its order, shuffle and source; a tap on a sugg
 - The sheet handle: 48 x 5 in white at 45% on Android (`layout.handleWidthAndroid`, `layout.handleHeightAndroid`, `color.overlay.handleAndroid`); iOS keeps `layout.handleWidth` x `layout.handleHeight` in `color.overlay.muted`. Its position is the same row on both.
 - Android: the chevron-down close button stays, next to the drag; the system back closes too. The header's more button draws three vertical dots (ADR 027).
 - Android, where the column scrolls: a drag that starts inside the column may be taken by the scroll; the header always closes.
+- The sheet's selector: on Android, Material 3 primary tabs across the full width (`layout.controlHeight` tabs, a `border.width` divider in `color.surface.border`, a `layout.tabIndicatorHeightAndroid` indicator in `color.accent.primary` with `radius.full` top corners, as wide as the selected label, sliding over `motion.duration.base`, without sliding under reduce motion); iOS keeps the pill `SegmentedControl` with `layout.gutter` at the sides.
 - Foreground only (`shouldPlayInBackground: false`); `playsInSilentMode` is on.
 
 ## States

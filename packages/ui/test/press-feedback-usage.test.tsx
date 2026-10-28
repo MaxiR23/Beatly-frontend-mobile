@@ -238,7 +238,12 @@ const sites: readonly Site[] = [
   {
     name: "SegmentedControl",
     element: () => (
-      <SegmentedControl options={[{ key: "a", label: "Alpha" }]} selected="a" onChange={noop} />
+      <SegmentedControl
+        options={[{ key: "a", label: "Alpha" }]}
+        selected="a"
+        onChange={noop}
+        reduceMotion={false}
+      />
     ),
     find: () => {
       const [first] = screen.getAllByRole("tab");
@@ -246,7 +251,7 @@ const sites: readonly Site[] = [
       return first;
     },
     on: "surface",
-    shape: "own",
+    shape: "rect",
   },
   {
     name: "TrackRow",

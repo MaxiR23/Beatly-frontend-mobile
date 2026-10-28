@@ -1,6 +1,14 @@
-// INFO: the player's up next, lyrics and related sheet over PullUpSheet: the song row (its title scrolls when it does not fit) that closes it, play or pause, the three options and the selected tab's body, mounted from the moment the sheet starts opening (a drag on the handle or open) until its close ends, so it is drawn while the sheet moves and each tab loads only once shown (up next asks for the source's suggestions, read once per source); nudges the handle the first time the player opens on each track in the app's session.
+// INFO: the player's up next, lyrics and related sheet over PullUpSheet: the song row (its title scrolls when it does not fit) that closes it, play or pause, the three options (primary tabs on Android) and the selected tab's body, mounted from the moment the sheet starts opening (a drag on the handle or open) until its close ends, so it is drawn while the sheet moves and each tab loads only once shown (up next asks for the source's suggestions, read once per source); nudges the handle the first time the player opens on each track in the app's session.
 import { layout, spacing } from "@beatly/ui";
-import { Cover, IconButton, Marquee, PullUpSheet, SegmentedControl, Text } from "@beatly/ui/native";
+import {
+  Cover,
+  IconButton,
+  isAndroidVariant,
+  Marquee,
+  PullUpSheet,
+  SegmentedControl,
+  Text,
+} from "@beatly/ui/native";
 import { useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -87,7 +95,10 @@ export function PlayerSheet({
           }}
         />
       </View>
-      <View style={styles.tabs}>
+      <View
+        style={[styles.tabs, isAndroidVariant() && styles.tabsAndroid]}
+        testID="player-sheet-tabs-row"
+      >
         <SegmentedControl
           options={options}
           selected={tab}
@@ -95,6 +106,7 @@ export function PlayerSheet({
             setTab(next);
             setBodyAtTop(true);
           }}
+          reduceMotion={reduceMotion}
           testID="player-sheet-tabs"
         />
       </View>
@@ -157,5 +169,6 @@ const styles = StyleSheet.create({
   song: { flex: 1, flexDirection: "row", alignItems: "center", gap: layout.gap },
   titles: { flex: 1, gap: spacing.xxs },
   tabs: { paddingHorizontal: layout.gutter, paddingTop: spacing.lg },
+  tabsAndroid: { paddingHorizontal: 0 },
   body: { flex: 1, marginTop: spacing.md },
 });
