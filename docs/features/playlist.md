@@ -109,6 +109,7 @@ the info block:
 - Expo Go: the native color module is missing, so the wash stays neutral.
 - Edit tracks: iOS with the `ExpoUI` module draws `NativeEditList` (the system list); Android, Expo Go
   and an iOS build without the module draw `ReorderList`.
+- Android: the collapsed top bar is the Material 3 small top app bar: the back, then the title from the start on one line with an ellipsis, running to the end padding (the screen passes no bar action); iOS keeps the title centered in the strip (ADR 027).
 
 ## States
 
@@ -214,3 +215,5 @@ Also: the entry cascade on iOS and Android: its order, the 300 ms and 60 ms feel
 Also: the iOS strip blur: absent at the top, fading in with the strip and following the scroll with no flicker or dark flash, full at the top and gone at the strip's bottom edge with no visible border or cut, about 4 points (tune `blur.detailStrip`), no change under reduce motion other than the strip's own, the floating back and the title above it unchanged, a development build rebuilt after the install.
 
 The arrow and the three vertical dots on Android (floating, top bar, options, Edit tracks), and the chevron and horizontal ellipsis unchanged on iOS (ADR 027). The snackbar on Android for a failed delete or edit.
+
+The collapsed bar on Android: the title starting right after the back arrow, a long title ending in an ellipsis at the end padding, and the title unchanged (centered) on iOS (ADR 027).

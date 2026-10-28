@@ -32,6 +32,7 @@ Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), excep
 
 - iOS: the floating buttons use native glass on iOS 26+, `GlassSurface`'s solid fallback elsewhere. The back's native glass never fades (the back stays fixed); the top bar has no glass on any platform. On iOS the content under the top strip is blurred; Android has no blur.
 - Android: the solid fallback draws the buttons; the back buttons (floating and top bar) draw an arrow (ADR 027).
+- Android: the collapsed top bar is the Material 3 small top app bar: the back, then the title from the start on one line with an ellipsis, running to the end padding (the screen passes no bar action); iOS keeps the title centered in the strip (ADR 027).
 
 ## States
 
@@ -86,3 +87,5 @@ Also: the entry cascade on iOS and Android: its order, the 300 ms and 60 ms feel
 Also: the iOS strip blur: absent at the top, fading in with the strip and following the scroll with no flicker or dark flash, full at the top and gone at the strip's bottom edge with no visible border or cut, about 4 points (tune `blur.detailStrip`), no change under reduce motion other than the strip's own, the floating back and the title above it unchanged, a development build rebuilt after the install.
 
 The Android back arrow, and the chevron unchanged on iOS (ADR 027).
+
+The collapsed bar on Android: the title starting right after the back arrow, a long title ending in an ellipsis at the end padding, and the title unchanged (centered) on iOS (ADR 027).
