@@ -9,12 +9,15 @@ import { color } from "../tokens/color.ts";
 import { radius } from "../tokens/radius.ts";
 import { shadow } from "../tokens/shadow.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
+import { ColorFade } from "./ColorFade.tsx";
 
 interface GlassSurfaceProps {
   variant: "bar" | "sheet" | "circle";
   children: ReactNode;
-  // A runtime color (a cover's dominant color) laid over the surface; null or unset keeps it neutral.
+  // A runtime color (a cover's color from the backend) over the surface; null or unset keeps it neutral.
   tint?: string | null;
+  // The tint fades in when it arrives after mount, unless this is on.
+  reduceMotion?: boolean;
   testID?: string;
 }
 
@@ -23,7 +26,13 @@ export function isGlassAvailable(): boolean {
   return Platform.OS === "ios" && isLiquidGlassAvailable();
 }
 
-export function GlassSurface({ variant, children, tint, testID }: GlassSurfaceProps) {
+export function GlassSurface({
+  variant,
+  children,
+  tint,
+  reduceMotion = false,
+  testID,
+}: GlassSurfaceProps) {
   const shape = styles[variant];
 
   if (isGlassAvailable()) {
@@ -40,14 +49,22 @@ export function GlassSurface({ variant, children, tint, testID }: GlassSurfacePr
   }
 
   return (
-    <View
-      style={[
-        shape,
-        styles.fallback,
-        typeof tint === "string" ? { backgroundColor: tint } : undefined,
-      ]}
-      testID={testID}
-    >
+    <View style={[shape, styles.fallback]} testID={testID}>
+      <ColorFade
+        color={tint ?? null}
+        reduceMotion={reduceMotion}
+        style={[StyleSheet.absoluteFill, { borderRadius: shape.borderRadius }]}
+        testID={testID === undefined ? undefined : `${testID}-tint`}
+      >
+        {(c) => (
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              { borderRadius: shape.borderRadius, backgroundColor: c },
+            ]}
+          />
+        )}
+      </ColorFade>
       {children}
     </View>
   );

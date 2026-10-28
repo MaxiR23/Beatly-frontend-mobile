@@ -100,9 +100,6 @@ sign out, so it works with no screen involved (ADR 022).
 `adapters/i18n.ts` wraps `i18next` and `expo-localization`. It has no
 port because `core` never translates.
 
-`adapters/imageColors.ts` wraps `react-native-image-colors`. It has no
-port because `core` never needs a color (ADR 019).
-
 `adapters/device.ts` wraps `expo-constants` and reads `Platform`. It has no
 port because `core` receives the device as a plain value.
 

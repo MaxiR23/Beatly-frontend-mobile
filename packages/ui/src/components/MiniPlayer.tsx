@@ -76,7 +76,7 @@ export function MiniPlayer({
       {children}
     </View>
   ) : (
-    <GlassSurface variant="bar" tint={tint} testID="mini-player">
+    <GlassSurface variant="bar" tint={tint} reduceMotion={reduceMotion} testID="mini-player">
       {children}
     </GlassSurface>
   );

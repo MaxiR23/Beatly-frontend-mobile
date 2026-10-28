@@ -13,7 +13,7 @@ export interface PlayableTrack {
   readonly albumId: string | null;
   // The thumbnail_url the write routes take (likes, plays, playlist adds); never drawn.
   readonly coverUrl: string | null;
-  // The tiers the screens draw: large in the player, small in rows and the mini player, and the source of the dominant color; null draws the placeholder.
+  // The tiers the screens draw: large in the player, small in rows and the mini player, and the backend's color for the player and mini player background; null draws the placeholder.
   readonly image: ImageTiers | null;
   readonly durationSeconds: number | null;
 }

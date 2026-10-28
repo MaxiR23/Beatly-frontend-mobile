@@ -2,6 +2,7 @@
 import { likeInputOf, type PlayableTrack } from "@beatly/core";
 import { color, layout, spacing } from "@beatly/ui";
 import {
+  ColorFade,
   Cover,
   DragToClose,
   EmptyState,
@@ -20,7 +21,6 @@ import { BackHandler, ScrollView, StyleSheet, useWindowDimensions, View } from "
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
-import { useDominantColor } from "../detail/useDominantColor.ts";
 import { useIsLiked } from "../../queries/useLikes.ts";
 import { formatDuration } from "../search/formatDuration.ts";
 import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
@@ -68,7 +68,7 @@ export function PlayerScreen() {
   const playback = usePlaybackActions();
   const state = usePlayback((s) => s);
   const { current, source, status } = state;
-  const wash = useDominantColor(current?.image?.small ?? null);
+  const wash = current?.image?.color ?? null;
   const reduceMotion = useReduceMotion();
   const [atTop, setAtTop] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -175,14 +175,19 @@ export function PlayerScreen() {
           }}
         >
           <View style={styles.root} testID="player">
-            {wash === null ? null : (
-              <View style={StyleSheet.absoluteFill} testID="player-wash">
+            <ColorFade
+              color={wash}
+              reduceMotion={reduceMotion}
+              style={StyleSheet.absoluteFill}
+              testID="player-wash"
+            >
+              {(c) => (
                 <GradientFill
                   direction="vertical"
-                  colors={[wash, color.surface.base, color.surface.base]}
+                  colors={[c, color.surface.base, color.surface.base]}
                 />
-              </View>
-            )}
+              )}
+            </ColorFade>
             <View style={top}>
               <View style={styles.header} testID="player-header">
                 {leading}

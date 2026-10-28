@@ -66,10 +66,6 @@ jest.mock("expo-router", () => ({
     canGoBack: () => true,
   }),
 }));
-jest.mock("../../../src/adapters/imageColors.ts", () => ({
-  getDominantColor: () => Promise.resolve({ kind: "unavailable" }),
-  peekDominantColor: () => undefined,
-}));
 
 const spring = jest.spyOn(Animated, "spring");
 const timing = jest.spyOn(Animated, "timing");

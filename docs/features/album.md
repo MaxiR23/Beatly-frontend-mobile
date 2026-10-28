@@ -11,7 +11,7 @@ pushes a new album in the same tab. Pressing an available track plays the album 
 
 ## Layout
 
-- Collapse: the header collapses into the top bar on scroll (`DESIGN.md`, "Detail screen base"): the cover shrinks and fades, the bar is drawn on the dominant color. On iOS the floating back stays fixed and the bar is a strip with no back of its own, reaching from the top edge to `spacing.sm` past `spacing.xs` under the back's bottom edge, with no background: the dominant color and a light shade, both fading to transparent at its bottom edge. Under the strip the content is blurred slightly (`blur.detailStrip`), full at the top and fading to zero at the strip's bottom edge, appearing with the strip (`DESIGN.md`, "Detail screen base").
+- Collapse: the header collapses into the top bar on scroll (`DESIGN.md`, "Detail screen base"): the cover shrinks and fades, the bar is drawn on the cover color. On iOS the floating back stays fixed and the bar is a strip with no back of its own, reaching from the top edge to `spacing.sm` past `spacing.xs` under the back's bottom edge, with no background: the dominant color and a light shade, both fading to transparent at its bottom edge. Under the strip the content is blurred slightly (`blur.detailStrip`), full at the top and fading to zero at the strip's bottom edge, appearing with the strip (`DESIGN.md`, "Detail screen base").
 - Virtualization: the tracks are rows of the base's `FlatList` (`DESIGN.md`, "Detail screen base"), so a long album is virtualized: rows past the initial window render on scroll, already at rest, and the carousels (the slot after the rows) mount from the first render below a spacer. A fast scroll on a very long list is checked on device for blank rows.
 - Entry: the content enters in a top-down cascade (`DESIGN.md`, "Detail screen base"): the cover over its wash, the title, the info and action row, the first 3 tracks (`motion.detailCascade.firstRows`), then the other tracks on screen with the carousels after them, `motion.detailCascade.*`. The tracks are rows of the base; the carousels are its slot after the rows and enter with the later tracks. At once when the album arrives, after the navigation transition when it was cached. Nothing moves under reduce motion.
 
@@ -19,7 +19,7 @@ Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), excep
 the body:
 
 - Hero: the cover (its `image` passed as `cover.images`, drawn at `large`) in `layout.heroCover`, `radius.sm`, `shadow.cover`, over the
-  wash from the dominant color. Then the title in `typography.title`.
+  wash from the cover color. Then the title in `typography.title`.
 - Info: `layout.gutter` on the sides, `spacing.xs` gap, no padding below. The
   artist names in `typography.rowTitle` and `color.text.secondary` (a name with an id is a `Link`
   that pushes `/artist/[id]`, in `typography.link`; a name without one is plain text), joined by
@@ -80,8 +80,7 @@ The back button is labeled `album:back`.
 
 A well-formed id that does not exist comes back as `upstream_error`, so it draws
 the generic error. `tracks: []` with the album populated is `ok: true`: an
-expected empty state, never a retry. The dominant color comes from the cover's `image.small`
-through `adapters/imageColors.ts` (ADR 019), not from the API.
+expected empty state, never a retry. The wash and the bar color are `image.color` from `GET /album/{album_id}` (ADR 030); `null` or absent draws the neutral surfaces. A color that arrives on a refetch fades in over `motion.duration.base` (at once under reduce motion). While the color is pending the response's `max-age` is capped at `IMAGE_COLOR_PENDING_MAX_AGE`, so the next read refetches it.
 
 Save sends `{ kind: "album", source: "external", external_id, title, album_id, album_name }` with `thumbnail_url` (the legacy URL, never `image`), `artist` (the names joined by `album:artistSeparator`) and `artist_id` (the first artist's) only when the album has them. The button flips at once and rolls back if the write fails; a write settling refetches `library` and the saved state. Play sets shuffle off and shuffle sets it on before starting; a row press leaves the shuffle flag as it is.
 
@@ -102,8 +101,7 @@ Back pops the stack, or replaces with `/` when there is nothing to go back to.
 ## Checked by hand
 
 The action row centered on iOS and Android, the shrink without dropped frames while playback starts, on iOS and Android, and a tap on shuffle and on the side button right after the shrink and at the middle of it (taps reach them, not play); the label fading and the play pill shrinking to a circle with shuffle and save following it, then scaling in as pause, the now playing bars moving, freezing on pause and static under reduce motion, a mid-track buffer on a slow network; saving, closing and reopening the album and finding it on the library screen; screenshots of the album at the top and scrolled, on iOS and Android, with the
-collapsed header and top bar; the header collapse on scroll (the cover shrinking and fading, then the floating buttons, the title and the top bar, in that order, without dropped frames on iOS and Android); on iOS the floating back staying fixed and tappable at every scroll position, the title never under it, and the strip's fade matching the top of the wash and ending with no edge under the back, and the strip's transparent bottom catching taps over the first visible row (album, playlist); TalkBack focus moving from the floating buttons to the top bar after a scroll, and VoiceOver reaching the fixed back and the bar's title once collapsed; the bar title's legibility over bright dominant colors and the bar matching the top of the wash; the native glass on iOS 26+; the real
-dominant color on a development build and the neutral fallback in Expo Go;
+collapsed header and top bar; the header collapse on scroll (the cover shrinking and fading, then the floating buttons, the title and the top bar, in that order, without dropped frames on iOS and Android); on iOS the floating back staying fixed and tappable at every scroll position, the title never under it, and the strip's fade matching the top of the wash and ending with no edge under the back, and the strip's transparent bottom catching taps over the first visible row (album, playlist); TalkBack focus moving from the floating buttons to the top bar after a scroll, and VoiceOver reaching the fixed back and the bar's title once collapsed; the bar title's legibility over bright dominant colors and the bar matching the top of the wash; the native glass on iOS 26+; the backend's color on iOS and Android, in Expo Go and a development build, and the fade when a pending color arrives on a refetch;
 swipe-back per tab; and the native tab bar on iOS 26+ with the renamed tab
 groups.
 

@@ -45,7 +45,6 @@ const adapterOnlyLibraries = [
   "@react-native-community/netinfo",
   "i18next",
   "expo-localization",
-  "react-native-image-colors",
   "expo-constants",
 ];
 

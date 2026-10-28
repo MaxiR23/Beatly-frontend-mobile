@@ -8,7 +8,7 @@
 // What is covered:
 // - the handle as a labelled button, the press and the drag up opening, the header and body drags closing (the body only at its top)
 // - the dim and the recede following the sheet's position, the springs of opening and closing, no animation on mount
-// - the closed panel and the open content hidden from accessibility, the double bounce once, the wash only with a color, the handle bar's size and color on iOS and on Android
+// - the closed panel and the open content hidden from accessibility, the double bounce once, the wash only with a color, fading in over motion.duration.base when the color arrives and at once under reduce motion, the handle bar's size and color on iOS and on Android
 // - reduce motion (fades instead of movement and scale, no bounce, a bounce under way stopped when it turns on), a live change of it while open leaving the panel and the dim drawn
 // - onDragStart on a handle drag, onClosed when the close animation finishes and not when it is cut, or when a cancelled handle drag settles back and not when it commits
 //
@@ -69,6 +69,7 @@ async function drag(testID: string, delta: number, release: boolean, dt = 5000) 
 }
 
 const spring = jest.spyOn(Animated, "spring");
+const hidden = { includeHiddenElements: true };
 const timing = jest.spyOn(Animated, "timing");
 const height = Dimensions.get("window").height;
 
@@ -245,9 +246,29 @@ describe("PullUpSheet", () => {
 
   it("draws the wash gradient only with a color", async () => {
     const { rerender } = await setup();
+    expect(screen.queryByTestId("sheet-wash", hidden)).toBeNull();
     expect(gradients()).toBe(0);
     await rerender({ washColor: "#336699" });
+    expect(screen.getByTestId("sheet-wash", hidden)).toBeTruthy();
     expect(gradients()).toBe(1);
+  });
+
+  it("fades the wash in when its color arrives, and at once under reduce motion", async () => {
+    const { rerender } = await setup();
+    await rerender({ washColor: "#336699" });
+    expect(timing).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        toValue: 1,
+        duration: motion.duration.base,
+        useNativeDriver: true,
+      }),
+    );
+    timing.mockClear();
+    const reduced = await setup({ reduceMotion: true });
+    await reduced.rerender({ reduceMotion: true, washColor: "#336699" });
+    expect(timing).not.toHaveBeenCalled();
+    expect(screen.getAllByTestId("sheet-wash", hidden).at(-1)).toHaveStyle({ opacity: 1 });
   });
 
   it("under reduce motion, fades the panel and the dim and moves and scales nothing", async () => {

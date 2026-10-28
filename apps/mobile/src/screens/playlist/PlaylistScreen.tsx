@@ -33,7 +33,6 @@ import { useLibrarySaved, useSetSaved } from "../../queries/useLibrary.ts";
 import { useDeletePlaylist } from "../../queries/usePlaylists.ts";
 import { useProfile } from "../../queries/useProfile.ts";
 import { useRegisterRecent } from "../../queries/useRecents.ts";
-import { useDominantColor } from "../detail/useDominantColor.ts";
 import { EditPlaylistSheet } from "./EditPlaylistSheet.tsx";
 import { PlaylistOptionsSheet } from "./PlaylistOptionsSheet.tsx";
 import type { PlaylistOptionKey } from "./playlistOptions.ts";
@@ -121,7 +120,7 @@ export function PlaylistScreen() {
   } else if (header.data?.source === "liked") {
     cover = { images: [], icon: "heart" };
   }
-  const wash = useDominantColor(cover.images[0]?.small ?? null);
+  const wash = cover.images[0]?.color ?? null;
 
   function goBack() {
     // A deep link has nothing to go back to, so it lands on home.

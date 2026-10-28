@@ -7,6 +7,7 @@
 //
 // What is covered:
 // - the title and subtitle, the failed subtitle in the error tone, the open, toggle and next presses, the pause label while playing, no progress element
+// - the tint handed to the glass surface with reduce motion: no fade under it
 // - the bare surface: filling and clipping, no glass and no tint, with the presses still working
 //
 // Run with: pnpm --filter @beatly/ui test -- MiniPlayer
@@ -16,9 +17,19 @@
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react-native";
 import type { ComponentProps } from "react";
+import { Animated } from "react-native";
 
 import { MiniPlayer } from "../../src/components/MiniPlayer.tsx";
 import { color } from "../../src/tokens/color.ts";
+
+jest.mock("expo-glass-effect", () => {
+  const { View } = jest.requireActual<{ View: unknown }>("react-native");
+  return {
+    GlassView: View,
+    isLiquidGlassAvailable: () => false,
+    isGlassEffectAPIAvailable: () => false,
+  };
+});
 
 const tiers = (n: string) => ({
   small: `test://img/${n}/s`,
@@ -91,6 +102,31 @@ describe("MiniPlayer", () => {
     await fireEvent.press(screen.getByRole("button", { name: "Play" }));
     expect(h.onOpen).toHaveBeenCalledTimes(1);
     expect(h.onToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it("hands reduce motion to the glass surface's tint", async () => {
+    const timing = jest.spyOn(Animated, "timing");
+    try {
+      const props = {
+        title: "Song",
+        subtitle: "Artist",
+        failed: false,
+        image: null,
+        playing: false,
+        busy: false,
+        labels,
+        onOpen: jest.fn(),
+        onToggle: jest.fn(),
+        onNext: jest.fn(),
+        reduceMotion: true,
+      };
+      const view = await render(<MiniPlayer {...props} tint={null} />);
+      await view.rerender(<MiniPlayer {...props} tint="#336699" />);
+      expect(screen.getByTestId("mini-player-tint")).toHaveStyle({ opacity: 1 });
+      expect(timing).not.toHaveBeenCalled();
+    } finally {
+      timing.mockRestore();
+    }
   });
 
   it("shows the pause label while playing and draws no progress element", async () => {
