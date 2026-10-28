@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
 import { playlistOptions, type PlaylistOptionKey } from "./playlistOptions.ts";
+import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface PlaylistOptionsSheetProps {
   onSelect: (key: PlaylistOptionKey) => void;
@@ -14,10 +15,17 @@ interface PlaylistOptionsSheetProps {
 
 export function PlaylistOptionsSheet({ onSelect, onClose }: PlaylistOptionsSheetProps) {
   const t = useT("playlist");
+  const reduceMotion = useReduceMotion();
   const insets = useSafeAreaInsets();
 
   return (
-    <Sheet visible onClose={onClose} closeLabel={t("options.close")} bottomInset={insets.bottom}>
+    <Sheet
+      reduceMotion={reduceMotion}
+      visible
+      onClose={onClose}
+      closeLabel={t("options.close")}
+      bottomInset={insets.bottom}
+    >
       <View style={styles.body} testID="playlist-options-sheet">
         {playlistOptions.map((option) => (
           <ActionRow

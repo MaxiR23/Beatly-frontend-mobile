@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useT } from "../../adapters/i18n.ts";
 import { useMyBugReports } from "../../queries/useBugReports.ts";
 import { reportDate } from "./reportDate.ts";
+import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface MyReportsSheetProps {
   onClose: () => void;
@@ -24,9 +25,11 @@ interface MyReportsSheetProps {
 
 export function MyReportsSheet({ onClose }: MyReportsSheetProps) {
   const t = useT("bugReports");
+  const reduceMotion = useReduceMotion();
   const insets = useSafeAreaInsets();
   return (
     <Sheet
+      reduceMotion={reduceMotion}
       visible
       onClose={onClose}
       closeLabel={t("list.close")}

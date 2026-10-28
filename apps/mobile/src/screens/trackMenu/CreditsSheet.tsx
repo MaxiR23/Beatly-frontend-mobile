@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
 import { useCredits } from "../../queries/useTracks.ts";
+import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface CreditsSheetProps {
   track: PlayableTrack;
@@ -15,9 +16,11 @@ interface CreditsSheetProps {
 
 export function CreditsSheet({ track, onClose }: CreditsSheetProps) {
   const t = useT("trackMenu");
+  const reduceMotion = useReduceMotion();
   const insets = useSafeAreaInsets();
   return (
     <Sheet
+      reduceMotion={reduceMotion}
       visible
       onClose={onClose}
       closeLabel={t("close")}

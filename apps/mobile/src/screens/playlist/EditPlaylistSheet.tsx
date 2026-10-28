@@ -13,6 +13,7 @@ import {
   isTitleTooLong,
 } from "../library/playlistRules.ts";
 import { playlistEditPatch } from "./playlistEdit.ts";
+import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface EditPlaylistSheetProps {
   playlist: { id: string; title: string; description: string | null };
@@ -21,6 +22,7 @@ interface EditPlaylistSheetProps {
 
 export function EditPlaylistSheet({ playlist, onClose }: EditPlaylistSheetProps) {
   const t = useT("playlist");
+  const reduceMotion = useReduceMotion();
   const tc = useT("common");
   const insets = useSafeAreaInsets();
   const update = useUpdatePlaylist();
@@ -39,7 +41,13 @@ export function EditPlaylistSheet({ playlist, onClose }: EditPlaylistSheetProps)
   };
 
   return (
-    <Sheet visible onClose={close} closeLabel={t("edit.close")} bottomInset={insets.bottom}>
+    <Sheet
+      reduceMotion={reduceMotion}
+      visible
+      onClose={close}
+      closeLabel={t("edit.close")}
+      bottomInset={insets.bottom}
+    >
       <View style={styles.form}>
         <Text variant="subtitle">{t("edit.title")}</Text>
         <Input

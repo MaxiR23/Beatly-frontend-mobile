@@ -52,8 +52,8 @@ Android draws like iOS (21 elements) found most of them differ from Material 3
   4. Material 3 filter chips: 32 tall, 8 corners, an outline and a check.
   5. Detail top bar: the title aligned to the start on Android.
   6. Material 3 modal bottom sheet: attached to the bottom edge, 28 top
-     corners, a drag handle and the keyboard on Android. 6b: drag to close,
-     a separate issue.
+     corners and a drag handle on Android. 6b: drag to close, shipped with 6. The keyboard on Android is deferred to a separate issue; the sheet
+     keeps today's keyboard behaviour.
   7. Tabs instead of the segmented control in the player sheet.
   8. Outlined text fields with a floating label.
   9. A Material 3 switch drawn in `ui`.

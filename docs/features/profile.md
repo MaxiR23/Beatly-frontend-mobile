@@ -72,3 +72,9 @@ Member since on Hermes in both languages with the database's microsecond timesta
 the skeleton blocks against the glass and the base surface, and their handoff to content on a throttled network; screen reader reading of the profile row, the badge and the prefixed field.
 
 The Android back arrow, and the chevron unchanged on iOS (ADR 027).
+
+## The sheet on Android
+
+On Android the `Sheet` is the Material 3 modal bottom sheet (ADR 027, `ui` `Sheet`): attached to the bottom and side edges on `color.surface.raised`, `radius.xl` top corners, a `layout.modalHandleZoneAndroid` handle zone with a `layout.modalHandleWidthAndroid` x `layout.handleHeight` handle in `color.overlay.handleAndroid`, `spacing.xl` side padding, and the content above the bottom inset. A drag down from the handle zone (the only drag zone, so a scrolling list keeps its own scroll) closes it past `motion.dragToClose.*` and springs back with `motion.spring` short of it; the scrim and the system back close it; under reduce motion it has no enter or exit animation and does not follow the finger. iOS keeps the floating glass sheet and slides whatever reduce motion says. The edit sheet is the sheet above with its form.
+
+Left to verify by hand. On an Android phone: the sheet meeting the bottom and side edges and the content ending above the gesture bar, the drag feel and the spring back on a finger, the system back closing it, and the scroll of a long list next to the handle zone.

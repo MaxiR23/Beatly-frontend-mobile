@@ -18,6 +18,7 @@ import {
   profileEditPatch,
   usernameProblem,
 } from "./profileEdit.ts";
+import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface EditProfileSheetProps {
   profile: Profile;
@@ -34,6 +35,7 @@ function isUsernameTaken(error: unknown): boolean {
 
 export function EditProfileSheet({ profile, onClose }: EditProfileSheetProps) {
   const t = useT("profile");
+  const reduceMotion = useReduceMotion();
   const tc = useT("common");
   const insets = useSafeAreaInsets();
   const update = useUpdateProfile();
@@ -64,7 +66,13 @@ export function EditProfileSheet({ profile, onClose }: EditProfileSheetProps) {
   else if (taken) usernameError = t("edit.usernameTaken");
 
   return (
-    <Sheet visible onClose={close} closeLabel={t("edit.close")} bottomInset={insets.bottom}>
+    <Sheet
+      reduceMotion={reduceMotion}
+      visible
+      onClose={close}
+      closeLabel={t("edit.close")}
+      bottomInset={insets.bottom}
+    >
       <View style={styles.form}>
         <Text variant="subtitle">{t("edit.title")}</Text>
         <Input

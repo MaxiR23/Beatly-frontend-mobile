@@ -6,6 +6,7 @@
 // - MediaRow
 //
 // What is covered:
+// - the menu size: a cover of layout.rowCoverMenu
 // - the title and subtitle in their tones, an unavailable row drawn disabled
 // - a trailing element drawn outside the pressable body
 // - the current track: bars in place of the number over the cover on a scrim, no row background, selected state, paused and reduce motion passed on, nothing without nowPlaying or on an unavailable row
@@ -24,6 +25,7 @@ import { MediaRow } from "../../src/components/MediaRow.tsx";
 import { color } from "../../src/tokens/color.ts";
 import { motion } from "../../src/tokens/motion.ts";
 import { radius } from "../../src/tokens/radius.ts";
+import { layout } from "../../src/tokens/spacing.ts";
 
 const tiers = (n: string) => ({
   small: `test://img/${n}/s`,
@@ -32,13 +34,21 @@ const tiers = (n: string) => ({
 });
 
 describe("MediaRow", () => {
-  it.each(["regular", "medium", "large"] as const)(
+  it.each(["regular", "medium", "large", "menu"] as const)(
     "draws the small tier at the %s size",
     async (size) => {
       await render(<MediaRow title="Song" images={[tiers("1")]} shape="square" size={size} />);
       expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/s" });
     },
   );
+
+  it("draws the menu size with a cover of layout.rowCoverMenu", async () => {
+    await render(<MediaRow title="Song" images={[tiers("1")]} shape="square" size="menu" />);
+    expect(screen.getByTestId("cover-single")).toHaveStyle({
+      width: layout.rowCoverMenu,
+      height: layout.rowCoverMenu,
+    });
+  });
 
   it("draws the title and subtitle in their tones when available", async () => {
     await render(

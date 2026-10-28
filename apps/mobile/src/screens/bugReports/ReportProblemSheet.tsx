@@ -16,6 +16,7 @@ import {
   descriptionProblem,
   showsCounter,
 } from "./reportRules.ts";
+import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface ReportProblemSheetProps {
   // The track the report is about, from the track menu; null from the account sheet.
@@ -25,6 +26,7 @@ interface ReportProblemSheetProps {
 
 export function ReportProblemSheet({ track, onClose }: ReportProblemSheetProps) {
   const t = useT("bugReports");
+  const reduceMotion = useReduceMotion();
   const tc = useT("common");
   const insets = useSafeAreaInsets();
   const create = useCreateBugReport();
@@ -63,6 +65,7 @@ export function ReportProblemSheet({ track, onClose }: ReportProblemSheetProps) 
 
   return (
     <Sheet
+      reduceMotion={reduceMotion}
       visible
       onClose={onClose}
       closeLabel={t("form.close")}

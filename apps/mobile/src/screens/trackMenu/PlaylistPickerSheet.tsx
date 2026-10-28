@@ -29,6 +29,7 @@ import {
   canCreatePlaylist,
   isTitleTooLong,
 } from "../library/playlistRules.ts";
+import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface PlaylistPickerSheetProps {
   track: PlayableTrack;
@@ -37,9 +38,11 @@ interface PlaylistPickerSheetProps {
 
 export function PlaylistPickerSheet({ track, onClose }: PlaylistPickerSheetProps) {
   const t = useT("trackMenu");
+  const reduceMotion = useReduceMotion();
   const insets = useSafeAreaInsets();
   return (
     <Sheet
+      reduceMotion={reduceMotion}
       visible
       onClose={onClose}
       closeLabel={t("close")}
