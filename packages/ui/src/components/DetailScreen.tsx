@@ -299,7 +299,7 @@ export function DetailScreen({
                   </Animated.View>
                 ) : null}
               </>
-            ) : null
+            ) : undefined
           }
           contentContainerStyle={{ paddingBottom: bottomInset }}
           onScroll={onScroll}

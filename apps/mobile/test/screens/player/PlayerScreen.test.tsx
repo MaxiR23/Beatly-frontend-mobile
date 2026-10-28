@@ -22,20 +22,14 @@ import type { PlayableTrack, PlaybackSource } from "@beatly/core";
 import { color, icon, layout, motion, radius, spacing } from "@beatly/ui";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
-import {
-  AccessibilityInfo,
-  Animated,
-  Dimensions,
-  Platform,
-  processColor,
-  StyleSheet,
-} from "react-native";
+import { AccessibilityInfo, Animated, Dimensions, Platform, processColor } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { PlayerScreen } from "../../../src/screens/player/PlayerScreen.tsx";
 import { makeCore, stateFlag, tiers, Wrapper } from "../../helpers/core.tsx";
+import { flatStyle } from "../../helpers/flatStyle.ts";
 
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
@@ -223,7 +217,7 @@ describe("PlayerScreen", () => {
     expect(screen.getByTestId("player-cover")).toHaveStyle({ marginTop: spacing.xl });
     const box = screen.getByTestId("cover-placeholder").parent;
     const side = Dimensions.get("window").width - 2 * spacing.xl;
-    expect(StyleSheet.flatten(box?.props.style)).toEqual(
+    expect(flatStyle(box?.props.style)).toEqual(
       expect.objectContaining({ width: side, height: side, borderRadius: radius.md }),
     );
     expect(screen.getByTestId("player-titles")).toHaveStyle({ marginTop: spacing.xxl });

@@ -16,12 +16,13 @@
 
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import { Platform, StyleSheet, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
+import { Platform, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 
 import { ActionRow } from "../../src/components/ActionRow.tsx";
 import { color } from "../../src/tokens/color.ts";
 import { icon } from "../../src/tokens/icon.ts";
 import { layout, spacing } from "../../src/tokens/spacing.ts";
+import { flatStyle } from "../helpers/flatStyle.ts";
 
 interface JsonNode {
   props: Record<string, unknown>;
@@ -45,7 +46,7 @@ function svgRoots(tree: unknown): JsonNode[] {
 }
 
 function row(): ViewStyle {
-  return StyleSheet.flatten(
+  return flatStyle(
     screen.getByRole("button", { name: "Share" }).props.style as StyleProp<ViewStyle>,
   );
 }
@@ -84,8 +85,8 @@ describe("ActionRow", () => {
 
   it("draws a destructive label in the error tone", async () => {
     await render(<ActionRow icon="heart" label="Share" onPress={jest.fn()} destructive />);
-    expect(
-      StyleSheet.flatten(screen.getByText("Share").props.style as StyleProp<TextStyle>).color,
-    ).toBe(color.status.error);
+    expect(flatStyle(screen.getByText("Share").props.style as StyleProp<TextStyle>).color).toBe(
+      color.status.error,
+    );
   });
 });

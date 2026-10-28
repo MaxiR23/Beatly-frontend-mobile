@@ -19,14 +19,7 @@
 
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import {
-  Animated,
-  Platform,
-  StyleSheet,
-  type StyleProp,
-  type TextStyle,
-  type ViewStyle,
-} from "react-native";
+import { Animated, Platform, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 
 import { Input } from "../../src/components/Input.tsx";
 import { border } from "../../src/tokens/border.ts";
@@ -35,6 +28,7 @@ import { motion } from "../../src/tokens/motion.ts";
 import { radius } from "../../src/tokens/radius.ts";
 import { layout, spacing } from "../../src/tokens/spacing.ts";
 import { typography } from "../../src/tokens/typography.ts";
+import { flatStyle } from "../helpers/flatStyle.ts";
 
 const timing = jest.spyOn(Animated, "timing");
 
@@ -44,12 +38,12 @@ afterEach(() => {
 });
 
 function flat(node: { props: { style?: unknown } }): ViewStyle {
-  return StyleSheet.flatten(node.props.style as StyleProp<ViewStyle>);
+  return flatStyle(node.props.style);
 }
 
 function labelTextColor(): unknown {
   const text = screen.getByText("Name", { includeHiddenElements: true });
-  return StyleSheet.flatten(text.props.style as StyleProp<TextStyle>).color;
+  return flatStyle(text.props.style as StyleProp<TextStyle>).color;
 }
 
 const restTop = (layout.controlHeight - typography.body.lineHeight) / 2;
@@ -166,7 +160,7 @@ describe("Input on Android", () => {
     expect(style.borderWidth).toBe(border.width);
     expect(style.borderColor).toBe(color.surface.border);
     expect(flat(screen.getByLabelText("Name").parent as never).backgroundColor).toBeUndefined();
-    expect(StyleSheet.flatten(label().props.style as StyleProp<ViewStyle>).backgroundColor).toBe(
+    expect(flatStyle(label().props.style as StyleProp<ViewStyle>).backgroundColor).toBe(
       color.surface.raised,
     );
   });
@@ -234,9 +228,9 @@ describe("Input on Android", () => {
     expect(labelTextColor()).toBe(color.status.error);
     const error = screen.getByTestId("input-error");
     expect(screen.getByText("Too long")).toBeTruthy();
-    expect(
-      StyleSheet.flatten(screen.getByText("Too long").props.style as StyleProp<TextStyle>).color,
-    ).toBe(color.status.error);
+    expect(flatStyle(screen.getByText("Too long").props.style as StyleProp<TextStyle>).color).toBe(
+      color.status.error,
+    );
     expect(error).toBeTruthy();
     const column = error.parent;
     expect(column).toBeTruthy();

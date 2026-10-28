@@ -20,7 +20,6 @@ import { fireEvent, render, screen } from "@testing-library/react-native";
 import {
   Platform,
   processColor,
-  StyleSheet,
   type StyleProp,
   type TextStyle,
   type ViewStyle,
@@ -31,6 +30,7 @@ import { border } from "../../src/tokens/border.ts";
 import { color } from "../../src/tokens/color.ts";
 import { radius } from "../../src/tokens/radius.ts";
 import { layout, spacing } from "../../src/tokens/spacing.ts";
+import { flatStyle } from "../helpers/flatStyle.ts";
 
 interface JsonNode {
   props: Record<string, unknown>;
@@ -54,11 +54,11 @@ function svgRoots(tree: unknown): JsonNode[] {
 }
 
 function flat(node: { props: { style?: unknown } }): ViewStyle {
-  return StyleSheet.flatten(node.props.style as StyleProp<ViewStyle>);
+  return flatStyle(node.props.style);
 }
 
 function labelColor(label: string): unknown {
-  return StyleSheet.flatten(screen.getByText(label).props.style as StyleProp<TextStyle>).color;
+  return flatStyle(screen.getByText(label).props.style as StyleProp<TextStyle>).color;
 }
 
 afterEach(() => {

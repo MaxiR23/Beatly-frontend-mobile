@@ -31,14 +31,14 @@ export function Marquee({ text, variant, tone = "primary", reduceMotion, testID 
         Animated.timing(translateX, {
           toValue: -overflow,
           duration,
-          easing: Easing.linear,
+          easing: (t) => Easing.linear(t),
           useNativeDriver: true,
         }),
         Animated.delay(motion.marquee.pause),
         Animated.timing(translateX, {
           toValue: 0,
           duration,
-          easing: Easing.linear,
+          easing: (t) => Easing.linear(t),
           useNativeDriver: true,
         }),
       ]),

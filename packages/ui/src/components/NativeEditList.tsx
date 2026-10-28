@@ -1,5 +1,6 @@
 // INFO: the iOS edit list drawn through the swiftUI loader (ADR 025): a SwiftUI List in edit mode with the system drag handles and delete, one row per item with its title over its subtitle and no cover, then a trailing inert spacer row of bottomInset points so the last item scrolls clear of the tab bar while the list itself fills the body; SwiftUI reports a move as source indices and a destination offset counted before the row is removed, which is converted here so onMove(fromIndex, toIndex) gets the row's final zero-based index, and only a single-row, effective move is reported; onRemove(index) is called for a single deleted row. It is drawn only where isNativeEditListAvailable() is true; everywhere else the caller draws ReorderList.
 import { color } from "../tokens/color.ts";
+import { spacing } from "../tokens/spacing.ts";
 import { typography } from "../tokens/typography.ts";
 import type { EditListItem } from "./editList.ts";
 import { isSwiftUIAvailable, loadSwiftUI } from "./swiftUI.ts";
@@ -85,6 +86,7 @@ export function NativeEditList({
             <VStack
               key={item.key}
               alignment="leading"
+              spacing={spacing.none}
               modifiers={[
                 listRowBackground(color.surface.base),
                 accessibilityLabel(item.label),

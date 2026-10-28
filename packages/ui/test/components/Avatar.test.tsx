@@ -14,11 +14,12 @@
 
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import { processColor, StyleSheet, type ViewStyle } from "react-native";
+import { processColor, type ViewStyle } from "react-native";
 
 import { Avatar } from "../../src/components/Avatar.tsx";
 import { layout } from "../../src/tokens/spacing.ts";
 import { avatarGradient } from "../../src/components/avatarIdentity.ts";
+import { flatStyle } from "../helpers/flatStyle.ts";
 
 interface JsonNode {
   props: Record<string, unknown>;
@@ -70,9 +71,7 @@ describe("Avatar", () => {
   it("draws the creator size at layout.creatorMark", async () => {
     await render(<Avatar name="Max Reb" size="creator" />);
     const root = screen.toJSON();
-    const style = StyleSheet.flatten(
-      (isJsonNode(root) ? root.props.style : undefined) as ViewStyle,
-    );
+    const style = flatStyle((isJsonNode(root) ? root.props.style : undefined) as ViewStyle);
     expect(style.width).toBe(layout.creatorMark);
     expect(style.height).toBe(layout.creatorMark);
   });
@@ -80,9 +79,7 @@ describe("Avatar", () => {
   it("draws the profile size at layout.profileAvatar", async () => {
     await render(<Avatar name="Max Reb" size="profile" />);
     const root = screen.toJSON();
-    const style = StyleSheet.flatten(
-      (isJsonNode(root) ? root.props.style : undefined) as ViewStyle,
-    );
+    const style = flatStyle((isJsonNode(root) ? root.props.style : undefined) as ViewStyle);
     expect(style.width).toBe(layout.profileAvatar);
     expect(style.height).toBe(layout.profileAvatar);
   });

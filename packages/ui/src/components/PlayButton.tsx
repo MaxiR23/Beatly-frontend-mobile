@@ -98,7 +98,7 @@ export function PlayButton({
         const shrinkTiming = Animated.timing(shrink, {
           toValue: 1,
           duration: motion.playButton.shrink,
-          easing: Easing.inOut(Easing.ease),
+          easing: Easing.inOut((t) => Easing.ease(t)),
           useNativeDriver: true,
         });
         running.current = shrinkTiming;

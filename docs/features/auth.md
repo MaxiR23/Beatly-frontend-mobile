@@ -15,13 +15,13 @@ The first feature doc: the routes the auth screens use and the states they draw.
 While the status is `unknown`, only `session-pending` and `auth/callback` are available and the
 native splash stays up. `session-pending` is the one shown; `auth/callback` mounts only when an
 email link opens it. On `signed_out`, `login` and `sign-up` mount. On `signed_in`, `(tabs)`
-and `player` mount. The splash hides in an effect after the commit that mounts the matching
-screen.
+and `player` mount. The splash hides once the status is known and the root route has left
+`session-pending`, after the commit that mounts the screen it lands on.
 
-`session-pending` must be declared first in the root `Stack`. When the current route stops
-being available, the stack falls back to the first available route name. If `auth/callback`
-came first, a cold start on `/` while `unknown` would land on the callback's invalid-link
-state and stay there.
+A route whose guard fails renders a redirect to the screen the status allows (`redirectTo` on
+each `Stack.Protected`: `/session-pending` while `unknown`, `/login` signed out, `/` signed in).
+Without it the router falls back to the first unguarded route in file order, which is
+`auth/callback`, and a cold start would stay on the callback's invalid-link state.
 
 ## Layout
 

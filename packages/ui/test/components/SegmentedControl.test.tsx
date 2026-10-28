@@ -16,14 +16,7 @@
 
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import {
-  Animated,
-  Platform,
-  StyleSheet,
-  type StyleProp,
-  type TextStyle,
-  type ViewStyle,
-} from "react-native";
+import { Animated, Platform, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 
 import { SegmentedControl } from "../../src/components/SegmentedControl.tsx";
 import { border } from "../../src/tokens/border.ts";
@@ -31,6 +24,7 @@ import { color } from "../../src/tokens/color.ts";
 import { motion } from "../../src/tokens/motion.ts";
 import { radius } from "../../src/tokens/radius.ts";
 import { layout } from "../../src/tokens/spacing.ts";
+import { flatStyle } from "../helpers/flatStyle.ts";
 
 const options = [
   { key: "a", label: "Up next" },
@@ -46,11 +40,11 @@ afterEach(() => {
 });
 
 function flat(node: { props: { style?: unknown } }): ViewStyle {
-  return StyleSheet.flatten(node.props.style as StyleProp<ViewStyle>);
+  return flatStyle(node.props.style);
 }
 
 function labelColor(label: string): unknown {
-  return StyleSheet.flatten(screen.getByText(label).props.style as StyleProp<TextStyle>).color;
+  return flatStyle(screen.getByText(label).props.style as StyleProp<TextStyle>).color;
 }
 
 const labelWidths = { a: 60, b: 50, c: 70 } as const;

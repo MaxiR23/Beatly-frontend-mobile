@@ -45,7 +45,7 @@ value: the value lives once, in the token file.
 
 | Role                                                                                                                                                                                           | Token                                                                                               |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Spacing scale, multiples of four                                                                                                                                                               | `spacing.xxs` … `spacing.xxl`                                                                       |
+| Spacing scale, multiples of four                                                                                                                                                               | `spacing.xxs` … `spacing.xxl`; `spacing.none` for an explicit zero gap over a native default        |
 | Screen edge padding                                                                                                                                                                            | `layout.gutter`                                                                                     |
 | Gap between items in a list/row                                                                                                                                                                | `layout.gap`                                                                                        |
 | Minimum touch target padding (`hitSlop`)                                                                                                                                                       | `layout.hitSlop`                                                                                    |
@@ -236,7 +236,7 @@ Entry: in the ready body the content enters once per mount in a top-down cascade
 
 ## Edit list
 
-- `NativeEditList` (iOS with the ExpoUI module, ADR 025): a SwiftUI `List` in edit mode, plain style, scroll background hidden on `color.surface.base`; each row is `typography.rowTitle` in `color.text.primary` over `typography.meta` in `color.text.secondary`, without a cover; the system draws the handles and the delete.
+- `NativeEditList` (iOS with the ExpoUI module, ADR 025): a SwiftUI `List` in edit mode, plain style, scroll background hidden on `color.surface.base`; each row is `typography.rowTitle` in `color.text.primary` over `typography.meta` in `color.text.secondary` with no gap between them (`spacing.none`), without a cover; the system draws the handles and the delete.
 - `ReorderList` (Android and the iOS fallback): rows `layout.controlHeight + 2 * spacing.xs` tall: an `IconButton` `x`, a `MediaRow` `regular`, and a `layout.controlHeight` handle with `gripVertical`. The held row is lifted on `color.surface.raised` with `shadow.floating`; the others make room over `motion.duration.fast`; the list auto-scrolls inside `motion.reorder.edge` of either end at `motion.reorder.speed`.
 
 ## Bug reports

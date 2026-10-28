@@ -120,6 +120,10 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
   Android follows Material 3 element by element, and the Android branches
   are decided by `isAndroidVariant()`, with `isGlassAvailable()` left as the
   glass test. 017 stays in force for iOS.
+- `017-native-tabs-and-glass-surfaces.md` says the iOS tab bar comes from
+  `expo-router/unstable-native-tabs`, a stable SDK's unstable API. Since
+  issue #130 (SDK 58) it comes from `expo-router/native-tabs`, which SDK 58
+  made stable; the rest of 017, as corrected above by 027, stands.
 
 ## Files
 
@@ -213,3 +217,6 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
   Material 3 with only brand adjustments while iOS does not change, why one
   helper decides the Android branches, and in what order the Android
   variants land.
+- `028-first-pnpm-patch-and-jest-30.md` — why the masked view's type
+  declarations carry the repo's first pnpm patch, when to drop it, and why
+  jest moved to 30 with Expo SDK 58.

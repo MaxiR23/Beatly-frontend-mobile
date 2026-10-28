@@ -17,13 +17,14 @@
 
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import { Platform, StyleSheet, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
+import { Platform, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 
 import { Notice } from "../../src/components/Notice.tsx";
 import { color } from "../../src/tokens/color.ts";
 import { radius } from "../../src/tokens/radius.ts";
 import { spacing } from "../../src/tokens/spacing.ts";
 import { typography } from "../../src/tokens/typography.ts";
+import { flatStyle } from "../helpers/flatStyle.ts";
 
 interface ReactNativeView {
   View: unknown;
@@ -65,7 +66,7 @@ function iconClasses(): string[] {
 }
 
 function styleOf(testID: string): ViewStyle {
-  return StyleSheet.flatten(screen.getByTestId(testID).props.style as StyleProp<ViewStyle>);
+  return flatStyle(screen.getByTestId(testID).props.style as StyleProp<ViewStyle>);
 }
 
 function treeHasBackground(value: string): boolean {
@@ -124,7 +125,7 @@ describe("Notice floating on Android", () => {
     expect(style.backgroundColor).toBe(color.surface.inverse);
     expect(style.borderRadius).toBe(radius.xs);
     expect(svgRoots(screen.toJSON())).toHaveLength(0);
-    const text = StyleSheet.flatten(screen.getByText("Failed").props.style as StyleProp<TextStyle>);
+    const text = flatStyle(screen.getByText("Failed").props.style as StyleProp<TextStyle>);
     expect(text.color).toBe(color.text.inverse);
     expect(text.fontSize).toBe(typography.body.fontSize);
     const node = screen.getByTestId("n");

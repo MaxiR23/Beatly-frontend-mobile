@@ -10,4 +10,7 @@
 //
 import { notifyManager } from "@tanstack/react-query";
 
-notifyManager.setScheduler(queueMicrotask);
+// queueMicrotask is not in the global types of React Native 0.88.
+notifyManager.setScheduler((callback) => {
+  void Promise.resolve().then(callback);
+});

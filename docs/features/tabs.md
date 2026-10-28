@@ -10,7 +10,7 @@ accessible label. Each tab has its own screen (`home.md`, `explore.md`,
 
 ## Layout
 
-- iOS 26+: native tabs with system glass (`expo-router/unstable-native-tabs`)
+- iOS 26+: native tabs with system glass (`expo-router/native-tabs`)
   and SF Symbols: `house` / `house.fill`, `safari` / `safari.fill`,
   `magnifyingglass`, `books.vertical` / `books.vertical.fill`.
 - Elsewhere: `FloatingTabBar`, a pill in `radius.full` on `GlassSurface` (solid

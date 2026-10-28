@@ -94,7 +94,11 @@ describe("createDbAdapter", () => {
     });
     const transaction = db.transaction(() => held);
     const run = db.run("DELETE FROM likes");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) =>
+      setTimeout(() => {
+        resolve(undefined);
+      }, 0),
+    );
     expect(engine.runAsync).not.toHaveBeenCalled();
     release();
     await Promise.all([transaction, run]);

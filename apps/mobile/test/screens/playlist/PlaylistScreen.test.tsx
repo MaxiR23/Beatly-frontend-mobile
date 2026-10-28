@@ -736,7 +736,7 @@ describe("PlaylistScreen action row", () => {
         thumbnail_url: "test://img/1",
         kind: "user",
       },
-    };
+    } as const;
     await fireEvent.press(screen.getByRole("button", { name: en.playlist.play }));
     await waitFor(() => {
       expect(ctx.registerRecent).toHaveBeenCalledTimes(1);
