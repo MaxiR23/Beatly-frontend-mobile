@@ -98,7 +98,7 @@ export function UpNextTab({ seed, onAtTopChange }: UpNextTabProps) {
       onScroll={(event) => {
         onAtTopChange(event.nativeEvent.contentOffset.y <= 0);
       }}
-      ListHeaderComponent={<AutoplaySwitch />}
+      ListHeaderComponent={<AutoplaySwitch reduceMotion={nowPlaying.reduceMotion} />}
       ListFooterComponent={footer}
       renderItem={({ item }) =>
         item.section === "divider" ? (

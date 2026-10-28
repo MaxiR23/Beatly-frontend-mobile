@@ -1,9 +1,9 @@
 // packages/ui/test/press-feedback-usage.test.tsx
 //
-// Cross-cutting test: the 16 pressable components take their press feedback from pressFeedback.
+// Cross-cutting test: the 17 pressable components take their press feedback from pressFeedback.
 //
 // Tested:
-// - ActionRow, Avatar, AvatarRow, Button, Chip, FloatingTabBar, GenreRow, IconButton, MediaCard, MediaRow, MiniPlayer, Notice, PlayButton, RecentRow, SegmentedControl, TrackRow
+// - ActionRow, Avatar, AvatarRow, Button, Chip, FloatingTabBar, GenreRow, IconButton, MediaCard, MediaRow, MiniPlayer, Notice, PlayButton, RecentRow, SegmentedControl, SwitchRow, TrackRow
 //
 // What is covered:
 // - iOS: no ripple prop on the pressable, no opacity while unpressed, motion.pressOpacity while pressed
@@ -40,6 +40,7 @@ import { Notice } from "../src/components/Notice.tsx";
 import { PlayButton } from "../src/components/PlayButton.tsx";
 import { RecentRow } from "../src/components/RecentRow.tsx";
 import { SegmentedControl } from "../src/components/SegmentedControl.tsx";
+import { SwitchRow } from "../src/components/SwitchRow.tsx";
 import { TrackRow } from "../src/components/TrackRow.tsx";
 import { motion } from "../src/tokens/motion.ts";
 import { spacing } from "../src/tokens/spacing.ts";
@@ -266,6 +267,32 @@ const sites: readonly Site[] = [
       <Notice floating tone="error" message="Failed" action={{ label: "Undo", onPress: noop }} />
     ),
     find: () => screen.getByRole("button", { name: "Undo" }),
+    on: "accent",
+    shape: "round",
+    androidOnly: true,
+  },
+  {
+    name: "SwitchRow off",
+    element: () => (
+      <SwitchRow
+        label="Public"
+        helper="Anyone"
+        value={false}
+        onValueChange={noop}
+        reduceMotion={false}
+      />
+    ),
+    find: () => screen.getByRole("switch", { name: "Public" }),
+    on: "surface",
+    shape: "round",
+    androidOnly: true,
+  },
+  {
+    name: "SwitchRow on",
+    element: () => (
+      <SwitchRow label="Public" helper="Anyone" value onValueChange={noop} reduceMotion={false} />
+    ),
+    find: () => screen.getByRole("switch", { name: "Public" }),
     on: "accent",
     shape: "round",
     androidOnly: true,
