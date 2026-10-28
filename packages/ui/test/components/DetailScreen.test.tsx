@@ -12,6 +12,7 @@
 // - the slot after the rows: under the rows and after the next-page skeleton, none without it, drawn with no rows
 // - the hero title in typography.title
 // - the image hero: full width at the hero image ratio, the title over it in typography.display, the fade, the placeholder without an image, no centered cover or wash
+// - the bar's title from the start on Android (textAlign left, one line with the default tail ellipsis, back, title, more in that order, no trailing spacer without a more) and centered on iOS with and without a more
 // - the back and more glyphs of each platform on the floating buttons and the top bar
 // - the floating back button, the more button only when given, the neutral wash and the gradient wash
 // - the collapse: one Animated.event on the native driver, the cover's shrink and fade, the order of the fades on both heroes, ranges from the measured heights, the touches handed from the floating buttons to the top bar and back, the bar's geometry and fill, no cover scale under reduce motion, static until measured, the other bodies unchanged, the reset when the ready body leaves
@@ -755,6 +756,36 @@ describe("DetailScreen", () => {
       expect(StyleSheet.flatten(bar.props.style as ViewStyle).backgroundColor).toBe("#336699");
     });
 
+    // Each direct child of the bar's row as its accessibility label (an IconButton), its testID or "spacer".
+    const rowKinds = () =>
+      screen
+        .getByTestId("detail-top-bar-row", hidden)
+        .children.flatMap((child) => (typeof child === "string" ? [] : [child]))
+        .map((child) =>
+          typeof child.props.accessibilityLabel === "string"
+            ? child.props.accessibilityLabel
+            : typeof child.props.testID === "string"
+              ? child.props.testID
+              : "spacer",
+        );
+
+    it("draws the bar's title from the start after the back, on one line, with the more at the end on Android", async () => {
+      await setup(ready(), { more: { label: "More", onPress: () => undefined } });
+      const bar = screen.getByTestId("detail-top-bar", hidden);
+      const title = within(bar).getByText("Album title", hidden);
+      expect(StyleSheet.flatten(title.props.style as TextStyle).textAlign).toBe("left");
+      expect(title.props.numberOfLines).toBe(1);
+      expect(title.props.ellipsizeMode).toBeUndefined();
+      const container = screen.getByTestId("detail-top-bar-title", hidden);
+      expect(StyleSheet.flatten(container.props.style as ViewStyle).flex).toBe(1);
+      expect(rowKinds()).toEqual(["Back", "detail-top-bar-title", "More"]);
+    });
+
+    it("draws no trailing spacer after the title without a more on Android", async () => {
+      await setup(ready());
+      expect(rowKinds()).toEqual(["Back", "detail-top-bar-title"]);
+    });
+
     it("draws no blur on Android in any phase", async () => {
       const { scrollTo, scrollEvent } = await setup(ready(), {
         more: { label: "More", onPress: () => undefined },
@@ -885,6 +916,14 @@ describe("DetailScreen", () => {
         const row = screen.getByTestId("detail-top-bar-back-slot", hidden).parent;
         const last = find(row?.children, () => true).at(-1);
         expect(StyleSheet.flatten(last?.props.style as ViewStyle).width).toBe(layout.controlHeight);
+      });
+
+      it("keeps the bar's title centered on iOS with a more", async () => {
+        await setup(ready(), { more: { ...moreOf, onPress: () => undefined } });
+        const bar = screen.getByTestId("detail-top-bar", hidden);
+        const title = within(bar).getByText("Album title", hidden);
+        expect(StyleSheet.flatten(title.props.style as TextStyle).textAlign).toBe("center");
+        expect(rowKinds()).toEqual(["detail-top-bar-back-slot", "detail-top-bar-title", "More"]);
       });
 
       it("reaches from the top edge to spacing.sm past spacing.xs under the back and centers the title with it", async () => {

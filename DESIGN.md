@@ -146,8 +146,9 @@ Entry: in the ready body the content enters once per mount in a top-down cascade
 - Title: `typography.title` under the hero. The base reserves no space for an action
   row; the screen owns the gap below its own title block.
 - Top bar, on Android: from the top edge to `topInset + layout.controlHeight`, `layout.gutter` sides, filled with the dominant color or
-  `color.surface.base`, no blur and no glass; an `IconButton` `back` (the Android arrow), the title in `typography.subtitle` on one line centered, and more only
-  with the `more` prop (a `layout.controlHeight` spacer otherwise). It takes touches only once it starts to appear, the floating buttons
+  `color.surface.base`, no blur and no glass; the Material 3 small top app bar (ADR 027): an `IconButton` `back` (the Android arrow), then the title in `typography.subtitle` from the start, `spacing.sm` after the back,
+  on one line with a trailing ellipsis, and more at the end only with the `more` prop (no spacer otherwise, the title runs to the end padding).
+  A deliberate departure, not to be "fixed": the back keeps `layout.gutter` from the edge (Material 3 uses a 4dp inset) so it sits where the floating back sat and the hand-over does not move it; the title keeps `typography.subtitle` until the type scale (ADR 027 item 13). It takes touches only once it starts to appear, the floating buttons
   only until they have faded, neither in between; the faded set is hidden from assistive technology.
   The bar is a solid surface and catches every touch on its area once active, unlike the floating buttons, which let touches through
   around them. A three-valued phase owns the touches (floating while `offset < buttons[1]`, bar from `bar[0]`, neither in between);
@@ -161,7 +162,7 @@ Entry: in the ready body the content enters once per mount in a top-down cascade
   `layout.controlHeight` slots, at the back's vertical center, and more only with the `more` prop. The floating back is drawn above the bar,
   so the bar catches touches on its area without blocking it. The phase hands over only the mores: the floating more while
   `offset < buttons[1]`, the bar's from `bar[0]`.
-- Platform difference, a design decision of this change: iOS and Android draw different bars. On iOS the native-glass floating back stays fixed in every phase and the fading strip fades in behind it, with no back of its own in the bar; on Android the bar carries its own back and the floating buttons hand over to it.
+- Platform difference, a design decision of this change: iOS and Android draw different bars. On iOS the native-glass floating back stays fixed in every phase and the fading strip fades in behind it, with no back of its own in the bar; on Android the bar carries its own back and the floating buttons hand over to it; on Android the title starts after the back, on iOS it is centered.
 - Floating back and more buttons (`IconButton` `back` and `more`): `GlassSurface` `circle` over the hero in
   every state; in the ready body, on Android both fade out with the scroll; on iOS the back stays fixed, opaque and touchable in every phase, and only the more fades. The more button is drawn only when the screen passes a `more` prop.
 - Skeleton: `DetailSkeleton`, a static cover block, a title bar, a meta bar and
