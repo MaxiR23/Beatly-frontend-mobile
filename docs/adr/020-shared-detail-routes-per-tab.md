@@ -13,7 +13,8 @@ route at the root of the app would leave the tab and lose the selection.
 - The four tabs are the groups `(home)`, `(explore)`, `(search)` and `(library)`
   under `(tabs)`. Their URLs do not change.
 - One layout, in the array group `(home,explore,search,library)`, declares a stack
-  for each tab, with `unstable_settings` naming each tab's initial route. The
+  for each tab, with `unstable_settings` naming each tab's initial route as its `anchor`, which
+  also seeds the base screen under a detail opened with `withAnchor`. The
   detail routes live in the same folder, so expo-router materializes a copy in
   each tab and resolves the one in the current tab when a route is pushed.
 - The tab roots live in their own group folders, which expo-router merges with the
@@ -26,4 +27,6 @@ route at the root of the app would leave the tab and lose the selection.
 
 - The route names of the tab navigator are the group names.
 - A new detail screen is one file in the array folder.
+- A cold deep link to a shared route opens in Home over its anchor; a tab's own
+  route keeps its tab.
 - The NativeTabs branch (iOS 26+) is checked by hand.
