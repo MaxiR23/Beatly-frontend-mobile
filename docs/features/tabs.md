@@ -55,7 +55,12 @@ keeps its own back stack and shares the detail routes declared in that folder:
 `/album/[id]` (`album.md`) and `/artist/[id]` (`artist.md`). Every navigator paints
 `color.surface.base` from the root navigation theme. The Explore tab's genre route
 (`explore/genres/[slug]`) lives in its own group. A new detail screen is one
-file in the array folder (ADR 020).
+file in the array folder (ADR 020). Each stack declares its base screen as the
+`anchor` in `unstable_settings` (not the deprecated `initialRouteName`): `index`
+for Home, `explore/index` for Explore, `search` for Search and `library` for
+Library. A cold deep link into a shared detail route is kept across the session gate (`auth.md`) and
+opens in the Home tab over `index`; one into a tab's own route opens over that tab's base
+screen. Back returns to the base screen.
 
 ## i18n namespace
 

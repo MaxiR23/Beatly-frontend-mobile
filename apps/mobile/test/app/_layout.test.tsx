@@ -9,22 +9,26 @@
 // - unknown mounts only the placeholder and keeps the splash; signed out mounts login and sign up only; signed in mounts tabs and player only
 // - the splash hides only once the screen matching the status is committed (a mount registry the hideAsync mock reads), from the stored status and from a change event
 // - signing in lands on home, signing out lands on login
+// - a cold deep link to a tab route is kept while unknown: opened over the tab's base with a session, or after signing in from login; used once; the splash hides only with the target drawn
+// - a cold /login is not kept
 //
 // Run with: pnpm --filter @beatly/mobile test -- app/_layout
 //
-// SEE: apps/mobile/app/_layout.tsx, apps/mobile/app/session-pending.tsx
+// SEE: apps/mobile/app/_layout.tsx, apps/mobile/app/session-pending.tsx, apps/mobile/src/screens/album/AlbumScreen.tsx
 
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { router } from "expo-router";
-import { act, renderRouter, screen } from "expo-router/testing-library";
+import { act, fireEvent, renderRouter, screen } from "expo-router/testing-library";
 import * as SplashScreen from "expo-splash-screen";
 import { useLayoutEffect, type ComponentType } from "react";
 
+import type * as AlbumModule from "../../src/screens/album/AlbumScreen.tsx";
 import type * as HomeModule from "../../src/screens/home/HomeScreen.tsx";
 import type * as LoginModule from "../../src/screens/login/LoginScreen.tsx";
 import type * as PlayerModule from "../../src/screens/player/PlayerScreen.tsx";
 import type * as PendingModule from "../../src/screens/sessionPending/SessionPendingScreen.tsx";
 import type * as SignUpModule from "../../src/screens/signUp/SignUpScreen.tsx";
+import { resources } from "../../src/i18n/resources.ts";
 import { installCore } from "../helpers/routeCore.ts";
 
 jest.mock("../../src/createCore.ts", () => ({ createCore: () => mockCore.current }));
@@ -32,14 +36,20 @@ jest.mock("expo-splash-screen", () => ({
   preventAutoHideAsync: jest.fn(() => Promise.resolve(true)),
   hideAsync: jest.fn(() => Promise.resolve()),
 }));
+jest.mock("../../src/adapters/imageColors.ts", () => ({
+  getDominantColor: () => Promise.resolve({ kind: "unavailable" }),
+  peekDominantColor: () => undefined,
+}));
 const mockCore = installCore();
 
 const mockMounted = new Set<string>();
+const everMounted = new Set<string>();
 
 function mockTracked(id: string, Screen: ComponentType) {
   return function Tracked() {
     useLayoutEffect(() => {
       mockMounted.add(id);
+      everMounted.add(id);
       return () => {
         mockMounted.delete(id);
       };
@@ -51,6 +61,10 @@ function mockTracked(id: string, Screen: ComponentType) {
 jest.mock("../../src/screens/home/HomeScreen.tsx", () => {
   const actual = jest.requireActual<typeof HomeModule>("../../src/screens/home/HomeScreen.tsx");
   return { ...actual, HomeScreen: mockTracked("home", actual.HomeScreen) };
+});
+jest.mock("../../src/screens/album/AlbumScreen.tsx", () => {
+  const actual = jest.requireActual<typeof AlbumModule>("../../src/screens/album/AlbumScreen.tsx");
+  return { ...actual, AlbumScreen: mockTracked("album", actual.AlbumScreen) };
 });
 jest.mock("../../src/screens/login/LoginScreen.tsx", () => {
   const actual = jest.requireActual<typeof LoginModule>("../../src/screens/login/LoginScreen.tsx");
@@ -83,6 +97,7 @@ const drawnAtHide: string[][] = [];
 beforeEach(() => {
   drawnAtHide.length = 0;
   mockMounted.clear();
+  everMounted.clear();
   jest.mocked(SplashScreen.hideAsync).mockClear();
   jest.mocked(SplashScreen.hideAsync).mockImplementation(() => {
     drawnAtHide.push([...mockMounted]);
@@ -201,5 +216,64 @@ describe("the root layout session gate", () => {
     });
     expect(await screen.findByTestId("home")).toBeTruthy();
     expect(screen.queryByTestId("login")).toBeNull();
+  });
+
+  it("opens a cold deep link with a session, the splash hiding only once the album is drawn", async () => {
+    mockCore.set("signed_in");
+    await renderRouter("app", { initialUrl: "/album/MPREb_1" });
+    expect(await screen.findByTestId("album")).toBeTruthy();
+    const first = drawnAtHide[0] ?? [];
+    expect(first).toContain("album");
+    expect(first).not.toContain("sessionPending");
+    expect(first).not.toContain("login");
+    expect(everMounted.has("login")).toBe(false);
+    expect(everMounted.has("signUp")).toBe(false);
+  });
+
+  it("shows login for a cold deep link without a session and opens the link after signing in", async () => {
+    mockCore.set("signed_out");
+    await renderRouter("app", { initialUrl: "/album/MPREb_1" });
+    expect(await screen.findByTestId("login")).toBeTruthy();
+    const first = drawnAtHide[0] ?? [];
+    expect(first).toContain("login");
+    expect(first).not.toContain("album");
+    expect(first).not.toContain("home");
+    await act(() => {
+      mockCore.emit("signed_in");
+      return Promise.resolve();
+    });
+    expect(await screen.findByTestId("album")).toBeTruthy();
+    expect(router.canGoBack()).toBe(true);
+    await fireEvent.press(screen.getByRole("button", { name: resources.en.album.back }));
+    expect(await screen.findByTestId("home")).toBeTruthy();
+  });
+
+  it("uses the pending link once: a later sign-out and sign-in lands on home", async () => {
+    mockCore.set("signed_in");
+    await renderRouter("app", { initialUrl: "/album/MPREb_1" });
+    await screen.findByTestId("album");
+    await act(() => {
+      mockCore.emit("signed_out");
+      return Promise.resolve();
+    });
+    await screen.findByTestId("login");
+    await act(() => {
+      mockCore.emit("signed_in");
+      return Promise.resolve();
+    });
+    expect(await screen.findByTestId("home")).toBeTruthy();
+    expect(screen.queryByTestId("album")).toBeNull();
+  });
+
+  it("keeps no pending link for a cold /login", async () => {
+    mockCore.set("signed_out");
+    await renderRouter("app", { initialUrl: "/login" });
+    await screen.findByTestId("login");
+    await act(() => {
+      mockCore.emit("signed_in");
+      return Promise.resolve();
+    });
+    expect(await screen.findByTestId("home")).toBeTruthy();
+    expect(everMounted.has("album")).toBe(false);
   });
 });

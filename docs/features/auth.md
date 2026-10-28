@@ -4,13 +4,13 @@ The first feature doc: the routes the auth screens use and the states they draw.
 
 ## Screens and routes
 
-| Route              | Screen                               | Guard                                                                                    |
-| ------------------ | ------------------------------------ | ---------------------------------------------------------------------------------------- |
-| `/login`           | `LoginScreen`                        | signed out only (`Stack.Protected` on `status === "signed_out"`; signed in lands on `/`) |
-| `/sign-up`         | `SignUpScreen`                       | signed out only                                                                          |
-| `/auth/callback`   | `AuthCallbackScreen`                 | none: reachable in `unknown`, `signed_out` and `signed_in`                               |
-| `/session-pending` | `SessionPendingScreen`               | `unknown` only: the app background under the splash while the stored session is read     |
-| `/`                | `HomeScreen` (first tab of `(tabs)`) | signed in only; see `home.md`                                                            |
+| Route              | Screen                               | Guard                                                                                                                                 |
+| ------------------ | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `/login`           | `LoginScreen`                        | signed out only (`Stack.Protected` on `status === "signed_out"`; signed in lands on `/`, or on a kept cold link, see Cold deep links) |
+| `/sign-up`         | `SignUpScreen`                       | signed out only                                                                                                                       |
+| `/auth/callback`   | `AuthCallbackScreen`                 | none: reachable in `unknown`, `signed_out` and `signed_in`                                                                            |
+| `/session-pending` | `SessionPendingScreen`               | `unknown` only: the app background under the splash while the stored session is read                                                  |
+| `/`                | `HomeScreen` (first tab of `(tabs)`) | signed in only; see `home.md`                                                                                                         |
 
 While the status is `unknown`, only `session-pending` and `auth/callback` are available and the
 native splash stays up. `session-pending` is the one shown; `auth/callback` mounts only when an
@@ -22,6 +22,15 @@ A route whose guard fails renders a redirect to the screen the status allows (`r
 each `Stack.Protected`: `/session-pending` while `unknown`, `/login` signed out, `/` signed in).
 Without it the router falls back to the first unguarded route in file order, which is
 `auth/callback`, and a cold start would stay on the callback's invalid-link state.
+
+Cold deep links. While the status is `unknown`, the gate keeps the cold URL if it is a route of
+the signed-in tabs other than `/`. Signed in, the gate holds
+`session-pending` (or the login it is on) and opens the URL itself with the tab's anchor seeded
+under it (see `tabs.md`): a shared detail route opens in the Home tab over `index`, and a tab's
+own route over that tab's base. A guard's redirect cannot seed an anchor, which is why the gate
+opens it. Signed out, it shows the login and opens the URL after signing in. It
+is dropped once the tabs are shown, so it is used once. `/player`, `/login`, `/sign-up` and
+`/auth/callback` are not kept. Links that arrive while the app runs are unchanged.
 
 ## Layout
 
@@ -84,6 +93,7 @@ timeout, is a typed `AuthFailure`.
   retry automatically.
 - Known edge: with an expired session, a dead network and an unreadable store at
   the same time, the splash can stay up over the placeholder, not over the login. It is logged as `session.status_unreadable`.
+- Known edge: a pending link is dropped without being opened if the session starts through the email callback, because the callback replaces itself with `/`.
 - Known edge: a cold start on /sign-up while signed out lands on the login, not on sign up. While the status is unknown only session-pending and auth/callback exist, so on signed_out the stack falls back to its first route. Nothing outside the app links to /sign-up; the login's "sign up" link reaches it.
 
 ## Provider dashboard requirements
@@ -107,6 +117,7 @@ timeout, is a typed `AuthFailure`.
   home. Cold start signed out: the splash goes straight to the login.
 - The swap from the placeholder to the home does not show the home sliding in as the splash
   fades (the native stack's replace animation); if it does, it is fixed in the same change before merging.
+- A cold deep link (`beatly://album/<id>`) with and without a session, on a device.
 
 On Android the `Input`s are the Material 3 outlined text field (ADR 027, `ui` `Input`; see DESIGN.md, Text field): outline, label inside rising onto it on focus or with text, accent outline on focus, error color and the error under the field; iOS unchanged. Left to verify by hand on an Android phone: the label animation feel, the notch over the card surface, TalkBack reading the label once and announcing the error.
 

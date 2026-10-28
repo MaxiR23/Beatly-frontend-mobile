@@ -7,6 +7,7 @@
 //
 // What is covered:
 // - opening a genre from explore and going back
+// - the stacks declare `anchor`: no initialRouteName deprecation warning, and a cold deep link to a shared detail route opens in home over its base screen, and one to a tab's own route over that tab's base, back returning to it
 // - opening an album from home recents, a search result, a saved album and the explore stack, back returning to the same tab
 // - opening a playlist recent from home, an own playlist from home, liked and a saved genre playlist from library, and a genre playlist from the genre grid, back returning to the origin
 // - editing an own playlist's tracks from its options, back showing the new order, count and duration
@@ -423,5 +424,38 @@ describe("the shared tab stack", () => {
     await fireEvent.press(artistBack());
     expect((await screen.findAllByText("Test Artist")).length).toBeGreaterThan(0);
     expect(screen.queryByText("Second Artist")).toBeNull();
+  });
+
+  it("logs no initialRouteName deprecation warning when the app renders", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      mockCore.set("signed_in");
+      await renderRouter("app", { initialUrl: "/" });
+      await screen.findByTestId("home");
+      const text = warn.mock.calls.map((call) => call.join(" ")).join("\n");
+      expect(text).not.toContain("initialRouteName");
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("opens an album by cold deep link over home, and back returns to home with home selected", async () => {
+    mockCore.set("signed_in");
+    await renderRouter("app", { initialUrl: "/album/MPREb_1" });
+    expect(await screen.findByTestId("album")).toBeTruthy();
+    expect(router.canGoBack()).toBe(true);
+    await fireEvent.press(backButton());
+    expect(await screen.findByTestId("home")).toBeTruthy();
+    expect(isSelected(screen.getByRole("tab", { name: en.tabs.home }))).toBe(true);
+  });
+
+  it("opens a genre by cold deep link over explore, and back returns to explore with explore selected", async () => {
+    mockCore.set("signed_in", { listGenres: () => Promise.resolve(pageOf([genreFixture])) });
+    await renderRouter("app", { initialUrl: "/explore/genres/pop?name=Pop" });
+    expect(await screen.findByTestId("genre")).toBeTruthy();
+    expect(router.canGoBack()).toBe(true);
+    await fireEvent.press(screen.getByRole("button", { name: en.genre.back }));
+    expect(await screen.findByTestId("explore")).toBeTruthy();
+    expect(isSelected(screen.getByRole("tab", { name: en.tabs.explore }))).toBe(true);
   });
 });

@@ -3,10 +3,10 @@ import { color } from "@beatly/ui";
 import { Stack } from "expo-router";
 
 export const unstable_settings = {
-  home: { initialRouteName: "index" },
-  explore: { initialRouteName: "explore/index" },
-  search: { initialRouteName: "search" },
-  library: { initialRouteName: "library" },
+  home: { anchor: "index" },
+  explore: { anchor: "explore/index" },
+  search: { anchor: "search" },
+  library: { anchor: "library" },
 };
 
 export default function TabStackLayout() {
