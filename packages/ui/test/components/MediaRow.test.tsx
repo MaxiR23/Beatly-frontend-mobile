@@ -7,6 +7,7 @@
 //
 // What is covered:
 // - the menu size: a cover of layout.rowCoverMenu
+// - the cover keyed by its item's image URL, a new item's images changing the key
 // - the title and subtitle in their tones, an unavailable row drawn disabled
 // - a trailing element drawn outside the pressable body
 // - the current track: bars in place of the number over the cover on a scrim, no row background, selected state, paused and reduce motion passed on, nothing without nowPlaying or on an unavailable row
@@ -34,11 +35,32 @@ const tiers = (n: string) => ({
 });
 
 describe("MediaRow", () => {
+  it("keys each row's image by its item's image URL", async () => {
+    await render(
+      <>
+        <MediaRow title="One" images={[tiers("1")]} shape="square" />
+        <MediaRow title="Two" images={[tiers("2")]} shape="square" />
+      </>,
+    );
+    const keys = screen
+      .getAllByTestId("cover-single")
+      .map((node): unknown => node.props.recyclingKey);
+    expect(keys).toEqual(["test://img/1/s", "test://img/2/s"]);
+  });
+
+  it("changes the key when the row is given another item's images", async () => {
+    const { rerender } = await render(
+      <MediaRow title="One" images={[tiers("1")]} shape="square" />,
+    );
+    await rerender(<MediaRow title="Two" images={[tiers("2")]} shape="square" />);
+    expect(screen.getByTestId("cover-single").props.recyclingKey).toBe("test://img/2/s");
+  });
+
   it.each(["regular", "medium", "large", "menu"] as const)(
     "draws the small tier at the %s size",
     async (size) => {
       await render(<MediaRow title="Song" images={[tiers("1")]} shape="square" size={size} />);
-      expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/s" });
+      expect(screen.getByTestId("cover-single").props.source).toEqual([{ uri: "test://img/1/s" }]);
     },
   );
 

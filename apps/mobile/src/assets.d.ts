@@ -1,6 +1,5 @@
-// INFO: types a bundled PNG import as the source the Image component takes; Metro resolves the file to an asset.
+// INFO: types a bundled PNG import as the source Picture takes; Metro resolves the file to an asset.
 declare module "*.png" {
-  import type { ImageSourcePropType } from "react-native";
-  const source: ImageSourcePropType;
+  const source: number;
   export default source;
 }

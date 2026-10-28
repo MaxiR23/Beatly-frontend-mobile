@@ -214,7 +214,7 @@ describe("AlbumScreen", () => {
     await setup();
     await screen.findByTestId("album-other-versions");
     const [hero] = screen.getAllByTestId("cover-single");
-    expect(hero?.props.source).toEqual({ uri: "test://img/al1/l" });
+    expect(hero?.props.source).toEqual([{ uri: "test://img/al1/l" }]);
   });
 
   it("draws both carousels with data", async () => {

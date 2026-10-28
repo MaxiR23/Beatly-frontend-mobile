@@ -109,3 +109,5 @@ timeout, is a typed `AuthFailure`.
   fades (the native stack's replace animation); if it does, it is fixed in the same change before merging.
 
 On Android the `Input`s are the Material 3 outlined text field (ADR 027, `ui` `Input`; see DESIGN.md, Text field): outline, label inside rising onto it on focus or with text, accent outline on focus, error color and the error under the field; iOS unchanged. Left to verify by hand on an Android phone: the label animation feel, the notch over the card surface, TalkBack reading the label once and announcing the error.
+
+The brand icon (ADR 029) unchanged on iOS and Android, also under iOS Smart Invert.

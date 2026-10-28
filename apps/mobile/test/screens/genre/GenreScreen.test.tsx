@@ -195,8 +195,8 @@ describe("GenreScreen", () => {
       expect(screen.getAllByTestId("cover-mosaic")).toHaveLength(1);
       const singles = screen.getAllByTestId("cover-single");
       expect(singles.map((node) => node.props.source as unknown)).toEqual([
-        { uri: "test://img/a/m" },
-        { uri: "test://img/curated/m" },
+        [{ uri: "test://img/a/m" }],
+        [{ uri: "test://img/curated/m" }],
       ]);
       expect(screen.getAllByTestId("cover-placeholder")).toHaveLength(1);
       expect(within(screen.getByTestId("genre-playlists")).getByText("Bare")).toBeTruthy();

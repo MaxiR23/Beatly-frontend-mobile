@@ -177,7 +177,7 @@ describe("ReorderList", () => {
         testID="list"
       />,
     );
-    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/s" });
+    expect(screen.getByTestId("cover-single").props.source).toEqual([{ uri: "test://img/1/s" }]);
   });
 
   it("calls onRemove with the row's index from its remove button", async () => {

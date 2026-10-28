@@ -216,7 +216,7 @@ describe("SearchScreen results", () => {
     await fireEvent.changeText(input(), "test");
     await screen.findByText("Test Song");
     const cover = within(screen.getByTestId("search-artist")).getByTestId("cover-single");
-    expect(cover.props.source as unknown).toEqual({ uri: "test://img/ar1/s" });
+    expect(cover.props.source as unknown).toEqual([{ uri: "test://img/ar1/s" }]);
   });
 
   it("opens the top artist", async () => {

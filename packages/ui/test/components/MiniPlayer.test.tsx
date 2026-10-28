@@ -51,7 +51,7 @@ async function draw(over: Partial<ComponentProps<typeof MiniPlayer>> = {}) {
 describe("MiniPlayer", () => {
   it("draws the cover at the small tier", async () => {
     await draw({ image: tiers("1") });
-    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/1/s" });
+    expect(screen.getByTestId("cover-single").props.source).toEqual([{ uri: "test://img/1/s" }]);
   });
 
   it("draws the placeholder without an image", async () => {

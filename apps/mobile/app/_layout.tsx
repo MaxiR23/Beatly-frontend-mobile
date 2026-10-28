@@ -1,4 +1,4 @@
-// INFO: root layout of the app; wires the core and the providers, mounts only an empty placeholder under the splash while the session is unknown, gates the routes by session status, hides the splash once the matching screen is mounted and mounts the player's autoplay while signed in.
+// INFO: root layout of the app; wires the core and the providers, mounts only an empty placeholder under the splash while the session is unknown, gates the routes by session status, hides the splash once the matching screen is mounted and mounts the player's autoplay and the next cover's prefetch while signed in.
 import type { AuthStatus } from "@beatly/core";
 import { color } from "@beatly/ui";
 import { Stack, ThemeProvider, useSegments, type Href } from "expo-router";
@@ -12,6 +12,7 @@ import { CoreProvider } from "../src/providers/CoreProvider.tsx";
 import { QueryProvider } from "../src/providers/QueryProvider.tsx";
 import { SessionProvider, useSession } from "../src/providers/SessionProvider.tsx";
 import { Autoplay } from "../src/screens/player/Autoplay.tsx";
+import { NextCoverPrefetch } from "../src/screens/player/NextCoverPrefetch.tsx";
 import { playerRouteOptions } from "../src/screens/player/playerRoute.ts";
 import { useReduceMotion } from "../src/screens/player/useReduceMotion.ts";
 
@@ -58,7 +59,12 @@ function RootNavigator() {
         </Stack.Protected>
         <Stack.Screen name="auth/callback" />
       </Stack>
-      {status === "signed_in" ? <Autoplay /> : null}
+      {status === "signed_in" ? (
+        <>
+          <Autoplay />
+          <NextCoverPrefetch />
+        </>
+      ) : null}
     </>
   );
 }

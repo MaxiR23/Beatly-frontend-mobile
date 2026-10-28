@@ -193,7 +193,7 @@ describe("the handle and the sheet", () => {
     const sources = screen
       .getAllByTestId("cover-single")
       .map((node) => node.props.source as unknown);
-    expect(sources).toContainEqual({ uri: "test://img/t1/s" });
+    expect(sources).toContainEqual([{ uri: "test://img/t1/s" }]);
   });
 
   it("opens the sheet from the handle and loads no tab before it", async () => {

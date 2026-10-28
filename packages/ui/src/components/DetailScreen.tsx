@@ -8,7 +8,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Animated,
-  Image,
   StyleSheet,
   useWindowDimensions,
   View,
@@ -33,6 +32,7 @@ import { GradientFill } from "./GradientFill.tsx";
 import type { IconName } from "./Icon.tsx";
 import { IconButton } from "./IconButton.tsx";
 import { imageUri, type ImageTiers } from "./imageTier.ts";
+import { Picture } from "./Picture.tsx";
 import { isAndroidVariant } from "./platform.ts";
 import { Text } from "./Text.tsx";
 
@@ -317,10 +317,11 @@ export function DetailScreen({
                     style={[styles.imageLayer, entering(cascade.hero)]}
                   >
                     {body.cover.images[0] !== undefined ? (
-                      <Image
+                      <Picture
                         source={{ uri: imageUri(body.cover.images[0], windowWidth) }}
                         style={StyleSheet.absoluteFill}
-                        resizeMode="cover"
+                        contentFit="cover"
+                        priority="high"
                         accessible={false}
                         testID="detail-hero-photo"
                       />
@@ -381,6 +382,7 @@ export function DetailScreen({
                           shape="square"
                           size={layout.heroCover}
                           elevated
+                          priority="high"
                         />
                       </Animated.View>
                     </View>

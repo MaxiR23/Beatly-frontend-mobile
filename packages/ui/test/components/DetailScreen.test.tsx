@@ -11,6 +11,7 @@
 // - the next-page footer of skeleton rows, its count and label, none without it, the end-reached threshold, the loading skeleton's row count
 // - the slot after the rows: under the rows and after the next-page skeleton, none without it, drawn with no rows
 // - the hero title in typography.title
+// - the cover and image heroes at high priority, the rows' covers at normal
 // - the image hero: full width at the hero image ratio, the title over it in typography.display, the fade, the placeholder without an image, no centered cover or wash
 // - the bar's title from the start on Android (textAlign left, one line with the default tail ellipsis, back, title, more in that order, no trailing spacer without a more) and centered on iOS with and without a more
 // - the back and more glyphs of each platform on the floating buttons and the top bar
@@ -43,6 +44,7 @@ import { color } from "../../src/tokens/color.ts";
 import { motion } from "../../src/tokens/motion.ts";
 import { layout, spacing } from "../../src/tokens/spacing.ts";
 import { typography } from "../../src/tokens/typography.ts";
+import { Cover } from "../../src/components/Cover.tsx";
 import { DetailScreen, type DetailBody } from "../../src/components/DetailScreen.tsx";
 import { collapseRanges } from "../../src/components/detailCollapse.ts";
 import { flatStyle } from "../helpers/flatStyle.ts";
@@ -322,7 +324,32 @@ describe("DetailScreen", () => {
 
   it("draws the hero cover at the large tier", async () => {
     await draw(ready());
-    expect(screen.getByTestId("cover-single").props.source).toEqual({ uri: "test://img/cover/l" });
+    expect(screen.getByTestId("cover-single").props.source).toEqual([
+      { uri: "test://img/cover/l" },
+    ]);
+  });
+
+  it("loads the hero cover at high priority and the rows' covers at normal", async () => {
+    await draw({
+      ...(ready() as Extract<DetailBody, { kind: "ready" }>),
+      rows: [
+        {
+          key: "a",
+          element: <Cover images={[tiers("row")]} shape="square" />,
+        },
+      ],
+    });
+    const covers = screen.getAllByTestId("cover-single");
+    expect(covers).toHaveLength(2);
+    expect(
+      within(screen.getByTestId("detail-hero-cover")).getByTestId("cover-single").props.priority,
+    ).toBe("high");
+    const row = covers.find(
+      (cover) =>
+        !within(screen.getByTestId("detail-hero-cover")).queryByTestId("cover-single") ||
+        cover !== within(screen.getByTestId("detail-hero-cover")).getByTestId("cover-single"),
+    );
+    expect(row?.props.priority).toBe("normal");
   });
 
   it("draws the accent tile with an icon cover", async () => {
@@ -397,10 +424,15 @@ describe("DetailScreen", () => {
       expect(style.maxHeight).toBe(
         Dimensions.get("window").height * layout.heroImageMaxHeightShare,
       );
-      expect(screen.getByTestId("detail-hero-photo").props.resizeMode).toBe("cover");
-      expect(screen.getByTestId("detail-hero-photo").props.source).toEqual({
-        uri: "test://img/artist/l",
-      });
+      expect(screen.getByTestId("detail-hero-photo").props.contentFit).toBe("cover");
+      expect(screen.getByTestId("detail-hero-photo").props.source).toEqual([
+        { uri: "test://img/artist/l" },
+      ]);
+    });
+
+    it("loads the image hero at high priority", async () => {
+      await draw(imageHero());
+      expect(screen.getByTestId("detail-hero-photo").props.priority).toBe("high");
     });
 
     it("draws the title over the image in the display role", async () => {

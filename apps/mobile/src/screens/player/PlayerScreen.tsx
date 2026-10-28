@@ -26,6 +26,7 @@ import { formatDuration } from "../search/formatDuration.ts";
 import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
 import { useTrackMenu } from "../trackMenu/trackMenuContext.ts";
 import { TrackMenuHost } from "../trackMenu/TrackMenuHost.tsx";
+import { playerCoverSize } from "./playerCover.ts";
 import { PlayerSheet } from "./PlayerSheet.tsx";
 import { usePlayback, usePlaybackActions } from "./usePlayback.ts";
 import { useReduceMotion } from "./useReduceMotion.ts";
@@ -122,7 +123,7 @@ export function PlayerScreen() {
   }
 
   const duration = state.durationSeconds;
-  const coverSize = width - 2 * spacing.xl;
+  const coverSize = playerCoverSize(width);
   const hasSeek = duration !== null && duration > 0;
   const failed = status === "failed";
   const sourceName =
@@ -217,6 +218,7 @@ export function PlayerScreen() {
                     corner="md"
                     size={coverSize}
                     elevated
+                    priority="high"
                   />
                 </PauseScale>
               </View>

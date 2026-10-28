@@ -114,3 +114,5 @@ Also: the iOS strip blur: absent at the top, fading in with the strip and follow
 The Android back arrow, and the chevron unchanged on iOS (ADR 027).
 
 The collapsed bar on Android: the title starting right after the back arrow, a long title ending in an ellipsis at the end padding, and the title unchanged (centered) on iOS (ADR 027).
+
+Covers (ADR 029): on Android a first open fades the hero and the row covers in, and back and reopen draws them at once, with no fade, and sharp; iOS draws them with no transition; screenshots before and after on iOS and Android match; the hero loads at high priority.

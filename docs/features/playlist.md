@@ -225,3 +225,5 @@ On Android the `Sheet` is the Material 3 modal bottom sheet (ADR 027, `ui` `Shee
 Left to verify by hand. On an Android phone: the sheet meeting the bottom and side edges and the content ending above the gesture bar, the drag feel and the spring back on a finger, the system back closing it, and the scroll of a long list next to the handle zone.
 
 On Android the `Input`s are the Material 3 outlined text field (ADR 027, `ui` `Input`; see DESIGN.md, Text field): outline, label inside rising onto it on focus or with text, accent outline on focus, error color and the error under the field; iOS unchanged. Left to verify by hand on an Android phone: the label animation feel, the notch over the sheet surface, TalkBack reading the label once and announcing the error.
+
+Covers (ADR 029): on Android a first open fades the mosaic and the row covers in, and back and reopen draws them at once, with no fade; iOS draws them with no transition; the brand mark unchanged on iOS and Android, also under iOS Smart Invert; screenshots before and after on iOS and Android match; the hero loads at high priority.
