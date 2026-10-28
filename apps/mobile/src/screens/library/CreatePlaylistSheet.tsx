@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useT } from "../../adapters/i18n.ts";
 import { useCreatePlaylist } from "../../queries/usePlaylists.ts";
 import { PLAYLIST_TITLE_MAX_LENGTH, canCreatePlaylist, isTitleTooLong } from "./playlistRules.ts";
+import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface CreatePlaylistSheetProps {
   visible: boolean;
@@ -16,6 +17,7 @@ interface CreatePlaylistSheetProps {
 
 export function CreatePlaylistSheet({ visible, onClose }: CreatePlaylistSheetProps) {
   const t = useT("library");
+  const reduceMotion = useReduceMotion();
   const tc = useT("common");
   const insets = useSafeAreaInsets();
   const create = useCreatePlaylist();
@@ -45,6 +47,7 @@ export function CreatePlaylistSheet({ visible, onClose }: CreatePlaylistSheetPro
 
   return (
     <Sheet
+      reduceMotion={reduceMotion}
       visible={visible}
       onClose={close}
       closeLabel={t("create.close")}

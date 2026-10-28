@@ -63,3 +63,9 @@ The palette gradients in the bar, the shared stack under the iOS 26 native tabs
 with the swipe-back gesture, the last row clearing the tab bar, and the `display`
 name fitting one line on a small screen. Screenshots with data, empty, in es and
 en, on iOS and Android, are in the pull request.
+
+## The sheet on Android
+
+On Android the `Sheet` is the Material 3 modal bottom sheet (ADR 027, `ui` `Sheet`): attached to the bottom and side edges on `color.surface.raised`, `radius.xl` top corners, a `layout.modalHandleZoneAndroid` handle zone with a `layout.modalHandleWidthAndroid` x `layout.handleHeight` handle in `color.overlay.handleAndroid`, `spacing.xl` side padding, and the content above the bottom inset. A drag down from the handle zone (the only drag zone, so a scrolling list keeps its own scroll) closes it past `motion.dragToClose.*` and springs back with `motion.spring` short of it; the scrim and the system back close it; under reduce motion it has no enter or exit animation and does not follow the finger. iOS keeps the floating glass sheet and slides whatever reduce motion says. The account sheet is `AccountButton`'s, as in `home.md`.
+
+Left to verify by hand. On an Android phone: the sheet meeting the bottom and side edges and the content ending above the gesture bar, the drag feel and the spring back on a finger, the system back closing it, and the scroll of a long list next to the handle zone.

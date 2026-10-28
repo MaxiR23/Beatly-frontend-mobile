@@ -28,7 +28,7 @@ sheet with log out from the avatar.
 - Cover rule: own playlists draw their `mosaic` (4: a 2 x 2 mosaic, 1 to 3: the
   first, none: the placeholder) at `medium`; a recent draws its `metadata.image` at
   `medium`, or the placeholder. `GET /playlists` has no `image`.
-- Account sheet: on `GlassSurface`, `radius.lg`, `spacing.xl` padding.
+- Account sheet: on iOS, on `GlassSurface`, `radius.lg`, `spacing.xl` padding.
 - Bottom: the content clears the floating tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
 ## Platform differences
@@ -100,3 +100,9 @@ without a kind is not pressable; an artist recent pushes `/artist/[id]` with its
 Screenshots of the home with data and empty, on iOS and Android, are in the pull
 request. The native glass of the sheet on iOS 26+ and the last card clearing the
 tab bar are checked on a device.
+
+## The sheet on Android
+
+On Android the `Sheet` is the Material 3 modal bottom sheet (ADR 027, `ui` `Sheet`): attached to the bottom and side edges on `color.surface.raised`, `radius.xl` top corners, a `layout.modalHandleZoneAndroid` handle zone with a `layout.modalHandleWidthAndroid` x `layout.handleHeight` handle in `color.overlay.handleAndroid`, `spacing.xl` side padding, and the content above the bottom inset. A drag down from the handle zone (the only drag zone, so a scrolling list keeps its own scroll) closes it past `motion.dragToClose.*` and springs back with `motion.spring` short of it; the scrim and the system back close it; under reduce motion it has no enter or exit animation and does not follow the finger. iOS keeps the floating glass sheet and slides whatever reduce motion says. The account sheet's `ActionRow`s are `layout.actionRowHeightAndroid` tall, full width, with an `icon.size.actionRowAndroid` icon.
+
+Left to verify by hand. On an Android phone: the sheet meeting the bottom and side edges and the content ending above the gesture bar, the drag feel and the spring back on a finger, the system back closing it, and the scroll of a long list next to the handle zone.

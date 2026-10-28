@@ -20,7 +20,7 @@ Every screen with track rows (album, playlist, artist, search, the player's up n
 Token names only.
 
 - Button: an `IconButton` `more` (three vertical dots on Android, the horizontal ellipsis on iOS without the native module; `layout.controlHeight`, `icon.size.lg`) at the end of the row, outside the row's pressable body.
-- Menu sheet: a `Sheet` on a `GlassSurface` `sheet` (`radius.lg`, `spacing.xl` padding, `spacing.lg` gap): a `MediaRow` header
+- Menu sheet: a `Sheet` on a `GlassSurface` `sheet` on iOS (`radius.lg`, `spacing.xl` padding, `spacing.lg` gap): a `MediaRow` header
   with the track (its song row draws `image.small`), then one `ActionRow` per item (`layout.controlHeight` tall, `layout.gap` between the icon and the label,
   `typography.body`, the icon at `icon.size.md`; the heart filled when liked; Remove from this playlist in `color.status.error`).
 - Playlist picker: a `Sheet` kept `topInset` below the status bar; `typography.subtitle` title, a New playlist `MediaRow` (`size="medium"`,
@@ -95,3 +95,9 @@ the marquee's real motion and its ellipsis under the system Reduce Motion settin
 the notice above the iOS 26 tab accessory and the Android floating bar; screenshots of the heart, the menu, the picker and the credits on iOS and Android.
 
 The three vertical dots on Android (ADR 027). The Android snackbar's look over the floating bar, with and without the mini player.
+
+## The sheet on Android
+
+On Android the `Sheet` is the Material 3 modal bottom sheet (ADR 027, `ui` `Sheet`): attached to the bottom and side edges on `color.surface.raised`, `radius.xl` top corners, a `layout.modalHandleZoneAndroid` handle zone with a `layout.modalHandleWidthAndroid` x `layout.handleHeight` handle in `color.overlay.handleAndroid`, `spacing.xl` side padding, and the content above the bottom inset. A drag down from the handle zone (the only drag zone, so a scrolling list keeps its own scroll) closes it past `motion.dragToClose.*` and springs back with `motion.spring` short of it; the scrim and the system back close it; under reduce motion it has no enter or exit animation and does not follow the finger. iOS keeps the floating glass sheet and slides whatever reduce motion says. The menu sheet's header `MediaRow` is `size="menu"` there (a `layout.rowCoverMenu` cover, `radius.sm`, `layout.gutter` at the sides, full width), with a `border.hairline` divider in `color.surface.border` under it and `spacing.xs` below the divider. The `ActionRow`s are `layout.actionRowHeightAndroid` tall, full width, with an `icon.size.actionRowAndroid` icon and `spacing.lg` before the label. The picker and credits sheets keep their content as above.
+
+Left to verify by hand. On an Android phone: the sheet meeting the bottom and side edges and the content ending above the gesture bar, the drag feel and the spring back on a finger, the system back closing it, and the scroll of a long list next to the handle zone.

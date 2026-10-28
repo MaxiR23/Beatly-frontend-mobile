@@ -11,6 +11,7 @@ import { OutcomeError } from "../../queries/outcomeError.ts";
 import { useSetBugReportStatus } from "../../queries/useBugReports.ts";
 import { reportDate } from "./reportDate.ts";
 import { reporterLabel } from "./reporterLabel.ts";
+import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface ReportDetailSheetProps {
   report: BugReportWithReporter;
@@ -25,6 +26,7 @@ function failureReason(error: unknown): string | null {
 
 export function ReportDetailSheet({ report, onClose }: ReportDetailSheetProps) {
   const t = useT("bugReports");
+  const reduceMotion = useReduceMotion();
   const tc = useT("common");
   const insets = useSafeAreaInsets();
   const update = useSetBugReportStatus();
@@ -37,6 +39,7 @@ export function ReportDetailSheet({ report, onClose }: ReportDetailSheetProps) {
 
   return (
     <Sheet
+      reduceMotion={reduceMotion}
       visible
       onClose={onClose}
       closeLabel={t("triage.detail.dismiss")}

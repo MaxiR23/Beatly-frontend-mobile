@@ -1,7 +1,7 @@
 // INFO: spacing tokens, a multiples-of-four scale, plus the layout
 // constants (gutter, gap, hitSlop, control height, text area height, and the carousel card,
-// avatar, creator mark, profile avatar, tab item, chip (and the Android chip), genre bar, row cover, detail hero cover,
-// track-number column, now playing bar width, large and medium play button, the detail play pill's width, the side buttons' stacking value, seek bar and sheet handle sizes (iOS and Android), and the skeleton bar widths and row count).
+// avatar, creator mark, profile avatar, tab item, chip (and the Android chip), genre bar, row cover (and the Android track menu header cover), the Android action row height, detail hero cover,
+// track-number column, now playing bar width, large and medium play button, the detail play pill's width, the side buttons' stacking value, seek bar and sheet handle sizes (iOS and Android) and the Android modal sheet handle zone and width, and the skeleton bar widths and row count).
 export const spacing = {
   xxs: 2,
   xs: 4,
@@ -17,6 +17,8 @@ export const layout = {
   gap: 12,
   hitSlop: 8,
   controlHeight: 48,
+  // Height of an ActionRow on Android (Material 3 one-line list item).
+  actionRowHeightAndroid: 56,
   // Minimum height of a multiline form field.
   textAreaHeight: 120,
   carouselCard: 140,
@@ -30,6 +32,8 @@ export const layout = {
   genreBarWidth: 6,
   genreBarHeight: 28,
   rowCover: 40,
+  // Side of the track cover in the Android track menu sheet's header.
+  rowCoverMenu: 48,
   rowCoverMedium: 56,
   rowCoverLarge: 64,
   heroCover: 240,
@@ -57,6 +61,10 @@ export const layout = {
   // Width and height of the sheet handle bar on Android.
   handleWidthAndroid: 48,
   handleHeightAndroid: 5,
+  // Height of the handle zone (the drag zone) at the top of the Android modal sheet.
+  modalHandleZoneAndroid: 36,
+  // Width of the Android modal sheet's drag handle (Material 3).
+  modalHandleWidthAndroid: 32,
   // Widths of a skeleton's placeholder bars, as a share of their row.
   skeletonBar: { title: "70%", meta: "45%", rowTitle: "60%", rowMeta: "35%" },
   // How many placeholder track rows a detail skeleton draws, on first load and under the list while its next page loads.

@@ -1,4 +1,4 @@
-// INFO: a list row, pressable when given onPress: a cover at the start, a title and an optional secondary line; regular for songs, medium for the library, large for an artist; an icon replaces the images with an accent tile; an unavailable row draws its texts disabled, is never pressable and is one element announced by its unavailable label; a trailing element sits after the pressable body, outside it; the current track draws the now playing bars over the cover, on a scrim.
+// INFO: a list row, pressable when given onPress: a cover at the start, a title and an optional secondary line; regular for songs, menu for the Android track menu header, medium for the library, large for an artist; an icon replaces the images with an accent tile; an unavailable row draws its texts disabled, is never pressable and is one element announced by its unavailable label; a trailing element sits after the pressable body, outside it; the current track draws the now playing bars over the cover, on a scrim.
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -17,7 +17,7 @@ interface MediaRowProps {
   subtitle?: string | undefined;
   images: readonly ImageTiers[];
   shape: "square" | "round";
-  size?: "regular" | "medium" | "large";
+  size?: "regular" | "medium" | "large" | "menu";
   icon?: IconName | undefined;
   available?: boolean;
   onPress?: (() => void) | undefined;
@@ -51,7 +51,13 @@ export function MediaRow({
   const marked = available && nowPlaying !== undefined;
   const large = size === "large";
   const medium = size === "medium";
-  const coverSize = large ? layout.rowCoverLarge : medium ? layout.rowCoverMedium : layout.rowCover;
+  const coverSize = large
+    ? layout.rowCoverLarge
+    : medium
+      ? layout.rowCoverMedium
+      : size === "menu"
+        ? layout.rowCoverMenu
+        : layout.rowCover;
   const content = (
     <>
       <View style={styles.cover}>

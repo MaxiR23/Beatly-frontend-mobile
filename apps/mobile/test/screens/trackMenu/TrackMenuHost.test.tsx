@@ -7,6 +7,7 @@
 //
 // What is covered:
 // - the sheet with only the items that apply, closing on a choice
+// - the header: the regular cover on iOS; on Android the 48 cover full width with a divider under it
 // - like through the likes service with the mapped input, the error notice for a rejected like and for a storage failure, hiding after its time, the error notice on Android at the bottom inset, hiding after its time, nothing for a pending one
 // - a secondary artist without an id drawn by name in the sheet header, never linked
 // - go to artist and go to album closing the sheet and calling the screen
@@ -17,7 +18,8 @@
 //
 // SEE: apps/mobile/src/screens/trackMenu/TrackMenuHost.tsx
 
-import { color, motion, spacing } from "@beatly/ui";
+import { color, layout, motion, spacing } from "@beatly/ui";
+import { border } from "@beatly/ui/native";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, screen, within } from "@testing-library/react-native";
 import { Platform, StyleSheet } from "react-native";
@@ -42,6 +44,38 @@ describe("the track menu", () => {
     const sheet = screen.getByTestId("track-menu-sheet");
     expect(within(sheet).getByTestId("cover-single").props.source).toEqual({
       uri: "test://img/t1/s",
+    });
+  });
+
+  it("on iOS draws the header with the regular cover and no divider", async () => {
+    await setupMenu();
+    await openMenu();
+    expect(screen.queryByTestId("track-menu-sheet-divider")).toBeNull();
+    expect(screen.queryByTestId("track-menu-sheet-header")).toBeNull();
+    expect(StyleSheet.flatten(screen.getByTestId("cover-single").props.style)).toMatchObject({
+      width: layout.rowCover,
+      height: layout.rowCover,
+    });
+  });
+
+  it("on Android draws the 48 header cover full width and a divider under it", async () => {
+    Platform.OS = "android";
+    await setupMenu();
+    await openMenu();
+    expect(StyleSheet.flatten(screen.getByTestId("track-menu-sheet-header").props.style)).toEqual({
+      marginHorizontal: -spacing.xl,
+    });
+    expect(
+      within(screen.getByTestId("track-menu-sheet-header")).getByTestId("track-menu-sheet-divider"),
+    ).toBeTruthy();
+    expect(StyleSheet.flatten(screen.getByTestId("track-menu-sheet-divider").props.style)).toEqual({
+      borderBottomColor: color.surface.border,
+      borderBottomWidth: border.hairline,
+      marginBottom: spacing.xs,
+    });
+    expect(StyleSheet.flatten(screen.getByTestId("cover-single").props.style)).toMatchObject({
+      width: layout.rowCoverMenu,
+      height: layout.rowCoverMenu,
     });
   });
 

@@ -12,9 +12,11 @@ import { useSignOut } from "../../queries/useAuth.ts";
 import { useProfile } from "../../queries/useProfile.ts";
 import { MyReportsSheet } from "../bugReports/MyReportsSheet.tsx";
 import { ReportProblemSheet } from "../bugReports/ReportProblemSheet.tsx";
+import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 export function AccountButton() {
   const tc = useT("common");
+  const reduceMotion = useReduceMotion();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const profile = useProfile();
@@ -37,6 +39,7 @@ export function AccountButton() {
         }}
       />
       <Sheet
+        reduceMotion={reduceMotion}
         visible={open === "account"}
         onClose={close}
         closeLabel={tc("account.close")}
