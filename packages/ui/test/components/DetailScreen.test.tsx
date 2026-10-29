@@ -16,6 +16,7 @@
 // - the bar's title from the start on Android (textAlign left, one line with the default tail ellipsis, back, title, more in that order, no trailing spacer without a more) and centered on iOS with and without a more
 // - the back and more glyphs of each platform on the floating buttons and the top bar
 // - the floating back button, the more button only when given, the neutral wash and the gradient wash, the hero wash fading in over motion.duration.base when its color arrives after the body is ready
+// - the hero wash: the detailHero stops as the shape times the intensity, the dominant color at those stops on iOS and Android, the layer reaching layout.heroWashExtension below the hero inside the list, before the title and the children
 // - the collapse: one Animated.event on the native driver, the cover's shrink and fade, the order of the fades on both heroes, ranges from the measured heights, the touches handed from the floating buttons to the top bar and back, the bar's geometry and fill, no cover scale under reduce motion, static until measured, the other bodies unchanged, the reset when the ready body leaves
 //
 // - the entry cascade: five steps (hero, title, children, the first motion.detailCascade.firstRows rows, the later rows) in that order with the motion.detailCascade tokens on the native driver, opacity and translateY only, at once from loading and after navigationDelay when ready at mount, once per mount, late rows at rest, the slot after the rows in the later rows step under exactly one cascade wrapper and at rest when it arrives late, reduce motion at mount and turning on mid-way, unmount stopping it, the floating buttons never under a cascade wrapper on iOS and Android, no wrapper in the other bodies, the collapse's layers untouched by it
@@ -117,6 +118,42 @@ function glyphCount(name: string): number {
     String(node.props.className).split(/\s+/).includes(`lucide-${name}`),
   ).length;
 }
+
+const find = (tree: unknown, match: (node: JsonNode) => boolean): JsonNode[] => {
+  const found: JsonNode[] = [];
+  const visit = (node: unknown) => {
+    if (Array.isArray(node)) node.forEach(visit);
+    if (!isJsonNode(node)) return;
+    if (match(node)) found.push(node);
+    visit(node.children);
+  };
+  visit(tree);
+  return found;
+};
+const argb = (c: string) => Number(processColor(c)) | 0;
+const gradientOf = (id: string) => {
+  const [wash] = find(screen.toJSON(), (node) => node.props.testID === id);
+  const [gradient] = find(wash?.children, (node) => "gradient" in node.props);
+  return gradient?.props;
+};
+const stopsOf = (id: string) => {
+  const flat = gradientOf(id)?.gradient;
+  if (!Array.isArray(flat)) throw new Error("gradient is not an array");
+  const stops: { offset: number; alpha: number; rgb: number }[] = [];
+  for (let i = 0; i < flat.length; i += 2) {
+    const packed = Number(flat[i + 1]);
+    stops.push({
+      offset: Number(flat[i]),
+      alpha: (packed >>> 24) & 0xff,
+      rgb: packed & 0xffffff,
+    });
+  }
+  return stops;
+};
+const offsetsOf = (stops: readonly { offset: number }[]) => stops.map((stop) => stop.offset);
+const alphasOf = (stops: readonly { opacity: number }[]) =>
+  stops.map((stop) => Math.round(stop.opacity * 255));
+const rgbOf = (c: string) => argb(c) & 0xffffff;
 
 function fail(): never {
   throw new Error("expected ranges");
@@ -479,6 +516,80 @@ describe("DetailScreen", () => {
       expect(screen.queryByTestId("cover-single")).toBeNull();
       expect(screen.queryByTestId("detail-wash-neutral")).toBeNull();
       expect(screen.queryByTestId("detail-wash-color")).toBeNull();
+    });
+  });
+
+  describe("hero wash", () => {
+    afterEach(() => {
+      Platform.OS = "ios";
+    });
+
+    it("defines the hero curve as the shape times the intensity", () => {
+      const { shape, intensity, stops } = color.gradient.detailHero;
+      expect(intensity).toBe(0.7);
+      expect(stops).toHaveLength(shape.length);
+      stops.forEach((stop, i) => {
+        expect(stop.offset).toBe(shape[i]?.offset);
+        expect(stop.opacity).toBeCloseTo((shape[i]?.opacity ?? NaN) * intensity, 10);
+      });
+      expect(offsetsOf(stops)).toEqual([0, 0.2, 0.4, 0.6, 0.75, 0.88, 1]);
+      [0.7, 0.644, 0.518, 0.336, 0.189, 0.077, 0].forEach((opacity, i) => {
+        expect(stops[i]?.opacity).toBeCloseTo(opacity, 6);
+      });
+    });
+
+    it.each(["ios", "android"] as const)(
+      "draws the dominant color at the detailHero stops on %s",
+      async (os) => {
+        Platform.OS = os;
+        await draw(ready("#336699"));
+        const stops = stopsOf("detail-wash-color");
+        const expected = color.gradient.detailHero.stops;
+        expect(stops.map((stop) => stop.offset)).toEqual(offsetsOf(expected));
+        // Within 1: the mock packs the alpha with its own rounding of the 0.70 stop (178.5).
+        stops.forEach((stop, i) => {
+          expect(Math.abs(stop.alpha - (alphasOf(expected)[i] ?? NaN))).toBeLessThanOrEqual(1);
+          expect(stop.rgb).toBe(rgbOf("#336699"));
+        });
+        expect(stops[stops.length - 1]?.alpha).toBe(0);
+        expect(gradientOf("detail-wash-color")).toMatchObject({ x2: "0", y2: "1" });
+      },
+    );
+
+    it.each(["ios", "android"] as const)(
+      "extends the wash layout.heroWashExtension below the hero on %s",
+      async (os) => {
+        Platform.OS = os;
+        await draw(ready("#336699"));
+        const style = flatStyle(screen.getByTestId("detail-wash-color").props.style as ViewStyle);
+        expect(style).toMatchObject({
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: -layout.heroWashExtension,
+        });
+        expect(style).not.toHaveProperty("zIndex");
+      },
+    );
+
+    it("scrolls the wash with the content, under the title and the children", async () => {
+      await draw(ready("#336699"));
+      expect(
+        within(screen.getByTestId("detail-list")).getByTestId("detail-wash-color"),
+      ).toBeTruthy();
+      const order: unknown[] = [];
+      find(screen.toJSON(), (node) => {
+        const id = node.props.testID;
+        if (id === "detail-wash-color" || id === "detail-title" || id === "detail-cascade-children")
+          order.push(id);
+        return false;
+      });
+      expect(order.slice(0, 3)).toEqual([
+        "detail-wash-color",
+        "detail-title",
+        "detail-cascade-children",
+      ]);
     });
   });
 
@@ -846,51 +957,10 @@ describe("DetailScreen", () => {
     });
 
     describe("on iOS", () => {
-      interface JsonNode {
-        props: Record<string, unknown>;
-        children: unknown;
-      }
-      const isJsonNode = (value: unknown): value is JsonNode =>
-        typeof value === "object" && value !== null && "props" in value;
-      const find = (tree: unknown, match: (node: JsonNode) => boolean): JsonNode[] => {
-        const found: JsonNode[] = [];
-        const visit = (node: unknown) => {
-          if (Array.isArray(node)) node.forEach(visit);
-          if (!isJsonNode(node)) return;
-          if (match(node)) found.push(node);
-          visit(node.children);
-        };
-        visit(tree);
-        return found;
-      };
-      const argb = (c: string) => Number(processColor(c)) | 0;
       const styleOf = (id: string): ViewStyle => {
         const style = screen.getByTestId(id, hidden).props.style as ViewStyle | undefined;
         return style ? flatStyle(style) : {};
       };
-      const gradientOf = (id: string) => {
-        const [wash] = find(screen.toJSON(), (node) => node.props.testID === id);
-        const [gradient] = find(wash?.children, (node) => "gradient" in node.props);
-        return gradient?.props;
-      };
-      const stopsOf = (id: string) => {
-        const flat = gradientOf(id)?.gradient;
-        if (!Array.isArray(flat)) throw new Error("gradient is not an array");
-        const stops: { offset: number; alpha: number; rgb: number }[] = [];
-        for (let i = 0; i < flat.length; i += 2) {
-          const packed = Number(flat[i + 1]);
-          stops.push({
-            offset: Number(flat[i]),
-            alpha: (packed >>> 24) & 0xff,
-            rgb: packed & 0xffffff,
-          });
-        }
-        return stops;
-      };
-      const offsetsOf = (stops: readonly { offset: number }[]) => stops.map((stop) => stop.offset);
-      const alphasOf = (stops: readonly { opacity: number }[]) =>
-        stops.map((stop) => Math.round(stop.opacity * 255));
-      const rgbOf = (c: string) => argb(c) & 0xffffff;
       const moreOf = { label: "More" };
 
       beforeEach(() => {

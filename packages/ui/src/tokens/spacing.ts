@@ -1,6 +1,6 @@
 // INFO: spacing tokens, a multiples-of-four scale (and an explicit zero), plus the layout
 // constants (gutter, gap, hitSlop, control height, text area height, and the carousel card,
-// avatar, creator mark, profile avatar, tab item, chip (and the Android chip), the Android tab indicator, the Android switch's track and thumb sizes, genre bar, row cover (and the Android track menu header cover), the Android action row height, detail hero cover,
+// avatar, creator mark, profile avatar, tab item, chip (and the Android chip), the Android tab indicator, the Android switch's track and thumb sizes, genre bar, row cover (and the Android track menu header cover), the Android action row height, detail hero cover, the detail hero wash's extension,
 // track-number column, now playing bar width, large and medium play button, the detail play pill's width, the side buttons' stacking value, seek bar and sheet handle sizes (iOS and Android) and the Android modal sheet handle zone and width, and the skeleton bar widths and row count).
 export const spacing = {
   // An explicit zero gap where a native container would otherwise apply a system default.
@@ -55,6 +55,8 @@ export const layout = {
   heroImageRatio: 1,
   // Most of the window height, as a share, the detail image hero may take.
   heroImageMaxHeightShare: 0.5,
+  // How far the detail hero's wash reaches below the hero's bottom edge, behind the title, the actions and the first rows.
+  heroWashExtension: 280,
   trackNumber: 24,
   // Width of one bar of the now playing indicator.
   nowPlayingBarWidth: 3,

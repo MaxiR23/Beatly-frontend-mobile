@@ -19,7 +19,7 @@ Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), excep
 the body:
 
 - Hero: the cover (its `image` passed as `cover.images`, drawn at `large`) in `layout.heroCover`, `radius.sm`, `shadow.cover`, over the
-  wash from the cover color. Then the title in `typography.title`.
+  wash from the cover color (`DESIGN.md`, Detail screen base: its curve and its extension under the hero). Then the title in `typography.title`.
 - Info: `layout.gutter` on the sides, `spacing.xs` gap, no padding below. The
   artist names in `typography.rowTitle` and `color.text.secondary` (a name with an id is a `Link`
   that pushes `/artist/[id]`, in `typography.link`; a name without one is plain text), joined by
@@ -101,7 +101,7 @@ Back pops the stack, or replaces with `/` when there is nothing to go back to.
 ## Checked by hand
 
 The action row centered on iOS and Android, the shrink without dropped frames while playback starts, on iOS and Android, and a tap on shuffle and on the side button right after the shrink and at the middle of it (taps reach them, not play); the label fading and the play pill shrinking to a circle with shuffle and save following it, then scaling in as pause, the now playing bars moving, freezing on pause and static under reduce motion, a mid-track buffer on a slow network; saving, closing and reopening the album and finding it on the library screen; screenshots of the album at the top and scrolled, on iOS and Android, with the
-collapsed header and top bar; the header collapse on scroll (the cover shrinking and fading, then the floating buttons, the title and the top bar, in that order, without dropped frames on iOS and Android); on iOS the floating back staying fixed and tappable at every scroll position, the title never under it, and the strip's fade matching the top of the wash and ending with no edge under the back, and the strip's transparent bottom catching taps over the first visible row (album, playlist); TalkBack focus moving from the floating buttons to the top bar after a scroll, and VoiceOver reaching the fixed back and the bar's title once collapsed; the bar title's legibility over bright dominant colors and the bar matching the top of the wash; the native glass on iOS 26+; the backend's color on iOS and Android, in Expo Go and a development build, and the fade when a pending color arrives on a refetch;
+collapsed header and top bar; the header collapse on scroll (the cover shrinking and fading, then the floating buttons, the title and the top bar, in that order, without dropped frames on iOS and Android); on iOS the floating back staying fixed and tappable at every scroll position, the title never under it, and the strip's fade ending with no edge under the back, and the bar and the strip at full color while the hero wash starts at `color.gradient.detailHero` intensity (0.70), so the top of the wash is lighter than the strip and the bar by design (matching them is out of scope), and the strip's transparent bottom catching taps over the first visible row (album, playlist); TalkBack focus moving from the floating buttons to the top bar after a scroll, and VoiceOver reaching the fixed back and the bar's title once collapsed; the bar title's legibility over bright dominant colors and the bar at full color; the native glass on iOS 26+; the backend's color on iOS and Android, in Expo Go and a development build, and the fade when a pending color arrives on a refetch;
 swipe-back per tab; and the native tab bar on iOS 26+ with the renamed tab
 groups.
 
@@ -114,3 +114,5 @@ The Android back arrow, and the chevron unchanged on iOS (ADR 027).
 The collapsed bar on Android: the title starting right after the back arrow, a long title ending in an ellipsis at the end padding, and the title unchanged (centered) on iOS (ADR 027).
 
 Covers (ADR 029): on Android a first open fades the hero and the row covers in, and back and reopen draws them at once, with no fade, and sharp; iOS draws them with no transition; screenshots before and after on iOS and Android match; the hero loads at high priority.
+
+The hero wash on iOS and Android: no hard edge at the hero's bottom or at the end of the extension, the title, actions and first rows over it, the wash scrolling with them and not popping out on Android when the header leaves the screen, its top under the iOS strip once it fades in; tune `color.gradient.detailHero.intensity` only.

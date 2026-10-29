@@ -40,6 +40,9 @@ value: the value lives once, in the token file.
 | Clear start of a fade into the base surface (the detail hero image); the see-through container of the player route                                                                                                              | `color.overlay.clear`                                                                                               |
 | Opacity stops of the iOS detail strip: its wash (the dominant color or the base surface) and the base-surface shade over it, both transparent at the bottom edge                                                                | `color.gradient.detailStrip.wash` / `.shade`                                                                        |
 | Opacity stops of the mask of the iOS detail strip's blur: opaque to 55% of the strip's height, transparent at its bottom edge                                                                                                   | `color.gradient.detailStrip.blurMask`                                                                               |
+| Opacity curve of the detail hero's wash (album, playlist): the dominant color over the base surface, the shape's opacities times the intensity, transparent at the bottom; tune the intensity only                              | `color.gradient.detailHero.shape` / `.intensity` / `.stops`                                                         |
+
+A token may be computed from other tokens of the same file when it is a curve tuned by one value: `color.gradient.detailHero.stops` is the shape times the intensity, so tuning is one number and the stops follow.
 
 ## Spacing and layout (`spacing`, `layout`)
 
@@ -67,6 +70,7 @@ value: the value lives once, in the token file.
 | Side of the cover in a detail hero                                                                                                                                                             | `layout.heroCover`                                                                                  |
 | Width / height ratio of the full-width detail hero image                                                                                                                                       | `layout.heroImageRatio`                                                                             |
 | Share of the window height the detail hero image may take at most                                                                                                                              | `layout.heroImageMaxHeightShare`                                                                    |
+| How far the detail hero's wash reaches below the hero, behind the title, the actions and the first rows                                                                                        | `layout.heroWashExtension`                                                                          |
 | Width of the track-number column in a track row                                                                                                                                                | `layout.trackNumber`                                                                                |
 | Width of one bar of the now playing indicator                                                                                                                                                  | `layout.nowPlayingBarWidth`                                                                         |
 | Side of the large play or pause button of the player                                                                                                                                           | `layout.playButton`                                                                                 |
@@ -128,7 +132,7 @@ Entry: in the ready body the content enters once per mount in a top-down cascade
 - Hero: a `layout.heroCover` cover in `radius.sm` with `shadow.cover`, centered
   over a wash. The cover follows `Cover`'s rules: a mosaic with four urls, an image, the
   accent tile with a glyph, or the placeholder. The wash is `color.surface.base` until a dominant color is known,
-  then a vertical gradient from that color to `color.surface.base`, drawn at once when it is there at mount, fading in over `motion.duration.base` when it arrives later, at once under reduce motion.
+  then that color over `color.surface.base` at the opacities of `color.gradient.detailHero`, a vertical gradient from the hero's top to `layout.heroWashExtension` under its bottom edge (behind the title, the actions and the first rows, scrolling with them), drawn at once when it is there at mount, fading in over `motion.duration.base` when it arrives later, at once under reduce motion.
 - Image hero (artist): the image stretched to the full width at `layout.heroImageRatio`, at most
   `layout.heroImageMaxHeightShare` of the window height, cropped to fill (`cover`) and centered,
   on `color.surface.card`, a vertical fade from `color.overlay.clear` to
