@@ -19,7 +19,7 @@
 
 import type { HttpOutcome, PageResult, PlaylistTrack } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
@@ -214,14 +214,14 @@ describe("EditTracksScreen on the dragging list", () => {
     await screen.findByText("First Song");
     const loads = ctx.listPlaylistTracks.mock.calls.length;
     await act1("First Song", "moveDown");
-    expect(await screen.findByTestId("edit-tracks-notice")).toBeTruthy();
+    const notice = await screen.findByTestId("edit-tracks-notice");
+    expect(within(notice).getByText(en.common.error.generic)).toBeTruthy();
     await waitFor(() => {
       expect(ctx.listPlaylistTracks.mock.calls.length).toBeGreaterThan(loads);
     });
     await waitFor(() => {
       expect(titles()).toEqual(["First Song", "Second Song", "Third Song"]);
     });
-    expect(screen.getByText(en.common.error.generic)).toBeTruthy();
   });
 
   it("a failed remove does the same for a transport failure", async () => {
