@@ -3,9 +3,9 @@ import { spacing } from "@beatly/ui";
 import { Button, Input, Sheet, Text } from "@beatly/ui/native";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { useWindowInsets } from "../../providers/WindowInsetsProvider.tsx";
 import { useUpdatePlaylist } from "../../queries/usePlaylists.ts";
 import {
   PLAYLIST_TITLE_MAX_LENGTH,
@@ -16,15 +16,22 @@ import { playlistEditPatch } from "./playlistEdit.ts";
 import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface EditPlaylistSheetProps {
+  visible: boolean;
+  onClosed: () => void;
   playlist: { id: string; title: string; description: string | null };
   onClose: () => void;
 }
 
-export function EditPlaylistSheet({ playlist, onClose }: EditPlaylistSheetProps) {
+export function EditPlaylistSheet({
+  visible,
+  onClosed,
+  playlist,
+  onClose,
+}: EditPlaylistSheetProps) {
   const t = useT("playlist");
   const reduceMotion = useReduceMotion();
   const tc = useT("common");
-  const insets = useSafeAreaInsets();
+  const insets = useWindowInsets();
   const update = useUpdatePlaylist();
   const [name, setName] = useState(playlist.title);
   const [description, setDescription] = useState(playlist.description ?? "");
@@ -43,7 +50,8 @@ export function EditPlaylistSheet({ playlist, onClose }: EditPlaylistSheetProps)
   return (
     <Sheet
       reduceMotion={reduceMotion}
-      visible
+      visible={visible}
+      onClosed={onClosed}
       onClose={close}
       closeLabel={t("edit.close")}
       bottomInset={insets.bottom}

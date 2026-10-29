@@ -20,13 +20,13 @@
 import type { HttpOutcome, PageResult, PlaylistTrack } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { EditTracksScreen } from "../../../src/screens/playlist/EditTracksScreen.tsx";
 import { createTestQueryClient } from "../../helpers/queryClient.ts";
 import { makeCore, pageOf, playlistTrackFixture, stateFlag, Wrapper } from "../../helpers/core.tsx";
+import { Insets } from "../../helpers/insets.tsx";
 
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
@@ -62,11 +62,6 @@ afterEach(async () => {
 const en = resources.en;
 const es = resources.es;
 
-const metrics = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 0, left: 0, right: 0, bottom: 0 },
-};
-
 const first = playlistTrackFixture;
 const second: PlaylistTrack = { ...first, track_id: "t2", title: "Second Song", position: 2 };
 const third: PlaylistTrack = { ...first, track_id: "t3", title: "Third Song", position: 3 };
@@ -78,9 +73,9 @@ async function setup(options: Parameters<typeof makeCore>[0] = {}) {
   const invalidate = jest.spyOn(client, "invalidateQueries");
   const view = await render(
     <Wrapper core={ctx.core} client={client}>
-      <SafeAreaProvider initialMetrics={metrics}>
+      <Insets>
         <EditTracksScreen />
-      </SafeAreaProvider>
+      </Insets>
     </Wrapper>,
   );
   return { ctx, invalidate, view };

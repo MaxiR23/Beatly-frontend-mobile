@@ -4,9 +4,9 @@ import { spacing } from "@beatly/ui";
 import { Badge, Button, Sheet, Text } from "@beatly/ui/native";
 import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { useWindowInsets } from "../../providers/WindowInsetsProvider.tsx";
 import { OutcomeError } from "../../queries/outcomeError.ts";
 import { useSetBugReportStatus } from "../../queries/useBugReports.ts";
 import { reportDate } from "./reportDate.ts";
@@ -14,6 +14,8 @@ import { reporterLabel } from "./reporterLabel.ts";
 import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface ReportDetailSheetProps {
+  visible: boolean;
+  onClosed: () => void;
   report: BugReportWithReporter;
   onClose: () => void;
 }
@@ -24,11 +26,11 @@ function failureReason(error: unknown): string | null {
     : null;
 }
 
-export function ReportDetailSheet({ report, onClose }: ReportDetailSheetProps) {
+export function ReportDetailSheet({ visible, onClosed, report, onClose }: ReportDetailSheetProps) {
   const t = useT("bugReports");
   const reduceMotion = useReduceMotion();
   const tc = useT("common");
-  const insets = useSafeAreaInsets();
+  const insets = useWindowInsets();
   const update = useSetBugReportStatus();
 
   const [confirmed, setConfirmed] = useState(report.status);
@@ -40,7 +42,8 @@ export function ReportDetailSheet({ report, onClose }: ReportDetailSheetProps) {
   return (
     <Sheet
       reduceMotion={reduceMotion}
-      visible
+      visible={visible}
+      onClosed={onClosed}
       onClose={onClose}
       closeLabel={t("triage.detail.dismiss")}
       bottomInset={insets.bottom}

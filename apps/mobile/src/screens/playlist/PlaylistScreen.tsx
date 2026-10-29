@@ -34,6 +34,7 @@ import { useDeletePlaylist } from "../../queries/usePlaylists.ts";
 import { useProfile } from "../../queries/useProfile.ts";
 import { useRegisterRecent } from "../../queries/useRecents.ts";
 import { EditPlaylistSheet } from "./EditPlaylistSheet.tsx";
+import { useSheetPresence } from "../trackMenu/useSheetPresence.ts";
 import { PlaylistOptionsSheet } from "./PlaylistOptionsSheet.tsx";
 import type { PlaylistOptionKey } from "./playlistOptions.ts";
 import { playlistMeta } from "./playlistMeta.ts";
@@ -91,7 +92,7 @@ export function PlaylistScreen() {
       mounted.current = false;
     };
   }, []);
-  const [sheet, setSheet] = useState<"options" | "edit" | null>(null);
+  const sheet = useSheetPresence<"options" | "edit">();
   const [failed, setFailed] = useState<{ at: number } | null>(null);
   const deletion = useDeletePlaylist();
   useEffect(() => {
@@ -153,12 +154,12 @@ export function PlaylistScreen() {
 
   const selectOption = (key: PlaylistOptionKey) => {
     if (key === "edit") {
-      setSheet("edit");
+      sheet.show("edit");
     } else if (key === "editTracks") {
-      setSheet(null);
+      sheet.hide();
       router.push({ pathname: "/playlist-edit/[id]", params: { id } });
     } else {
-      setSheet(null);
+      sheet.hide();
       confirmDelete();
     }
   };
@@ -347,7 +348,7 @@ export function PlaylistScreen() {
                         icon="more"
                         accessibilityLabel={t("options.more")}
                         onPress={() => {
-                          setSheet("options");
+                          sheet.show("options");
                         }}
                       />
                     ),
@@ -397,19 +398,23 @@ export function PlaylistScreen() {
         topInset={insets.top}
         bottomInset={tabBarClearance}
       />
-      {sheet === "options" ? (
+      {sheet.current === "options" ? (
         <PlaylistOptionsSheet
+          visible={sheet.visible}
+          onClosed={sheet.closed}
           onSelect={selectOption}
           onClose={() => {
-            setSheet(null);
+            sheet.hide();
           }}
         />
       ) : null}
-      {sheet === "edit" && own !== null ? (
+      {sheet.current === "edit" && own !== null ? (
         <EditPlaylistSheet
+          visible={sheet.visible}
+          onClosed={sheet.closed}
           playlist={own}
           onClose={() => {
-            setSheet(null);
+            sheet.hide();
           }}
         />
       ) : null}

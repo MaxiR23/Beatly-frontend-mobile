@@ -4,9 +4,9 @@ import { motion, spacing } from "@beatly/ui";
 import { Button, Chip, Input, Notice, Sheet, Text } from "@beatly/ui/native";
 import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { useWindowInsets } from "../../providers/WindowInsetsProvider.tsx";
 import { useCreateBugReport } from "../../queries/useBugReports.ts";
 import {
   REPORT_DESCRIPTION_MAX_LENGTH,
@@ -19,16 +19,18 @@ import {
 import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface ReportProblemSheetProps {
+  visible: boolean;
+  onClosed: () => void;
   // The track the report is about, from the track menu; null from the account sheet.
   track: { id: string; title: string } | null;
   onClose: () => void;
 }
 
-export function ReportProblemSheet({ track, onClose }: ReportProblemSheetProps) {
+export function ReportProblemSheet({ visible, onClosed, track, onClose }: ReportProblemSheetProps) {
   const t = useT("bugReports");
   const reduceMotion = useReduceMotion();
   const tc = useT("common");
-  const insets = useSafeAreaInsets();
+  const insets = useWindowInsets();
   const create = useCreateBugReport();
   const [category, setCategory] = useState<BugReportCategory | null>(null);
   const [description, setDescription] = useState("");
@@ -66,7 +68,8 @@ export function ReportProblemSheet({ track, onClose }: ReportProblemSheetProps) 
   return (
     <Sheet
       reduceMotion={reduceMotion}
-      visible
+      visible={visible}
+      onClosed={onClosed}
       onClose={onClose}
       closeLabel={t("form.close")}
       bottomInset={insets.bottom}

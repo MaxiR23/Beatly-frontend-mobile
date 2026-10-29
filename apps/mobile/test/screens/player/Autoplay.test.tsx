@@ -19,7 +19,6 @@
 import type { HttpOutcome, PlayableTrack, StoragePort, UpNext } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
@@ -33,6 +32,7 @@ import {
   upNextFixture,
   Wrapper,
 } from "../../helpers/core.tsx";
+import { Insets } from "../../helpers/insets.tsx";
 
 jest.mock("expo-router", () => ({
   useRouter: () => ({
@@ -45,11 +45,6 @@ jest.mock("expo-router", () => ({
 
 const en = resources.en;
 const es = resources.es;
-const metrics = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 0, left: 0, right: 0, bottom: 0 },
-};
-
 afterEach(async () => {
   await i18n.changeLanguage("en");
 });
@@ -94,10 +89,10 @@ async function setup(options: CoreOptions = {}) {
   });
   const rendered = await render(
     <Wrapper core={ctx.core}>
-      <SafeAreaProvider initialMetrics={metrics}>
+      <Insets>
         <PlayerScreen />
         <Autoplay />
-      </SafeAreaProvider>
+      </Insets>
     </Wrapper>,
   );
   return { ...ctx, unmount: rendered.unmount };

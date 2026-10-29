@@ -11,6 +11,8 @@
 // - own playlists named after the profile (username, display name, or the kind alone when it fails)
 // - creating a playlist, the disabled and too-long name states, the inline failure, an omitted description, cancel, es
 // - a saved album opens the album, a playlist entry does not
+// - the sheet attached to the bottom and side edges, its content 34 above the bottom edge inside a native tab (the window's inset, not the tab's 83)
+// - the create sheet keeping the typed name while it closes and clearing it once closed
 //
 // Run with: pnpm --filter @beatly/mobile test -- LibraryScreen
 //
@@ -19,7 +21,6 @@
 import type { HttpOutcome, LibraryEntry, PageResult } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
@@ -37,6 +38,8 @@ import {
   successOf,
   Wrapper,
 } from "../../helpers/core.tsx";
+import { expectSheetOverWindow, Insets } from "../../helpers/insets.tsx";
+import { holdSheetMotion } from "../../helpers/sheetMotion.ts";
 
 const mockPush = jest.fn();
 jest.mock("expo-router", () => ({ useRouter: () => ({ push: mockPush }) }));
@@ -48,20 +51,15 @@ afterEach(async () => {
 
 const en = resources.en;
 
-const metrics = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 0, left: 0, right: 0, bottom: 0 },
-};
-
 type Options = Parameters<typeof makeCore>[0];
 
-async function setup(options: Options = {}) {
+async function setup(options: Options = {}, tab = false) {
   const ctx = makeCore(options);
   await render(
     <Wrapper core={ctx.core}>
-      <SafeAreaProvider initialMetrics={metrics}>
+      <Insets tab={tab}>
         <LibraryScreen />
-      </SafeAreaProvider>
+      </Insets>
     </Wrapper>,
   );
   return ctx;
@@ -91,6 +89,12 @@ async function openSheet() {
 }
 
 describe("LibraryScreen", () => {
+  it("attaches the sheet to the bottom and side edges with its content the window's bottom inset above the edge inside a native tab", async () => {
+    await setup({}, true);
+    await openSheet();
+    expectSheetOverWindow({ top: false });
+  });
+
   it("draws the loading state while the library loads", async () => {
     await setup({ listLibrary: () => new Promise(() => undefined) });
     expect(screen.getByLabelText(en.common.loading)).toBeTruthy();
@@ -290,6 +294,25 @@ describe("LibraryScreen", () => {
     await fireEvent.press(screen.getByRole("button", { name: en.library.create.open }));
     expect(await screen.findByText(en.library.create.title)).toBeTruthy();
     expect(screen.getByLabelText(en.library.create.name).props.value).toBe("");
+  });
+
+  it("keeps the typed name while the create sheet closes and clears it once closed", async () => {
+    const motionHold = holdSheetMotion();
+    try {
+      await setup();
+      await openSheet();
+      await motionHold.finishAll();
+      await fireEvent.changeText(screen.getByLabelText(en.library.create.name), "Mine");
+      await fireEvent.press(screen.getByRole("button", { name: en.library.create.cancel }));
+      expect(screen.getByLabelText(en.library.create.name).props.value).toBe("Mine");
+      await motionHold.finishAll();
+      await fireEvent.press(screen.getByRole("button", { name: en.library.create.open }));
+      await motionHold.finishAll();
+      expect(await screen.findByText(en.library.create.title)).toBeTruthy();
+      expect(screen.getByLabelText(en.library.create.name).props.value).toBe("");
+    } finally {
+      motionHold.restore();
+    }
   });
 
   it("draws the title, the liked entry and the empty message in Spanish", async () => {

@@ -5,7 +5,7 @@ export const radius = {
   sm: 8,
   md: 12,
   lg: 16,
-  // Material 3 extra-large shape: the Android modal bottom sheet's top corners.
+  // Material 3 extra-large shape: the modal bottom sheet's top corners, on both platforms.
   xl: 28,
   full: 9999,
 } as const;

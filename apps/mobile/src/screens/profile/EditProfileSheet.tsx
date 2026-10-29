@@ -4,9 +4,9 @@ import { spacing } from "@beatly/ui";
 import { Button, Input, Sheet, Text } from "@beatly/ui/native";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { useWindowInsets } from "../../providers/WindowInsetsProvider.tsx";
 import { OutcomeError } from "../../queries/outcomeError.ts";
 import { useUpdateProfile } from "../../queries/useProfile.ts";
 import {
@@ -21,6 +21,8 @@ import {
 import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface EditProfileSheetProps {
+  visible: boolean;
+  onClosed: () => void;
   profile: Profile;
   onClose: () => void;
 }
@@ -33,11 +35,11 @@ function isUsernameTaken(error: unknown): boolean {
   );
 }
 
-export function EditProfileSheet({ profile, onClose }: EditProfileSheetProps) {
+export function EditProfileSheet({ visible, onClosed, profile, onClose }: EditProfileSheetProps) {
   const t = useT("profile");
   const reduceMotion = useReduceMotion();
   const tc = useT("common");
-  const insets = useSafeAreaInsets();
+  const insets = useWindowInsets();
   const update = useUpdateProfile();
   const [name, setName] = useState(profile.display_name ?? "");
   const [username, setUsername] = useState(profile.username ?? "");
@@ -68,7 +70,8 @@ export function EditProfileSheet({ profile, onClose }: EditProfileSheetProps) {
   return (
     <Sheet
       reduceMotion={reduceMotion}
-      visible
+      visible={visible}
+      onClosed={onClosed}
       onClose={close}
       closeLabel={t("edit.close")}
       bottomInset={insets.bottom}

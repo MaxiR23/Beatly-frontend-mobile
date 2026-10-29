@@ -39,7 +39,6 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
@@ -53,6 +52,7 @@ import {
   upNextFixture,
   Wrapper,
 } from "../../helpers/core.tsx";
+import { Insets } from "../../helpers/insets.tsx";
 import { flatStyle } from "../../helpers/flatStyle.ts";
 
 const mockBack = jest.fn();
@@ -77,11 +77,6 @@ const scrollToIndex = jest
 const height = Dimensions.get("window").height;
 const en = resources.en;
 const es = resources.es;
-const metrics = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 0, left: 0, right: 0, bottom: 0 },
-};
-
 afterEach(async () => {
   Platform.OS = "ios";
   spring.mockClear();
@@ -116,9 +111,9 @@ async function setup(options: Parameters<typeof makeCore>[0] = {}, tracks = ["t1
   const ctx = makeCore({ sheetNudge: noSheetNudge, ...options });
   await render(
     <Wrapper core={ctx.core}>
-      <SafeAreaProvider initialMetrics={metrics}>
+      <Insets>
         <PlayerScreen />
-      </SafeAreaProvider>
+      </Insets>
     </Wrapper>,
   );
   await act(async () => {
@@ -835,9 +830,9 @@ describe("the handle nudge", () => {
   const open = (ctx: ReturnType<typeof makeCore>) =>
     render(
       <Wrapper core={ctx.core}>
-        <SafeAreaProvider initialMetrics={metrics}>
+        <Insets>
           <PlayerScreen />
-        </SafeAreaProvider>
+        </Insets>
       </Wrapper>,
     );
   const play = (ctx: ReturnType<typeof makeCore>, ids = ["t1", "t2"]) =>

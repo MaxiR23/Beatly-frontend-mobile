@@ -21,6 +21,7 @@ import { OutcomeError } from "../../queries/outcomeError.ts";
 import { useAllBugReports, type BugReportFilter } from "../../queries/useBugReports.ts";
 import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 import { reportDate } from "./reportDate.ts";
+import { useSheetPresence } from "../trackMenu/useSheetPresence.ts";
 import { ReportDetailSheet } from "./ReportDetailSheet.tsx";
 import { reporterLabel } from "./reporterLabel.ts";
 
@@ -40,7 +41,7 @@ export function AllReportsScreen() {
   const router = useRouter();
   const tabBarClearance = useTabBarClearance();
   const [filter, setFilter] = useState<BugReportFilter>("all");
-  const [selected, setSelected] = useState<BugReportWithReporter | null>(null);
+  const detail = useSheetPresence<BugReportWithReporter>();
   const reports = useAllBugReports(filter);
 
   function goBack() {
@@ -91,7 +92,7 @@ export function AllReportsScreen() {
             title={t(`categories.${item.category}`)}
             subtitle={subtitleOf(item)}
             onPress={() => {
-              setSelected(item);
+              detail.show(item);
             }}
             trailing={
               <Badge
@@ -134,12 +135,12 @@ export function AllReportsScreen() {
         </ScrollView>
       </View>
       <View style={styles.content}>{body}</View>
-      {selected !== null ? (
+      {detail.current !== null ? (
         <ReportDetailSheet
-          report={selected}
-          onClose={() => {
-            setSelected(null);
-          }}
+          report={detail.current}
+          visible={detail.visible}
+          onClosed={detail.closed}
+          onClose={detail.hide}
         />
       ) : null}
     </SafeAreaView>

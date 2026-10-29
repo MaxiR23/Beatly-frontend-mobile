@@ -25,13 +25,13 @@ import type { Artist, HttpOutcome } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { type ViewStyle } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { color, spacing } from "@beatly/ui";
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { ArtistScreen } from "../../../src/screens/artist/ArtistScreen.tsx";
 import { artistFixture, makeCore, stateFlag, Wrapper } from "../../helpers/core.tsx";
+import { Insets } from "../../helpers/insets.tsx";
 import { flatStyle } from "../../helpers/flatStyle.ts";
 
 const mockPush = jest.fn();
@@ -59,18 +59,13 @@ afterEach(async () => {
 const en = resources.en;
 const es = resources.es;
 
-const metrics = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 0, left: 0, right: 0, bottom: 0 },
-};
-
 async function setup(options: Parameters<typeof makeCore>[0] = {}) {
   const ctx = makeCore(options);
   await render(
     <Wrapper core={ctx.core}>
-      <SafeAreaProvider initialMetrics={metrics}>
+      <Insets>
         <ArtistScreen />
-      </SafeAreaProvider>
+      </Insets>
     </Wrapper>,
   );
   return ctx;

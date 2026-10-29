@@ -16,12 +16,12 @@
 import type { HttpOutcome, PageResult } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { ExploreScreen } from "../../../src/screens/explore/ExploreScreen.tsx";
 import { genreFixture, makeCore, pageOf, Wrapper } from "../../helpers/core.tsx";
+import { Insets } from "../../helpers/insets.tsx";
 
 const mockPush = jest.fn();
 jest.mock("expo-router", () => ({
@@ -35,18 +35,13 @@ afterEach(async () => {
 
 const en = resources.en;
 
-const metrics = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 0, left: 0, right: 0, bottom: 0 },
-};
-
 async function setup(options: Parameters<typeof makeCore>[0] = {}) {
   const ctx = makeCore(options);
   await render(
     <Wrapper core={ctx.core}>
-      <SafeAreaProvider initialMetrics={metrics}>
+      <Insets>
         <ExploreScreen />
-      </SafeAreaProvider>
+      </Insets>
     </Wrapper>,
   );
   return ctx;

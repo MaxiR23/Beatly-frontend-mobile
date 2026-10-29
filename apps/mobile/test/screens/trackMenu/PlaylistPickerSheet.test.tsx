@@ -11,6 +11,7 @@
 // - adding to another playlist: the confirmation, then the sheet closes; track_already_in_playlist counted as added
 // - the generic error inline with the sheet open when the add fails
 // - creating a new playlist with the track: create disabled until a valid name, the trimmed title sent
+// - the sheet attached to the bottom and side edges, its content 34 above the bottom edge inside a native tab (the window's inset, not the tab's 83)
 //
 // Run with: pnpm --filter @beatly/mobile test -- PlaylistPickerSheet
 //
@@ -19,10 +20,11 @@
 import type { PlaylistListItem } from "@beatly/core";
 import { motion } from "@beatly/ui";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import { act, fireEvent, screen } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 
 import { resources } from "../../../src/i18n/resources.ts";
 import { pageOf, playlistFixture, stateFlag } from "../../helpers/core.tsx";
+import { expectSheetOverWindow } from "../../helpers/insets.tsx";
 import { setupMenu } from "./trackMenuHelpers.tsx";
 
 const en = resources.en;
@@ -32,10 +34,17 @@ afterEach(() => {
   jest.useRealTimers();
 });
 
-async function openPicker(options: Parameters<typeof setupMenu>[0] = {}) {
-  const ctx = await setupMenu(options);
+async function openPicker(
+  options: Parameters<typeof setupMenu>[0] = {},
+  host: Parameters<typeof setupMenu>[1] = {},
+) {
+  const ctx = await setupMenu(options, host);
   await fireEvent.press(screen.getByRole("button", { name: en.trackMenu.more }));
   await fireEvent.press(screen.getByRole("button", { name: en.trackMenu.items.addToPlaylist }));
+  // The menu slides down before the next sheet slides up.
+  await waitFor(() => {
+    expect(screen.queryByTestId("track-menu-sheet")).toBeNull();
+  });
   return ctx;
 }
 
@@ -44,6 +53,11 @@ const lists = {
 };
 
 describe("the playlist picker", () => {
+  it("attaches the sheet to the bottom and side edges with its content the window's bottom inset above the edge inside a native tab", async () => {
+    await openPicker({}, { tab: true });
+    expectSheetOverWindow({ top: true });
+  });
+
   it("draws loading while the playlists load", async () => {
     await openPicker({ listPlaylists: () => new Promise<never>(() => undefined) });
     expect(screen.getByRole("progressbar", { name: en.common.loading })).toBeTruthy();
@@ -90,8 +104,10 @@ describe("the playlist picker", () => {
     await act(() => {
       jest.advanceTimersByTime(motion.duration.notice + 1);
     });
-    expect(screen.queryByTestId("playlist-picker")).toBeNull();
-    expect(screen.queryByText("Added to Gym")).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByTestId("playlist-picker")).toBeNull();
+      expect(screen.queryByText("Added to Gym")).toBeNull();
+    });
   });
 
   it("counts track_already_in_playlist as added", async () => {

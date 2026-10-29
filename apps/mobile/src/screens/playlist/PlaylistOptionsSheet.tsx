@@ -2,26 +2,34 @@
 import { spacing } from "@beatly/ui";
 import { ActionRow, Sheet } from "@beatly/ui/native";
 import { StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { useWindowInsets } from "../../providers/WindowInsetsProvider.tsx";
 import { playlistOptions, type PlaylistOptionKey } from "./playlistOptions.ts";
 import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface PlaylistOptionsSheetProps {
+  visible: boolean;
+  onClosed: () => void;
   onSelect: (key: PlaylistOptionKey) => void;
   onClose: () => void;
 }
 
-export function PlaylistOptionsSheet({ onSelect, onClose }: PlaylistOptionsSheetProps) {
+export function PlaylistOptionsSheet({
+  visible,
+  onClosed,
+  onSelect,
+  onClose,
+}: PlaylistOptionsSheetProps) {
   const t = useT("playlist");
   const reduceMotion = useReduceMotion();
-  const insets = useSafeAreaInsets();
+  const insets = useWindowInsets();
 
   return (
     <Sheet
       reduceMotion={reduceMotion}
-      visible
+      visible={visible}
+      onClosed={onClosed}
       onClose={onClose}
       closeLabel={t("options.close")}
       bottomInset={insets.bottom}

@@ -3,25 +3,28 @@ import type { CreditSection, PlayableTrack } from "@beatly/core";
 import { spacing } from "@beatly/ui";
 import { EmptyState, ErrorState, LoadingState, Sheet, Text } from "@beatly/ui/native";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { useWindowInsets } from "../../providers/WindowInsetsProvider.tsx";
 import { useCredits } from "../../queries/useTracks.ts";
 import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface CreditsSheetProps {
+  visible: boolean;
+  onClosed: () => void;
   track: PlayableTrack;
   onClose: () => void;
 }
 
-export function CreditsSheet({ track, onClose }: CreditsSheetProps) {
+export function CreditsSheet({ visible, onClosed, track, onClose }: CreditsSheetProps) {
   const t = useT("trackMenu");
   const reduceMotion = useReduceMotion();
-  const insets = useSafeAreaInsets();
+  const insets = useWindowInsets();
   return (
     <Sheet
       reduceMotion={reduceMotion}
-      visible
+      visible={visible}
+      onClosed={onClosed}
       onClose={onClose}
       closeLabel={t("close")}
       bottomInset={insets.bottom}

@@ -8,28 +8,42 @@
 // What is covered:
 // - each section's localized title and names, then the other sections, sections without names left out
 // - "Credits not available" for the empty credits, the error with retry that refetches, loading
+// - the sheet attached to the bottom and side edges, its content 34 above the bottom edge inside a native tab (the window's inset, not the tab's 83)
 //
 // Run with: pnpm --filter @beatly/mobile test -- CreditsSheet
 //
 // SEE: apps/mobile/src/screens/trackMenu/CreditsSheet.tsx
 
 import { describe, expect, it } from "@jest/globals";
-import { fireEvent, screen } from "@testing-library/react-native";
+import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 
 import { resources } from "../../../src/i18n/resources.ts";
 import { emptyCreditsFixture } from "../../helpers/core.tsx";
+import { expectSheetOverWindow } from "../../helpers/insets.tsx";
 import { setupMenu } from "./trackMenuHelpers.tsx";
 
 const en = resources.en;
 
-async function openCredits(options: Parameters<typeof setupMenu>[0] = {}) {
-  const ctx = await setupMenu(options);
+async function openCredits(
+  options: Parameters<typeof setupMenu>[0] = {},
+  host: Parameters<typeof setupMenu>[1] = {},
+) {
+  const ctx = await setupMenu(options, host);
   await fireEvent.press(screen.getByRole("button", { name: en.trackMenu.more }));
   await fireEvent.press(screen.getByRole("button", { name: en.trackMenu.items.credits }));
+  // The menu slides down before the next sheet slides up.
+  await waitFor(() => {
+    expect(screen.queryByTestId("track-menu-sheet")).toBeNull();
+  });
   return ctx;
 }
 
 describe("the credits sheet", () => {
+  it("attaches the sheet to the bottom and side edges with its content the window's bottom inset above the edge inside a native tab", async () => {
+    await openCredits({}, { tab: true });
+    expectSheetOverWindow({ top: true });
+  });
+
   it("draws each section's title and names, then the other sections", async () => {
     const ctx = await openCredits();
     expect(await screen.findByText("Performed by")).toBeTruthy();

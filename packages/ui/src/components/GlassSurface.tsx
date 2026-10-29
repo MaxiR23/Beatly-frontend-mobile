@@ -1,5 +1,5 @@
 // INFO: the only importer of expo-glass-effect: native glass on iOS 26+, a
-// solid raised surface elsewhere; every floating surface is drawn with it.
+// solid raised surface elsewhere; every floating surface and the iOS sheet are drawn with it.
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
 import type { ReactNode } from "react";
 import { Platform, StyleSheet, View } from "react-native";
@@ -77,12 +77,14 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
     gap: spacing.xs,
   },
+  // The iOS Sheet: attached to the bottom and side edges like the system sheet, so only the top corners round; a corner key wins over borderRadius in RN and in the glass view.
   sheet: {
     alignSelf: "stretch",
     flexShrink: 1,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     padding: spacing.xl,
-    gap: spacing.lg,
   },
   circle: {
     width: layout.controlHeight,

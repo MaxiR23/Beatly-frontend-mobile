@@ -9,6 +9,7 @@
 // - the full report: description, category, reporter, linked entity and date, and no entity line for a report about nothing
 // - closing and reopening with the badge and the action changing at once
 // - the rollback and the inline line on a generic failure, forbidden and report_not_found
+// - the sheet attached to the bottom and side edges, its content 34 above the bottom edge inside a native tab (the window's inset, not the tab's 83)
 //
 // Run with: pnpm --filter @beatly/mobile test -- ReportDetailSheet
 //
@@ -17,7 +18,6 @@
 import type { BugReport, HttpOutcome } from "@beatly/core";
 import { describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { resources } from "../../../src/i18n/resources.ts";
 import { ReportDetailSheet } from "../../../src/screens/bugReports/ReportDetailSheet.tsx";
@@ -28,23 +28,20 @@ import {
   triageUsernameFixture,
   Wrapper,
 } from "../../helpers/core.tsx";
+import { expectSheetOverWindow, Insets } from "../../helpers/insets.tsx";
 
 const en = resources.en;
-const metrics = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 0, left: 0, right: 0, bottom: 0 },
-};
-
 async function setup(
   report: Parameters<typeof ReportDetailSheet>[0]["report"],
   options: Parameters<typeof makeCore>[0] = {},
+  tab = false,
 ) {
   const ctx = makeCore(options);
   await render(
     <Wrapper core={ctx.core}>
-      <SafeAreaProvider initialMetrics={metrics}>
-        <ReportDetailSheet report={report} onClose={jest.fn()} />
-      </SafeAreaProvider>
+      <Insets tab={tab}>
+        <ReportDetailSheet report={report} visible onClosed={jest.fn()} onClose={jest.fn()} />
+      </Insets>
     </Wrapper>,
   );
   return ctx;
@@ -58,6 +55,11 @@ const closed = (): HttpOutcome<BugReport> => ({
 });
 
 describe("the report detail sheet", () => {
+  it("attaches the sheet to the bottom and side edges with its content the window's bottom inset above the edge inside a native tab", async () => {
+    await setup(triageReportFixture, {}, true);
+    expectSheetOverWindow({ top: true });
+  });
+
   it("draws the description, category, reporter, linked entity and date", async () => {
     await setup(triageUsernameFixture);
     const date = new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(

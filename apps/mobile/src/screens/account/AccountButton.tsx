@@ -3,30 +3,30 @@ import { profileName } from "@beatly/core";
 import { spacing } from "@beatly/ui";
 import { ActionRow, Avatar, AvatarRow, Button, Sheet, Text } from "@beatly/ui/native";
 import { useRouter } from "expo-router";
-import { useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { useWindowInsets } from "../../providers/WindowInsetsProvider.tsx";
 import { useSignOut } from "../../queries/useAuth.ts";
 import { useProfile } from "../../queries/useProfile.ts";
 import { MyReportsSheet } from "../bugReports/MyReportsSheet.tsx";
 import { ReportProblemSheet } from "../bugReports/ReportProblemSheet.tsx";
 import { useReduceMotion } from "../player/useReduceMotion.ts";
+import { useSheetPresence } from "../trackMenu/useSheetPresence.ts";
 
 export function AccountButton() {
   const tc = useT("common");
   const reduceMotion = useReduceMotion();
-  const insets = useSafeAreaInsets();
+  const insets = useWindowInsets();
   const router = useRouter();
   const profile = useProfile();
   const signOut = useSignOut();
-  const [open, setOpen] = useState<"account" | "report" | "reports" | null>(null);
+  const sheet = useSheetPresence<"account" | "report" | "reports">();
 
   const canTriage = profile.data?.role === "developer" || profile.data?.role === "admin";
 
   const close = () => {
-    setOpen(null);
+    sheet.hide();
   };
 
   return (
@@ -35,12 +35,13 @@ export function AccountButton() {
         name={profile.data ? profileName(profile.data) : null}
         accessibilityLabel={tc("account.open")}
         onPress={() => {
-          setOpen("account");
+          sheet.show("account");
         }}
       />
       <Sheet
         reduceMotion={reduceMotion}
-        visible={open === "account"}
+        visible={sheet.current === "account" && sheet.visible}
+        onClosed={sheet.closed}
         onClose={close}
         closeLabel={tc("account.close")}
         bottomInset={insets.bottom}
@@ -72,14 +73,14 @@ export function AccountButton() {
             icon="flag"
             label={tc("account.report")}
             onPress={() => {
-              setOpen("report");
+              sheet.show("report");
             }}
           />
           <ActionRow
             icon="inbox"
             label={tc("account.myReports")}
             onPress={() => {
-              setOpen("reports");
+              sheet.show("reports");
             }}
           />
           {canTriage ? (
@@ -108,8 +109,17 @@ export function AccountButton() {
           </Text>
         ) : null}
       </Sheet>
-      {open === "report" ? <ReportProblemSheet track={null} onClose={close} /> : null}
-      {open === "reports" ? <MyReportsSheet onClose={close} /> : null}
+      {sheet.current === "report" ? (
+        <ReportProblemSheet
+          track={null}
+          visible={sheet.visible}
+          onClosed={sheet.closed}
+          onClose={close}
+        />
+      ) : null}
+      {sheet.current === "reports" ? (
+        <MyReportsSheet visible={sheet.visible} onClosed={sheet.closed} onClose={close} />
+      ) : null}
     </>
   );
 }
