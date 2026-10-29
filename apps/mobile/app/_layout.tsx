@@ -1,4 +1,4 @@
-// INFO: root layout of the app; wires the core and the providers, mounts only an empty placeholder under the splash while the session is unknown, keeps a cold deep link to a tab route while the session is unknown and opens it once on sign-in, gates the routes by session status, hides the splash once the matching screen is mounted and mounts the player's autoplay and the next cover's prefetch while signed in.
+// INFO: root layout of the app; wires the core and the providers, mounts only an empty placeholder under the splash while the session is unknown, keeps a cold deep link to a tab route while the session is unknown and opens it once on sign-in, gates the routes by session status, hides the splash once the matching screen is mounted and mounts the player's autoplay and the next cover's prefetch while signed in, and provides the window's insets to the sheets.
 import type { AuthStatus } from "@beatly/core";
 import { color } from "@beatly/ui";
 import {
@@ -19,6 +19,7 @@ import { createCore } from "../src/createCore.ts";
 import { CoreProvider } from "../src/providers/CoreProvider.tsx";
 import { QueryProvider } from "../src/providers/QueryProvider.tsx";
 import { SessionProvider, useSession } from "../src/providers/SessionProvider.tsx";
+import { WindowInsetsProvider } from "../src/providers/WindowInsetsProvider.tsx";
 import { Autoplay } from "../src/screens/player/Autoplay.tsx";
 import { NextCoverPrefetch } from "../src/screens/player/NextCoverPrefetch.tsx";
 import { playerRouteOptions } from "../src/screens/player/playerRoute.ts";
@@ -117,8 +118,10 @@ export default function RootLayout() {
       <QueryProvider>
         <SessionProvider>
           <ThemeProvider value={navigationTheme}>
-            <StatusBar style="light" />
-            <RootNavigator />
+            <WindowInsetsProvider>
+              <StatusBar style="light" />
+              <RootNavigator />
+            </WindowInsetsProvider>
           </ThemeProvider>
         </SessionProvider>
       </QueryProvider>

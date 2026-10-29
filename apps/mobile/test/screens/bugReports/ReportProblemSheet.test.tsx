@@ -11,6 +11,7 @@
 // - the chosen category and the trimmed description sent, with and without a track
 // - a busy Send, the generic error with the input kept, the confirmation then closing
 // - the labels in Spanish
+// - the sheet attached to the bottom and side edges, its content 34 above the bottom edge inside a native tab (the window's inset, not the tab's 83)
 //
 // Run with: pnpm --filter @beatly/mobile test -- ReportProblemSheet
 //
@@ -20,19 +21,14 @@ import type { BugReport, HttpOutcome } from "@beatly/core";
 import { motion } from "@beatly/ui";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { ReportProblemSheet } from "../../../src/screens/bugReports/ReportProblemSheet.tsx";
 import { bugReportFixture, makeCore, stateFlag, Wrapper } from "../../helpers/core.tsx";
+import { expectSheetOverWindow, Insets } from "../../helpers/insets.tsx";
 
 const en = resources.en;
-const metrics = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 0, left: 0, right: 0, bottom: 0 },
-};
-
 afterEach(async () => {
   jest.useRealTimers();
   await i18n.changeLanguage("en");
@@ -41,14 +37,15 @@ afterEach(async () => {
 async function setup(
   options: Parameters<typeof makeCore>[0] = {},
   track: { id: string; title: string } | null = null,
+  tab = false,
 ) {
   const ctx = makeCore(options);
   const onClose = jest.fn<() => void>();
   await render(
     <Wrapper core={ctx.core}>
-      <SafeAreaProvider initialMetrics={metrics}>
-        <ReportProblemSheet track={track} onClose={onClose} />
-      </SafeAreaProvider>
+      <Insets tab={tab}>
+        <ReportProblemSheet track={track} visible onClosed={jest.fn()} onClose={onClose} />
+      </Insets>
     </Wrapper>,
   );
   return { ...ctx, onClose };
@@ -60,6 +57,11 @@ const type = (text: string) =>
 const pick = (label: string) => fireEvent.press(screen.getByRole("button", { name: label }));
 
 describe("the report form", () => {
+  it("attaches the sheet to the bottom and side edges with its content the window's bottom inset above the edge inside a native tab", async () => {
+    await setup({}, null, true);
+    expectSheetOverWindow({ top: true });
+  });
+
   it("keeps Send disabled until a category is chosen and the description is valid", async () => {
     const ctx = await setup();
     await type("abcde");

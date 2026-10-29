@@ -9,6 +9,7 @@
 // - the name, @username, email and member since in en and es, No name and No username, the role badge
 // - the skeleton then the error with retry with no profile, the cached profile drawn at once and kept on a failed refetch
 // - the email placeholder, the email read failing, the large avatar's initials, saving from the edit sheet, back
+// - the edit sheet drawn until its close ends
 //
 // Run with: pnpm --filter @beatly/mobile test -- ProfileScreen
 //
@@ -17,7 +18,6 @@
 import type { HttpOutcome, Profile } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
@@ -25,6 +25,8 @@ import { profileQueryKey } from "../../../src/queries/useProfile.ts";
 import { ProfileScreen } from "../../../src/screens/profile/ProfileScreen.tsx";
 import { createTestQueryClient } from "../../helpers/queryClient.ts";
 import { makeAuth, makeCore, profileFixture, successOf, Wrapper } from "../../helpers/core.tsx";
+import { Insets } from "../../helpers/insets.tsx";
+import { holdSheetMotion } from "../../helpers/sheetMotion.ts";
 
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
@@ -39,11 +41,6 @@ afterEach(async () => {
 });
 
 const en = resources.en;
-const metrics = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 0, left: 0, right: 0, bottom: 0 },
-};
-
 const dated: Profile = { ...profileFixture, created_at: "2026-03-15T12:00:00Z" };
 
 async function setup(
@@ -53,9 +50,9 @@ async function setup(
   const ctx = makeCore(options);
   await render(
     <Wrapper core={ctx.core} client={client}>
-      <SafeAreaProvider initialMetrics={metrics}>
+      <Insets>
         <ProfileScreen />
-      </SafeAreaProvider>
+      </Insets>
     </Wrapper>,
   );
   return ctx;
@@ -201,6 +198,21 @@ describe("ProfileScreen", () => {
     });
     expect(screen.getByText("New")).toBeTruthy();
     expect(ctx.updateMyProfile).toHaveBeenCalledWith({ display_name: "New" });
+  });
+
+  it("keeps the edit sheet drawn until its close ends", async () => {
+    const motionHold = holdSheetMotion();
+    try {
+      await setup({ getMyProfile: profileOf(dated) });
+      await fireEvent.press(await screen.findByRole("button", { name: en.profile.editProfile }));
+      await motionHold.finishAll();
+      await fireEvent.press(screen.getByRole("button", { name: en.profile.edit.cancel }));
+      expect(screen.getByLabelText(en.profile.edit.name)).toBeTruthy();
+      await motionHold.finishAll();
+      expect(screen.queryByLabelText(en.profile.edit.name)).toBeNull();
+    } finally {
+      motionHold.restore();
+    }
   });
 
   it("goes back", async () => {

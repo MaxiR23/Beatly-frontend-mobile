@@ -19,6 +19,8 @@
 // - the options button only on an own playlist, after play, opening the sheet with edit, edit tracks and delete in that order, edit tracks opening the edit mode without asking; a saved rename shown as the player's source with the queue kept; the edit sheet prefilled, Save disabled unchanged or invalid, only changed fields, empty description as null, a failed save keeping the sheet and input, a saved edit closing it and redrawing the header; delete asking first, cancel doing nothing, confirm going back, a failed delete showing the notice and staying, playback untouched; no recent registered by an edit or a delete
 // - the list playing under its own source kind: playlist, genre_playlist and liked
 // - the skeleton, back and its fallback, es
+// - the options and the edit sheets attached to the bottom and side edges, their content 34 above the bottom edge inside a native tab (the window's inset, not the tab's 83)
+// - the options sheet drawn through its close, the edit sheet opening only once it has closed
 //
 // Run with: pnpm --filter @beatly/mobile test -- PlaylistScreen
 //
@@ -28,7 +30,6 @@ import type { HttpOutcome, PageResult, PlaylistTrack } from "@beatly/core";
 import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { Alert, Animated, processColor } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { motion } from "@beatly/ui";
 
@@ -49,6 +50,8 @@ import {
   tiers,
   Wrapper,
 } from "../../helpers/core.tsx";
+import { expectSheetOverWindow, Insets } from "../../helpers/insets.tsx";
+import { holdSheetMotion } from "../../helpers/sheetMotion.ts";
 
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
@@ -97,18 +100,13 @@ afterEach(async () => {
 const en = resources.en;
 const es = resources.es;
 
-const metrics = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 0, left: 0, right: 0, bottom: 0 },
-};
-
-async function setup(options: Parameters<typeof makeCore>[0] = {}) {
+async function setup(options: Parameters<typeof makeCore>[0] = {}, tab = false) {
   const ctx = makeCore(options);
   await render(
     <Wrapper core={ctx.core}>
-      <SafeAreaProvider initialMetrics={metrics}>
+      <Insets tab={tab}>
         <PlaylistScreen />
-      </SafeAreaProvider>
+      </Insets>
     </Wrapper>,
   );
   return ctx;
@@ -774,9 +772,9 @@ describe("PlaylistScreen action row", () => {
     await ctx.playback.playList([otherTrack], 0, { kind: "album", id: "other", name: "Other" });
     await render(
       <Wrapper core={ctx.core}>
-        <SafeAreaProvider initialMetrics={metrics}>
+        <Insets>
           <PlaylistScreen />
-        </SafeAreaProvider>
+        </Insets>
       </Wrapper>,
     );
     await screen.findByText("First Song");
@@ -937,9 +935,9 @@ describe("PlaylistScreen action row", () => {
     });
     const view = await render(
       <Wrapper core={ctx.core}>
-        <SafeAreaProvider initialMetrics={metrics}>
+        <Insets>
           <PlaylistScreen />
-        </SafeAreaProvider>
+        </Insets>
       </Wrapper>,
     );
     await screen.findByText("First Song");
@@ -1163,10 +1161,24 @@ describe("PlaylistScreen own playlist options", () => {
   const openEdit = async () => {
     await openOptions();
     await fireEvent.press(screen.getByRole("button", { name: en.playlist.options.items.edit }));
+    // The options slide down before the edit sheet slides up.
+    await screen.findByLabelText(en.playlist.edit.name);
   };
   const save = () => screen.getByRole("button", { name: en.playlist.edit.submit });
   const nameField = () => screen.getByLabelText(en.playlist.edit.name);
   const descriptionField = () => screen.getByLabelText(en.playlist.edit.description);
+
+  it("attaches the options sheet to the bottom and side edges with its content the window's bottom inset above the edge inside a native tab", async () => {
+    await setup({ listPlaylistTracks: tracksOf(two) }, true);
+    await openOptions();
+    expectSheetOverWindow({ top: false });
+  });
+
+  it("attaches the edit sheet to the bottom and side edges with its content the window's bottom inset above the edge inside a native tab", async () => {
+    await setup({ listPlaylistTracks: tracksOf(two) }, true);
+    await openEdit();
+    expectSheetOverWindow({ top: false });
+  });
 
   it("draws the options button after play on an own playlist", async () => {
     await setup({ listPlaylistTracks: tracksOf(two) });
@@ -1216,7 +1228,27 @@ describe("PlaylistScreen own playlist options", () => {
       params: { id: "p1" },
     });
     expect(alert).not.toHaveBeenCalled();
-    expect(screen.queryByTestId("playlist-options-sheet")).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByTestId("playlist-options-sheet")).toBeNull();
+    });
+  });
+
+  it("opens the edit sheet only after the options sheet has closed", async () => {
+    const motionHold = holdSheetMotion();
+    try {
+      await setup({ listPlaylistTracks: tracksOf(two) });
+      await screen.findByText("First Song");
+      await fireEvent.press(optionsButton());
+      await motionHold.finishAll();
+      await fireEvent.press(screen.getByRole("button", { name: en.playlist.options.items.edit }));
+      expect(screen.getByTestId("playlist-options-sheet")).toBeTruthy();
+      expect(screen.queryByLabelText(en.playlist.edit.name)).toBeNull();
+      await motionHold.finishAll();
+      expect(await screen.findByLabelText(en.playlist.edit.name)).toBeTruthy();
+      expect(screen.queryByTestId("playlist-options-sheet")).toBeNull();
+    } finally {
+      motionHold.restore();
+    }
   });
 
   it("prefills the edit sheet and keeps Save disabled until something changes", async () => {

@@ -9,6 +9,7 @@
 // - each report with its category, date, track mark, excerpt and status
 // - loading the next page at the end of the list
 // - the expected empty state, and the error with retry that recovers
+// - the sheet attached to the bottom and side edges, its content 34 above the bottom edge inside a native tab (the window's inset, not the tab's 83)
 //
 // Run with: pnpm --filter @beatly/mobile test -- MyReportsSheet
 //
@@ -16,7 +17,6 @@
 
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, within } from "@testing-library/react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { resources } from "../../../src/i18n/resources.ts";
 import { MyReportsSheet } from "../../../src/screens/bugReports/MyReportsSheet.tsx";
@@ -27,30 +27,31 @@ import {
   trackBugReportFixture,
   Wrapper,
 } from "../../helpers/core.tsx";
+import { expectSheetOverWindow, Insets } from "../../helpers/insets.tsx";
 
 const en = resources.en;
-const metrics = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 0, left: 0, right: 0, bottom: 0 },
-};
-
 afterEach(() => {
   jest.useRealTimers();
 });
 
-async function setup(options: Parameters<typeof makeCore>[0] = {}) {
+async function setup(options: Parameters<typeof makeCore>[0] = {}, tab = false) {
   const ctx = makeCore(options);
   await render(
     <Wrapper core={ctx.core}>
-      <SafeAreaProvider initialMetrics={metrics}>
-        <MyReportsSheet onClose={jest.fn()} />
-      </SafeAreaProvider>
+      <Insets tab={tab}>
+        <MyReportsSheet visible onClosed={jest.fn()} onClose={jest.fn()} />
+      </Insets>
     </Wrapper>,
   );
   return ctx;
 }
 
 describe("the My reports sheet", () => {
+  it("attaches the sheet to the bottom and side edges with its content the window's bottom inset above the edge inside a native tab", async () => {
+    await setup({}, true);
+    expectSheetOverWindow({ top: true });
+  });
+
   it("draws each report with its category, date, track mark, excerpt and status", async () => {
     await setup({
       listMyBugReports: () => Promise.resolve(pageOf([bugReportFixture, trackBugReportFixture])),

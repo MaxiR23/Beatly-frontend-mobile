@@ -1,4 +1,4 @@
-// INFO: motion tokens: the duration scale, the one spring used app-wide, the opacity a pressed control drops to, the scale a paused player cover drops to, the scale the player drops to behind the open sheet, the scale a control enters from, the detail play button's fade, shrink and scale-in durations, the now playing bars' fall, loop periods and static heights, the points the sheet handle rises in each bounce of its nudge, the thresholds of the vertical drag (the player's close, the sheet's open and close), the speed and rest of a scrolling title, the edge zone and speed of a reorder list's auto-scroll, the scroll each detail header layer takes to fade, the scale the hero cover shrinks to, the share of a fade the top bar leads by, the detail entry cascade's duration, stagger, offset, first row step and post-navigation delay, how long a brief notice stays and how long a picture loaded from the network fades in.
+// INFO: motion tokens: the duration scale, the easing of a surface entering and leaving the screen, the one spring used app-wide, the opacity a pressed control drops to, the scale a paused player cover drops to, the scale the player drops to behind the open sheet, the scale a control enters from, the detail play button's fade, shrink and scale-in durations, the now playing bars' fall, loop periods and static heights, the points the sheet handle rises in each bounce of its nudge, the thresholds of the vertical drag (the player's close, the sheet's open and close), the speed and rest of a scrolling title, the edge zone and speed of a reorder list's auto-scroll, the scroll each detail header layer takes to fade, the scale the hero cover shrinks to, the share of a fade the top bar leads by, the detail entry cascade's duration, stagger, offset, first row step and post-navigation delay, how long a brief notice stays and how long a picture loaded from the network fades in.
 export const motion = {
   duration: {
     fast: 150,
@@ -9,6 +9,11 @@ export const motion = {
     notice: 2500,
     // Milliseconds a picture loaded from the network fades in on Android only (Picture); iOS and a memory or disk hit draw at once.
     imageFade: 300,
+  },
+  // Cubic-bezier control points (x1, y1, x2, y2) of a surface entering and leaving the screen (the modal Sheet and its backdrop): the Material 3 emphasized decelerate and accelerate curves.
+  easing: {
+    enter: [0.05, 0.7, 0.1, 1],
+    exit: [0.3, 0, 0.8, 0.15],
   },
   spring: {
     damping: 18,

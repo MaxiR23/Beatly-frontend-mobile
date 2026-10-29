@@ -13,6 +13,9 @@
 // - go to artist and go to album closing the sheet and calling the screen
 // - remove calling the service for an own playlist, and the error notice when it fails
 // - report a problem swapping the menu for the report form with the track's title, and sending the track attached
+// - the sheet attached to the bottom and side edges, its content 34 above the bottom edge inside a native tab (the window's inset, not the tab's 83)
+// - the menu drawn through its close, the picker opening only once it has closed
+// - the closing menu taking no touches
 //
 // Run with: pnpm --filter @beatly/mobile test -- TrackMenuHost
 //
@@ -21,12 +24,14 @@
 import { color, layout, motion, spacing } from "@beatly/ui";
 import { border } from "@beatly/ui/native";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import { act, fireEvent, screen, within } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react-native";
 import { Platform } from "react-native";
 
 import { resources } from "../../../src/i18n/resources.ts";
+import { expectSheetOverWindow } from "../../helpers/insets.tsx";
 import { fullTrack, setupMenu } from "./trackMenuHelpers.tsx";
 import { flatStyle } from "../../helpers/flatStyle.ts";
+import { holdSheetMotion } from "../../helpers/sheetMotion.ts";
 
 const en = resources.en;
 
@@ -39,6 +44,12 @@ const openMenu = () => fireEvent.press(screen.getByRole("button", { name: en.tra
 const choose = (label: string) => fireEvent.press(screen.getByRole("button", { name: label }));
 
 describe("the track menu", () => {
+  it("attaches the sheet to the bottom and side edges with its content the window's bottom inset above the edge inside a native tab", async () => {
+    await setupMenu({}, { tab: true });
+    await openMenu();
+    expectSheetOverWindow({ top: false });
+  });
+
   it("draws the sheet's song row at the small tier", async () => {
     await setupMenu();
     await openMenu();
@@ -123,7 +134,9 @@ describe("the track menu", () => {
       },
       true,
     );
-    expect(screen.queryByTestId("track-menu-sheet")).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByTestId("track-menu-sheet")).toBeNull();
+    });
     await openMenu();
     expect(screen.getByRole("button", { name: en.trackMenu.items.unlike })).toBeTruthy();
   });
@@ -178,7 +191,9 @@ describe("the track menu", () => {
     await openMenu();
     await choose(en.trackMenu.items.goToArtist);
     expect(ctx.onOpenArtist).toHaveBeenCalledWith("ar1");
-    expect(screen.queryByTestId("track-menu-sheet")).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByTestId("track-menu-sheet")).toBeNull();
+    });
   });
 
   it("draws a secondary artist without an id by name, with no link", async () => {
@@ -194,7 +209,9 @@ describe("the track menu", () => {
     await openMenu();
     await choose(en.trackMenu.items.goToAlbum);
     expect(ctx.onOpenAlbum).toHaveBeenCalledWith("al1");
-    expect(screen.queryByTestId("track-menu-sheet")).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByTestId("track-menu-sheet")).toBeNull();
+    });
   });
 
   it("removes from an own playlist", async () => {
@@ -202,7 +219,9 @@ describe("the track menu", () => {
     await openMenu();
     await choose(en.trackMenu.items.removeFromPlaylist);
     expect(ctx.removeTrackFromPlaylist).toHaveBeenCalledWith("p1", "t1");
-    expect(screen.queryByTestId("track-menu-sheet")).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByTestId("track-menu-sheet")).toBeNull();
+    });
     expect(screen.queryByText(en.common.error.generic)).toBeNull();
   });
 
@@ -223,14 +242,51 @@ describe("the track menu", () => {
     await setupMenu();
     await openMenu();
     await choose(en.trackMenu.items.report);
-    expect(screen.queryByTestId("track-menu-sheet")).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByTestId("track-menu-sheet")).toBeNull();
+    });
     expect(screen.getByText("About: Menu Song")).toBeTruthy();
+  });
+
+  it("keeps the menu drawn while it closes and opens the picker only once it has closed", async () => {
+    const motionHold = holdSheetMotion();
+    try {
+      await setupMenu();
+      await openMenu();
+      await motionHold.finishAll();
+      await choose(en.trackMenu.items.addToPlaylist);
+      expect(screen.getByTestId("track-menu-sheet")).toBeTruthy();
+      expect(screen.queryByTestId("playlist-picker")).toBeNull();
+      await motionHold.finishAll();
+      expect(await screen.findByTestId("playlist-picker")).toBeTruthy();
+      expect(screen.queryByTestId("track-menu-sheet")).toBeNull();
+    } finally {
+      motionHold.restore();
+    }
+  });
+
+  it("takes no touches while the menu closes, so a second press on a row cannot repeat its action", async () => {
+    const motionHold = holdSheetMotion();
+    try {
+      const ctx = await setupMenu();
+      await openMenu();
+      await motionHold.finishAll();
+      expect(screen.getByTestId("sheet-container").props.pointerEvents).toBe("auto");
+      await choose(en.trackMenu.items.goToArtist);
+      expect(screen.getByTestId("track-menu-sheet")).toBeTruthy();
+      expect(screen.getByTestId("sheet-container").props.pointerEvents).toBe("none");
+      expect(ctx.onOpenArtist).toHaveBeenCalledTimes(1);
+      await motionHold.finishAll();
+    } finally {
+      motionHold.restore();
+    }
   });
 
   it("sends the report with the track attached", async () => {
     const ctx = await setupMenu();
     await openMenu();
     await choose(en.trackMenu.items.report);
+    await screen.findByLabelText(en.bugReports.form.description);
     await choose(en.bugReports.categories.ui);
     await fireEvent.changeText(
       screen.getByLabelText(en.bugReports.form.description),

@@ -12,25 +12,28 @@ import {
 } from "@beatly/ui/native";
 import type { ReactNode } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { useWindowInsets } from "../../providers/WindowInsetsProvider.tsx";
 import { useMyBugReports } from "../../queries/useBugReports.ts";
 import { reportDate } from "./reportDate.ts";
 import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface MyReportsSheetProps {
+  visible: boolean;
+  onClosed: () => void;
   onClose: () => void;
 }
 
-export function MyReportsSheet({ onClose }: MyReportsSheetProps) {
+export function MyReportsSheet({ visible, onClosed, onClose }: MyReportsSheetProps) {
   const t = useT("bugReports");
   const reduceMotion = useReduceMotion();
-  const insets = useSafeAreaInsets();
+  const insets = useWindowInsets();
   return (
     <Sheet
       reduceMotion={reduceMotion}
-      visible
+      visible={visible}
+      onClosed={onClosed}
       onClose={onClose}
       closeLabel={t("list.close")}
       bottomInset={insets.bottom}

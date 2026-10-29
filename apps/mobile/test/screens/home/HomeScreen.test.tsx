@@ -19,7 +19,6 @@
 import type { HttpOutcome, PageResult, PlaylistListItem, RecentEntity } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
@@ -33,6 +32,7 @@ import {
   successOf,
   Wrapper,
 } from "../../helpers/core.tsx";
+import { Insets } from "../../helpers/insets.tsx";
 
 const mockPush = jest.fn();
 jest.mock("expo-router", () => ({ useRouter: () => ({ push: mockPush }) }));
@@ -44,16 +44,11 @@ afterEach(async () => {
 
 const en = resources.en;
 
-const metrics = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 0, left: 0, right: 0, bottom: 0 },
-};
-
 function Screen() {
   return (
-    <SafeAreaProvider initialMetrics={metrics}>
+    <Insets>
       <HomeScreen />
-    </SafeAreaProvider>
+    </Insets>
   );
 }
 

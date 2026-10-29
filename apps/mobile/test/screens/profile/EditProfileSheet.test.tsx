@@ -9,6 +9,7 @@
 // - the prefilled form with Save disabled, the validation messages, only the changed field sent, a cleared name as null
 // - the busy state, a taken username under its field, the generic error for any other failure, the input kept
 // - closing once the profile refetched
+// - the sheet attached to the bottom and side edges, its content 34 above the bottom edge inside a native tab (the window's inset, not the tab's 83)
 //
 // Run with: pnpm --filter @beatly/mobile test -- EditProfileSheet
 //
@@ -17,34 +18,29 @@
 import type { HttpOutcome, Profile } from "@beatly/core";
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { useProfile } from "../../../src/queries/useProfile.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { EditProfileSheet } from "../../../src/screens/profile/EditProfileSheet.tsx";
 import { makeCore, profileFixture, stateFlag, successOf, Wrapper } from "../../helpers/core.tsx";
+import { expectSheetOverWindow, Insets } from "../../helpers/insets.tsx";
 
 const en = resources.en;
-const metrics = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 0, left: 0, right: 0, bottom: 0 },
-};
-
 // Holds the profile query the way the header avatar does, so a save has a reader to refetch.
 function ProfileReader() {
   useProfile();
   return null;
 }
 
-async function setup(options: Parameters<typeof makeCore>[0] = {}) {
+async function setup(options: Parameters<typeof makeCore>[0] = {}, tab = false) {
   const ctx = makeCore(options);
   const onClose = jest.fn();
   await render(
     <Wrapper core={ctx.core}>
-      <SafeAreaProvider initialMetrics={metrics}>
+      <Insets tab={tab}>
         <ProfileReader />
-        <EditProfileSheet profile={profileFixture} onClose={onClose} />
-      </SafeAreaProvider>
+        <EditProfileSheet profile={profileFixture} visible onClosed={jest.fn()} onClose={onClose} />
+      </Insets>
     </Wrapper>,
   );
   return { ...ctx, onClose };
@@ -59,6 +55,11 @@ function failure(reason: string): () => Promise<HttpOutcome<Profile>> {
 }
 
 describe("EditProfileSheet", () => {
+  it("attaches the sheet to the bottom and side edges with its content the window's bottom inset above the edge inside a native tab", async () => {
+    await setup({}, true);
+    expectSheetOverWindow({ top: false });
+  });
+
   it("prefills the name and the username and disables Save while nothing changed", async () => {
     await setup();
     expect(nameInput().props.value).toBe("Maxi");

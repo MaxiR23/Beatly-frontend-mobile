@@ -10,6 +10,8 @@
 // - the row from the cache with no new request, No name, the skeleton row while the profile loads or fails, always opening the profile
 // - the report form and My reports opening in place of the account sheet
 // - All reports below My reports for a developer or an admin, never for a user or a tester, nor while the profile loads or fails, opening its screen and closing the sheet
+// - the sheet attached to the bottom and side edges, its content 34 above the bottom edge inside a native tab (the window's inset, not the tab's 83)
+// - the account sheet drawn through its close, the report form opening only once it has closed
 //
 // Run with: pnpm --filter @beatly/mobile test -- AccountButton
 //
@@ -18,11 +20,12 @@
 import type { HttpOutcome, Profile } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { resources } from "../../../src/i18n/resources.ts";
 import { AccountButton } from "../../../src/screens/account/AccountButton.tsx";
 import { makeCore, profileFixture, successOf, Wrapper } from "../../helpers/core.tsx";
+import { expectSheetOverWindow, Insets } from "../../helpers/insets.tsx";
+import { holdSheetMotion } from "../../helpers/sheetMotion.ts";
 
 const mockPush = jest.fn();
 jest.mock("expo-router", () => ({ useRouter: () => ({ push: mockPush }) }));
@@ -32,18 +35,13 @@ afterEach(() => {
 });
 
 const en = resources.en;
-const metrics = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 0, left: 0, right: 0, bottom: 0 },
-};
-
-async function setup(options: Parameters<typeof makeCore>[0] = {}) {
+async function setup(options: Parameters<typeof makeCore>[0] = {}, tab = false) {
   const ctx = makeCore(options);
   await render(
     <Wrapper core={ctx.core}>
-      <SafeAreaProvider initialMetrics={metrics}>
+      <Insets tab={tab}>
         <AccountButton />
-      </SafeAreaProvider>
+      </Insets>
     </Wrapper>,
   );
   await fireEvent.press(screen.getByRole("button", { name: en.common.account.open }));
@@ -56,6 +54,11 @@ const failing = (): Promise<HttpOutcome<Profile>> =>
   Promise.resolve({ kind: "api_failure", reason: "upstream_error" });
 
 describe("the account sheet", () => {
+  it("attaches the sheet to the bottom and side edges with its content the window's bottom inset above the edge inside a native tab", async () => {
+    await setup({}, true);
+    expectSheetOverWindow({ top: false });
+  });
+
   it("offers the profile row above Report a problem, My reports and Log out", async () => {
     await setup();
     const row = await screen.findByRole("button", { name: profileLabel("Maxi") });
@@ -83,7 +86,9 @@ describe("the account sheet", () => {
     await setup();
     await fireEvent.press(await screen.findByRole("button", { name: profileLabel("Maxi") }));
     expect(mockPush).toHaveBeenCalledWith("/profile");
-    expect(screen.queryByRole("button", { name: en.common.account.logout })).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: en.common.account.logout })).toBeNull();
+    });
   });
 
   it("draws the skeleton row while the profile loads and opens the profile from it", async () => {
@@ -108,9 +113,9 @@ describe("the account sheet", () => {
     const ctx = makeCore();
     await render(
       <Wrapper core={ctx.core}>
-        <SafeAreaProvider initialMetrics={metrics}>
+        <Insets>
           <AccountButton />
-        </SafeAreaProvider>
+        </Insets>
       </Wrapper>,
     );
     await waitFor(() => {
@@ -142,9 +147,11 @@ describe("the account sheet", () => {
   it("opens the empty report form in place of the account sheet", async () => {
     await setup();
     await fireEvent.press(screen.getByRole("button", { name: en.common.account.report }));
-    expect(screen.getByText(en.bugReports.form.title)).toBeTruthy();
+    expect(await screen.findByText(en.bugReports.form.title)).toBeTruthy();
     expect(screen.queryByText(/^About:/)).toBeNull();
-    expect(screen.queryByRole("button", { name: en.common.account.logout })).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: en.common.account.logout })).toBeNull();
+    });
   });
 
   it.each(["developer", "admin"] as const)(
@@ -188,13 +195,33 @@ describe("the account sheet", () => {
     });
     await fireEvent.press(await screen.findByTestId("account-all-reports"));
     expect(mockPush).toHaveBeenCalledWith("/bug-reports");
-    expect(screen.queryByRole("button", { name: en.common.account.logout })).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: en.common.account.logout })).toBeNull();
+    });
+  });
+
+  it("opens the report form only after the account sheet has closed", async () => {
+    const motionHold = holdSheetMotion();
+    try {
+      await setup();
+      await motionHold.finishAll();
+      await fireEvent.press(screen.getByRole("button", { name: en.common.account.report }));
+      expect(screen.getByRole("button", { name: en.common.account.logout })).toBeTruthy();
+      expect(screen.queryByLabelText(en.bugReports.form.description)).toBeNull();
+      await motionHold.finishAll();
+      expect(await screen.findByLabelText(en.bugReports.form.description)).toBeTruthy();
+      expect(screen.queryByRole("button", { name: en.common.account.logout })).toBeNull();
+    } finally {
+      motionHold.restore();
+    }
   });
 
   it("opens My reports in place of the account sheet", async () => {
     const ctx = await setup();
     await fireEvent.press(screen.getByRole("button", { name: en.common.account.myReports }));
-    expect(screen.getByText(en.bugReports.list.title)).toBeTruthy();
-    expect(ctx.listMyBugReports).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText(en.bugReports.list.title)).toBeTruthy();
+    await waitFor(() => {
+      expect(ctx.listMyBugReports).toHaveBeenCalledTimes(1);
+    });
   });
 });

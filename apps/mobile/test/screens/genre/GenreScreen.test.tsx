@@ -17,12 +17,12 @@ import type { GenrePlaylistListItem, HttpOutcome, PageResult } from "@beatly/cor
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { Dimensions } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { GenreScreen } from "../../../src/screens/genre/GenreScreen.tsx";
 import { genrePlaylistFixture, makeCore, pageOf, tiers, Wrapper } from "../../helpers/core.tsx";
+import { Insets } from "../../helpers/insets.tsx";
 
 const mockPush = jest.fn();
 const mockBack = jest.fn();
@@ -50,18 +50,13 @@ afterEach(async () => {
 
 const en = resources.en;
 
-const metrics = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 0, left: 0, right: 0, bottom: 0 },
-};
-
 async function setup(options: Parameters<typeof makeCore>[0] = {}) {
   const ctx = makeCore(options);
   await render(
     <Wrapper core={ctx.core}>
-      <SafeAreaProvider initialMetrics={metrics}>
+      <Insets>
         <GenreScreen />
-      </SafeAreaProvider>
+      </Insets>
     </Wrapper>,
   );
   return ctx;

@@ -13,7 +13,6 @@ import {
   Text,
 } from "@beatly/ui/native";
 import { useRouter } from "expo-router";
-import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -22,6 +21,7 @@ import { useEmail } from "../../queries/useAuth.ts";
 import { useProfile } from "../../queries/useProfile.ts";
 import { reportDate } from "../bugReports/reportDate.ts";
 import { useTabBarClearance } from "../player/useTabBarClearance.ts";
+import { useSheetPresence } from "../trackMenu/useSheetPresence.ts";
 import { EditProfileSheet } from "./EditProfileSheet.tsx";
 
 const roleKey = {
@@ -37,7 +37,7 @@ export function ProfileScreen() {
   const tabBarClearance = useTabBarClearance();
   const profile = useProfile();
   const email = useEmail();
-  const [editing, setEditing] = useState(false);
+  const editing = useSheetPresence<"edit">();
 
   function goBack() {
     // A deep link has nothing to go back to, so it lands on home.
@@ -126,7 +126,7 @@ export function ProfileScreen() {
           shape="field"
           label={t("editProfile")}
           onPress={() => {
-            setEditing(true);
+            editing.show("edit");
           }}
         />
       </ScrollView>
@@ -142,12 +142,12 @@ export function ProfileScreen() {
         </Text>
       </View>
       {body}
-      {editing && data ? (
+      {editing.current !== null && data ? (
         <EditProfileSheet
           profile={data}
-          onClose={() => {
-            setEditing(false);
-          }}
+          visible={editing.visible}
+          onClosed={editing.closed}
+          onClose={editing.hide}
         />
       ) : null}
     </SafeAreaView>

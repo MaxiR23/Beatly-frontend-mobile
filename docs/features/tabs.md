@@ -22,7 +22,7 @@ accessible label. Each tab has its own screen (`home.md`, `explore.md`,
 
 The mini player sits above the bar when a track is loaded: on iOS 26+ as
 `NativeTabs.BottomAccessory`, bare inside the system's capsule, elsewhere as the `accessory` of `FloatingTabBar`, drawn `spacing.md` above the
-pill at the same width, the window width minus `layout.gutter` on each side. Screens clear both with `useTabBarClearance`. See `player.md`.
+pill at the same width, the window width minus `layout.gutter` on each side. Screens clear both with `useTabBarClearance`, built on the window's bottom inset: on iOS 26+ a native tab's own inset already holds the tab bar, and the clearance adds the bar itself (issue 144). See `player.md`.
 
 ## Platform differences
 

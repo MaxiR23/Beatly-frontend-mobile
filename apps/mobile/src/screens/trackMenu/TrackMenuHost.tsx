@@ -13,6 +13,7 @@ import { ReportProblemSheet } from "../bugReports/ReportProblemSheet.tsx";
 import { PlaylistPickerSheet } from "./PlaylistPickerSheet.tsx";
 import { TrackMenuSheet } from "./TrackMenuSheet.tsx";
 import { TrackMenuContext } from "./trackMenuContext.ts";
+import { useSheetPresence } from "./useSheetPresence.ts";
 import type { TrackMenuItem } from "./trackMenuItems.ts";
 
 interface TrackMenuHostProps {
@@ -25,8 +26,6 @@ interface TrackMenuHostProps {
   children: ReactNode;
 }
 
-type Open = { sheet: "menu" | "picker" | "credits" | "report"; track: PlayableTrack } | null;
-
 export function TrackMenuHost({
   ownPlaylistId = null,
   onOpenArtist,
@@ -37,7 +36,10 @@ export function TrackMenuHost({
   const tc = useT("common");
   const likes = useLikesActions();
   const remove = useRemoveFromPlaylist();
-  const [open, setOpen] = useState<Open>(null);
+  const sheet = useSheetPresence<{
+    sheet: "menu" | "picker" | "credits" | "report";
+    track: PlayableTrack;
+  }>();
   const [notice, setNotice] = useState<{ tone: "error"; message: string } | null>(null);
 
   useEffect(() => {
@@ -65,28 +67,28 @@ export function TrackMenuHost({
     switch (item.key) {
       case "like":
       case "unlike":
-        setOpen(null);
+        sheet.hide();
         void toggleLike(track);
         break;
       case "addToPlaylist":
-        setOpen({ sheet: "picker", track });
+        sheet.show({ sheet: "picker", track });
         break;
       case "credits":
-        setOpen({ sheet: "credits", track });
+        sheet.show({ sheet: "credits", track });
         break;
       case "report":
-        setOpen({ sheet: "report", track });
+        sheet.show({ sheet: "report", track });
         break;
       case "goToArtist":
-        setOpen(null);
+        sheet.hide();
         if (item.artistId !== undefined) onOpenArtist(item.artistId);
         break;
       case "goToAlbum":
-        setOpen(null);
+        sheet.hide();
         if (item.albumId !== undefined) onOpenAlbum(item.albumId);
         break;
       case "removeFromPlaylist":
-        setOpen(null);
+        sheet.hide();
         if (ownPlaylistId !== null) {
           remove.mutate(
             { playlistId: ownPlaylistId, trackId: track.trackId },
@@ -98,7 +100,7 @@ export function TrackMenuHost({
   };
 
   const close = () => {
-    setOpen(null);
+    sheet.hide();
   };
 
   return (
@@ -106,7 +108,7 @@ export function TrackMenuHost({
       value={{
         ownPlaylistId,
         openMenu: (track) => {
-          setOpen({ sheet: "menu", track });
+          sheet.show({ sheet: "menu", track });
         },
         select,
         toggleLike,
@@ -114,14 +116,35 @@ export function TrackMenuHost({
     >
       <View style={styles.host}>
         {children}
-        {open?.sheet === "menu" ? <TrackMenuSheet track={open.track} onClose={close} /> : null}
-        {open?.sheet === "picker" ? (
-          <PlaylistPickerSheet track={open.track} onClose={close} />
+        {sheet.current?.sheet === "menu" ? (
+          <TrackMenuSheet
+            track={sheet.current.track}
+            visible={sheet.visible}
+            onClosed={sheet.closed}
+            onClose={close}
+          />
         ) : null}
-        {open?.sheet === "credits" ? <CreditsSheet track={open.track} onClose={close} /> : null}
-        {open?.sheet === "report" ? (
+        {sheet.current?.sheet === "picker" ? (
+          <PlaylistPickerSheet
+            track={sheet.current.track}
+            visible={sheet.visible}
+            onClosed={sheet.closed}
+            onClose={close}
+          />
+        ) : null}
+        {sheet.current?.sheet === "credits" ? (
+          <CreditsSheet
+            track={sheet.current.track}
+            visible={sheet.visible}
+            onClosed={sheet.closed}
+            onClose={close}
+          />
+        ) : null}
+        {sheet.current?.sheet === "report" ? (
           <ReportProblemSheet
-            track={{ id: open.track.trackId, title: open.track.title }}
+            track={{ id: sheet.current.track.trackId, title: sheet.current.track.title }}
+            visible={sheet.visible}
+            onClosed={sheet.closed}
             onClose={close}
           />
         ) : null}

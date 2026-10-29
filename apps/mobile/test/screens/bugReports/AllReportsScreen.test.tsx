@@ -11,6 +11,7 @@
 // - loading the next page at the end of the list
 // - the expected empty state of each filter, the error with retry that recovers, and not allowed on forbidden
 // - opening the full report from a row
+// - the report detail drawn until its close ends
 //
 // Run with: pnpm --filter @beatly/mobile test -- AllReportsScreen
 //
@@ -18,7 +19,6 @@
 
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, within } from "@testing-library/react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { resources } from "../../../src/i18n/resources.ts";
 import { AllReportsScreen } from "../../../src/screens/bugReports/AllReportsScreen.tsx";
@@ -30,6 +30,8 @@ import {
   triageUsernameFixture,
   Wrapper,
 } from "../../helpers/core.tsx";
+import { Insets } from "../../helpers/insets.tsx";
+import { holdSheetMotion } from "../../helpers/sheetMotion.ts";
 
 const mockBack = jest.fn();
 jest.mock("expo-router", () => ({
@@ -37,11 +39,6 @@ jest.mock("expo-router", () => ({
 }));
 
 const en = resources.en;
-const metrics = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 0, left: 0, right: 0, bottom: 0 },
-};
-
 afterEach(() => {
   jest.useRealTimers();
 });
@@ -50,9 +47,9 @@ async function setup(options: Parameters<typeof makeCore>[0] = {}) {
   const ctx = makeCore(options);
   await render(
     <Wrapper core={ctx.core}>
-      <SafeAreaProvider initialMetrics={metrics}>
+      <Insets>
         <AllReportsScreen />
-      </SafeAreaProvider>
+      </Insets>
     </Wrapper>,
   );
   return ctx;
@@ -182,6 +179,23 @@ describe("the All reports screen", () => {
     await fireEvent.press(await screen.findByTestId("triage-r1"));
     expect(await screen.findByTestId("report-detail-status")).toBeTruthy();
     expect(screen.getByText(en.bugReports.triage.detail.title)).toBeTruthy();
+  });
+
+  it("keeps the report detail drawn until its close ends", async () => {
+    const motionHold = holdSheetMotion();
+    try {
+      await setup({ listBugReports: () => Promise.resolve(pageOf([triageReportFixture])) });
+      await fireEvent.press(await screen.findByTestId("triage-r1"));
+      await motionHold.finishAll();
+      await fireEvent.press(
+        screen.getByRole("button", { name: en.bugReports.triage.detail.dismiss }),
+      );
+      expect(screen.getByTestId("report-detail-status")).toBeTruthy();
+      await motionHold.finishAll();
+      expect(screen.queryByTestId("report-detail-status")).toBeNull();
+    } finally {
+      motionHold.restore();
+    }
   });
 
   it("goes back from the header", async () => {

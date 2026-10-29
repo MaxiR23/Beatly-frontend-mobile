@@ -3,9 +3,9 @@ import { spacing } from "@beatly/ui";
 import { Button, Input, Sheet, SwitchRow, Text } from "@beatly/ui/native";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { useWindowInsets } from "../../providers/WindowInsetsProvider.tsx";
 import { useCreatePlaylist } from "../../queries/usePlaylists.ts";
 import { PLAYLIST_TITLE_MAX_LENGTH, canCreatePlaylist, isTitleTooLong } from "./playlistRules.ts";
 import { useReduceMotion } from "../player/useReduceMotion.ts";
@@ -19,18 +19,22 @@ export function CreatePlaylistSheet({ visible, onClose }: CreatePlaylistSheetPro
   const t = useT("library");
   const reduceMotion = useReduceMotion();
   const tc = useT("common");
-  const insets = useSafeAreaInsets();
+  const insets = useWindowInsets();
   const create = useCreatePlaylist();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
 
   const close = () => {
+    onClose();
+  };
+
+  // The fields clear once the close has ended, so the form does not blank while it slides down.
+  const clear = () => {
     setName("");
     setDescription("");
     setIsPublic(false);
     create.reset();
-    onClose();
   };
 
   const submit = () => {
@@ -49,6 +53,7 @@ export function CreatePlaylistSheet({ visible, onClose }: CreatePlaylistSheetPro
     <Sheet
       reduceMotion={reduceMotion}
       visible={visible}
+      onClosed={clear}
       onClose={close}
       closeLabel={t("create.close")}
       bottomInset={insets.bottom}

@@ -131,6 +131,7 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
   `expo-router/unstable-native-tabs`, a stable SDK's unstable API. Since
   issue #130 (SDK 58) it comes from `expo-router/native-tabs`, which SDK 58
   made stable; the rest of 017, as corrected above by 027, stands.
+- `017-native-tabs-and-glass-surfaces.md` draws "every floating surface (the bar, the sheet)" with `GlassSurface`, and `027-android-variants-follow-material-3.md` says iOS keeps what it draws. Since `031-window-insets-from-a-root-context.md` (issue #144) the iOS `Sheet` is no longer floating: it is attached to the bottom and side edges like the system sheet, still drawn with `GlassSurface`.
 
 ## Files
 
@@ -232,3 +233,4 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
   memory and disk cache, no transition on iOS, a fade on Android only for a network load and a recycling key
   from the URL.
 - `030-cover-color-from-the-backend.md` — why the album, playlist, player and mini player backgrounds read `image.color` from the backend instead of extracting it on the device, and how a color that arrives after mount fades in.
+- `031-window-insets-from-a-root-context.md` — why full-window surfaces and the floating bar's clearance read the window's insets from a root provider that throws outside it, instead of the nearest safe-area provider, which inside an iOS native tab includes the tab bar, and which readers stay on the nearest one, and why the iOS `Sheet` is attached to the bottom and side edges like the system sheet, and why the sheet's backdrop fades in place while only the sheet slides.

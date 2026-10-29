@@ -3,24 +3,26 @@ import type { PlayableTrack } from "@beatly/core";
 import { color, spacing } from "@beatly/ui";
 import { ActionRow, MediaRow, Sheet, border, isAndroidVariant } from "@beatly/ui/native";
 import { StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { useWindowInsets } from "../../providers/WindowInsetsProvider.tsx";
 import { useIsLiked } from "../../queries/useLikes.ts";
 import { useTrackMenu } from "./trackMenuContext.ts";
 import { trackMenuItems } from "./trackMenuItems.ts";
 import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface TrackMenuSheetProps {
+  visible: boolean;
+  onClosed: () => void;
   track: PlayableTrack;
   onClose: () => void;
 }
 
-export function TrackMenuSheet({ track, onClose }: TrackMenuSheetProps) {
+export function TrackMenuSheet({ visible, onClosed, track, onClose }: TrackMenuSheetProps) {
   const t = useT("trackMenu");
   const reduceMotion = useReduceMotion();
   const tp = useT("player");
-  const insets = useSafeAreaInsets();
+  const insets = useWindowInsets();
   const { ownPlaylistId, select } = useTrackMenu();
   const liked = useIsLiked(track.trackId);
   const android = isAndroidVariant();
@@ -38,7 +40,8 @@ export function TrackMenuSheet({ track, onClose }: TrackMenuSheetProps) {
   return (
     <Sheet
       reduceMotion={reduceMotion}
-      visible
+      visible={visible}
+      onClosed={onClosed}
       onClose={onClose}
       closeLabel={t("close")}
       bottomInset={insets.bottom}

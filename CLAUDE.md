@@ -154,7 +154,7 @@ that needs it opens a backend issue instead of computing it here.
       src/queries/          TanStack Query hooks over core services
       src/adapters/         one file per external library: http, auth, player, config, log, storage, db, i18n
       src/i18n/es/ en/      one namespace per screen, key parity enforced by a test
-      src/providers/        thin React providers over core
+      src/providers/        thin React providers over core and over the window's insets
       src/auth/             pure helpers of the auth adapter (no library import)
       test/                 mirrors src/
     packages/core/

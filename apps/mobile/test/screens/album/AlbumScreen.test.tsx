@@ -27,13 +27,13 @@ import type { Album, HttpOutcome } from "@beatly/core";
 import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { Animated, processColor, type ViewStyle } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { color, motion, spacing } from "@beatly/ui";
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { AlbumScreen } from "../../../src/screens/album/AlbumScreen.tsx";
 import { albumFixture, makeCore, stateFlag, tiers, Wrapper } from "../../helpers/core.tsx";
+import { Insets } from "../../helpers/insets.tsx";
 import { flatStyle } from "../../helpers/flatStyle.ts";
 
 const mockPush = jest.fn();
@@ -81,18 +81,13 @@ afterEach(async () => {
 const en = resources.en;
 const es = resources.es;
 
-const metrics = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 0, left: 0, right: 0, bottom: 0 },
-};
-
 async function setup(options: Parameters<typeof makeCore>[0] = {}) {
   const ctx = makeCore(options);
   await render(
     <Wrapper core={ctx.core}>
-      <SafeAreaProvider initialMetrics={metrics}>
+      <Insets>
         <AlbumScreen />
-      </SafeAreaProvider>
+      </Insets>
     </Wrapper>,
   );
   return ctx;
@@ -533,9 +528,9 @@ describe("AlbumScreen action row", () => {
     );
     await render(
       <Wrapper core={ctx.core}>
-        <SafeAreaProvider initialMetrics={metrics}>
+        <Insets>
           <AlbumScreen />
-        </SafeAreaProvider>
+        </Insets>
       </Wrapper>,
     );
     await screen.findByText("First Song");
@@ -678,9 +673,9 @@ describe("AlbumScreen action row", () => {
     );
     await render(
       <Wrapper core={ctx.core}>
-        <SafeAreaProvider initialMetrics={metrics}>
+        <Insets>
           <AlbumScreen />
-        </SafeAreaProvider>
+        </Insets>
       </Wrapper>,
     );
     await screen.findByText("First Song");

@@ -15,9 +15,9 @@ import {
 } from "@beatly/ui/native";
 import { useEffect, useState, type ReactNode } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { useWindowInsets } from "../../providers/WindowInsetsProvider.tsx";
 import {
   useAddToPlaylist,
   useCreatePlaylistWithTrack,
@@ -32,18 +32,26 @@ import {
 import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface PlaylistPickerSheetProps {
+  visible: boolean;
+  onClosed: () => void;
   track: PlayableTrack;
   onClose: () => void;
 }
 
-export function PlaylistPickerSheet({ track, onClose }: PlaylistPickerSheetProps) {
+export function PlaylistPickerSheet({
+  visible,
+  onClosed,
+  track,
+  onClose,
+}: PlaylistPickerSheetProps) {
   const t = useT("trackMenu");
   const reduceMotion = useReduceMotion();
-  const insets = useSafeAreaInsets();
+  const insets = useWindowInsets();
   return (
     <Sheet
       reduceMotion={reduceMotion}
-      visible
+      visible={visible}
+      onClosed={onClosed}
       onClose={onClose}
       closeLabel={t("close")}
       bottomInset={insets.bottom}
@@ -54,7 +62,7 @@ export function PlaylistPickerSheet({ track, onClose }: PlaylistPickerSheetProps
   );
 }
 
-function PickerBody({ track, onClose }: PlaylistPickerSheetProps) {
+function PickerBody({ track, onClose }: Pick<PlaylistPickerSheetProps, "track" | "onClose">) {
   const t = useT("trackMenu");
   const reduceMotion = useReduceMotion();
   const tc = useT("common");
