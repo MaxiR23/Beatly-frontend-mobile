@@ -1,8 +1,9 @@
 // INFO: color tokens. Surface levels (and the inverse surface of the Android snackbar), text levels, the white accent, the
 // semantic error/success colors, and the black/white overlays used over
-// images and controls, the clear start of a fade, the sheet handle bar on Android, the press ripple on Android over a dark fill and over the accent, and the opacity stops of the iOS detail strip's wash and shade and of the mask of its blur, and the shape, intensity and stops of the detail hero's wash. Values are the legacy inventory's, named by role.
+// images and controls, the clear start of a fade, the sheet handle bar on Android, the press ripple on Android over a dark fill and over the accent, and the opacity stops of the iOS detail strip's wash and shade and of the mask of its blur, and the shape, intensity and stops of the dominant-color wash of the detail hero, the player and its sheet. Values are the legacy inventory's, named by role.
 // The detail hero's wash: the shape of its opacity curve, from the hero's top (offset 0) to
 // layout.heroWashExtension under its bottom edge (offset 1), scaled by its intensity. Tune the intensity only.
+// The player and its sheet read the same stops over their full height (offset 1 at the bottom edge).
 // Decision: a token may be computed from other tokens of this file when it is a curve tuned by one value
 // (shape times intensity); stops below derives from the two, so only the intensity is edited.
 const detailHeroShape = [
@@ -76,7 +77,7 @@ export const color = {
         { offset: 1, opacity: 0 },
       ],
     },
-    // The detail hero's wash (album, playlist): the dominant color over surface.base at the shape's
+    // The detail hero's wash (album, playlist, the full player and its sheet): the dominant color over surface.base at the shape's
     // opacities times the intensity (0: 0.70, 0.2: 0.644, 0.4: 0.518, 0.6: 0.336, 0.75: 0.189, 0.88: 0.077, 1: 0).
     detailHero: {
       shape: detailHeroShape,

@@ -36,8 +36,8 @@ Token names only.
 
 - Android: the notice is the Material 3 snackbar (`color.surface.inverse`, `radius.xs`, no glyph); iOS keeps the glass bar with the check or the x (ADR 027).
 
-- iOS with the `ExpoUI` native module: the system menu (`NativeMenu`, `@expo/ui`, ADR 023), one button per item with an SF Symbol, the remove item destructive (red). The three dots take `color.text.primary` through the `Host` seed color, like the other icons, never the system tint.
-- Android, and any build without the `ExpoUI` module (Expo Go, an old development build): the `Sheet` with `ActionRow`s; the button draws three vertical dots on Android and the horizontal ellipsis on iOS without the module (ADR 027).
+- iOS with the `ExpoUI` native module: the system menu (`NativeMenu`, `@expo/ui`, ADR 023), one button per item with an SF Symbol, the remove item destructive (red). The three dots take `color.text.primary` through the `Host` seed color, like the other icons, never the system tint. The button keeps a `layout.controlHeight` square with the dots centered in it, in the player header and in every row. The whole square is the trigger (the label carries the same frame and a rectangle content shape), not only the glyph.
+- Android, and any build without the `ExpoUI` module (an old development build): the `Sheet` with `ActionRow`s; the button draws three vertical dots on Android and the horizontal ellipsis on iOS without the module (ADR 027).
 - The sheets open from inside the player route, which is a native `transparentModal`.
 
 ## States
@@ -90,7 +90,7 @@ Go to artist and Go to album push `/artist/[id]` and `/album/[id]` in the curren
 
 ## Checked by hand
 
-The iOS system menu opening from the button with its SF Symbols and the destructive red; the three dots in the icon color, not the system blue; whether Expo Go ships the `ExpoUI` module (the sheet is the fallback);
+The iOS system menu opening from the button with its SF Symbols and the destructive red; the three dots in the icon color, not the system blue; the button 48 wide and in the same place in a row as the Android and fallback button;
 the marquee's real motion and its ellipsis under the system Reduce Motion setting; a sheet opened from inside the player route, including that the sheets mount on open and unmount on close, and the swap from the menu to the picker, the credits or the report form (ADR 023);
 the notice above the iOS 26 tab accessory and the Android floating bar; screenshots of the heart, the menu, the picker and the credits on iOS and Android.
 
@@ -99,6 +99,8 @@ The three vertical dots on Android (ADR 027). The Android snackbar's look over t
 ## The sheet on Android
 
 On Android the `Sheet` is the Material 3 modal bottom sheet (ADR 027, `ui` `Sheet`): attached to the bottom and side edges on `color.surface.raised`, `radius.xl` top corners, a `layout.modalHandleZoneAndroid` handle zone with a `layout.modalHandleWidthAndroid` x `layout.handleHeight` handle in `color.overlay.handleAndroid`, `spacing.xl` side padding, and the content above the bottom inset. A drag down from the handle zone (the only drag zone, so a scrolling list keeps its own scroll) closes it past `motion.dragToClose.*` and springs back with `motion.spring` short of it; the scrim and the system back close it; under reduce motion it has no enter or exit animation and does not follow the finger. iOS keeps the floating glass sheet and slides whatever reduce motion says. The menu sheet's header `MediaRow` is `size="menu"` there (a `layout.rowCoverMenu` cover, `radius.sm`, `layout.gutter` at the sides, full width), with a `border.hairline` divider in `color.surface.border` under it and `spacing.xs` below the divider. The `ActionRow`s are `layout.actionRowHeightAndroid` tall, full width, with an `icon.size.actionRowAndroid` icon and `spacing.lg` before the label. The picker and credits sheets keep their content as above.
+
+Left to verify by hand on an iPhone: the first tap opening the system menu from the center, the edges and the corners of the 48 x 48 square, in the player header and in the rows.
 
 Left to verify by hand. On an Android phone: the sheet meeting the bottom and side edges and the content ending above the gesture bar, the drag feel and the spring back on a finger, the system back closing it, and the scroll of a long list next to the handle zone.
 

@@ -51,7 +51,6 @@ the body:
 - iOS: the floating buttons use native glass on iOS 26+, `GlassSurface`'s solid
   fallback elsewhere. The back's native glass never fades (the back stays fixed); the top bar has no glass on any platform. On iOS the content under the top strip is blurred; Android has no blur.
 - Android: the solid fallback draws the buttons; the back buttons (floating and top bar) draw an arrow (ADR 027).
-- Expo Go: the native color module is missing, so the wash stays neutral.
 - Android: the collapsed top bar is the Material 3 small top app bar: the back, then the title from the start on one line with an ellipsis, running to the end padding (the screen passes no bar action); iOS keeps the title centered in the strip (ADR 027).
 
 ## States

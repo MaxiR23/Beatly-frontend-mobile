@@ -11,12 +11,14 @@
 // - signing in lands on home, signing out lands on login
 // - a cold deep link to a tab route is kept while unknown: opened over the tab's base with a session, or after signing in from login; used once; the splash hides only with the target drawn
 // - a cold /login is not kept
+// - a cold unknown link keeps the splash while unknown (the router's built-in not-found never mounts) and lands where / lands
 //
 // Run with: pnpm --filter @beatly/mobile test -- app/_layout
 //
-// SEE: apps/mobile/app/_layout.tsx, apps/mobile/app/session-pending.tsx, apps/mobile/src/screens/album/AlbumScreen.tsx
+// SEE: apps/mobile/app/_layout.tsx, apps/mobile/app/session-pending.tsx, apps/mobile/src/screens/album/AlbumScreen.tsx, apps/mobile/app/+not-found.tsx
 
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import type * as Expo from "expo";
 import { router } from "expo-router";
 import { act, fireEvent, renderRouter, screen } from "expo-router/testing-library";
 import * as SplashScreen from "expo-splash-screen";
@@ -36,6 +38,31 @@ jest.mock("expo-splash-screen", () => ({
   preventAutoHideAsync: jest.fn(() => Promise.resolve(true)),
   hideAsync: jest.fn(() => Promise.resolve()),
 }));
+jest.mock("expo", () => {
+  const actual = jest.requireActual<typeof Expo>("expo");
+  const splash = {
+    hide: jest.fn(),
+    hideAsync: jest.fn(() => Promise.resolve()),
+    preventAutoHideAsync: jest.fn(() => Promise.resolve(true)),
+    internalPreventAutoHideAsync: jest.fn(() => Promise.resolve(true)),
+    internalMaybeHideAsync: jest.fn(() => Promise.resolve(true)),
+  };
+  return {
+    ...actual,
+    // Same as test/setup/nativeMenu.ts for ExpoUI; one shared splash module so the router's own hide is visible.
+    requireOptionalNativeModule: (name: string) =>
+      name === "ExpoUI"
+        ? null
+        : name === "ExpoSplashScreen"
+          ? splash
+          : actual.requireOptionalNativeModule<object>(name),
+  };
+});
+// The router's splash module: hide() is what its built-in not-found screen calls on mount.
+const routerSplash = () =>
+  jest
+    .requireMock<{ requireOptionalNativeModule: (name: string) => { hide: jest.Mock } }>("expo")
+    .requireOptionalNativeModule("ExpoSplashScreen");
 const mockCore = installCore();
 
 const mockMounted = new Set<string>();
@@ -92,6 +119,7 @@ const drawnAtHide: string[][] = [];
 
 beforeEach(() => {
   drawnAtHide.length = 0;
+  routerSplash().hide.mockClear();
   mockMounted.clear();
   everMounted.clear();
   jest.mocked(SplashScreen.hideAsync).mockClear();
@@ -109,6 +137,31 @@ describe("the root layout session gate", () => {
     for (const id of ["login", "signUp", "home", "player"])
       expect(screen.queryByTestId(id)).toBeNull();
     expect(SplashScreen.hideAsync).not.toHaveBeenCalled();
+  });
+
+  it("keeps the splash on a cold unknown link until the session check finishes", async () => {
+    mockCore.set("unknown");
+    await renderRouter("app", { initialUrl: "/no-such-route" });
+    await act(() => Promise.resolve());
+    expect(routerSplash().hide).not.toHaveBeenCalled();
+    expect(SplashScreen.hideAsync).not.toHaveBeenCalled();
+    expect(await screen.findByTestId("sessionPending")).toBeTruthy();
+  });
+
+  it("lands a cold unknown link where / lands once the session is known, the splash hiding with that screen drawn", async () => {
+    mockCore.set("unknown");
+    await renderRouter("app", { initialUrl: "/no-such-route" });
+    await screen.findByTestId("sessionPending");
+    await act(() => {
+      mockCore.emit("signed_in");
+      return Promise.resolve();
+    });
+    await screen.findByTestId("home");
+    expect(routerSplash().hide).not.toHaveBeenCalled();
+    expect(SplashScreen.hideAsync).toHaveBeenCalled();
+    const first = drawnAtHide[0] ?? [];
+    expect(first).toContain("home");
+    expect(first).not.toContain("sessionPending");
   });
 
   it.each(["/login", "/sign-up"])(

@@ -113,6 +113,12 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
   `025-swiftui-edit-list-through-a-single-expo-ui-loader.md` it is the
   loader `components/swiftUI.ts`, and `NativeMenu` and `NativeEditList`
   draw through it.
+- `023-native-track-menu-behind-a-single-ui-importer.md` says the tests fake
+  `@expo/ui` at the module and report the `ExpoUI` module as missing in every
+  screen test, so they take the sheet. Since issue #142 the player screen test
+  also takes the system menu branch, with `isNativeMenuAvailable` mocked and
+  `@expo/ui` faked at the module, to check the header's balance; the other
+  screen tests still take the sheet.
 - `017-native-tabs-and-glass-surfaces.md` says Android and older iOS draw
   `FloatingTabBar`, rejects native tabs on Android, draws every floating
   surface (the bar, the sheet) with `GlassSurface` and calls

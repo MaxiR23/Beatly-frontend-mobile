@@ -1,4 +1,4 @@
-// INFO: content with a handle at its bottom and a full-screen sheet pulled up from it: a drag up on the handle or its press opens (onDragStart tells the caller a drag began, onClosed that a close animation ended, or a drag up that was released short settled back closed), a drag down on the sheet's header (or its body at its top) closes; the content darkens toward overlay.backdrop and drops to motion.behindSheetScale with the sheet's position; the handle bounces twice once when asked (its bar is wider, taller and brighter on Android); under reduce motion the sheet and the dim fade and nothing moves or scales (a bounce under way stops when reduce motion turns on). The caller passes the labels translated; the wash fades in when its color arrives (ColorFade).
+// INFO: content with a handle at its bottom and a full-screen sheet pulled up from it: a drag up on the handle or its press opens (onDragStart tells the caller a drag began, onClosed that a close animation ended, or a drag up that was released short settled back closed), a drag down on the sheet's header (or its body at its top) closes; the content darkens toward overlay.backdrop and drops to motion.behindSheetScale with the sheet's position; the handle bounces twice once when asked (its bar is wider, taller and brighter on Android); under reduce motion the sheet and the dim fade and nothing moves or scales (a bounce under way stops when reduce motion turns on). The caller passes the labels translated; the wash, the dominant color at color.gradient.detailHero's stops over the panel's full height, fades in when its color arrives (ColorFade).
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Animated, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 
@@ -185,7 +185,13 @@ export function PullUpSheet({
             style={StyleSheet.absoluteFill}
             testID={`${testID}-wash`}
           >
-            {(c) => <GradientFill direction="vertical" colors={[c, color.surface.base]} />}
+            {(c) => (
+              <GradientFill
+                direction="vertical"
+                color={c}
+                stops={color.gradient.detailHero.stops}
+              />
+            )}
           </ColorFade>
         </View>
         <View style={{ paddingTop: topInset }}>
