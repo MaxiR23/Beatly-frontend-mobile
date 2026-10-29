@@ -8,7 +8,7 @@
 // What is covered:
 // - the source, title, artists and the elapsed and remaining times, a search source and a track source drawn as their own label
 // - play or pause, next, previous, shuffle, repeat one and the seek bar reaching the controller
-// - the spec's layout: header, full-width cover at high priority, gaps, controls row, the wash to the base surface by the middle from the track's image.color (none without one, fading in when the next track brings one), the transport icon sizes
+// - the spec's layout: header, full-width cover at high priority, gaps, controls row, the wash from the track's image.color at the color.gradient.detailHero stops on iOS and Android, over the base surface and the player's full height, transparent only at its bottom edge (the neutral base surface without a color, fading in when the next track brings one), the transport icon sizes, the source centered between a leading side and a more button both layout.controlHeight wide on iOS with the native menu, iOS without it and Android
 // - the empty state, the resolution failure with retry, loading, close and its fallback, es
 // - the platform split of the close button, the drag down closing, the scroll gate of the drag
 // - the cover shrinking while paused and springing back, reduce motion keeping the cover and the player still
@@ -38,12 +38,42 @@ jest.mock("expo-router", () => ({
   useRouter: () => ({ back: mockBack, replace: mockReplace, canGoBack: () => mockCanGoBack }),
 }));
 
+let mockNativeMenu = false;
+const mockMenuHost: { props: Record<string, unknown> } = { props: {} };
+jest.mock("@beatly/ui/native", () => {
+  const actual = jest.requireActual<Record<string, unknown>>("@beatly/ui/native");
+  return { ...actual, isNativeMenuAvailable: () => mockNativeMenu };
+});
+jest.mock("@expo/ui/swift-ui", () => {
+  const { View } = jest.requireActual<{ View: React.ComponentType<Record<string, unknown>> }>(
+    "react-native",
+  );
+  const passthrough = ({ children }: { children?: React.ReactNode }) => <View>{children}</View>;
+  return {
+    Host: (props: Record<string, unknown>) => {
+      mockMenuHost.props = props;
+      return <View testID="native-menu-host" style={props.style} />;
+    },
+    Menu: passthrough,
+    Image: () => null,
+    Button: () => null,
+  };
+});
+jest.mock("@expo/ui/swift-ui/modifiers", () => ({
+  accessibilityLabel: (label: string) => ({ accessibilityLabel: label }),
+  frame: (params: object) => ({ frame: params }),
+  contentShape: (shape: object) => ({ contentShape: shape }),
+  shapes: { rectangle: () => ({ type: "rectangle" }) },
+}));
+
 const spring = jest.spyOn(Animated, "spring");
 const timing = jest.spyOn(Animated, "timing");
 const reduce = jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled");
 
 afterEach(async () => {
   Platform.OS = "ios";
+  mockNativeMenu = false;
+  mockMenuHost.props = {};
   spring.mockClear();
   timing.mockClear();
   reduce.mockClear().mockResolvedValue(false);
@@ -174,6 +204,33 @@ function glyph(name: string): JsonNode | undefined {
 // The svg renderer stores the gradient as [offset, color, ...] with signed ARGB colors.
 const argb = (value: string) => Number(processColor(value)) | 0;
 
+// The wash's gradient, scoped to the wash node, parsed into offset, alpha and rgb.
+function washStops() {
+  const [washNode] = nodesWithProp(screen.toJSON(), "testID").filter(
+    (node) => node.props.testID === "player-wash",
+  );
+  const [gradient] = nodesWithProp(washNode?.children, "gradient");
+  const flat = gradient?.props.gradient;
+  if (!Array.isArray(flat)) throw new Error("gradient is not an array");
+  const stops: { offset: number; alpha: number; rgb: number }[] = [];
+  for (let i = 0; i < flat.length; i += 2) {
+    const packed = Number(flat[i + 1]);
+    stops.push({ offset: Number(flat[i]), alpha: (packed >>> 24) & 0xff, rgb: packed & 0xffffff });
+  }
+  return { gradient, stops };
+}
+
+// The header's three parts as drawn: the leading side, the source and the trailing side.
+function headerParts() {
+  const [header] = nodesWithProp(screen.toJSON(), "testID").filter(
+    (node) => node.props.testID === "player-header",
+  );
+  const parts = Array.isArray(header?.children) ? header.children.filter(isJsonNode) : [];
+  if (parts.length !== 3) throw new Error(`header has ${String(parts.length)} parts`);
+  const [leading, source, trailing] = parts;
+  return { header, leading, source, trailing };
+}
+
 describe("PlayerScreen", () => {
   it("draws the source, the title, the artists and the times", async () => {
     const ctx = await setup();
@@ -186,6 +243,34 @@ describe("PlayerScreen", () => {
     expect(screen.getByText("0:30")).toBeTruthy();
     expect(screen.getByText("-3:38")).toBeTruthy();
   });
+
+  it.each([
+    ["ios", true],
+    ["ios", false],
+    ["android", false],
+  ] as const)(
+    "centers the source between equal sides on %s (native menu: %s)",
+    async (os, native) => {
+      Platform.OS = os;
+      mockNativeMenu = native;
+      const ctx = await setup();
+      await start(ctx);
+      const { header, leading, source, trailing } = headerParts();
+      expect(flatStyle(leading?.props.style).width).toBe(layout.controlHeight);
+      expect(flatStyle(trailing?.props.style).width).toBe(layout.controlHeight);
+      expect(flatStyle(source?.props.style)).toMatchObject({ flex: 1, alignItems: "center" });
+      const headerStyle = flatStyle(header?.props.style);
+      expect(headerStyle).toMatchObject({ paddingHorizontal: spacing.xl });
+      for (const side of ["paddingLeft", "paddingRight", "paddingStart", "paddingEnd"]) {
+        expect(headerStyle).not.toHaveProperty(side);
+      }
+      if (native) {
+        expect(trailing?.props.testID).toBe("native-menu-host");
+        expect(mockMenuHost.props).not.toHaveProperty("matchContents");
+        expect(mockMenuHost.props.alignment).toBe("center");
+      }
+    },
+  );
 
   it("draws the cover at the large tier", async () => {
     const ctx = await setup();
@@ -234,21 +319,49 @@ describe("PlayerScreen", () => {
     expect(screen.getByTestId("player-controls")).toHaveStyle({ marginTop: spacing.xl });
   });
 
-  it("draws the wash from the track's color to the base surface by the middle", async () => {
+  it.each(["ios", "android"] as const)(
+    "draws the track's color at the detailHero stops on %s",
+    async (os) => {
+      Platform.OS = os;
+      const ctx = await setup();
+      await act(async () => {
+        await ctx.playback.playList([withColor("1", "#336699")], 0, album);
+      });
+      const { gradient, stops } = washStops();
+      const expected = color.gradient.detailHero.stops;
+      expect(stops.map((s) => s.offset)).toEqual(expected.map((s) => s.offset));
+      // Within 1: the svg mock packs the alpha with its own rounding of the 0.70 stop.
+      stops.forEach((stop, i) => {
+        const want = Math.round((expected[i]?.opacity ?? NaN) * 255);
+        expect(Math.abs(stop.alpha - want)).toBeLessThanOrEqual(1);
+        expect(stop.rgb).toBe(argb("#336699") & 0xffffff);
+      });
+      expect(gradient?.props).toMatchObject({ x2: "0", y2: "1" });
+    },
+  );
+
+  it("spans the wash over the player's full height, reaching 0 only at the bottom edge", async () => {
     const ctx = await setup();
     await act(async () => {
       await ctx.playback.playList([withColor("1", "#336699")], 0, album);
     });
-    expect(screen.getByTestId("player-wash")).toBeTruthy();
-    const [gradient] = nodesWithProp(screen.toJSON(), "gradient");
-    expect(gradient?.props.gradient).toEqual([
-      0,
-      argb("#336699"),
-      0.5,
-      argb(color.surface.base),
-      1,
-      argb(color.surface.base),
-    ]);
+    expect(within(screen.getByTestId("player")).getByTestId("player-wash")).toBeTruthy();
+    expect(screen.getByTestId("player")).toHaveStyle({
+      flex: 1,
+      backgroundColor: color.surface.base,
+    });
+    expect(screen.getByTestId("player-wash")).toHaveStyle({
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+    });
+    const { stops } = washStops();
+    expect(stops[stops.length - 1]).toMatchObject({ offset: 1, alpha: 0 });
+    stops.slice(0, -1).forEach((stop) => {
+      expect(stop.alpha).toBeGreaterThan(0);
+    });
   });
 
   it("draws no wash when the track's image has no color", async () => {
@@ -257,10 +370,12 @@ describe("PlayerScreen", () => {
       await ctx.playback.playList([withColor("1", null)], 0, album);
     });
     expect(screen.queryByTestId("player-wash")).toBeNull();
+    expect(screen.getByTestId("player")).toHaveStyle({ backgroundColor: color.surface.base });
     await act(async () => {
       await ctx.playback.playList([track("2", "test://cover/2")], 0, album);
     });
     expect(screen.queryByTestId("player-wash")).toBeNull();
+    expect(screen.getByTestId("player")).toHaveStyle({ backgroundColor: color.surface.base });
   });
 
   it("fades the wash in when the next track brings a color", async () => {

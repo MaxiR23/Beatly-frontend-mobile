@@ -1,6 +1,6 @@
 // apps/mobile/test/setup/nativeMenu.ts
 //
-// Test setup: reports the ExpoUI native module as missing, so every route and screen test takes the sheet fallback of the track menu instead of the iOS system menu.
+// Test setup: reports the ExpoUI native module as missing, so every test that does not mock the availability check takes the sheet fallback of the track menu instead of the iOS system menu.
 //
 // Tested:
 // - Not a test itself; loaded by the jest `setupFiles` of apps/mobile

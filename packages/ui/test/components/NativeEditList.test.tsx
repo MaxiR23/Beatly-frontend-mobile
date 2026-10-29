@@ -14,6 +14,7 @@
 // - onRemove with the deleted row's index
 // - each row's label, position value and move hint, and its title and subtitle in order
 // - each row's stack drawn with no gap (spacing.none)
+// - the rows passed as data keyed by each item's key with recycling off, and the Host filling its parent
 //
 // Run with: pnpm --filter @beatly/ui test -- NativeEditList
 //
@@ -49,21 +50,39 @@ jest.mock("@expo/ui/swift-ui", () => {
   const passthrough = ({ children }: { children?: React.ReactNode }) => <View>{children}</View>;
   const List = Object.assign(passthrough, {
     ForEach: ({
+      data,
+      keyExtractor,
+      recycling,
       children,
       onMove,
       onDelete,
     }: {
-      children?: React.ReactNode;
+      data: readonly unknown[];
+      keyExtractor: (item: unknown, index: number) => string;
+      recycling?: boolean;
+      children: (info: { item: unknown; index: number }) => React.ReactNode;
       onMove: unknown;
       onDelete: unknown;
     }) => (
-      <View testID="foreach" onMove={onMove} onDelete={onDelete}>
-        {children}
+      <View
+        testID="foreach"
+        onMove={onMove}
+        onDelete={onDelete}
+        recycling={recycling}
+        rowKeys={data.map(keyExtractor)}
+      >
+        {data.map((item, index) => (
+          <View key={keyExtractor(item, index)}>{children({ item, index })}</View>
+        ))}
       </View>
     ),
   });
   return {
-    Host: passthrough,
+    Host: ({ children, style }: { children?: React.ReactNode; style?: unknown }) => (
+      <View testID="edit-list-host" style={style}>
+        {children}
+      </View>
+    ),
     List,
     VStack: ({
       children,
@@ -235,6 +254,17 @@ describe("NativeEditList", () => {
     const rows = screen.getAllByTestId("edit-list-row");
     expect(rows).toHaveLength(3);
     for (const row of rows) expect(row.props.spacing).toBe(spacing.none);
+  });
+
+  it("passes the rows as data keyed by each item's key, every row drawn at once", async () => {
+    await setup();
+    expect(screen.getByTestId("foreach").props.rowKeys).toEqual(["1", "2", "3"]);
+    expect(screen.getByTestId("foreach").props.recycling).toBe(false);
+  });
+
+  it("fills its parent", async () => {
+    await setup();
+    expect(screen.getByTestId("edit-list-host")).toHaveStyle({ flex: 1 });
   });
 
   it("draws each row's title and subtitle in order", async () => {

@@ -1,4 +1,4 @@
-// INFO: drawn through the swiftUI loader: the iOS system menu opened by a three-dots button, one button per item. It is drawn only where isNativeMenuAvailable() is true (iOS with the ExpoUI module built in); everywhere else the caller draws its own sheet. The library is loaded lazily, once the native module is known to exist.
+// INFO: drawn through the swiftUI loader: the iOS system menu opened by a three-dots button in a fixed layout.controlHeight square with the ellipsis centered and the whole square as the trigger (the label carries the same frame and a rectangle content shape, since only the glyph is hit-tested otherwise), one button per item. It is drawn only where isNativeMenuAvailable() is true (iOS with the ExpoUI module built in); everywhere else the caller draws its own sheet. The library is loaded lazily, once the native module is known to exist.
 import type { ComponentProps } from "react";
 
 import { color } from "../tokens/color.ts";
@@ -41,10 +41,11 @@ export function isNativeMenuAvailable(): boolean {
 export function NativeMenu({ accessibilityLabel, items, testID }: NativeMenuProps) {
   const { views, modifiers } = loadSwiftUI();
   const { Host, Menu, Button, Image } = views;
-  const labelModifier = modifiers.accessibilityLabel;
+  const { accessibilityLabel: labelModifier, frame, contentShape, shapes } = modifiers;
   return (
     <Host
-      matchContents
+      // A fixed control-height square: matchContents would shrink the host to the ellipsis, and SDK 58 hosts align their content top-leading by default.
+      alignment="center"
       // The Host tints its content with the system accent otherwise; same color as the rest of the icons.
       seedColor={color.text.primary}
       style={{ width: layout.controlHeight, height: layout.controlHeight }}
@@ -52,7 +53,17 @@ export function NativeMenu({ accessibilityLabel, items, testID }: NativeMenuProp
     >
       <Menu
         modifiers={[labelModifier(accessibilityLabel)]}
-        label={<Image systemName="ellipsis" size={icon.size.lg} />}
+        label={
+          <Image
+            systemName="ellipsis"
+            size={icon.size.lg}
+            // Only the glyph is hit-tested otherwise: the frame and the rectangle make the whole control-height square open the menu.
+            modifiers={[
+              frame({ width: layout.controlHeight, height: layout.controlHeight }),
+              contentShape(shapes.rectangle()),
+            ]}
+          />
+        }
       >
         {items.map((item) => {
           const systemImage = sfSymbol[item.icon];

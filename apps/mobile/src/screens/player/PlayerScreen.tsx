@@ -184,7 +184,8 @@ export function PlayerScreen() {
               {(c) => (
                 <GradientFill
                   direction="vertical"
-                  colors={[c, color.surface.base, color.surface.base]}
+                  color={c}
+                  stops={color.gradient.detailHero.stops}
                 />
               )}
             </ColorFade>

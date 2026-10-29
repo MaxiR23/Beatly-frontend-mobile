@@ -4,15 +4,16 @@ The first feature doc: the routes the auth screens use and the states they draw.
 
 ## Screens and routes
 
-| Route              | Screen                               | Guard                                                                                                                                 |
-| ------------------ | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `/login`           | `LoginScreen`                        | signed out only (`Stack.Protected` on `status === "signed_out"`; signed in lands on `/`, or on a kept cold link, see Cold deep links) |
-| `/sign-up`         | `SignUpScreen`                       | signed out only                                                                                                                       |
-| `/auth/callback`   | `AuthCallbackScreen`                 | none: reachable in `unknown`, `signed_out` and `signed_in`                                                                            |
-| `/session-pending` | `SessionPendingScreen`               | `unknown` only: the app background under the splash while the stored session is read                                                  |
-| `/`                | `HomeScreen` (first tab of `(tabs)`) | signed in only; see `home.md`                                                                                                         |
+| Route              | Screen                               | Guard                                                                                                                                           |
+| ------------------ | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/login`           | `LoginScreen`                        | signed out only (`Stack.Protected` on `status === "signed_out"`; signed in lands on `/`, or on a kept cold link, see Cold deep links)           |
+| `/sign-up`         | `SignUpScreen`                       | signed out only                                                                                                                                 |
+| `/auth/callback`   | `AuthCallbackScreen`                 | none: reachable in `unknown`, `signed_out` and `signed_in`                                                                                      |
+| `/session-pending` | `SessionPendingScreen`               | `unknown` only: the app background under the splash while the stored session is read                                                            |
+| any unknown link   | `NotFoundScreen`                     | none: redirects to `/`, so the guards pick the landing; the router's built-in not-found, which hides the splash on mount (SDK 58), never mounts |
+| `/`                | `HomeScreen` (first tab of `(tabs)`) | signed in only; see `home.md`                                                                                                                   |
 
-While the status is `unknown`, only `session-pending` and `auth/callback` are available and the
+While the status is `unknown`, only `session-pending`, `auth/callback` and `+not-found` (which redirects to `/`) are available and the
 native splash stays up. `session-pending` is the one shown; `auth/callback` mounts only when an
 email link opens it. On `signed_out`, `login` and `sign-up` mount. On `signed_in`, `(tabs)`
 and `player` mount. The splash hides once the status is known and the root route has left
@@ -118,6 +119,7 @@ timeout, is a typed `AuthFailure`.
 - The swap from the placeholder to the home does not show the home sliding in as the splash
   fades (the native stack's replace animation); if it does, it is fixed in the same change before merging.
 - A cold deep link (`beatly://album/<id>`) with and without a session, on a device.
+- A cold start on an unknown `beatly://` link, with and without a session: the splash stays up until the session is read, then home or login.
 
 On Android the `Input`s are the Material 3 outlined text field (ADR 027, `ui` `Input`; see DESIGN.md, Text field): outline, label inside rising onto it on focus or with text, accent outline on focus, error color and the error under the field; iOS unchanged. Left to verify by hand on an Android phone: the label animation feel, the notch over the card surface, TalkBack reading the label once and announcing the error.
 

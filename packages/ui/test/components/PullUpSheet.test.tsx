@@ -8,7 +8,7 @@
 // What is covered:
 // - the handle as a labelled button, the press and the drag up opening, the header and body drags closing (the body only at its top)
 // - the dim and the recede following the sheet's position, the springs of opening and closing, no animation on mount
-// - the closed panel and the open content hidden from accessibility, the double bounce once, the wash only with a color, fading in over motion.duration.base when the color arrives and at once under reduce motion, the handle bar's size and color on iOS and on Android
+// - the closed panel and the open content hidden from accessibility, the double bounce once, the wash only with a color (the base surface without one), the dominant color at the color.gradient.detailHero stops on iOS and Android over the panel's full height, transparent only at its bottom edge, fading in over motion.duration.base when the color arrives and at once under reduce motion, the handle bar's size and color on iOS and on Android
 // - reduce motion (fades instead of movement and scale, no bounce, a bounce under way stopped when it turns on), a live change of it while open leaving the panel and the dim drawn
 // - onDragStart on a handle drag, onClosed when the close animation finishes and not when it is cut, or when a cancelled handle drag settles back and not when it commits
 //
@@ -18,7 +18,7 @@
 
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
-import { Animated, Dimensions, Platform, Text } from "react-native";
+import { Animated, Dimensions, Platform, processColor, Text } from "react-native";
 
 import { PullUpSheet } from "../../src/components/PullUpSheet.tsx";
 import { color } from "../../src/tokens/color.ts";
@@ -131,6 +131,39 @@ const panel = () => screen.getByTestId("sheet-panel", { includeHiddenElements: t
 const behind = () => screen.getByTestId("sheet-behind", { includeHiddenElements: true });
 
 const gradients = (): number => JSON.stringify(screen.toJSON()).split('"gradient"').length - 1;
+
+interface JsonNode {
+  props: Record<string, unknown>;
+  children: unknown;
+}
+const isJsonNode = (value: unknown): value is JsonNode =>
+  typeof value === "object" && value !== null && "props" in value;
+const find = (tree: unknown, match: (node: JsonNode) => boolean): JsonNode[] => {
+  const found: JsonNode[] = [];
+  const visit = (node: unknown) => {
+    if (Array.isArray(node)) node.forEach(visit);
+    if (!isJsonNode(node)) return;
+    if (match(node)) found.push(node);
+    visit(node.children);
+  };
+  visit(tree);
+  return found;
+};
+// The svg renderer stores the gradient as [offset, color, ...] with signed ARGB colors.
+const rgbOf = (c: string) => (Number(processColor(c)) | 0) & 0xffffff;
+// The wash's gradient, scoped to the wash node, parsed into offset, alpha and rgb.
+function washStops() {
+  const [wash] = find(screen.toJSON(), (node) => node.props.testID === "sheet-wash");
+  const [gradient] = find(wash?.children, (node) => "gradient" in node.props);
+  const flat = gradient?.props.gradient;
+  if (!Array.isArray(flat)) throw new Error("gradient is not an array");
+  const stops: { offset: number; alpha: number; rgb: number }[] = [];
+  for (let i = 0; i < flat.length; i += 2) {
+    const packed = Number(flat[i + 1]);
+    stops.push({ offset: Number(flat[i]), alpha: (packed >>> 24) & 0xff, rgb: packed & 0xffffff });
+  }
+  return { gradient, stops };
+}
 
 describe("PullUpSheet", () => {
   it("draws the handle as a labelled button and opens on press", async () => {
@@ -248,9 +281,52 @@ describe("PullUpSheet", () => {
     const { rerender } = await setup();
     expect(screen.queryByTestId("sheet-wash", hidden)).toBeNull();
     expect(gradients()).toBe(0);
+    expect(panel()).toHaveStyle({ backgroundColor: color.surface.base });
     await rerender({ washColor: "#336699" });
     expect(screen.getByTestId("sheet-wash", hidden)).toBeTruthy();
     expect(gradients()).toBe(1);
+  });
+
+  it.each(["ios", "android"] as const)(
+    "draws the color at the detailHero stops on %s",
+    async (os) => {
+      Platform.OS = os;
+      await setup({ washColor: "#336699" });
+      const { gradient, stops } = washStops();
+      const expected = color.gradient.detailHero.stops;
+      expect(stops.map((stop) => stop.offset)).toEqual(expected.map((stop) => stop.offset));
+      // Within 1: the mock packs the alpha with its own rounding of the 0.70 stop (178.5).
+      stops.forEach((stop, i) => {
+        const want = Math.round((expected[i]?.opacity ?? NaN) * 255);
+        expect(Math.abs(stop.alpha - want)).toBeLessThanOrEqual(1);
+        expect(stop.rgb).toBe(rgbOf("#336699"));
+      });
+      expect(gradient?.props).toMatchObject({ x2: "0", y2: "1" });
+    },
+  );
+
+  it("spans the wash over the panel's full height over the base surface, reaching 0 only at the bottom edge", async () => {
+    await setup({ washColor: "#336699" });
+    expect(panel()).toHaveStyle({
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: color.surface.base,
+    });
+    expect(screen.getByTestId("sheet-wash", hidden)).toHaveStyle({
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+    });
+    const { stops } = washStops();
+    expect(stops.at(-1)).toMatchObject({ offset: 1, alpha: 0 });
+    stops.slice(0, -1).forEach((stop) => {
+      expect(stop.alpha).toBeGreaterThan(0);
+    });
   });
 
   it("fades the wash in when its color arrives, and at once under reduce motion", async () => {

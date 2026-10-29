@@ -10,6 +10,8 @@
 // - available on iOS when the ExpoUI module exists, not without the module, not on Android
 // - one button per item that calls onSelect, a destructive item marked with its role
 // - the Host seed color is the primary text color, not the system accent
+// - the label carries the controlHeight frame and the rectangle content shape, so the whole square opens the menu
+// - the Host keeps its layout.controlHeight square (no matchContents, so it never shrinks to the ellipsis) and centers its content
 //
 // Run with: pnpm --filter @beatly/ui test -- NativeMenu
 //
@@ -17,9 +19,10 @@
 
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import { Platform } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 
 import { color } from "../../src/tokens/color.ts";
+import { layout } from "../../src/tokens/spacing.ts";
 import { NativeMenu, isNativeMenuAvailable } from "../../src/components/NativeMenu.tsx";
 
 interface ReactNativeParts {
@@ -29,6 +32,8 @@ interface ReactNativeParts {
 }
 
 const mockNative: { module: object | null } = { module: {} };
+const mockImage: { modifiers: unknown } = { modifiers: undefined };
+const mockHost: { props: Record<string, unknown> } = { props: {} };
 
 jest.mock("expo", () => ({ requireOptionalNativeModule: () => mockNative.module }));
 jest.mock("@expo/ui/swift-ui", () => {
@@ -37,15 +42,25 @@ jest.mock("@expo/ui/swift-ui", () => {
     Text: React.ComponentType<Record<string, unknown>>;
     View: React.ComponentType<Record<string, unknown>>;
   };
-  const passthrough = ({ children }: { children?: React.ReactNode }) => <View>{children}</View>;
   return {
-    Host: ({ children, seedColor }: { children?: React.ReactNode; seedColor?: string }) => (
-      <View testID="host" accessibilityHint={seedColor}>
+    Host: (props: { children?: React.ReactNode; seedColor?: string } & Record<string, unknown>) => {
+      mockHost.props = props;
+      return (
+        <View testID="host" accessibilityHint={props.seedColor}>
+          {props.children}
+        </View>
+      );
+    },
+    Menu: ({ children, label }: { children?: React.ReactNode; label?: React.ReactNode }) => (
+      <View>
+        {label}
         {children}
       </View>
     ),
-    Menu: passthrough,
-    Image: () => null,
+    Image: (props: { modifiers?: unknown }) => {
+      mockImage.modifiers = props.modifiers;
+      return null;
+    },
     Button: ({ label, role, onPress }: { label: string; role: string; onPress: () => void }) => (
       <Pressable accessibilityRole="button" accessibilityHint={role} onPress={onPress}>
         <Text>{label}</Text>
@@ -55,10 +70,15 @@ jest.mock("@expo/ui/swift-ui", () => {
 });
 jest.mock("@expo/ui/swift-ui/modifiers", () => ({
   accessibilityLabel: (label: string) => ({ accessibilityLabel: label }),
+  frame: (params: object) => ({ type: "frame", ...params }),
+  contentShape: (shape: object) => ({ type: "contentShape", shape }),
+  shapes: { rectangle: () => ({ type: "rectangle" }) },
 }));
 
 beforeEach(() => {
   mockNative.module = {};
+  mockHost.props = {};
+  mockImage.modifiers = undefined;
   Platform.OS = "ios";
 });
 
@@ -103,6 +123,43 @@ describe("NativeMenu", () => {
       />,
     );
     expect(screen.getByTestId("host").props.accessibilityHint).toBe(color.text.primary);
+  });
+
+  it("keeps the Host at the layout.controlHeight square instead of the content's size", async () => {
+    await render(
+      <NativeMenu
+        accessibilityLabel="More"
+        items={[{ key: "like", label: "Like", icon: "heart", onSelect: jest.fn() }]}
+      />,
+    );
+    expect(mockHost.props).not.toHaveProperty("matchContents");
+    expect(StyleSheet.flatten(mockHost.props.style as object)).toEqual({
+      width: layout.controlHeight,
+      height: layout.controlHeight,
+    });
+  });
+
+  it("makes the whole control-height square the trigger, not only the glyph", async () => {
+    await render(
+      <NativeMenu
+        accessibilityLabel="More"
+        items={[{ key: "like", label: "Like", icon: "heart", onSelect: jest.fn() }]}
+      />,
+    );
+    expect(mockImage.modifiers).toEqual([
+      { type: "frame", width: layout.controlHeight, height: layout.controlHeight },
+      { type: "contentShape", shape: { type: "rectangle" } },
+    ]);
+  });
+
+  it("centers the ellipsis in the Host", async () => {
+    await render(
+      <NativeMenu
+        accessibilityLabel="More"
+        items={[{ key: "like", label: "Like", icon: "heart", onSelect: jest.fn() }]}
+      />,
+    );
+    expect(mockHost.props.alignment).toBe("center");
   });
 
   it("marks a destructive item", async () => {
