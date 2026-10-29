@@ -14,7 +14,7 @@ value: the value lives once, in the token file.
 
 | Role                                                                                                                                                                                                                            | Token                                                                                                               |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Base background of every screen and the detail top bar without a dominant color (on iOS the strip's wash without one, and its shade)                                                                                            | `color.surface.base`                                                                                                |
+| Base background of every screen and the detail top bar (the cover color is laid over it; on iOS the strip's wash without a color, and its shade)                                                                                | `color.surface.base`                                                                                                |
 | Sheet, modal, dialog and form `Card` background (the `ui` `Card` is only this raised card; a list card is a different component)                                                                                                | `color.surface.raised`                                                                                              |
 | List card, input and image-placeholder background                                                                                                                                                                               | `color.surface.card`                                                                                                |
 | Secondary control background (secondary button, inactive iOS chip/tab, the Android switch track when off)                                                                                                                       | `color.surface.control`                                                                                             |
@@ -85,7 +85,7 @@ value: the value lives once, in the token file.
 
 ## Image tiers
 
-Every remote image is one of the three tiers the API sends (`image`, `mosaic`). The tier is the smallest whose side covers the drawn side at 3 pixels per point: `small` up to 64 pt, `medium` up to 200 pt, `large` above. `Cover` and the detail image hero apply it from the side they draw (`packages/ui/src/components/imageTier.ts`); a screen never picks a tier and never builds or edits a URL. With no image (`image: null`, `mosaic: []`) the cover draws the placeholder. The dominant color reads `small`. Every image is drawn with `Picture`, the only importer of `expo-image`: memory and disk cache, no transition on iOS, a `motion.duration.imageFade` fade on Android only for a picture loaded from the network, a remote source's URL as its recycling key (ADR 029). The main cover of a screen (the detail cover and image heroes, the player cover) loads at high priority, every other image at normal. The player prefetches the next queued track's cover at its own tier on every track change.
+Every remote image is one of the three tiers the API sends (`image`, `mosaic`). The tier is the smallest whose side covers the drawn side at 3 pixels per point: `small` up to 64 pt, `medium` up to 200 pt, `large` above. `Cover` and the detail image hero apply it from the side they draw (`packages/ui/src/components/imageTier.ts`); a screen never picks a tier and never builds or edits a URL. With no image (`image: null`, `mosaic: []`) the cover draws the placeholder. The cover color is the backend's `image.color`, never read from a picture on the device. Every image is drawn with `Picture`, the only importer of `expo-image`: memory and disk cache, no transition on iOS, a `motion.duration.imageFade` fade on Android only for a picture loaded from the network, a remote source's URL as its recycling key (ADR 029). The main cover of a screen (the detail cover and image heroes, the player cover) loads at high priority, every other image at normal. The player prefetches the next queued track's cover at its own tier on every track change.
 
 | Place                                                                                | Drawn side                                   | Tier                                      |
 | ------------------------------------------------------------------------------------ | -------------------------------------------- | ----------------------------------------- |
@@ -100,7 +100,6 @@ Every remote image is one of the three tiers the API sends (`image`, `mosaic`). 
 | Detail hero cover (album, playlist)                                                  | `layout.heroCover`                           | `large`                                   |
 | Player cover                                                                         | window width minus `spacing.xl` on each side | `large`                                   |
 | Detail image hero (artist photo)                                                     | window width                                 | `large`                                   |
-| Dominant color (player, mini player, album and playlist washes)                      | n/a                                          | `small`                                   |
 
 ## Floating surfaces
 
@@ -109,8 +108,10 @@ Every remote image is one of the three tiers the API sends (`image`, `mosaic`). 
 `color.surface.raised` with a `border.width` border in
 `color.surface.border` and `shadow.floating`. Variants: `bar` (the tab bar pill),
 `sheet` and `circle` (a `layout.controlHeight` circle for the floating detail
-buttons). An optional `tint` (a cover's dominant color, a runtime value) colors the glass or replaces the
-fallback's `color.surface.raised`.
+buttons). An optional `tint` (a cover's `image.color`, a runtime value) colors the glass or lays over the
+fallback's `color.surface.raised`, fading in over `motion.duration.base` when it arrives after mount.
+
+`ColorFade`: a colored layer over the neutral surface under it, faded in on the native driver over `motion.duration.base` when its color goes from null to a value after mount; at once at mount, between two colors and under reduce motion.
 
 ## Detail screen base
 
@@ -127,7 +128,7 @@ Entry: in the ready body the content enters once per mount in a top-down cascade
 - Hero: a `layout.heroCover` cover in `radius.sm` with `shadow.cover`, centered
   over a wash. The cover follows `Cover`'s rules: a mosaic with four urls, an image, the
   accent tile with a glyph, or the placeholder. The wash is `color.surface.base` until a dominant color is known,
-  then a vertical gradient from that color to `color.surface.base`, drawn at once.
+  then a vertical gradient from that color to `color.surface.base`, drawn at once when it is there at mount, fading in over `motion.duration.base` when it arrives later, at once under reduce motion.
 - Image hero (artist): the image stretched to the full width at `layout.heroImageRatio`, at most
   `layout.heroImageMaxHeightShare` of the window height, cropped to fill (`cover`) and centered,
   on `color.surface.card`, a vertical fade from `color.overlay.clear` to
@@ -153,8 +154,7 @@ Entry: in the ready body the content enters once per mount in a top-down cascade
   `color.surface.control` with the glyph in `color.text.disabled`. Wide (liked): two `Button` pills with `fill`, `layout.controlHeight` tall and `layout.gap` apart, glyph (`icon.size.lg`) and label `spacing.sm` apart: play `primary` (pause glyph and label while the list plays, the spinner while it loads, no shrink) and shuffle `secondary` (`color.surface.control`).
 - Title: `typography.title` under the hero. The base reserves no space for an action
   row; the screen owns the gap below its own title block.
-- Top bar, on Android: from the top edge to `topInset + layout.controlHeight`, `layout.gutter` sides, filled with the dominant color or
-  `color.surface.base`, no blur and no glass; the Material 3 small top app bar (ADR 027): an `IconButton` `back` (the Android arrow), then the title in `typography.subtitle` from the start, `spacing.sm` after the back,
+- Top bar, on Android: from the top edge to `topInset + layout.controlHeight`, `layout.gutter` sides, filled with `color.surface.base` and, over it, the cover color, no blur and no glass; the Material 3 small top app bar (ADR 027): an `IconButton` `back` (the Android arrow), then the title in `typography.subtitle` from the start, `spacing.sm` after the back,
   on one line with a trailing ellipsis, and more at the end only with the `more` prop (no spacer otherwise, the title runs to the end padding).
   A deliberate departure, not to be "fixed": the back keeps `layout.gutter` from the edge (Material 3 uses a 4dp inset) so it sits where the floating back sat and the hand-over does not move it; the title keeps `typography.subtitle` until the type scale (ADR 027 item 13). It takes touches only once it starts to appear, the floating buttons
   only until they have faded, neither in between; the faded set is hidden from assistive technology.

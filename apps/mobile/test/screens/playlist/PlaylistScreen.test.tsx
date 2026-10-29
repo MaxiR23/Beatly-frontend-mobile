@@ -7,6 +7,7 @@
 //
 // What is covered:
 // - the header of an own (its mosaic), a liked and a genre playlist: cover, title, creator, description, meta line
+// - the wash from the first mosaic element's color (own) or the genre image's, neutral without a color and for liked
 // - the tracks, each with a more button, infinite scroll for own and liked, a genre playlist's tracks from its header
 // - skeleton rows while the next page loads, replaced by its tracks, none with no next page
 // - the empty message under the header, not found from the header or the tracks, the generic error with retry
@@ -26,7 +27,7 @@
 import type { HttpOutcome, PageResult, PlaylistTrack } from "@beatly/core";
 import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
-import { Alert, Animated } from "react-native";
+import { Alert, Animated, processColor } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { motion } from "@beatly/ui";
@@ -45,6 +46,7 @@ import {
   publicGenrePlaylistFixture,
   stateFlag,
   successOf,
+  tiers,
   Wrapper,
 } from "../../helpers/core.tsx";
 
@@ -61,10 +63,6 @@ jest.mock("expo-router", () => ({
     canGoBack: () => mockCanGoBack,
   }),
   useLocalSearchParams: () => mockParams,
-}));
-jest.mock("../../../src/adapters/imageColors.ts", () => ({
-  getDominantColor: () => Promise.resolve({ kind: "unavailable" }),
-  peekDominantColor: () => undefined,
 }));
 
 const instant = () =>
@@ -120,6 +118,23 @@ function detail<T>(data: T) {
   return () => Promise.resolve<HttpOutcome<T>>({ kind: "success", data, maxAgeSeconds: 0 });
 }
 
+const argb = (value: string) => Number(processColor(value)) | 0;
+
+// The first gradient prop found under a rendered node.
+function gradientOf(node: unknown): unknown {
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const found = gradientOf(child);
+      if (found !== undefined) return found;
+    }
+    return undefined;
+  }
+  if (typeof node !== "object" || node === null) return undefined;
+  const { props, children } = node as { props?: Record<string, unknown>; children?: unknown };
+  if (props !== undefined && "gradient" in props) return props.gradient;
+  return gradientOf(children);
+}
+
 const first = playlistTrackFixture;
 const second: PlaylistTrack = {
   ...playlistTrackFixture,
@@ -161,6 +176,53 @@ describe("PlaylistScreen", () => {
     expect(screen.getByText("Windows down")).toBeTruthy();
     expect(screen.getByText("Private · 2 songs · 1 h 14 min")).toBeTruthy();
     expect(screen.getByTestId("cover-mosaic")).toBeTruthy();
+  });
+
+  it("draws the wash from the first mosaic element's color", async () => {
+    await setup({
+      getPlaylist: detail({
+        ...playlistDetailFixture,
+        mosaic: [tiers("1", "#336699"), tiers("2", "#ff0000")],
+      }),
+    });
+    await screen.findByTestId("playlist-info");
+    expect(screen.queryByTestId("detail-wash-neutral")).toBeNull();
+    const gradient = gradientOf(screen.getByTestId("detail-wash-color").children);
+    expect(Array.isArray(gradient) && gradient[1]).toBe(argb("#336699"));
+  });
+
+  it("draws the wash from a genre playlist's image color", async () => {
+    mockParams = { id: "gp1", source: "genre" };
+    await setup({
+      getGenrePlaylist: detail({
+        ...publicGenrePlaylistFixture,
+        mosaic: [],
+        image: tiers("cover", "#336699"),
+      }),
+    });
+    await screen.findAllByText("Pop hits");
+    const gradient = gradientOf(screen.getByTestId("detail-wash-color").children);
+    expect(Array.isArray(gradient) && gradient[1]).toBe(argb("#336699"));
+  });
+
+  it("draws the neutral wash without a color", async () => {
+    await setup({
+      getPlaylist: detail({
+        ...playlistDetailFixture,
+        mosaic: [tiers("1", null), tiers("2", "#ff0000")],
+      }),
+    });
+    await screen.findByTestId("playlist-info");
+    expect(screen.getByTestId("detail-wash-neutral")).toBeTruthy();
+    expect(screen.queryByTestId("detail-wash-color")).toBeNull();
+  });
+
+  it("draws the neutral wash for liked", async () => {
+    mockParams = { id: "liked", source: "liked" };
+    await setup({ getLikedPlaylist: detail(likedDetailFixture) });
+    expect((await screen.findAllByText(en.playlist.liked)).length).toBeGreaterThan(0);
+    expect(screen.getByTestId("detail-wash-neutral")).toBeTruthy();
+    expect(screen.queryByTestId("detail-wash-color")).toBeNull();
   });
 
   it("draws the placeholder for an own playlist with no thumbnails", async () => {

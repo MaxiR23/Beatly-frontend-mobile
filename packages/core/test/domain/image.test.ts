@@ -8,6 +8,7 @@
 // What is covered:
 // - each schema parses image with its three tiers and image null; each mosaic schema parses a list of tiers and []
 // - a missing image or mosaic, and a tier that is not a string, fail
+// - image.color as #rrggbb, null and absent in every schema and mosaic; a malformed color fails
 // - recents metadata.image reads a value, null, and a malformed value as absent
 //
 // Run with: pnpm --filter @beatly/core test -- domain/image
@@ -17,6 +18,7 @@
 import { describe, expect, it } from "vitest";
 import { z, type ZodType } from "zod";
 
+import { imageTiersSchema } from "../../src/domain/image.ts";
 import { recentEntitySchema } from "../../src/domain/activity.ts";
 import { albumRefSchema, albumSchema } from "../../src/domain/album.ts";
 import {
@@ -223,6 +225,47 @@ describe("image", () => {
 
   it.each(withImage)("%s rejects a tier that is not a string", (_name, schema, base) => {
     expect(schema.safeParse({ ...base, image: { ...tiers("x"), large: 5 } }).success).toBe(false);
+  });
+});
+
+describe("image color", () => {
+  it.each(withImage)("%s parses image with a color", (_name, schema, base) => {
+    const parsed = schema.safeParse({ ...base, image: tiers("x", "#3a5f9c") });
+    expect(parsed.success).toBe(true);
+    expect(parsed.success && field(parsed.data, "image")).toEqual(tiers("x", "#3a5f9c"));
+  });
+
+  it.each(withImage)("%s parses image with color null", (_name, schema, base) => {
+    const parsed = schema.safeParse({ ...base, image: tiers("x", null) });
+    expect(parsed.success).toBe(true);
+    expect(parsed.success && field(parsed.data, "image")).toEqual(tiers("x", null));
+  });
+
+  it("parses an image without color (absent)", () => {
+    const parsed = imageTiersSchema.safeParse(tiers("x"));
+    expect(parsed.success).toBe(true);
+    expect(parsed.success && parsed.data.color).toBeUndefined();
+  });
+
+  it.each(withMosaic)("%s parses a mosaic element with its color", (_name, schema, base) => {
+    const mosaic = [tiers("a", "#112233"), tiers("b", null)];
+    const parsed = schema.safeParse({ ...base, mosaic });
+    expect(parsed.success).toBe(true);
+    expect(parsed.success && field(parsed.data, "mosaic")).toEqual(mosaic);
+  });
+
+  it.each(["#3A5F9C", "red", "#abc", 5])("rejects the color %s", (bad) => {
+    expect(imageTiersSchema.safeParse({ ...tiers("x"), color: bad }).success).toBe(false);
+  });
+
+  it("reads metadata.image with its color", () => {
+    const parsed = recentEntitySchema.safeParse({
+      entity_type: "album",
+      entity_id: "a1",
+      played_at: "2026-01-01T00:00:00Z",
+      metadata: { image: tiers("x", "#3a5f9c") },
+    });
+    expect(parsed.success && parsed.data.metadata.image).toEqual(tiers("x", "#3a5f9c"));
   });
 });
 

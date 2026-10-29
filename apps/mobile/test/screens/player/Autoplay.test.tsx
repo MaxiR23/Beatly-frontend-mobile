@@ -42,10 +42,6 @@ jest.mock("expo-router", () => ({
     canGoBack: () => true,
   }),
 }));
-jest.mock("../../../src/adapters/imageColors.ts", () => ({
-  getDominantColor: () => Promise.resolve({ kind: "unavailable" }),
-  peekDominantColor: () => undefined,
-}));
 
 const en = resources.en;
 const es = resources.es;

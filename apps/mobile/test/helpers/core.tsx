@@ -70,10 +70,11 @@ import { CoreProvider } from "../../src/providers/CoreProvider.tsx";
 import { createTestQueryClient } from "./queryClient.ts";
 
 // The tiers of one picture, as the API sends them: three ready test URLs named by tier.
-export const tiers = (name: string) => ({
+export const tiers = (name: string, color?: string | null) => ({
   small: `test://img/${name}/s`,
   medium: `test://img/${name}/m`,
   large: `test://img/${name}/l`,
+  ...(color === undefined ? {} : { color }),
 });
 
 export const profileFixture: Profile = {

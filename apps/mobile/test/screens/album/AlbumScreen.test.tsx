@@ -8,6 +8,7 @@
 // What is covered:
 // - the skeleton, the title, artists and meta line with plural forms, null year and count omitted
 // - one spacing token between the title block, the action row, the tracks and the carousels
+// - the wash and the bar from image.color, neutral when it is null or absent
 // - the tracks as rows of the detail base in API order, the carousels in the slot after the rows, the empty message in the body with no rows
 // - the tracks with an unavailable one disabled, the empty tracks message, hidden empty carousels
 // - opening another album from a carousel, opening an artist from the artist names, an artist without an id as plain text, not available for invalid_request without retry
@@ -25,14 +26,14 @@
 import type { Album, HttpOutcome } from "@beatly/core";
 import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
-import { Animated, type ViewStyle } from "react-native";
+import { Animated, processColor, type ViewStyle } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { color, motion, spacing } from "@beatly/ui";
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { AlbumScreen } from "../../../src/screens/album/AlbumScreen.tsx";
-import { albumFixture, makeCore, stateFlag, Wrapper } from "../../helpers/core.tsx";
+import { albumFixture, makeCore, stateFlag, tiers, Wrapper } from "../../helpers/core.tsx";
 import { flatStyle } from "../../helpers/flatStyle.ts";
 
 const mockPush = jest.fn();
@@ -47,10 +48,6 @@ jest.mock("expo-router", () => ({
     canGoBack: () => mockCanGoBack,
   }),
   useLocalSearchParams: () => ({ id: "MPREb_1" }),
-}));
-jest.mock("../../../src/adapters/imageColors.ts", () => ({
-  getDominantColor: () => Promise.resolve({ kind: "unavailable" }),
-  peekDominantColor: () => undefined,
 }));
 
 const instant = () =>
@@ -112,6 +109,31 @@ function albumOf(album: Album) {
   return () =>
     Promise.resolve<HttpOutcome<Album>>({ kind: "success", data: album, maxAgeSeconds: 0 });
 }
+
+interface JsonNode {
+  props: Record<string, unknown>;
+  children: unknown;
+}
+
+function isJsonNode(value: unknown): value is JsonNode {
+  return typeof value === "object" && value !== null && "props" in value;
+}
+
+// The first gradient stop colors found in the rendered tree.
+function gradientOf(tree: unknown): unknown {
+  let found: unknown;
+  const visit = (node: unknown) => {
+    if (found !== undefined) return;
+    if (Array.isArray(node)) node.forEach(visit);
+    if (!isJsonNode(node)) return;
+    if ("gradient" in node.props) found = node.props.gradient;
+    visit(node.children);
+  };
+  visit(tree);
+  return found;
+}
+
+const argb = (value: string) => Number(processColor(value)) | 0;
 
 describe("AlbumScreen", () => {
   it("draws the skeleton while the album loads", async () => {
@@ -208,6 +230,21 @@ describe("AlbumScreen", () => {
     const sections = screen.getByTestId("album-sections");
     expect(within(sections).getByText(en.album.empty)).toBeTruthy();
     expect(flatStyle(sections.props.style as ViewStyle).paddingBottom).toBeUndefined();
+  });
+
+  it("draws the wash and the bar from image.color", async () => {
+    await setup({ getAlbum: albumOf({ ...albumFixture, image: tiers("al1", "#336699") }) });
+    await screen.findByTestId("album-other-versions");
+    expect(screen.queryByTestId("detail-wash-neutral")).toBeNull();
+    const gradient = gradientOf(screen.getByTestId("detail-wash-color").children);
+    expect(Array.isArray(gradient) && gradient[1]).toBe(argb("#336699"));
+  });
+
+  it.each([null, undefined])("draws the neutral wash when image.color is %s", async (value) => {
+    await setup({ getAlbum: albumOf({ ...albumFixture, image: tiers("al1", value) }) });
+    await screen.findByTestId("album-other-versions");
+    expect(screen.getByTestId("detail-wash-neutral")).toBeTruthy();
+    expect(screen.queryByTestId("detail-wash-color")).toBeNull();
   });
 
   it("draws the hero cover at the large tier", async () => {

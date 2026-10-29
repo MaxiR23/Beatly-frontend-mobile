@@ -12,17 +12,16 @@ source (`player.md`). Every track ends with a more button that opens the track m
 
 ## Layout
 
-- Collapse: the header collapses into the top bar on scroll (`DESIGN.md`, "Detail screen base"): the cover shrinks and fades, the bar is drawn on the dominant color (neutral for liked). On iOS the floating back stays fixed and the bar is a strip with no back of its own, reaching from the top edge to `spacing.sm` past `spacing.xs` under the back's bottom edge, with no background: the dominant color and a light shade, both fading to transparent at its bottom edge (the base surface for liked). Under the strip the content is blurred slightly (`blur.detailStrip`), full at the top and fading to zero at the strip's bottom edge, appearing with the strip (`DESIGN.md`, "Detail screen base").
+- Collapse: the header collapses into the top bar on scroll (`DESIGN.md`, "Detail screen base"): the cover shrinks and fades, the bar is drawn on the cover color (neutral for liked). On iOS the floating back stays fixed and the bar is a strip with no back of its own, reaching from the top edge to `spacing.sm` past `spacing.xs` under the back's bottom edge, with no background: the dominant color and a light shade, both fading to transparent at its bottom edge (the base surface for liked). Under the strip the content is blurred slightly (`blur.detailStrip`), full at the top and fading to zero at the strip's bottom edge, appearing with the strip (`DESIGN.md`, "Detail screen base").
 - Entry: the content enters in a top-down cascade (`DESIGN.md`, "Detail screen base"): the cover over its wash, the title, the info and action row, the first 3 tracks, then the other tracks on screen, `motion.detailCascade.*`. At once when the tracks arrive, after the navigation transition when they were cached. Tracks of a later page do not animate. Nothing moves under reduce motion.
 
 Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), except
 the info block:
 
 - Hero: the cover in `layout.heroCover`, `radius.sm`, `shadow.cover`, over the wash
-  from the dominant color (neutral for liked). Own: its
+  from `image.color` (neutral for liked). Own: its
   `mosaic`, the single image with one, the placeholder with none. Liked: the accent tile with the heart. Genre:
-  its `mosaic`, or `image` with none. The hero cover draws `large` (its mosaic cells `medium`) and the
-  dominant color comes from `small` (`DESIGN.md`, "Image tiers").
+  its `mosaic`, or `image` with none. The hero cover draws `large` (its mosaic cells `medium`). The wash is `image.color` of the first mosaic element, or of the image when the mosaic is empty (genre) (ADR 030); liked stays neutral. A color arriving on a refetch fades in over `motion.duration.base`. The responses are `private, no-cache` and `no-store`, so a pending color is picked up on the next mount of the screen.
 - Info: `layout.gutter` on the sides, `spacing.xs` gap, `spacing.xl` below.
   - Creator row, `spacing.sm` gap: a `layout.creatorMark` mark (the user's avatar for
     an own playlist, the brand mark on `color.accent.primary` in `radius.full` for a
@@ -204,7 +203,7 @@ Edit tracks opens from the options sheet of an own playlist, at `/playlist-edit/
 
 The play pill shrink without dropped frames while playback starts, on iOS and Android, and taps on shuffle and on the side button during and right after the shrink reaching them, not play. The SwiftUI list in edit mode on iOS: its look in the dark theme, the system handles, the swipe and minus delete, and the move landing where the row was dropped; the Android drag on a device: the lifted row following the finger, the others making room, no scroll while held, auto-scroll near both edges on a playlist of more than 50 tracks (and a few hundred), and the values of `motion.reorder.edge` and `motion.reorder.speed`; that the order and the removals persist after closing and reopening, and Home and Library updating; VoiceOver and TalkBack announcing the position and the move action; editing the playing playlist; the `ReorderList` fallback on iOS in Expo Go; the options sheet on iOS and Android; the native confirmation on both platforms; a rename and a delete seen in Home and Library without reopening the app; deleting the playing playlist; screenshots of the three kinds on iOS and Android; the label fade, then the eased shrink with shuffle and the side button following toward the center, on an own, a genre playlist and an album (instant start) and a long own playlist, before the spinner or pause; the liked playlist's two pills filling the row and the play pill's Play, spinner and Pause; a rename of the playing playlist shown as the player's source; the play pill shrinking to a circle and scaling in as pause, the now playing bars moving, freezing on pause and static under reduce motion; play and shuffle on a real own or liked playlist of more than 50 tracks; saving a genre playlist and finding it in the library; infinite scroll with a real
 gesture on a playlist of more than 50 tracks; real covers on an own playlist header; a playlist recent of each kind opening from
-Home; real covers, the dominant-color wash
+Home; real covers, the backend's color wash (and its fade when a pending color arrives on a refetch)
 and the brand mark at `layout.creatorMark`; swipe-back per tab and the native tab
 bar on iOS 26+; and the album screen scrolled to its carousels after its list moved
 to a `FlatList`; the next-page skeleton rows on a real own or liked playlist of more than 50 tracks with a slow network, and the next page asked for early enough that a normal scroll rarely reaches them.

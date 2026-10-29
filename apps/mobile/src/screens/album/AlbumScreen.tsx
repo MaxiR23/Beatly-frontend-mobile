@@ -29,7 +29,6 @@ import { useAlbum } from "../../queries/useAlbum.ts";
 import { useLibrarySaved, useSetSaved } from "../../queries/useLibrary.ts";
 import { useRegisterRecent } from "../../queries/useRecents.ts";
 import { OutcomeError } from "../../queries/outcomeError.ts";
-import { useDominantColor } from "../detail/useDominantColor.ts";
 import { albumMeta } from "./albumMeta.ts";
 import { toQueue, wholeQueue } from "../player/queue.ts";
 import { useListPlayback, useNowPlaying } from "../player/useNowPlaying.ts";
@@ -70,7 +69,7 @@ export function AlbumScreen() {
   const setSaved = useSetSaved("album", id);
   const nowPlaying = useNowPlaying();
   const listPlayback = useListPlayback("album", album.data?.id ?? null);
-  const wash = useDominantColor(album.data?.image?.small ?? null);
+  const wash = album.data?.image?.color ?? null;
 
   function goBack() {
     // A deep link has nothing to go back to, so it lands on home.

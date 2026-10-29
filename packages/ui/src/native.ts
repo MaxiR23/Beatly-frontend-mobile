@@ -44,6 +44,7 @@ export { MediaGrid, gridCardSize } from "./components/MediaGrid.tsx";
 export { SearchBar } from "./components/SearchBar.tsx";
 export { MediaRow } from "./components/MediaRow.tsx";
 export { RecentRow } from "./components/RecentRow.tsx";
+export { ColorFade } from "./components/ColorFade.tsx";
 export { DetailScreen, type DetailBody, type DetailRow } from "./components/DetailScreen.tsx";
 export { TrackRow } from "./components/TrackRow.tsx";
 export { Marquee } from "./components/Marquee.tsx";

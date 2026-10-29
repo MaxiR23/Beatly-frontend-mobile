@@ -8,7 +8,7 @@
 // What is covered:
 // - the source, title, artists and the elapsed and remaining times, a search source and a track source drawn as their own label
 // - play or pause, next, previous, shuffle, repeat one and the seek bar reaching the controller
-// - the spec's layout: header, full-width cover at high priority, gaps, controls row, the wash to the base surface by the middle, the transport icon sizes
+// - the spec's layout: header, full-width cover at high priority, gaps, controls row, the wash to the base surface by the middle from the track's image.color (none without one, fading in when the next track brings one), the transport icon sizes
 // - the empty state, the resolution failure with retry, loading, close and its fallback, es
 // - the platform split of the close button, the drag down closing, the scroll gate of the drag
 // - the cover shrinking while paused and springing back, reduce motion keeping the cover and the player still
@@ -37,23 +37,16 @@ let mockCanGoBack = true;
 jest.mock("expo-router", () => ({
   useRouter: () => ({ back: mockBack, replace: mockReplace, canGoBack: () => mockCanGoBack }),
 }));
-const mockPeek: { current: unknown } = { current: undefined };
-const mockGet = jest.fn<(url: string) => Promise<{ kind: string }>>(() =>
-  Promise.resolve({ kind: "unavailable" }),
-);
-jest.mock("../../../src/adapters/imageColors.ts", () => ({
-  getDominantColor: (url: string) => mockGet(url),
-  peekDominantColor: () => mockPeek.current,
-}));
 
 const spring = jest.spyOn(Animated, "spring");
+const timing = jest.spyOn(Animated, "timing");
 const reduce = jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled");
 
 afterEach(async () => {
   Platform.OS = "ios";
   spring.mockClear();
+  timing.mockClear();
   reduce.mockClear().mockResolvedValue(false);
-  mockPeek.current = undefined;
   mockBack.mockClear();
   mockReplace.mockClear();
   mockCanGoBack = true;
@@ -79,6 +72,10 @@ const track = (id: string, coverUrl: string | null = null): PlayableTrack => ({
   coverUrl,
   image: coverUrl === null ? null : tiers(id),
   durationSeconds: 248,
+});
+const withColor = (id: string, imageColor: string | null): PlayableTrack => ({
+  ...track(id),
+  image: tiers(id, imageColor),
 });
 const album: PlaybackSource = { kind: "album", id: "a1", name: "Test Album" };
 
@@ -206,14 +203,6 @@ describe("PlayerScreen", () => {
     expect(screen.getByTestId("cover-single").props.priority).toBe("high");
   });
 
-  it("reads the dominant color from the small tier", async () => {
-    const ctx = await setup();
-    await act(async () => {
-      await ctx.playback.playList([track("1", "test://img/1")], 0, album);
-    });
-    expect(mockGet).toHaveBeenCalledWith("test://img/1/s");
-  });
-
   it("lays out the header, the full-width cover and the spec's gaps", async () => {
     const ctx = await setup();
     await start(ctx);
@@ -245,11 +234,10 @@ describe("PlayerScreen", () => {
     expect(screen.getByTestId("player-controls")).toHaveStyle({ marginTop: spacing.xl });
   });
 
-  it("draws the wash from the dominant color to the base surface by the middle", async () => {
-    mockPeek.current = { kind: "color", value: "#336699" };
+  it("draws the wash from the track's color to the base surface by the middle", async () => {
     const ctx = await setup();
     await act(async () => {
-      await ctx.playback.playList([track("1", "test://cover/1")], 0, album);
+      await ctx.playback.playList([withColor("1", "#336699")], 0, album);
     });
     expect(screen.getByTestId("player-wash")).toBeTruthy();
     const [gradient] = nodesWithProp(screen.toJSON(), "gradient");
@@ -261,6 +249,36 @@ describe("PlayerScreen", () => {
       1,
       argb(color.surface.base),
     ]);
+  });
+
+  it("draws no wash when the track's image has no color", async () => {
+    const ctx = await setup();
+    await act(async () => {
+      await ctx.playback.playList([withColor("1", null)], 0, album);
+    });
+    expect(screen.queryByTestId("player-wash")).toBeNull();
+    await act(async () => {
+      await ctx.playback.playList([track("2", "test://cover/2")], 0, album);
+    });
+    expect(screen.queryByTestId("player-wash")).toBeNull();
+  });
+
+  it("fades the wash in when the next track brings a color", async () => {
+    const ctx = await setup();
+    await act(async () => {
+      await ctx.playback.playList([withColor("1", null), withColor("2", "#336699")], 0, album);
+    });
+    expect(screen.queryByTestId("player-wash")).toBeNull();
+    await fireEvent.press(screen.getByRole("button", { name: en.player.next }));
+    expect(screen.getByTestId("player-wash")).toHaveStyle({ opacity: 0 });
+    expect(timing).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        toValue: 1,
+        duration: motion.duration.base,
+        useNativeDriver: true,
+      }),
+    );
   });
 
   it("draws the transport icons at the spec's sizes", async () => {

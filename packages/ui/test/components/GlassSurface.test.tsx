@@ -8,7 +8,7 @@
 //
 // What is covered:
 // - the solid fallback when glass is unavailable, the glass view when it is, the availability test
-// - the tint on the fallback and on the glass view
+// - the tint on the fallback as a layer over the raised surface and on the glass view
 //
 // Run with: pnpm --filter @beatly/ui test -- GlassSurface
 //
@@ -20,6 +20,7 @@ import { Platform, Text } from "react-native";
 
 import { GlassSurface, isGlassAvailable } from "../../src/components/GlassSurface.tsx";
 import { color } from "../../src/tokens/color.ts";
+import { radius } from "../../src/tokens/radius.ts";
 import { layout } from "../../src/tokens/spacing.ts";
 
 interface ReactNativeView {
@@ -80,13 +81,28 @@ describe("GlassSurface", () => {
     });
   });
 
-  it("draws the tint as the fallback background and keeps the raised surface without one", async () => {
-    await render(
+  it("draws the tint as a layer over the raised surface and keeps it alone without one", async () => {
+    const view = await render(
       <GlassSurface variant="bar" tint="#123456" testID="tinted">
         <Text>inside</Text>
       </GlassSurface>,
     );
-    expect(screen.getByTestId("tinted")).toHaveStyle({ backgroundColor: "#123456" });
+    expect(screen.getByTestId("tinted")).toHaveStyle({ backgroundColor: color.surface.raised });
+    const layer = screen.getByTestId("tinted-tint");
+    const fill = layer.children[0];
+    if (fill === undefined || typeof fill === "string") throw new Error("no tint fill");
+    expect(fill.props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ borderRadius: radius.full, backgroundColor: "#123456" }),
+      ]),
+    );
+    await view.rerender(
+      <GlassSurface variant="bar" testID="tinted">
+        <Text>inside</Text>
+      </GlassSurface>,
+    );
+    expect(screen.getByTestId("tinted")).toHaveStyle({ backgroundColor: color.surface.raised });
+    expect(screen.queryByTestId("tinted-tint")).toBeNull();
   });
 
   it("passes the tint to the glass view as its tint color", async () => {

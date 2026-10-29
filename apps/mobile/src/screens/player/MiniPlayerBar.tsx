@@ -3,7 +3,6 @@ import { MiniPlayer } from "@beatly/ui/native";
 import { useRouter } from "expo-router";
 
 import { useT } from "../../adapters/i18n.ts";
-import { useDominantColor } from "../detail/useDominantColor.ts";
 import { usePlayback, usePlaybackActions } from "./usePlayback.ts";
 import { useReduceMotion } from "./useReduceMotion.ts";
 
@@ -13,7 +12,7 @@ export function MiniPlayerBar({ surface = "glass" }: { surface?: "glass" | "bare
   const playback = usePlaybackActions();
   const current = usePlayback((state) => state.current);
   const status = usePlayback((state) => state.status);
-  const tint = useDominantColor(current?.image?.small ?? null);
+  const tint = current?.image?.color ?? null;
   const reduceMotion = useReduceMotion();
 
   if (current === null) return null;

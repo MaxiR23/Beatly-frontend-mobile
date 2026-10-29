@@ -40,6 +40,7 @@ itself. That covers both sources of obsolescence: a later record
 that replaced the decision, and the code moving on from what the
 record described.
 
+- `029-images-through-expo-image-behind-a-single-ui-importer.md` says "The dominant color still downloads the `small` tier separately, outside this cache". Since 030, no color is computed on the device and nothing is downloaded for it.
 - `011-no-secrets-in-code-and-provider-never-named.md` says that
   `review-changes` greps every diff for `https://` literals and for the
   provider's name and hostnames. Since
@@ -190,7 +191,7 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
 - `019-dominant-color-behind-an-adapter.md` — why the dominant color of a
   cover comes from `react-native-image-colors` behind an adapter with no
   port, loaded only where its native module exists, and why the surfaces
-  stay neutral where it does not.
+  stay neutral where it does not. Superseded by 030.
 - `020-shared-detail-routes-per-tab.md` — why the four tabs are groups
   sharing one layout, so a detail screen opens inside the current tab and
   keeps that tab's back stack.
@@ -224,3 +225,4 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
   image is drawn with `Picture`, the only importer of `expo-image`, with the
   memory and disk cache, no transition on iOS, a fade on Android only for a network load and a recycling key
   from the URL.
+- `030-cover-color-from-the-backend.md` — why the album, playlist, player and mini player backgrounds read `image.color` from the backend instead of extracting it on the device, and how a color that arrives after mount fades in.

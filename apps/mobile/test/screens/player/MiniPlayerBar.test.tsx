@@ -7,6 +7,7 @@
 //
 // What is covered:
 // - nothing drawn while idle, the title and joined artists after a start, the error line on a failure
+// - the pill tinted with the track's image color on the fallback surface, neutral without one
 // - the bare surface when asked, and the glass one by default
 // - the body opening the player, play or pause and next reaching the controller
 //
@@ -26,13 +27,6 @@ import { makeCore, tiers, Wrapper } from "../../helpers/core.tsx";
 
 const mockPush = jest.fn();
 jest.mock("expo-router", () => ({ useRouter: () => ({ push: mockPush }) }));
-const mockGet = jest.fn<(url: string) => Promise<{ kind: string }>>(() =>
-  Promise.resolve({ kind: "unavailable" }),
-);
-jest.mock("../../../src/adapters/imageColors.ts", () => ({
-  getDominantColor: (url: string) => mockGet(url),
-  peekDominantColor: () => undefined,
-}));
 
 afterEach(async () => {
   mockPush.mockClear();
@@ -89,12 +83,24 @@ describe("MiniPlayerBar", () => {
     expect(screen.getByTestId("cover-single").props.source).toEqual([{ uri: "test://img/1/s" }]);
   });
 
-  it("reads the dominant color from the small tier", async () => {
+  it("tints the pill with the track's image color", async () => {
+    const ctx = await setup();
+    await act(async () => {
+      await ctx.playback.playList([{ ...track("1"), image: tiers("1", "#336699") }], 0, source);
+    });
+    expect(screen.getByTestId("mini-player-tint")).toHaveStyle({ opacity: 1 });
+  });
+
+  it("keeps the pill neutral without a color", async () => {
     const ctx = await setup();
     await act(async () => {
       await ctx.playback.playList([withImage("1")], 0, source);
     });
-    expect(mockGet).toHaveBeenCalledWith("test://img/1/s");
+    expect(screen.queryByTestId("mini-player-tint")).toBeNull();
+    await act(async () => {
+      await ctx.playback.playList([{ ...track("2"), image: tiers("2", null) }], 0, source);
+    });
+    expect(screen.queryByTestId("mini-player-tint")).toBeNull();
   });
 
   it("draws the placeholder when the track has no image", async () => {

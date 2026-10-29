@@ -1,5 +1,7 @@
 # 019. Dominant color behind an adapter
 
+> Superseded by `030-cover-color-from-the-backend.md`: the color comes from the backend's `image.color` and nothing is computed on the device. This note is an owner exception to the no-edit rule of `README.md`.
+
 How a detail screen gets the color it tints its hero wash and top bar with.
 
 ## Context

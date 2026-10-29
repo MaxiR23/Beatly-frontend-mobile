@@ -15,13 +15,13 @@
 // - the image hero: full width at the hero image ratio, the title over it in typography.display, the fade, the placeholder without an image, no centered cover or wash
 // - the bar's title from the start on Android (textAlign left, one line with the default tail ellipsis, back, title, more in that order, no trailing spacer without a more) and centered on iOS with and without a more
 // - the back and more glyphs of each platform on the floating buttons and the top bar
-// - the floating back button, the more button only when given, the neutral wash and the gradient wash
+// - the floating back button, the more button only when given, the neutral wash and the gradient wash, the hero wash fading in over motion.duration.base when its color arrives after the body is ready
 // - the collapse: one Animated.event on the native driver, the cover's shrink and fade, the order of the fades on both heroes, ranges from the measured heights, the touches handed from the floating buttons to the top bar and back, the bar's geometry and fill, no cover scale under reduce motion, static until measured, the other bodies unchanged, the reset when the ready body leaves
 //
 // - the entry cascade: five steps (hero, title, children, the first motion.detailCascade.firstRows rows, the later rows) in that order with the motion.detailCascade tokens on the native driver, opacity and translateY only, at once from loading and after navigationDelay when ready at mount, once per mount, late rows at rest, the slot after the rows in the later rows step under exactly one cascade wrapper and at rest when it arrives late, reduce motion at mount and turning on mid-way, unmount stopping it, the floating buttons never under a cascade wrapper on iOS and Android, no wrapper in the other bodies, the collapse's layers untouched by it
 //
 // - the iOS blur under the strip: absent before the measure, on Android and in the other bodies; mounted once measured whatever the phase, invisible at the top (mask opacity 0), between the list and the strip, at the strip's box, out of touches; the token's intensity and tint; masked by the blurMask stops on the base surface; the mask's opacity the strip's at every offset, also under reduce motion; no opacity on any parent of the blur
-// - the collapse cases run on Android; on iOS: the floating back fixed, opaque, touchable and announced in every phase and drawn above the bar, the strip's height from the back's tokens plus spacing.sm, no background, its wash stops from the dominant color or the base surface and its shade stops, both from the tokens and transparent at the bottom edge, the title between two control-height slots at the back's vertical center, the mores handed over by the phase, the other bodies
+// - the collapse cases run on Android; on iOS: the floating back fixed, opaque, touchable and announced in every phase and drawn above the bar, the strip's height from the back's tokens plus spacing.sm, no background, its wash stops from the color or the base surface and its shade stops, both from the tokens and transparent at the bottom edge, the title between two control-height slots at the back's vertical center, the mores handed over by the phase, the other bodies
 //
 // Run with: pnpm --filter @beatly/ui test -- DetailScreen
 //
@@ -391,6 +391,25 @@ describe("DetailScreen", () => {
     expect(screen.queryByTestId("detail-wash-color")).toBeNull();
   });
 
+  it("fades the hero wash in when the color arrives after the body is ready", async () => {
+    const view = await draw(ready());
+    const timing = jest.spyOn(Animated, "timing");
+    try {
+      await view.rerender(element(ready("#336699")));
+      expect(screen.getByTestId("detail-wash-color")).toHaveStyle({ opacity: 0 });
+      expect(timing).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          toValue: 1,
+          duration: motion.duration.base,
+          useNativeDriver: true,
+        }),
+      );
+    } finally {
+      timing.mockRestore();
+    }
+  });
+
   it("draws the gradient wash when it has a color", async () => {
     await draw(ready("#336699"));
     expect(screen.getByTestId("detail-wash-color")).toBeTruthy();
@@ -681,20 +700,25 @@ describe("DetailScreen", () => {
       expect(flatStyle(title.props.style as TextStyle).fontSize).toBe(typography.subtitle.fontSize);
     });
 
-    it("fills the bar with the dominant color, or the base surface without one", async () => {
+    it("fills the bar with the base surface and lays the color over it", async () => {
       await draw(ready("#336699"));
       expect(
         flatStyle(screen.getByTestId("detail-top-bar", hidden).props.style as ViewStyle)
           .backgroundColor,
-      ).toBe("#336699");
+      ).toBe(color.surface.base);
+      const layer = screen.getByTestId("detail-top-bar-color", hidden);
+      const fill = layer.children[0];
+      if (typeof fill === "string") throw new Error("no color fill");
+      expect(flatStyle(fill?.props.style as ViewStyle).backgroundColor).toBe("#336699");
     });
 
-    it("fills the bar with the base surface without a dominant color", async () => {
+    it("fills the bar with the base surface only without a color", async () => {
       await draw(ready());
       expect(
         flatStyle(screen.getByTestId("detail-top-bar", hidden).props.style as ViewStyle)
           .backgroundColor,
       ).toBe(color.surface.base);
+      expect(screen.queryByTestId("detail-top-bar-color", hidden)).toBeNull();
     });
 
     it("draws the bar's more only when given one", async () => {
@@ -775,7 +799,8 @@ describe("DetailScreen", () => {
       expect(screen.queryByTestId("detail-top-bar-shade", hidden)).toBeNull();
       expect(screen.queryByTestId("detail-top-bar-back-slot", hidden)).toBeNull();
       expect(screen.queryByTestId("detail-floating-more", hidden)).toBeNull();
-      expect(flatStyle(bar.props.style as ViewStyle).backgroundColor).toBe("#336699");
+      expect(flatStyle(bar.props.style as ViewStyle).backgroundColor).toBe(color.surface.base);
+      expect(within(bar).getByTestId("detail-top-bar-color", hidden)).toBeTruthy();
     });
 
     // Each direct child of the bar's row as its accessibility label (an IconButton), its testID or "spacer".
@@ -975,7 +1000,7 @@ describe("DetailScreen", () => {
         expect(opacityOf("detail-top-bar")).toBe(1);
       });
 
-      it("fades the dominant color to transparent at the wash stops, with no background", async () => {
+      it("fades the color to transparent at the wash stops, with no background", async () => {
         await setup(ready("#336699"));
         expect(styleOf("detail-top-bar").backgroundColor).toBeUndefined();
         const wash = color.gradient.detailStrip.wash;
@@ -998,7 +1023,7 @@ describe("DetailScreen", () => {
         expect(stops.at(-1)?.alpha).toBe(0);
       });
 
-      it("fades the base surface at the same wash stops without a dominant color", async () => {
+      it("fades the base surface at the same wash stops without a color", async () => {
         const bodies: [DetailBody, Parameters<typeof setup>[2]][] = [
           [ready(), undefined],
           [imageBody, { hero: HERO }],

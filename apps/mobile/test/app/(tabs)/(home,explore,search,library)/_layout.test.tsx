@@ -55,10 +55,6 @@ import {
 import { installCore } from "../../../helpers/routeCore.ts";
 
 jest.mock("../../../../src/createCore.ts", () => ({ createCore: () => mockCore.current }));
-jest.mock("../../../../src/adapters/imageColors.ts", () => ({
-  getDominantColor: () => Promise.resolve({ kind: "unavailable" }),
-  peekDominantColor: () => undefined,
-}));
 const mockCore = installCore();
 
 const en = resources.en;
