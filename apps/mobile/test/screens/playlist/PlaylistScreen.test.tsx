@@ -188,7 +188,9 @@ describe("PlaylistScreen", () => {
     await screen.findByTestId("playlist-info");
     expect(screen.queryByTestId("detail-wash-neutral")).toBeNull();
     const gradient = gradientOf(screen.getByTestId("detail-wash-color").children);
-    expect(Array.isArray(gradient) && gradient[1]).toBe(argb("#336699"));
+    expect(Array.isArray(gradient) && Number(gradient[1]) & 0xffffff).toBe(
+      argb("#336699") & 0xffffff,
+    );
   });
 
   it("draws the wash from a genre playlist's image color", async () => {
@@ -202,7 +204,9 @@ describe("PlaylistScreen", () => {
     });
     await screen.findAllByText("Pop hits");
     const gradient = gradientOf(screen.getByTestId("detail-wash-color").children);
-    expect(Array.isArray(gradient) && gradient[1]).toBe(argb("#336699"));
+    expect(Array.isArray(gradient) && Number(gradient[1]) & 0xffffff).toBe(
+      argb("#336699") & 0xffffff,
+    );
   });
 
   it("draws the neutral wash without a color", async () => {

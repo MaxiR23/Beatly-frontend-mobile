@@ -4,7 +4,7 @@
 // over it. Four bodies: loading skeleton, error with retry, unavailable,
 // ready. The cover is a mosaic, an image (drawn at the tier of the window width), an accent tile or the placeholder;
 // the ready body is a list: the hero, the title and the children on top,
-// optional rows under them paged by onEndReached two screens before the end, with skeleton rows under them while the next page loads, and an optional slot after them. In the ready body the scroll drives, on the native driver, the cover's shrink to motion.detailCollapse.coverScale and fade, the floating buttons' fade, the title's fade and a top bar's fade in (the bar's title centered on iOS and from the start, right after the back, on Android), over ranges derived from the measured hero and title heights; the floating buttons or the bar take touches, never both, on Android; on iOS the floating back never fades and always takes touches, drawn above a strip with no back of its own, reaching from the top edge to spacing.sm past spacing.xs under the back's bottom edge (topInset + spacing.xs + layout.controlHeight + spacing.xs + spacing.sm), with no background: the dominant color (the base surface without one), fading in over motion.duration.base when it arrives after mount (ColorFade) and at once under reduce motion, and a light base-surface shade over it, both fading to transparent at its bottom edge, and under them, outside the strip's fading parent, a blur of the content (blur.detailStrip) masked opaque to 55% of the strip's height and transparent at its bottom edge, the mask fading in with the strip, mounted once the ranges are measured and visible only through the mask's opacity (0 at the top), and only the floating more and the bar's more hand the touches over; under reduce motion the cover does not scale. In the ready body the content enters once per mount in a top-down cascade on the native driver: the hero, the title, the children, the first motion.detailCascade.firstRows rows and the later rows drawn with them, with the slot after the rows in that same last step, each from opacity 0 and motion.detailCascade.offset lower, in motion.detailCascade.duration, motion.detailCascade.stagger apart, in wrappers separate from the collapse's layers. It starts at once when the body becomes ready, after motion.detailCascade.navigationDelay when it was ready at mount. Rows drawn later and the floating buttons never animate. Under reduce motion, or when it turns on mid-way, everything is at rest.
+// optional rows under them paged by onEndReached two screens before the end, with skeleton rows under them while the next page loads, and an optional slot after them. In the ready body the scroll drives, on the native driver, the cover's shrink to motion.detailCollapse.coverScale and fade, the floating buttons' fade, the title's fade and a top bar's fade in (the bar's title centered on iOS and from the start, right after the back, on Android), over ranges derived from the measured hero and title heights; the floating buttons or the bar take touches, never both, on Android; on iOS the floating back never fades and always takes touches, drawn above a strip with no back of its own, reaching from the top edge to spacing.sm past spacing.xs under the back's bottom edge (topInset + spacing.xs + layout.controlHeight + spacing.xs + spacing.sm), with no background: the dominant color (the base surface without one), fading in over motion.duration.base when it arrives after mount (ColorFade) and at once under reduce motion, and a light base-surface shade over it, both fading to transparent at its bottom edge, and under them, outside the strip's fading parent, a blur of the content (blur.detailStrip) masked opaque to 55% of the strip's height and transparent at its bottom edge, the mask fading in with the strip, mounted once the ranges are measured and visible only through the mask's opacity (0 at the top), and only the floating more and the bar's more hand the touches over; under reduce motion the cover does not scale. In the ready body the content enters once per mount in a top-down cascade on the native driver: the hero, the title, the children, the first motion.detailCascade.firstRows rows and the later rows drawn with them, with the slot after the rows in that same last step, each from opacity 0 and motion.detailCascade.offset lower, in motion.detailCascade.duration, motion.detailCascade.stagger apart, in wrappers separate from the collapse's layers. It starts at once when the body becomes ready, after motion.detailCascade.navigationDelay when it was ready at mount. Rows drawn later and the floating buttons never animate. Under reduce motion, or when it turns on mid-way, everything is at rest. The hero wash is the dominant color over the base surface at color.gradient.detailHero, from the hero's top to layout.heroWashExtension below its bottom edge, scrolling with the content.
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Animated,
@@ -362,11 +362,15 @@ export function DetailScreen({
                       <ColorFade
                         color={body.washColor}
                         reduceMotion={reduceMotion}
-                        style={styles.wash}
+                        style={styles.heroWash}
                         testID="detail-wash-color"
                       >
                         {(c) => (
-                          <GradientFill direction="vertical" colors={[c, color.surface.base]} />
+                          <GradientFill
+                            direction="vertical"
+                            color={c}
+                            stops={color.gradient.detailHero.stops}
+                          />
                         )}
                       </ColorFade>
                       <Animated.View
@@ -563,6 +567,7 @@ const styles = StyleSheet.create({
   hero: { alignItems: "center", paddingBottom: spacing.xl },
   washNeutral: StyleSheet.absoluteFill,
   wash: StyleSheet.absoluteFill,
+  heroWash: { ...StyleSheet.absoluteFill, bottom: -layout.heroWashExtension },
   blur: { position: "absolute", top: 0, left: 0, right: 0 },
   blurFade: StyleSheet.absoluteFill,
   imageHero: {

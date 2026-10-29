@@ -18,7 +18,7 @@ source (`player.md`). Every track ends with a more button that opens the track m
 Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), except
 the info block:
 
-- Hero: the cover in `layout.heroCover`, `radius.sm`, `shadow.cover`, over the wash
+- Hero: the cover in `layout.heroCover`, `radius.sm`, `shadow.cover`, over the wash (`DESIGN.md`, Detail screen base: its curve and its extension under the hero)
   from `image.color` (neutral for liked). Own: its
   `mosaic`, the single image with one, the placeholder with none. Liked: the accent tile with the heart. Genre:
   its `mosaic`, or `image` with none. The hero cover draws `large` (its mosaic cells `medium`). The wash is `image.color` of the first mosaic element, or of the image when the mosaic is empty (genre) (ADR 030); liked stays neutral. A color arriving on a refetch fades in over `motion.duration.base`. The responses are `private, no-cache` and `no-store`, so a pending color is picked up on the next mount of the screen.
@@ -207,7 +207,7 @@ Home; real covers, the backend's color wash (and its fade when a pending color a
 and the brand mark at `layout.creatorMark`; swipe-back per tab and the native tab
 bar on iOS 26+; and the album screen scrolled to its carousels after its list moved
 to a `FlatList`; the next-page skeleton rows on a real own or liked playlist of more than 50 tracks with a slow network, and the next page asked for early enough that a normal scroll rarely reaches them.
-Also: the header collapse on scroll (the cover shrinking and fading, then the floating buttons, the title and the top bar, in that order, without dropped frames on iOS and Android); on iOS the floating back staying fixed and tappable at every scroll position, the title never under it, and the strip's fade matching the top of the wash and ending with no edge under the back, and the strip's transparent bottom catching taps over the first visible row (album, playlist); TalkBack focus moving from the floating buttons to the top bar after a scroll, and VoiceOver reaching the fixed back and the bar's title once collapsed; the bar title's legibility over bright dominant colors and the bar matching the top of the wash.
+Also: the header collapse on scroll (the cover shrinking and fading, then the floating buttons, the title and the top bar, in that order, without dropped frames on iOS and Android); on iOS the floating back staying fixed and tappable at every scroll position, the title never under it, and the strip's fade ending with no edge under the back, and the bar and the strip at full color while the hero wash starts at `color.gradient.detailHero` intensity (0.70), so the top of the wash is lighter than the strip and the bar by design (matching them is out of scope), and the strip's transparent bottom catching taps over the first visible row (album, playlist); TalkBack focus moving from the floating buttons to the top bar after a scroll, and VoiceOver reaching the fixed back and the bar's title once collapsed; the bar title's legibility over bright dominant colors and the bar at full color.
 
 Also: the entry cascade on iOS and Android: its order, the 300 ms and 60 ms feel, the start after the push with cached data (back and reopen) and at once after the skeleton, no animation on rows of a later page, the floating buttons visible from the first frame with the native glass on iOS 26+, nothing moving under reduce motion, the header collapse unchanged after it.
 
@@ -226,3 +226,5 @@ Left to verify by hand. On an Android phone: the sheet meeting the bottom and si
 On Android the `Input`s are the Material 3 outlined text field (ADR 027, `ui` `Input`; see DESIGN.md, Text field): outline, label inside rising onto it on focus or with text, accent outline on focus, error color and the error under the field; iOS unchanged. Left to verify by hand on an Android phone: the label animation feel, the notch over the sheet surface, TalkBack reading the label once and announcing the error.
 
 Covers (ADR 029): on Android a first open fades the mosaic and the row covers in, and back and reopen draws them at once, with no fade; iOS draws them with no transition; the brand mark unchanged on iOS and Android, also under iOS Smart Invert; screenshots before and after on iOS and Android match; the hero loads at high priority.
+
+The hero wash on iOS and Android: no hard edge at the hero's bottom or at the end of the extension, the title, actions and first rows over it, the wash scrolling with them and not popping out on Android when the header leaves the screen, its top under the iOS strip once it fades in; tune `color.gradient.detailHero.intensity` only.
