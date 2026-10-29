@@ -316,18 +316,24 @@ describe("the handle and the sheet", () => {
     await setup();
     await openSheet();
     await screen.findByText("Up u2");
-    await fireEvent.press(screen.getByRole("button", { name: en.player.sheet.close }));
-    expect(screen.getByTestId("player-sheet-upnext", { includeHiddenElements: true })).toBeTruthy();
-    await openSheet();
+    let done: ((result: { finished: boolean }) => void) | undefined;
     spring.mockImplementationOnce(
       () =>
         ({
-          start: (done?: (result: { finished: boolean }) => void) => {
-            done?.({ finished: true });
+          start: (next?: (result: { finished: boolean }) => void) => {
+            done = next;
           },
         }) as unknown as Animated.CompositeAnimation,
     );
     await fireEvent.press(screen.getByRole("button", { name: en.player.sheet.close }));
+    expect(spring).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({ toValue: height }),
+    );
+    expect(screen.getByTestId("player-sheet-upnext", { includeHiddenElements: true })).toBeTruthy();
+    await act(() => {
+      done?.({ finished: true });
+    });
     expect(screen.queryByTestId("player-sheet-upnext", { includeHiddenElements: true })).toBeNull();
   });
 
