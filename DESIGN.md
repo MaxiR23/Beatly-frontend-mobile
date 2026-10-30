@@ -73,6 +73,8 @@ A token may be computed from other tokens of the same file when it is a curve tu
 | How far the detail hero's wash reaches below the hero, behind the title, the actions and the first rows                                                                                        | `layout.heroWashExtension`                                                                          |
 | Width of the track-number column in a track row                                                                                                                                                | `layout.trackNumber`                                                                                |
 | Width of one bar of the now playing indicator                                                                                                                                                  | `layout.nowPlayingBarWidth`                                                                         |
+| The logo's geometry in the units of its square: its side, bar width, bar pitch and each bar's line length                                                                                      | `layout.logoBars`                                                                                   |
+| Side of each overlapped round photo of the onboarding welcome                                                                                                                                  | `layout.welcomePhoto`                                                                               |
 | Side of the large play or pause button of the player                                                                                                                                           | `layout.playButton`                                                                                 |
 | Side of the detail play button's circle and height of its idle pill                                                                                                                            | `layout.playButtonMedium`                                                                           |
 | Width of the detail play button's idle pill                                                                                                                                                    | `layout.playButtonPill`                                                                             |
@@ -197,6 +199,16 @@ Entry: in the ready body the content enters once per mount in a top-down cascade
   tall, rising and falling to `motion.nowPlaying.minScale` over `motion.nowPlaying.durations`, frozen
   while paused, at `motion.nowPlaying.staticScales` under reduce motion) in place of the number
   (`TrackRow`) or centered over the cover on `color.overlay.onImage` (`MediaRow`).
+
+## Onboarding
+
+Three steps on `color.surface.base`, drawn by `OnboardingScreen` (see `docs/features/onboarding.md`).
+
+- `BeatlyLogo`: five `radius.full` bars in `color.accent.primary` in an `icon.size.hero` box, with the geometry of `layout.logoBars` (a line plus its round caps), each scaling on `scaleY` on the native driver down to `motion.logo.minScale` over its own `motion.logo.durations`; every bar at full scale under reduce motion.
+- `PickGrid`: rows of three round covers (`pickTileSize`), `spacing.md` apart. A picked tile has a `border.widthFocused` ring in `color.accent.primary` and a check badge (`icon.size.lg` circle in `color.accent.primary`, `Icon` check `inverse`) at its bottom right, and pops from `motion.enterScale` with `motion.spring`. The row of a pick's similar artists fades in over `motion.duration.slow`.
+- The fixed bottom button sits over a vertical `GradientFill` from `color.overlay.clear` to `color.surface.base`.
+- `PhraseCycle`: a centered `body` line in `secondary` that changes every `motion.duration.phrase`, fading out and in over `motion.duration.base`.
+- `Cascade`: the welcome's three blocks enter with `motion.detailCascade.duration`, `.stagger` and `.offset`. The photos overlap by `spacing.lg`, each `layout.welcomePhoto` wide with a `border.widthFocused` outline in `color.surface.base`.
 
 ## Player
 
@@ -329,17 +341,20 @@ Roles, not raw sizes. Every role uses the platform's system font (no
 | Slow transition                                                                                                                                                                | `motion.duration.slow`                                 |
 | Shimmer loop (skeleton)                                                                                                                                                        | `motion.duration.shimmer`                              |
 | How long a brief notice stays                                                                                                                                                  | `motion.duration.notice`                               |
+| How long each phrase of the onboarding's building step stays                                                                                                                   | `motion.duration.phrase`                               |
 | How long a picture loaded from the network fades in on Android only (`Picture`); iOS and a memory or disk hit draw at once                                                     | `motion.duration.imageFade`                            |
 | Easing of a surface entering and leaving the screen (the modal `Sheet` and its backdrop), as cubic-bezier control points: Material 3 emphasized decelerate and accelerate      | `motion.easing.enter` / `.exit`                        |
 | The one spring (the player cover's pause scale, a drag that springs back, the sheet opening and closing, the handle settling after its double bounce, the detail toggle's pop) | `motion.spring` (`damping`, `stiffness`)               |
 | Opacity of a pressed control on iOS                                                                                                                                            | `motion.pressOpacity`                                  |
 | Scale the player cover drops to while paused                                                                                                                                   | `motion.pausedScale`                                   |
 | Scale the player drops to behind the open sheet                                                                                                                                | `motion.behindSheetScale`                              |
-| Scale a control starts from when it enters (the detail play button becoming pause, the detail toggle's pop)                                                                    | `motion.enterScale`                                    |
+| Scale a control starts from when it enters (the detail play button becoming pause, the detail toggle's pop, the onboarding pick's pop)                                         | `motion.enterScale`                                    |
 | The detail play button's label fade, pill shrink and pause scale-in, in ms                                                                                                     | `motion.playButton.labelFade` / `.shrink` / `.scaleIn` |
 | Lowest a now playing bar falls to, as a share of its height                                                                                                                    | `motion.nowPlaying.minScale`                           |
 | Milliseconds each now playing bar takes to rise or to fall (different per bar)                                                                                                 | `motion.nowPlaying.durations`                          |
 | Each now playing bar's height while static under reduce motion                                                                                                                 | `motion.nowPlaying.staticScales`                       |
+| Lowest a logo bar falls to, as a share of its height                                                                                                                           | `motion.logo.minScale`                                 |
+| Milliseconds each logo bar takes to rise or to fall (different per bar)                                                                                                        | `motion.logo.durations`                                |
 | Points per second a title that does not fit scrolls (`Marquee`)                                                                                                                | `motion.marquee.speed`                                 |
 | Rest, in ms, at each end of a `Marquee` scroll                                                                                                                                 | `motion.marquee.pause`                                 |
 | Points the sheet handle rises in the first and the second bounce of its nudge                                                                                                  | `motion.handleNudge.first` / `.second`                 |
@@ -351,9 +366,9 @@ Roles, not raw sizes. Every role uses the platform's system font (no
 | Points of scroll each detail header layer takes to fade (floating buttons, title, top bar)                                                                                     | `motion.detailCollapse.fade`                           |
 | Scale the detail hero cover shrinks to as it scrolls away                                                                                                                      | `motion.detailCollapse.coverScale`                     |
 | Share of a fade the detail top bar starts before the title is under it                                                                                                         | `motion.detailCollapse.barLead`                        |
-| Milliseconds each detail content block takes to enter                                                                                                                          | `motion.detailCascade.duration`                        |
-| Milliseconds between the starts of two detail content blocks                                                                                                                   | `motion.detailCascade.stagger`                         |
-| Points lower than its place a detail content block enters from                                                                                                                 | `motion.detailCascade.offset`                          |
+| Milliseconds each detail content block (and each onboarding welcome block) takes to enter                                                                                      | `motion.detailCascade.duration`                        |
+| Milliseconds between the starts of two detail content blocks (and welcome blocks)                                                                                              | `motion.detailCascade.stagger`                         |
+| Points lower than its place a detail content block (or welcome block) enters from                                                                                              | `motion.detailCascade.offset`                          |
 | Rows in the first row step of the detail entry                                                                                                                                 | `motion.detailCascade.firstRows`                       |
 | Milliseconds the detail entry waits when the content is ready at mount (after the navigation transition)                                                                       | `motion.detailCascade.navigationDelay`                 |
 

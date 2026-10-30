@@ -8,6 +8,7 @@ import { AppState } from "react-native";
 import { toAuthFailureReason } from "../auth/authFailure.ts";
 import { createChunkedStorage } from "../auth/chunkedStorage.ts";
 import { sessionEmail } from "../auth/sessionEmail.ts";
+import { sessionUserId } from "../auth/sessionUserId.ts";
 import { withTimeout } from "../auth/withTimeout.ts";
 
 export interface AuthAdapterConfig {
@@ -77,6 +78,10 @@ export function createAuthAdapter(config: AuthAdapterConfig): AuthPort {
     // Reads the secure store, never client.auth.getSession(): that refreshes an expired session over the network.
     async getEmail() {
       return sessionEmail(await storage.getItem(STORAGE_KEY));
+    },
+    // Reads the secure store, never client.auth.getSession(): that refreshes an expired session over the network.
+    async getUserId() {
+      return sessionUserId(await storage.getItem(STORAGE_KEY));
     },
     onAuthChange(listener) {
       const { data } = client.auth.onAuthStateChange((_event, session) => {

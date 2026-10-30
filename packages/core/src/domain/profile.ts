@@ -1,4 +1,4 @@
-// INFO: the profile schema of GET /profile/me and the name the app shows for it.
+// INFO: the profile schema of GET /profile/me (with onboarding_completed_at, null until the onboarding is done) and the name the app shows for it.
 import { z } from "zod";
 
 export const profileSchema = z.object({
@@ -10,6 +10,8 @@ export const profileSchema = z.object({
   avatar_url: z.string().nullable(),
   created_at: z.string(),
   updated_at: z.string(),
+  // null until the user finishes the onboarding.
+  onboarding_completed_at: z.string().nullable(),
 });
 export type Profile = z.infer<typeof profileSchema>;
 

@@ -1,0 +1,27 @@
+{
+  "pick": {
+    "title": "¿Qué artistas te gustan?",
+    "subtitle": "Elegí al menos 5 para armar tu inicio.",
+    "search": "Buscar artistas",
+    "clearSearch": "Borrar búsqueda",
+    "empty": "Todavía no hay artistas para elegir. Probá buscando uno.",
+    "noResults": "No encontramos ese artista.",
+    "more": "Elegí {{n}} más",
+    "continue": "Continuar ({{n}})",
+    "tooFew": "Uno de tus artistas ya no está disponible. Elegí uno más."
+  },
+  "building": {
+    "title": "Armando tu inicio",
+    "phrases": {
+      "similar": "Buscando artistas parecidos a {{artist}}",
+      "albums": "Sumando álbumes para vos",
+      "almost": "Ya casi está"
+    }
+  },
+  "welcome": {
+    "greeting": "¡Bienvenido, {{name}}!",
+    "greetingNoName": "¡Bienvenido!",
+    "text": "Tu inicio está listo, armado a partir de tus artistas. Se va a ir afinando a medida que escuches.",
+    "start": "Empezar"
+  }
+}

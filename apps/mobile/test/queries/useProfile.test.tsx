@@ -8,6 +8,7 @@
 //
 // What is covered:
 // - data unwrapped from the outcome, cache time from Cache-Control, OutcomeError on a failure
+// - disabled: nothing is fetched
 // - the saved values are written to the cache, so a failed refetch keeps them drawn
 // - the update refetches the profile before it settles, and a username_taken failure leaves it as it was
 // - Not applicable: the update's cache time from Cache-Control, because a mutation has none
@@ -86,6 +87,14 @@ describe("useProfile", () => {
     jest.advanceTimersByTime(61_000);
     await mountAndSettle(wrapper);
     expect(send).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not fetch while disabled", async () => {
+    const { send, wrapper } = setup({});
+    const { result } = await renderHook(() => useProfile(false), { wrapper });
+    await act(() => Promise.resolve());
+    expect(result.current.fetchStatus).toBe("idle");
+    expect(send).not.toHaveBeenCalled();
   });
 
   it("treats the profile's private, no-cache as stale", async () => {

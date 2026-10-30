@@ -1,7 +1,7 @@
 // INFO: spacing tokens, a multiples-of-four scale (and an explicit zero), plus the layout
 // constants (gutter, gap, hitSlop, control height, text area height, and the carousel card,
 // avatar, creator mark, profile avatar, tab item, chip (and the Android chip), the Android tab indicator, the Android switch's track and thumb sizes, genre bar, row cover (and the Android track menu header cover), the Android action row height, detail hero cover, the detail hero wash's extension,
-// track-number column, now playing bar width, large and medium play button, the detail play pill's width, the side buttons' stacking value, seek bar and sheet handle sizes (iOS and Android) and the Android modal sheet handle zone and width, and the skeleton bar widths and row count).
+// track-number column, now playing bar width, large and medium play button, the detail play pill's width, the side buttons' stacking value, seek bar and sheet handle sizes (iOS and Android) and the Android modal sheet handle zone and width, and the skeleton bar widths and row count, the logo's bar geometry and the side of a welcome photo).
 export const spacing = {
   // An explicit zero gap where a native container would otherwise apply a system default.
   none: 0,
@@ -60,6 +60,10 @@ export const layout = {
   trackNumber: 24,
   // Width of one bar of the now playing indicator.
   nowPlayingBarWidth: 3,
+  // The brand logo's geometry in the units of its square: its side, the bar width (round caps add half of it at each end), the distance between bar centers and each bar's line length.
+  logoBars: { units: 100, width: 6, pitch: 15, lengths: [4, 36, 60, 28, 4] },
+  // Side of each overlapped round photo of the onboarding welcome.
+  welcomePhoto: 72,
   // Side of the large play or pause button of the player.
   playButton: 72,
   // Side of the detail play button's circle and height of its idle pill.
