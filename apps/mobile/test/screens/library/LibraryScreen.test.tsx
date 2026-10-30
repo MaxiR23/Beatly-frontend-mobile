@@ -11,6 +11,8 @@
 // - own playlists named after the profile (username, display name, or the kind alone when it fails)
 // - creating a playlist, the disabled and too-long name states, the inline failure, an omitted description, cancel, es
 // - a saved album opens the album, a playlist entry does not
+// - a saved artist drawn with a round photo and the Artist meta, opening the artist
+// - the all and artists filter chips: the artists list asked with kind artist from the first page, its empty state without a retry, its error with retry, es
 // - the sheet attached to the bottom and side edges, its content 34 above the bottom edge inside a native tab (the window's inset, not the tab's 83)
 // - the create sheet keeping the typed name while it closes and clearing it once closed
 //
@@ -18,6 +20,7 @@
 //
 // SEE: apps/mobile/src/screens/library/LibraryScreen.tsx
 
+import { radius } from "@beatly/ui";
 import type { HttpOutcome, LibraryEntry, PageResult } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
@@ -26,6 +29,7 @@ import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { LibraryScreen } from "../../../src/screens/library/LibraryScreen.tsx";
 import {
+  artistEntryFixture,
   createdPlaylistFixture,
   likedEntryFixture,
   makeCore,
@@ -39,6 +43,7 @@ import {
   Wrapper,
 } from "../../helpers/core.tsx";
 import { expectSheetOverWindow, Insets } from "../../helpers/insets.tsx";
+import { flatStyle } from "../../helpers/flatStyle.ts";
 import { holdSheetMotion } from "../../helpers/sheetMotion.ts";
 
 const mockPush = jest.fn();
@@ -355,5 +360,77 @@ describe("LibraryScreen", () => {
     await screen.findByText("Saved playlist");
     expect(screen.queryByRole("button", { name: "Saved playlist" })).toBeNull();
     expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("draws a saved artist with a round photo and the Artist meta in the whole library", async () => {
+    await setup({ listLibrary: full([likedEntryFixture, artistEntryFixture]) });
+    await screen.findByText("Test Artist");
+    const row = screen.getAllByTestId("library-entry")[1];
+    if (row === undefined) throw new Error("no artist row");
+    expect(within(row).getByText("Artist")).toBeTruthy();
+    const photo = within(row).getByTestId("cover-single");
+    expect(flatStyle(photo.parent?.props.style).borderRadius).toBe(radius.full);
+  });
+
+  it("opens the artist from its row", async () => {
+    await setup({ listLibrary: full([likedEntryFixture, artistEntryFixture]) });
+    await fireEvent.press(await screen.findByRole("button", { name: "Test Artist" }));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: "/artist/[id]", params: { id: "ar1" } });
+  });
+
+  it("switches to the artists filter and asks for kind artist from the first page", async () => {
+    const ctx = await setup({
+      listLibrary: (_cursor, kind) =>
+        Promise.resolve(pageOf(kind === "artist" ? [artistEntryFixture] : [likedEntryFixture])),
+    });
+    await screen.findByText(en.library.liked);
+    expect(screen.getByRole("button", { name: en.library.filters.all })).toBeTruthy();
+    await fireEvent.press(screen.getByText(en.library.filters.artists));
+    expect(await screen.findByText("Test Artist")).toBeTruthy();
+    expect(ctx.listLibrary).toHaveBeenLastCalledWith(null, "artist");
+    expect(screen.queryByText(en.library.liked)).toBeNull();
+    expect(
+      stateFlag(screen.getByRole("button", { name: en.library.filters.artists }), "selected"),
+    ).toBe(true);
+  });
+
+  it("draws the artists empty state for an empty artists list, without a retry", async () => {
+    await setup({
+      listLibrary: (_cursor, kind) =>
+        Promise.resolve(pageOf(kind === "artist" ? [] : [likedEntryFixture])),
+    });
+    await screen.findByText(en.library.liked);
+    await fireEvent.press(screen.getByText(en.library.filters.artists));
+    expect(await screen.findByText(en.library.emptyArtists)).toBeTruthy();
+    expect(screen.queryByText(en.common.retry)).toBeNull();
+    expect(screen.queryByText(en.common.error.generic)).toBeNull();
+  });
+
+  it("draws the generic error with retry when the artists list fails, and retries", async () => {
+    const ctx = await setup({
+      listLibrary: (_cursor, kind) =>
+        Promise.resolve(
+          kind === "artist"
+            ? { kind: "transport_failure", cause: "timeout" }
+            : pageOf([likedEntryFixture]),
+        ),
+    });
+    await screen.findByText(en.library.liked);
+    await fireEvent.press(screen.getByText(en.library.filters.artists));
+    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    await fireEvent.press(screen.getByText(en.common.retry));
+    await waitFor(() => {
+      expect(
+        ctx.listLibrary.mock.calls.filter(([, kind]) => kind === "artist").length,
+      ).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it("draws the filter chips and the Artist meta in Spanish", async () => {
+    await i18n.changeLanguage("es");
+    await setup({ listLibrary: full([likedEntryFixture, artistEntryFixture]) });
+    expect(await screen.findByText(resources.es.library.filters.all)).toBeTruthy();
+    expect(screen.getByText(resources.es.library.filters.artists)).toBeTruthy();
+    expect(screen.getByText(resources.es.library.kind.artist)).toBeTruthy();
   });
 });

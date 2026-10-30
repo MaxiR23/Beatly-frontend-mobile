@@ -15,18 +15,20 @@
 // - the playing popular song's row marked with the now playing bars, never an unavailable song
 // - opening an album from the albums and singles carousels and a similar artist
 // - not available for invalid_request without retry, the generic error with retry for upstream_error and upstream_timeout and a transport failure
+// - the favorite star: the saved state asked for the route's artist, outline and filled with its add and remove label, disabled while its state loads or fails
+// - saving or removing flips the star at once with the added or removed notice, rolls back with the generic error notice on failure, library_item_not_found is a removal, the notice clears after motion.duration.notice
 // - back and its fallback, es
 //
 // Run with: pnpm --filter @beatly/mobile test -- ArtistScreen
 //
 // SEE: apps/mobile/src/screens/artist/ArtistScreen.tsx
 
-import type { Artist, HttpOutcome } from "@beatly/core";
+import type { Artist, HttpOutcome, LibrarySavedState } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { type ViewStyle } from "react-native";
 
-import { color, spacing } from "@beatly/ui";
+import { color, motion, spacing } from "@beatly/ui";
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
 import { ArtistScreen } from "../../../src/screens/artist/ArtistScreen.tsx";
@@ -173,6 +175,7 @@ describe("ArtistScreen", () => {
     expect(new Set(names)).toEqual(
       new Set([
         en.artist.back,
+        en.artist.favorite.add,
         "Popular Song",
         "First Album",
         "A Single",
@@ -361,5 +364,139 @@ describe("ArtistScreen", () => {
     await setup();
     expect(await screen.findByText(es.artist.popular)).toBeTruthy();
     expect(screen.getByText("Sencillo · 2024")).toBeTruthy();
+  });
+});
+
+describe("ArtistScreen favorite star", () => {
+  const savedOf = (saved: boolean) => (): Promise<HttpOutcome<LibrarySavedState>> =>
+    Promise.resolve({ kind: "success", data: { saved }, maxAgeSeconds: 0 });
+  // The refetch after a write never answers, so the optimistic value is what the star shows.
+  const onceThenPending = (saved: boolean) =>
+    jest
+      .fn<() => ReturnType<ReturnType<typeof savedOf>>>()
+      .mockImplementationOnce(savedOf(saved))
+      .mockImplementation(() => new Promise(() => undefined));
+  const add = () => screen.findByRole("button", { name: en.artist.favorite.add });
+  const remove = () => screen.findByRole("button", { name: en.artist.favorite.remove });
+  const noticeText = (text: string) => within(screen.getByTestId("artist-notice")).getByText(text);
+
+  it("asks for the saved state of the route's artist", async () => {
+    const ctx = await setup();
+    await add();
+    expect(ctx.getSavedState).toHaveBeenCalledWith("artist", "UCar1");
+  });
+
+  it("draws the star not selected with the add label when the artist is not saved", async () => {
+    await setup({ getSavedState: savedOf(false) });
+    const star = await add();
+    expect(stateFlag(star, "selected")).toBe(false);
+    expect(stateFlag(star, "disabled")).toBeFalsy();
+    expect(screen.queryByTestId("artist-notice")).toBeNull();
+  });
+
+  it("draws the star selected with the remove label when the artist is saved", async () => {
+    await setup({ getSavedState: savedOf(true) });
+    expect(stateFlag(await remove(), "selected")).toBe(true);
+  });
+
+  it("saves the artist with its body, flips the star at once and shows the added notice", async () => {
+    const ctx = await setup({
+      getSavedState: jest
+        .fn<() => ReturnType<ReturnType<typeof savedOf>>>()
+        .mockImplementationOnce(savedOf(false))
+        .mockImplementation(() => new Promise(() => undefined)),
+      saveItem: () => new Promise(() => undefined),
+    });
+    await fireEvent.press(await add());
+    expect(await remove()).toBeTruthy();
+    expect(noticeText(en.artist.favorite.added)).toBeTruthy();
+    expect(ctx.saveItem).toHaveBeenCalledWith({
+      kind: "artist",
+      source: "external",
+      external_id: "UCar1",
+      title: "Test Artist",
+      thumbnail_url: "test://img/ar1",
+    });
+  });
+
+  it("removes a saved artist and shows the removed notice", async () => {
+    const ctx = await setup({ getSavedState: onceThenPending(true) });
+    await fireEvent.press(await remove());
+    expect(await add()).toBeTruthy();
+    expect(noticeText(en.artist.favorite.removed)).toBeTruthy();
+    expect(ctx.removeItem).toHaveBeenCalledWith("artist", "UCar1");
+  });
+
+  it("rolls the star back and shows the generic error notice when the save fails", async () => {
+    // The refetch after the failure waits for the test, so the star returns by the rollback alone.
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await setup({
+      getSavedState: jest
+        .fn<() => ReturnType<ReturnType<typeof savedOf>>>()
+        .mockImplementationOnce(savedOf(false))
+        .mockImplementation(async () => {
+          await held;
+          return savedOf(false)();
+        }),
+      saveItem: () => Promise.resolve({ kind: "api_failure", reason: "upstream_error" }),
+    });
+    await fireEvent.press(await add());
+    expect(await add()).toBeTruthy();
+    release();
+    await waitFor(() => {
+      expect(noticeText(en.common.error.generic)).toBeTruthy();
+    });
+    expect(await add()).toBeTruthy();
+    expect(screen.queryByText(en.artist.favorite.added)).toBeNull();
+  });
+
+  it("keeps the star off and shows the removed notice on library_item_not_found", async () => {
+    await setup({
+      getSavedState: jest
+        .fn<() => ReturnType<ReturnType<typeof savedOf>>>()
+        .mockImplementationOnce(savedOf(true))
+        .mockImplementation(savedOf(false)),
+      removeItem: () => Promise.resolve({ kind: "api_failure", reason: "library_item_not_found" }),
+    });
+    await fireEvent.press(await remove());
+    expect(await add()).toBeTruthy();
+    expect(noticeText(en.artist.favorite.removed)).toBeTruthy();
+    expect(screen.queryByText(en.common.error.generic)).toBeNull();
+  });
+
+  it.each<[string, () => Promise<HttpOutcome<LibrarySavedState>>]>([
+    ["loads", () => new Promise(() => undefined)],
+    ["fails", () => Promise.resolve({ kind: "transport_failure", cause: "network" })],
+  ])("disables the star while its state %s, drawing the rest", async (_name, getSavedState) => {
+    await setup({ getSavedState });
+    const star = await add();
+    expect(stateFlag(star, "disabled")).toBe(true);
+    expect(await screen.findByText("Popular Song")).toBeTruthy();
+  });
+
+  it("clears the notice after motion.duration.notice", async () => {
+    jest.useFakeTimers({ advanceTimers: true });
+    try {
+      await setup({ getSavedState: savedOf(false) });
+      await fireEvent.press(await add());
+      expect(screen.getByTestId("artist-notice")).toBeTruthy();
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(motion.duration.notice + 1);
+      });
+      expect(screen.queryByTestId("artist-notice")).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("draws the star label and the notice in es", async () => {
+    await i18n.changeLanguage("es");
+    await setup({ getSavedState: onceThenPending(false) });
+    await fireEvent.press(await screen.findByRole("button", { name: es.artist.favorite.add }));
+    expect(noticeText(es.artist.favorite.added)).toBeTruthy();
+    expect(await screen.findByRole("button", { name: es.artist.favorite.remove })).toBeTruthy();
   });
 });

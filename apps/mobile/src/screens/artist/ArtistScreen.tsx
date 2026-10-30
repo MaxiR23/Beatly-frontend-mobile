@@ -1,22 +1,32 @@
-// INFO: an artist: the detail base with a full-width image hero and the name over it, then popular songs (rows of the detail base under their title), albums, singles and EPs and similar artists (the carousels being the slot after the rows), each hidden when empty, every playable popular song with a menu button, a song without a track id dimmed, unpressable, without menu, and announced as not available; unavailable for an invalid id; the current track's row is marked; starting a list registers it as a recent.
-import type { AlbumRef, Artist, ImageTiers, PlayableTrack } from "@beatly/core";
-import { layout, spacing } from "@beatly/ui";
+// INFO: an artist: the detail base with a full-width image hero and the name over it, then popular songs (rows of the detail base under their title), albums, singles and EPs and similar artists (the carousels being the slot after the rows), each hidden when empty, every playable popular song with a menu button, a song without a track id dimmed, unpressable, without menu, and announced as not available; unavailable for an invalid id; the current track's row is marked; starting a list registers it as a recent; a star at the top right saves or removes the artist from the favorites, optimistic, with a brief added, removed or error notice.
+import {
+  artistLibraryInputOf,
+  type AlbumRef,
+  type Artist,
+  type ImageTiers,
+  type PlayableTrack,
+} from "@beatly/core";
+import { layout, motion, spacing } from "@beatly/ui";
 import {
   Carousel,
   DetailScreen,
   MediaRow,
+  Notice,
   Text,
   type CarouselItem,
   type DetailBody,
   type DetailRow,
+  type DetailToggle,
 } from "@beatly/ui/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
 import { OutcomeError } from "../../queries/outcomeError.ts";
 import { useArtist } from "../../queries/useArtist.ts";
+import { useLibrarySaved, useSetSaved } from "../../queries/useLibrary.ts";
 import { useRegisterRecent } from "../../queries/useRecents.ts";
 import { singleMeta } from "./singleMeta.ts";
 import { toQueue } from "../player/queue.ts";
@@ -56,6 +66,22 @@ export function ArtistScreen() {
   const { id = "" } = useLocalSearchParams<{ id?: string }>();
   const artist = useArtist(id);
   const nowPlaying = useNowPlaying();
+  const saved = useLibrarySaved("artist", id, true);
+  const setSaved = useSetSaved("artist", id);
+  const [notice, setNotice] = useState<{
+    tone: "success" | "error";
+    message: string;
+    at: number;
+  } | null>(null);
+  useEffect(() => {
+    if (notice === null) return;
+    const timer = setTimeout(() => {
+      setNotice(null);
+    }, motion.duration.notice);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [notice]);
 
   function goBack() {
     // A deep link has nothing to go back to, so it lands on home.
@@ -85,6 +111,7 @@ export function ArtistScreen() {
     artist.error.outcome.reason === "invalid_request";
 
   let body: DetailBody;
+  let toggle: DetailToggle | undefined;
   if (artist.isPending) {
     body = { kind: "loading", label: tc("loading"), hero: "image" };
   } else if (unavailable) {
@@ -112,6 +139,30 @@ export function ArtistScreen() {
           metadata: { title: data.name, subtitle: null, thumbnail_url: data.thumbnail_url },
         });
       }
+    };
+    const isSaved = saved.data === true;
+    toggle = {
+      icon: "star",
+      label: isSaved ? t("favorite.remove") : t("favorite.add"),
+      selected: isSaved,
+      disabled: !saved.isSuccess,
+      onPress: () => {
+        if (setSaved.isPending) return;
+        const next = !isSaved;
+        setNotice({
+          tone: "success",
+          message: next ? t("favorite.added") : t("favorite.removed"),
+          at: Date.now(),
+        });
+        setSaved.mutate(
+          { saved: next, input: artistLibraryInputOf(id, data.name, data.thumbnail_url) },
+          {
+            onError: () => {
+              setNotice({ tone: "error", message: tc("error.generic"), at: Date.now() });
+            },
+          },
+        );
+      },
     };
     const rows: DetailRow[] = data.songs.map((song, index) => {
       const playable = toPlayable(song);
@@ -218,7 +269,17 @@ export function ArtistScreen() {
         onBack={goBack}
         topInset={insets.top}
         bottomInset={tabBarClearance}
+        {...(toggle ? { toggle } : {})}
       />
+      {notice !== null ? (
+        <View
+          pointerEvents="none"
+          style={[styles.notice, { bottom: tabBarClearance + spacing.md }]}
+          testID="artist-notice"
+        >
+          <Notice floating tone={notice.tone} message={notice.message} />
+        </View>
+      ) : null}
     </TrackMenuHost>
   );
 }
@@ -228,5 +289,6 @@ const styles = StyleSheet.create({
   // The popular title and the songs keep their spacing.md column gap; the carousels keep spacing.xl after the last song.
   afterSongs: { paddingTop: spacing.xl },
   song: { paddingTop: spacing.md },
+  notice: { position: "absolute", left: layout.gutter, right: layout.gutter },
   sectionHeader: { paddingHorizontal: layout.gutter },
 });

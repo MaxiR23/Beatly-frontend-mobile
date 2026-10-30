@@ -1,4 +1,4 @@
-// INFO: the query hook of GET /library, the caller's unified library, paged through the shared infinite-query hook; the saved state of one album or playlist (GET /library/{kind}/{external_id}), with its cache time from the outcome's max-age via the QueryClient; and the mutation that saves or removes it, optimistic with a rollback, which refetches the library and the saved state once settled; a failure is logged.
+// INFO: the query hook of GET /library, the caller's unified library or only its artists, each its own list, paged through the shared infinite-query hook; the saved state of one album, playlist or artist (GET /library/{kind}/{external_id}), with its cache time from the outcome's max-age via the QueryClient; and the mutation that saves or removes it, optimistic with a rollback, which refetches the library and the saved state once settled; a failure is logged.
 import type { LibraryItemInput, LibraryItemKind, LibrarySavedState, Success } from "@beatly/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -11,11 +11,17 @@ export const libraryQueryKey = ["library"] as const;
 export const librarySavedQueryKey = (kind: LibraryItemKind, externalId: string) =>
   ["library", "saved", kind, externalId] as const;
 
-export function useLibrary() {
+export type LibraryFilter = "all" | "artist";
+
+// Under the library's key, so every invalidation of ["library"] refreshes it too.
+export const libraryFilterQueryKey = (kind: "artist") => ["library", "kind", kind] as const;
+
+export function useLibrary(filter: LibraryFilter = "all") {
   const { library } = useCore();
   return useInfiniteList({
-    queryKey: libraryQueryKey,
-    fetchPage: (cursor) => library.listLibrary(cursor),
+    queryKey: filter === "all" ? libraryQueryKey : libraryFilterQueryKey(filter),
+    fetchPage: (cursor) =>
+      filter === "all" ? library.listLibrary(cursor) : library.listLibrary(cursor, filter),
   });
 }
 

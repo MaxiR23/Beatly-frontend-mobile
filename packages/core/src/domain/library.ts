@@ -1,8 +1,8 @@
-// INFO: image and mosaic are the tiers of thumbnail_url and of thumbnail_urls; the entry of GET /library: the fixed liked entry, own playlists and saved albums and playlists. source is free text because saved items carry whatever POST /library stored; the saved state of GET /library/{kind}/{external_id} and the item POST /library returns.
+// INFO: image and mosaic are the tiers of thumbnail_url and of thumbnail_urls; the entry of GET /library: the fixed liked entry, own playlists and saved albums, playlists and artists. source is free text because saved items carry whatever POST /library stored; the saved state of GET /library/{kind}/{external_id} and the item POST /library returns.
 import { z } from "zod";
 import { imageTiersSchema } from "./image.ts";
 
-export const libraryEntryKindSchema = z.enum(["album", "playlist"]);
+export const libraryEntryKindSchema = z.enum(["album", "playlist", "artist"]);
 
 export const libraryEntrySchema = z.object({
   kind: libraryEntryKindSchema,

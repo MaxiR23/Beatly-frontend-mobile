@@ -45,7 +45,12 @@ export { SearchBar } from "./components/SearchBar.tsx";
 export { MediaRow } from "./components/MediaRow.tsx";
 export { RecentRow } from "./components/RecentRow.tsx";
 export { ColorFade } from "./components/ColorFade.tsx";
-export { DetailScreen, type DetailBody, type DetailRow } from "./components/DetailScreen.tsx";
+export {
+  DetailScreen,
+  type DetailBody,
+  type DetailRow,
+  type DetailToggle,
+} from "./components/DetailScreen.tsx";
 export { TrackRow } from "./components/TrackRow.tsx";
 export { Marquee } from "./components/Marquee.tsx";
 export { Notice } from "./components/Notice.tsx";
