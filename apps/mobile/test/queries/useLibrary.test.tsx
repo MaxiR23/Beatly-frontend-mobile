@@ -3,10 +3,11 @@
 // Tests for the library query hook.
 //
 // Tested:
-// - useLibrary, useLibrarySaved, useSetSaved
+// - useLibrary (all and artist filters), useLibrarySaved, useSetSaved
 //
 // What is covered:
 // - the first page unwrapped, cache time from Cache-Control
+// - the artist filter asking with kind artist, its cache time from Cache-Control, its refetch after a write
 // - the saved state, its cache time, disabled; the optimistic save and remove, the rollback, library_item_not_found, the refetch after a write
 //
 // Run with: pnpm --filter @beatly/mobile test -- useLibrary
@@ -14,7 +15,13 @@
 // SEE: apps/mobile/src/queries/useLibrary.ts
 
 import { createHttpClient, createLibraryService } from "@beatly/core";
-import type { HttpOutcome, HttpPort, LibraryItem, LibraryItemInput } from "@beatly/core";
+import type {
+  HttpOutcome,
+  HttpPort,
+  LibraryEntry,
+  LibraryItem,
+  LibraryItemInput,
+} from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 import type { ReactNode } from "react";
@@ -22,7 +29,15 @@ import type { ReactNode } from "react";
 import type { Core } from "../../src/createCore.ts";
 import { createTestQueryClient } from "../helpers/queryClient.ts";
 import { useLibrary, useLibrarySaved, useSetSaved } from "../../src/queries/useLibrary.ts";
-import { makeAuth, makeCore, makeLog, ownPlaylistEntryFixture, Wrapper } from "../helpers/core.tsx";
+import {
+  artistEntryFixture,
+  makeAuth,
+  makeCore,
+  makeLog,
+  ownPlaylistEntryFixture,
+  pageOf,
+  Wrapper,
+} from "../helpers/core.tsx";
 
 afterEach(() => {
   jest.useRealTimers();
@@ -82,6 +97,76 @@ describe("useLibrary", () => {
     await mountAndSettle(wrapper);
     await mountAndSettle(wrapper);
     expect(send).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("useLibrary with the artist filter", () => {
+  async function mountArtists(wrapper: ReturnType<typeof setup>["wrapper"]) {
+    const rendered = await renderHook(() => useLibrary("artist"), { wrapper });
+    await waitFor(() => {
+      expect(rendered.result.current.isFetching).toBe(false);
+    });
+    return rendered;
+  }
+
+  it("returns only the artists, asking with kind artist", async () => {
+    const ctx = makeCore({
+      listLibrary: () => Promise.resolve(pageOf<LibraryEntry>([artistEntryFixture])),
+    });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <Wrapper core={ctx.core}>{children}</Wrapper>
+    );
+    const { result } = await renderHook(() => useLibrary("artist"), { wrapper });
+    await waitFor(() => {
+      expect(result.current.data).toEqual([artistEntryFixture]);
+    });
+    expect(ctx.listLibrary).toHaveBeenCalledWith(null, "artist");
+  });
+
+  it("keeps the artists list fresh for its Cache-Control max-age", async () => {
+    const { send, wrapper } = setup({ "cache-control": "max-age=60" });
+    await mountArtists(wrapper);
+    await mountArtists(wrapper);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(send.mock.calls[0]?.[0].url).toContain("kind=artist");
+    jest.useFakeTimers({ advanceTimers: true });
+    jest.advanceTimersByTime(61_000);
+    await mountArtists(wrapper);
+    expect(send).toHaveBeenCalledTimes(2);
+  });
+
+  it("treats the artists list's private, no-cache as stale", async () => {
+    const { send, wrapper } = setup({ "cache-control": "private, no-cache" });
+    await mountArtists(wrapper);
+    await mountArtists(wrapper);
+    expect(send).toHaveBeenCalledTimes(2);
+  });
+
+  it("refetches the artists list after a write", async () => {
+    const ctx = makeCore({
+      listLibrary: () => Promise.resolve(pageOf<LibraryEntry>([artistEntryFixture])),
+    });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <Wrapper core={ctx.core}>{children}</Wrapper>
+    );
+    const { result } = await renderHook(
+      () => ({ list: useLibrary("artist"), set: useSetSaved("artist", "ar1") }),
+      { wrapper },
+    );
+    await waitFor(() => {
+      expect(result.current.list.data).toEqual([artistEntryFixture]);
+    });
+    expect(ctx.listLibrary).toHaveBeenCalledTimes(1);
+    await act(() =>
+      result.current.set.mutateAsync({
+        saved: true,
+        input: { kind: "artist", source: "external", external_id: "ar1", title: "Test Artist" },
+      }),
+    );
+    await waitFor(() => {
+      expect(ctx.listLibrary).toHaveBeenCalledTimes(2);
+    });
+    expect(ctx.listLibrary).toHaveBeenLastCalledWith(null, "artist");
   });
 });
 

@@ -24,6 +24,8 @@
 // - the iOS blur under the strip: absent before the measure, on Android and in the other bodies; mounted once measured whatever the phase, invisible at the top (mask opacity 0), between the list and the strip, at the strip's box, out of touches; the token's intensity and tint; masked by the blurMask stops on the base surface; the mask's opacity the strip's at every offset, also under reduce motion; no opacity on any parent of the blur
 // - the collapse cases run on Android; on iOS: the floating back fixed, opaque, touchable and announced in every phase and drawn above the bar, the strip's height from the back's tokens plus spacing.sm, no background, its wash stops from the color or the base surface and its shade stops, both from the tokens and transparent at the bottom edge, the title between two control-height slots at the back's vertical center, the mores handed over by the phase, the other bodies
 //
+// - the trailing toggle: drawn only when given, outlined and filled with its label and selected state, the tap calling onPress with a pop from motion.enterScale back to full size with the one spring on the native driver (none under reduce motion), ignoring presses while disabled, the star glyph; pinned and opaque on iOS with the bar's spacer in its slot, fading with the floating buttons and drawn as the top bar's trailing action after the title on Android
+//
 // Run with: pnpm --filter @beatly/ui test -- DetailScreen
 //
 // SEE: packages/ui/src/components/DetailScreen.tsx
@@ -67,17 +69,25 @@ const ready = (washColor: string | null = null): DetailBody => ({
 interface DrawExtra {
   onBack?: () => void;
   more?: { label: string; onPress: () => void };
+  toggle?: {
+    icon: "star";
+    label: string;
+    selected: boolean;
+    disabled: boolean;
+    onPress: () => void;
+  };
   reduceMotion?: boolean;
   topInset?: number;
 }
 
 function element(body: DetailBody, extra: DrawExtra = {}) {
+  const trailing = extra.toggle ? { toggle: extra.toggle } : extra.more ? { more: extra.more } : {};
   return (
     <DetailScreen
       body={body}
       backLabel="Back"
       onBack={extra.onBack ?? (() => undefined)}
-      {...(extra.more ? { more: extra.more } : {})}
+      {...trailing}
       topInset={extra.topInset ?? 0}
       bottomInset={0}
       testID="detail"
@@ -1347,6 +1357,66 @@ describe("DetailScreen", () => {
         }
       });
     });
+
+    describe("with the trailing toggle", () => {
+      const toggle = {
+        icon: "star" as const,
+        label: "Favorite",
+        selected: false,
+        disabled: false,
+        onPress: () => undefined,
+      };
+
+      it("keeps the toggle pinned, opaque, touchable and announced on iOS in every phase, with the bar's spacer in its slot", async () => {
+        Platform.OS = "ios";
+        const { scrollTo, scrollEvent } = await setup(ready(), { toggle });
+        const r = ranges("cover");
+        for (const y of [0, mid(r.buttons), r.buttons[1], r.bar[0] + 5, r.bar[1] + 100]) {
+          await scrollTo(y);
+          await scrollEvent(y);
+          const buttons = screen.getByTestId("detail-buttons", hidden);
+          expect(opacityOf("detail-buttons")).toBeUndefined();
+          expect(buttons.props.pointerEvents).toBe("box-none");
+          const floating = screen.getByTestId("detail-floating-toggle", hidden);
+          expect(floating.props.pointerEvents).toBe("box-none");
+          expect(floating.props.accessibilityElementsHidden).not.toBe(true);
+          let node = floating.parent;
+          while (node && node.props.testID !== "detail-buttons") {
+            const style = node.props.style ? flatStyle(node.props.style as ViewStyle) : {};
+            expect(style.opacity).toBeUndefined();
+            expect(node.props.pointerEvents).not.toBe("none");
+            node = node.parent;
+          }
+          expect(node).not.toBeNull();
+          expect(screen.queryByTestId("detail-top-bar-toggle", hidden)).toBeNull();
+        }
+      });
+
+      it("fades the toggle with the floating buttons, hands the touches over by phase and draws it after the bar's title on Android", async () => {
+        const { scrollTo, scrollEvent } = await setup(ready(), { toggle });
+        const r = ranges("cover");
+        await scrollTo(0);
+        expect(opacityOf("detail-buttons")).toBe(1);
+        await scrollEvent(0);
+        expect(screen.getByTestId("detail-buttons", hidden).props.pointerEvents).toBe("box-none");
+        expect(screen.getByTestId("detail-top-bar", hidden).props.pointerEvents).toBe("none");
+        await scrollTo(mid(r.buttons));
+        expect(opacityOf("detail-buttons")).toBeGreaterThan(0);
+        expect(opacityOf("detail-buttons")).toBeLessThan(1);
+        await scrollTo(r.buttons[1]);
+        expect(opacityOf("detail-buttons")).toBe(0);
+        await scrollEvent(r.bar[1] + 100);
+        expect(screen.getByTestId("detail-buttons", hidden).props.pointerEvents).toBe("none");
+        expect(screen.getByTestId("detail-top-bar", hidden).props.pointerEvents).toBe("auto");
+        const row = screen.getByTestId("detail-top-bar-row", hidden);
+        const order = find(screen.toJSON(), (node) => node.props.testID === "detail-top-bar-row")[0]
+          ?.children;
+        expect(row).toBeTruthy();
+        const text = JSON.stringify(order);
+        expect(text.indexOf("Album title")).toBeGreaterThanOrEqual(0);
+        expect(text.indexOf("detail-top-bar-toggle")).toBeGreaterThan(text.indexOf("Album title"));
+      });
+    });
   });
 
   describe("entry cascade", () => {
@@ -1582,5 +1652,85 @@ describe("DetailScreen", () => {
         await view.unmount();
       }
     });
+  });
+});
+
+describe("DetailScreen trailing toggle", () => {
+  const hidden = { includeHiddenElements: true } as const;
+  const spring = jest.spyOn(Animated, "spring");
+  const toggleOf = (overrides: Partial<NonNullable<DrawExtra["toggle"]>> = {}) => ({
+    icon: "star" as const,
+    label: "Favorite",
+    selected: false,
+    disabled: false,
+    onPress: jest.fn(),
+    ...overrides,
+  });
+
+  afterEach(() => {
+    spring.mockClear();
+    Platform.OS = "ios";
+  });
+
+  it("draws no toggle without it", async () => {
+    await draw(ready());
+    expect(screen.queryByTestId("detail-floating-toggle")).toBeNull();
+    expect(screen.queryByTestId("detail-top-bar-toggle", hidden)).toBeNull();
+  });
+
+  it("draws the toggle outlined and not selected, then filled and selected", async () => {
+    const view = await draw(ready(), { toggle: toggleOf() });
+    const button = () => within(screen.getByTestId("detail-floating-toggle")).getByRole("button");
+    const starFill = () =>
+      svgRoots(
+        find(screen.toJSON(), (node) => node.props.testID === "detail-floating-toggle"),
+      ).find((node) => String(node.props.className).split(/\s+/).includes("lucide-star"))?.props
+        .fill;
+    expect(button().props.accessibilityLabel).toBe("Favorite");
+    expect(button().props.accessibilityState).toMatchObject({ selected: false, disabled: false });
+    expect(starFill()).toBe("none");
+    await view.rerender(element(ready(), { toggle: toggleOf({ selected: true }) }));
+    expect(button().props.accessibilityState).toMatchObject({ selected: true });
+    expect(starFill()).toBe(color.text.primary);
+    expect(glyphCount("star")).toBeGreaterThan(0);
+  });
+
+  it("calls onPress and pops from motion.enterScale with the motion spring", async () => {
+    const toggle = toggleOf();
+    await draw(ready(), { toggle });
+    await fireEvent.press(screen.getByRole("button", { name: "Favorite" }));
+    expect(toggle.onPress).toHaveBeenCalledTimes(1);
+    expect(spring).toHaveBeenCalledTimes(1);
+    expect(spring.mock.calls[0]?.[1]).toMatchObject({
+      toValue: 1,
+      damping: motion.spring.damping,
+      stiffness: motion.spring.stiffness,
+      useNativeDriver: true,
+    });
+  });
+
+  it("does not spring under reduce motion and still calls onPress", async () => {
+    const toggle = toggleOf();
+    await draw(ready(), { toggle, reduceMotion: true });
+    await fireEvent.press(screen.getByRole("button", { name: "Favorite" }));
+    expect(toggle.onPress).toHaveBeenCalledTimes(1);
+    expect(spring).not.toHaveBeenCalled();
+  });
+
+  it("ignores presses while disabled", async () => {
+    const toggle = toggleOf({ disabled: true });
+    await draw(ready(), { toggle });
+    await fireEvent.press(screen.getByRole("button", { name: "Favorite" }));
+    expect(toggle.onPress).not.toHaveBeenCalled();
+    expect(spring).not.toHaveBeenCalled();
+  });
+
+  it("draws the star glyph on both platforms", async () => {
+    for (const platform of ["ios", "android"] as const) {
+      Platform.OS = platform;
+      const view = await draw(ready(), { toggle: toggleOf({ selected: true }) });
+      expect(glyphCount("star")).toBe(platform === "android" ? 2 : 1);
+      await view.unmount();
+    }
   });
 });

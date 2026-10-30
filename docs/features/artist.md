@@ -8,6 +8,8 @@ Show an artist: a full-width image with the name over it, its popular songs, its
 singles and EPs, and similar artists. Albums and singles push the album; a similar artist pushes
 another artist in the same tab. Pressing a popular song with a `track_id` plays the popular songs from it (`player.md`); a song without one is unavailable: not pressable, without menu, announced as `artist:trackUnavailable`, and never enters the queue, so next, previous and shuffle skip it. Every playable popular song ends with a more button that opens the track menu (`track-menu.md`).
 
+A star at the top right saves the artist as a favorite, or removes it (`POST /library` with `kind: "artist"`, `DELETE /library/artist/{id}`). It flips at once, with a brief notice (added, removed, or the generic error if the request fails, in which case the star rolls back). The saved artists show in the library (`library.md`).
+
 ## Layout
 
 - Collapse: the header collapses into the top bar on scroll (`DESIGN.md`, "Detail screen base"): the image hero has no cover to scale, and the bar is always neutral (`color.surface.base`) because the artist has no dominant color. On iOS the floating back stays fixed and the bar is a strip with no back of its own, reaching from the top edge to `spacing.sm` past `spacing.xs` under the back's bottom edge, with no background: the base surface and a light shade, both fading to transparent at its bottom edge (no dominant color). Under the strip the content is blurred slightly (`blur.detailStrip`), full at the top and fading to zero at the strip's bottom edge, appearing with the strip (`DESIGN.md`, "Detail screen base").
@@ -28,11 +30,14 @@ Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), excep
 - Sections are `spacing.xl` apart (the carousels `spacing.xl` after the last song, right under the hero when there are no songs), and each empty one is hidden. The bottom clears the floating tab
   bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
+- Favorite star: the detail base's trailing toggle (`DESIGN.md`, "Detail screen base"), an `IconButton` `star` in `GlassSurface` `circle`, `layout.controlHeight`, `layout.gutter` from the edge, outlined when not saved and filled when saved; on a tap it pops from `motion.enterScale` back to full size with `motion.spring`, none under reduce motion. Disabled while the saved state loads or fails. The notice is a floating `Notice` `layout.gutter` from the sides and `spacing.md` above the tab bar clearance, for `motion.duration.notice`. The star is a `toggle` prop of the detail base, separate from `more`, because the iOS `more` fades with the floating buttons while the star must stay pinned. The star's notice and `TrackMenuHost`'s notice (a like failure) are drawn at the same position and can overlap if both fire within `motion.duration.notice`; accepted as rare, not worth a shared notice host.
+
 ## Platform differences
 
+- iOS: the favorite star stays fixed like the back, in every scroll phase; the bar keeps its spacer in that slot.
 - iOS: the floating buttons use native glass on iOS 26+, `GlassSurface`'s solid fallback elsewhere. The back's native glass never fades (the back stays fixed); the top bar has no glass on any platform. On iOS the content under the top strip is blurred; Android has no blur.
 - Android: the solid fallback draws the buttons; the back buttons (floating and top bar) draw an arrow (ADR 027).
-- Android: the collapsed top bar is the Material 3 small top app bar: the back, then the title from the start on one line with an ellipsis, running to the end padding (the screen passes no bar action); iOS keeps the title centered in the strip (ADR 027).
+- Android: the collapsed top bar is the Material 3 small top app bar: the back, then the title from the start on one line with an ellipsis, running to the end padding (the favorite star is its trailing action); iOS keeps the title centered in the strip (ADR 027).
 
 ## States
 
@@ -52,12 +57,17 @@ unavailable song is never marked.
 
 The back button is labeled `artist:back`.
 
+The favorite star (ready body only): off (`artist:favorite.add`), on (`artist:favorite.remove`), disabled while `GET /library/artist/{id}` loads or fails. Notices: `artist:favorite.added`, `artist:favorite.removed`, and `common:error.generic` in the error tone when the save or remove fails. A remove answered `library_item_not_found` counts as removed.
+
 ## Data
 
-| Route                     | Paginated                                         | Cache-Control                                             | Reasons listed                                                                                  | Branches on                                                                                       |
-| ------------------------- | ------------------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `GET /artist/{artist_id}` | no; songs, albums, singles and related come whole | `max-age=<seconds left>`, at most 12 h; errors `no-store` | `invalid_request` (422), `unauthorized` (401), `upstream_error` (502), `upstream_timeout` (504) | `invalid_request` draws `artist:notAvailable`; everything else draws the generic error with retry |
-| `POST /recents`           | no                                                | `private, no-cache`                                       | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                         | none; a failure is logged and nothing is drawn                                                    |
+| Route                         | Paginated                                         | Cache-Control                                             | Reasons listed                                                                                    | Branches on                                                                                       |
+| ----------------------------- | ------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `GET /artist/{artist_id}`     | no; songs, albums, singles and related come whole | `max-age=<seconds left>`, at most 12 h; errors `no-store` | `invalid_request` (422), `unauthorized` (401), `upstream_error` (502), `upstream_timeout` (504)   | `invalid_request` draws `artist:notAvailable`; everything else draws the generic error with retry |
+| `POST /recents`               | no                                                | `private, no-cache`                                       | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                           | none; a failure is logged and nothing is drawn                                                    |
+| `GET /library/artist/{id}`    | no                                                | `private, no-cache`                                       | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                           | none; a failure disables the star                                                                 |
+| `POST /library`               | no                                                | `private, no-cache`                                       | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                           | none; a failure rolls the star back and draws the error notice                                    |
+| `DELETE /library/artist/{id}` | no                                                | `private, no-cache`                                       | `invalid_request`, `library_item_not_found`, `unauthorized`, `upstream_error`, `upstream_timeout` | `library_item_not_found` is a removal                                                             |
 
 A well-formed id that does not exist comes back as `upstream_error`, so it draws the generic error.
 Any of the four lists `[]` is `ok: true`: an expected empty state, never a retry.
@@ -87,6 +97,8 @@ Also: the entry cascade on iOS and Android: its order, the 300 ms and 60 ms feel
 Also: the iOS strip blur: absent at the top, fading in with the strip and following the scroll with no flicker or dark flash, full at the top and gone at the strip's bottom edge with no visible border or cut, about 4 points (tune `blur.detailStrip`), no change under reduce motion other than the strip's own, the floating back and the title above it unchanged, a development build rebuilt after the install.
 
 The Android back arrow, and the chevron unchanged on iOS (ADR 027).
+
+The favorite star: the feel of its pop and its absence under reduce motion, the native glass behind it on iOS 26+, fixed on iOS at every scroll position, its hand-over to the top bar on Android, VoiceOver and TalkBack reading the label and the selected state, and the round trip against the real API (save, reopen, see it filled and in the library).
 
 The collapsed bar on Android: the title starting right after the back arrow, a long title ending in an ellipsis at the end padding, and the title unchanged (centered) on iOS (ADR 027).
 

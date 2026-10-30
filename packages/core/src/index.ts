@@ -102,6 +102,7 @@ export {
 export type { LibraryEntry, LibraryItem, LibrarySavedState } from "./domain/library.ts";
 export {
   albumLibraryInputOf,
+  artistLibraryInputOf,
   createLibraryService,
   genrePlaylistLibraryInputOf,
 } from "./services/library.ts";

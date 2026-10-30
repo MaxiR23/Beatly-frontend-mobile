@@ -1,13 +1,13 @@
 # Library
 
-The library tab: the fixed liked entry, the caller's own playlists and saved albums and playlists, and the create-playlist sheet.
+The library tab: the fixed liked entry, the caller's own playlists and saved albums, playlists and artists, an all or artists filter, and the create-playlist sheet.
 
 ## Purpose
 
 The user sees everything they keep in one list, newest first after the fixed
 "Liked songs" entry, and creates a playlist from the header button. A saved
 album row opens the album; the liked, own and saved genre playlist rows open the
-playlist screen; a playlist with another source is not pressable.
+playlist screen; a saved artist row opens the artist; a playlist with another source is not pressable. Two chips under the header, `library:filters.all` and `library:filters.artists`, switch between the whole library and only the saved artists, each its own list from the first page.
 
 ## Layout
 
@@ -21,6 +21,8 @@ playlist screen; a playlist with another source is not pressable.
   `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 - The liked entry draws a tile on `color.accent.primary` with a heart in
   `color.text.inverse`.
+- Filter chips: a horizontal `ScrollView` of `Chip`s under the header, `layout.gutter` on the sides, `spacing.sm` apart and `spacing.md` above the list, the selected one filled (the shape of `AllReportsScreen`). Chips rather than a section: each filter is a server-side list from its first page with its own cursor, so no list is merged or filtered on the client, and it follows the precedent of `AllReportsScreen`.
+- Artist rows: `MediaRow` with a round cover, `image` or the placeholder, meta `library:kind.artist` alone (the `subtitle` is null).
 - Covers per `source`: `user` (own playlist) draws its `mosaic`; saved albums and
   playlists draw `image`, or the placeholder when it is null; rows at `small`
   (`DESIGN.md`, "Image tiers").
@@ -48,6 +50,7 @@ lifts above the keyboard with padding on iOS; on Android the window resizes.
 | With data        | the rows in the API's order                                           | `library:liked`, `library:kind.*`, `library:meta` |
 | Expected empty   | the liked row plus an `EmptyState` (the library is never `items: []`) | `library:empty`                                   |
 | Error with retry | `ErrorState`, retry refetches                                         | `common:error.generic`, `common:retry`            |
+| Artists empty    | `EmptyState`, no retry (`items: []`)                                  | `library:emptyArtists`                            |
 
 The sheet also draws: idle, name too long (inline error, Create disabled),
 submitting (Create loading) and failed (inline `common:error.generic`, the sheet
@@ -55,11 +58,12 @@ stays open with the typed values).
 
 ## Data
 
-| Route             | Paginated                              | Cache-Control       | Reasons listed                                                                            | Branches on                                                                                             |
-| ----------------- | -------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `GET /library`    | yes, cursor, through `useInfiniteList` | `private, no-cache` | `invalid_request`, `invalid_cursor`, `unauthorized`, `upstream_error`, `upstream_timeout` | none; all draw the generic error; `invalid_cursor` is handled by the paginated helper                   |
-| `GET /profile/me` | no                                     | `private, no-cache` | `profile_not_found`                                                                       | none; feeds the own playlists' name                                                                     |
-| `POST /playlists` | no                                     | `private, no-cache` | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                   | none; all draw the generic error inline; `invalid_request` is prevented by the 1 to 200 character check |
+| Route                      | Paginated                                                                | Cache-Control       | Reasons listed                                                                            | Branches on                                                                                             |
+| -------------------------- | ------------------------------------------------------------------------ | ------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `GET /library`             | yes, cursor, through `useInfiniteList`                                   | `private, no-cache` | `invalid_request`, `invalid_cursor`, `unauthorized`, `upstream_error`, `upstream_timeout` | none; all draw the generic error; `invalid_cursor` is handled by the paginated helper                   |
+| `GET /library?kind=artist` | yes, cursor, through `useInfiniteList`, its own list from the first page | `private, no-cache` | as `GET /library`                                                                         | none; no liked entry; empty is `items: []`; `invalid_cursor` restarts keeping the kind                  |
+| `GET /profile/me`          | no                                                                       | `private, no-cache` | `profile_not_found`                                                                       | none; feeds the own playlists' name                                                                     |
+| `POST /playlists`          | no                                                                       | `private, no-cache` | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                   | none; all draw the generic error inline; `invalid_request` is prevented by the 1 to 200 character check |
 
 The first page starts with the fixed entry (`id: "liked"`, `title: "liked"`, a
 literal, so the row title comes from i18n). A next-page failure draws the
@@ -67,14 +71,14 @@ whole-body error, as on Home. Creating a playlist invalidates `library` and
 `playlists/mine`. The mutation stays pending (the Create button keeps spinning) until both have refetched, so the sheet closes with the new row already drawn. The request sends the trimmed title, `is_public`, and
 `description` only when it is not empty.
 
-Saved albums and genre playlists come from the save button of the album and playlist
+Saved artists come from the star of the artist screen; saved albums and genre playlists come from the save button of the album and playlist
 screens (`POST /library`, `DELETE /library/{kind}/{external_id}`). A save or a remove
 invalidates `library` and the saved states under it, so the row appears or disappears on the next
 library render.
 
 ## Navigation
 
-Route `/library`, the fourth tab. A saved album row (`kind: "album"`) pushes
+Route `/library`, the fourth tab. A saved artist row (`kind: "artist"`) pushes `/artist/[id]` with the entry's `id`. A saved album row (`kind: "album"`) pushes
 `/album/[id]` with the entry's `id`, inside the Library tab's stack. A playlist
 row whose `source` is `liked`, `user` or `genre` pushes `/playlist/[id]?source=` with the
 entry's `id` and `source`; a playlist with another source is not pressable.

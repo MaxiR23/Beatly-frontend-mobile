@@ -8,6 +8,12 @@
     "single": "Sencillo",
     "ep": "EP"
   },
+  "favorite": {
+    "add": "Agregar a favoritos",
+    "remove": "Quitar de favoritos",
+    "added": "Agregado a tus artistas favoritos",
+    "removed": "Quitado de tus artistas favoritos"
+  },
   "metaSeparator": " · ",
   "notAvailable": "Este artista no está disponible.",
   "trackUnavailable": "{{title}}, no disponible"

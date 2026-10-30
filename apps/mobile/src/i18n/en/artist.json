@@ -8,6 +8,12 @@
     "single": "Single",
     "ep": "EP"
   },
+  "favorite": {
+    "add": "Add to favorites",
+    "remove": "Remove from favorites",
+    "added": "Added to your favorite artists",
+    "removed": "Removed from your favorite artists"
+  },
   "metaSeparator": " · ",
   "notAvailable": "This artist is not available.",
   "trackUnavailable": "{{title}}, not available"

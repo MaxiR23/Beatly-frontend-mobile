@@ -3,10 +3,16 @@
   "liked": "Tus me gusta",
   "kind": {
     "playlist": "Playlist",
-    "album": "Álbum"
+    "album": "Álbum",
+    "artist": "Artista"
+  },
+  "filters": {
+    "all": "Todo",
+    "artists": "Artistas"
   },
   "meta": "{{kind}} · {{owner}}",
   "empty": "Crea una playlist o guarda álbumes para verlos aquí.",
+  "emptyArtists": "Marca artistas como favoritos para verlos aquí.",
   "create": {
     "open": "Crear playlist",
     "title": "Nueva playlist",

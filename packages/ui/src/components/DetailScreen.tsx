@@ -4,7 +4,7 @@
 // over it. Four bodies: loading skeleton, error with retry, unavailable,
 // ready. The cover is a mosaic, an image (drawn at the tier of the window width), an accent tile or the placeholder;
 // the ready body is a list: the hero, the title and the children on top,
-// optional rows under them paged by onEndReached two screens before the end, with skeleton rows under them while the next page loads, and an optional slot after them. In the ready body the scroll drives, on the native driver, the cover's shrink to motion.detailCollapse.coverScale and fade, the floating buttons' fade, the title's fade and a top bar's fade in (the bar's title centered on iOS and from the start, right after the back, on Android), over ranges derived from the measured hero and title heights; the floating buttons or the bar take touches, never both, on Android; on iOS the floating back never fades and always takes touches, drawn above a strip with no back of its own, reaching from the top edge to spacing.sm past spacing.xs under the back's bottom edge (topInset + spacing.xs + layout.controlHeight + spacing.xs + spacing.sm), with no background: the dominant color (the base surface without one), fading in over motion.duration.base when it arrives after mount (ColorFade) and at once under reduce motion, and a light base-surface shade over it, both fading to transparent at its bottom edge, and under them, outside the strip's fading parent, a blur of the content (blur.detailStrip) masked opaque to 55% of the strip's height and transparent at its bottom edge, the mask fading in with the strip, mounted once the ranges are measured and visible only through the mask's opacity (0 at the top), and only the floating more and the bar's more hand the touches over; under reduce motion the cover does not scale. In the ready body the content enters once per mount in a top-down cascade on the native driver: the hero, the title, the children, the first motion.detailCascade.firstRows rows and the later rows drawn with them, with the slot after the rows in that same last step, each from opacity 0 and motion.detailCascade.offset lower, in motion.detailCascade.duration, motion.detailCascade.stagger apart, in wrappers separate from the collapse's layers. It starts at once when the body becomes ready, after motion.detailCascade.navigationDelay when it was ready at mount. Rows drawn later and the floating buttons never animate. Under reduce motion, or when it turns on mid-way, everything is at rest. The hero wash is the dominant color over the base surface at color.gradient.detailHero, from the hero's top to layout.heroWashExtension below its bottom edge, scrolling with the content.
+// optional rows under them paged by onEndReached two screens before the end, with skeleton rows under them while the next page loads, and an optional slot after them. In the ready body the scroll drives, on the native driver, the cover's shrink to motion.detailCollapse.coverScale and fade, the floating buttons' fade, the title's fade and a top bar's fade in (the bar's title centered on iOS and from the start, right after the back, on Android), over ranges derived from the measured hero and title heights; the floating buttons or the bar take touches, never both, on Android; on iOS the floating back never fades and always takes touches, drawn above a strip with no back of its own, reaching from the top edge to spacing.sm past spacing.xs under the back's bottom edge (topInset + spacing.xs + layout.controlHeight + spacing.xs + spacing.sm), with no background: the dominant color (the base surface without one), fading in over motion.duration.base when it arrives after mount (ColorFade) and at once under reduce motion, and a light base-surface shade over it, both fading to transparent at its bottom edge, and under them, outside the strip's fading parent, a blur of the content (blur.detailStrip) masked opaque to 55% of the strip's height and transparent at its bottom edge, the mask fading in with the strip, mounted once the ranges are measured and visible only through the mask's opacity (0 at the top), and only the floating more and the bar's more hand the touches over; under reduce motion the cover does not scale. In the ready body the content enters once per mount in a top-down cascade on the native driver: the hero, the title, the children, the first motion.detailCascade.firstRows rows and the later rows drawn with them, with the slot after the rows in that same last step, each from opacity 0 and motion.detailCascade.offset lower, in motion.detailCascade.duration, motion.detailCascade.stagger apart, in wrappers separate from the collapse's layers. It starts at once when the body becomes ready, after motion.detailCascade.navigationDelay when it was ready at mount. Rows drawn later and the floating buttons never animate. Under reduce motion, or when it turns on mid-way, everything is at rest. An optional trailing toggle (a glyph outlined or filled when selected, instead of more) pops from motion.enterScale back to full size with the one spring on a tap, not under reduce motion; it is pinned like the back on iOS, fades with the floating buttons on Android and is drawn as the top bar's trailing action there. The hero wash is the dominant color over the base surface at color.gradient.detailHero, from the hero's top to layout.heroWashExtension below its bottom edge, scrolling with the content.
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Animated,
@@ -64,23 +64,36 @@ export type DetailBody =
       afterRows?: ReactNode | undefined;
     };
 
-interface DetailScreenProps {
+export interface DetailToggle {
+  icon: IconName;
+  label: string;
+  selected: boolean;
+  disabled: boolean;
+  onPress: () => void;
+}
+
+// The trailing action: a more button or a toggle, never both.
+type DetailTrailing =
+  | { more?: { label: string; onPress: () => void }; toggle?: never }
+  | { more?: never; toggle?: DetailToggle };
+
+type DetailScreenProps = DetailTrailing & {
   body: DetailBody;
   backLabel: string;
   onBack: () => void;
-  more?: { label: string; onPress: () => void };
   topInset: number;
   // The space the content leaves at its bottom; the screen passes floatingTabBarClearance.
   bottomInset: number;
   testID?: string;
   reduceMotion: boolean;
-}
+};
 
 export function DetailScreen({
   body,
   backLabel,
   onBack,
   more,
+  toggle,
   topInset,
   bottomInset,
   testID,
@@ -234,6 +247,36 @@ export function DetailScreen({
     ? topInset + spacing.xs + layout.controlHeight + spacing.xs + spacing.sm
     : topInset + layout.controlHeight;
   const barPaddingTop = ios ? topInset + spacing.xs : topInset;
+
+  // The toggle's tap pop: it starts at motion.enterScale and springs back to full size; at rest under reduce motion.
+  const [pop] = useState(() => new Animated.Value(1));
+  const pressToggle = () => {
+    if (!toggle) return;
+    if (reduceMotion) {
+      pop.setValue(1);
+    } else {
+      pop.setValue(motion.enterScale);
+      Animated.spring(pop, {
+        toValue: 1,
+        damping: motion.spring.damping,
+        stiffness: motion.spring.stiffness,
+        useNativeDriver: true,
+      }).start();
+    }
+    toggle.onPress();
+  };
+  const toggleButton = toggle ? (
+    <Animated.View testID="detail-toggle-pop" style={{ transform: [{ scale: pop }] }}>
+      <IconButton
+        icon={toggle.icon}
+        filled={toggle.selected}
+        selected={toggle.selected}
+        disabled={toggle.disabled}
+        accessibilityLabel={toggle.label}
+        onPress={pressToggle}
+      />
+    </Animated.View>
+  ) : null;
 
   const measureHero = (event: LayoutChangeEvent) => {
     setHeroHeight(event.nativeEvent.layout.height);
@@ -515,6 +558,8 @@ export function DetailScreen({
             </View>
             {more ? (
               <IconButton icon="more" accessibilityLabel={more.label} onPress={more.onPress} />
+            ) : toggle && !ios ? (
+              <View testID="detail-top-bar-toggle">{toggleButton}</View>
             ) : ios ? (
               <View style={styles.barSpacer} />
             ) : null}
@@ -554,6 +599,10 @@ export function DetailScreen({
                 <IconButton icon="more" accessibilityLabel={more.label} onPress={more.onPress} />
               </GlassSurface>
             )
+          ) : toggle ? (
+            <View testID="detail-floating-toggle" pointerEvents="box-none">
+              <GlassSurface variant="circle">{toggleButton}</GlassSurface>
+            </View>
           ) : null}
         </View>
       </Animated.View>

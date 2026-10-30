@@ -7,7 +7,7 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the stateful likes mirror, credits, membership, add, create-with-track, remove and move fakes, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile and its update, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, library item, the saved read, add and remove, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, the autoplay setting, the bug reports fixtures and fakes (including the triage fixtures with a reporter, the list and the status update), and the page builder)
+// (the stateful likes mirror, credits, membership, add, create-with-track, remove and move fakes, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile and its update, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, library artist entry, library item, the saved read, add and remove, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, the autoplay setting, the bug reports fixtures and fakes (including the triage fixtures with a reporter, the list and the status update), and the page builder)
 //
 import type {
   ActivityService,
@@ -236,6 +236,18 @@ export const savedAlbumEntryFixture: LibraryEntry = {
   thumbnail_url: "test://img/a1",
   image: tiers("a1"),
   subtitle: "Some artist",
+  source: "external",
+  thumbnail_urls: [],
+  mosaic: [],
+};
+
+export const artistEntryFixture: LibraryEntry = {
+  kind: "artist",
+  id: "ar1",
+  title: "Test Artist",
+  thumbnail_url: "test://img/ar1",
+  image: tiers("ar1"),
+  subtitle: null,
   source: "external",
   thumbnail_urls: [],
   mosaic: [],

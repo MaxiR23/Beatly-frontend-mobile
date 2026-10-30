@@ -1,4 +1,4 @@
-// INFO: the library service: the caller's unified library, a page at a time, over the shared paginated helper; the first page starts with the fixed liked entry. Also the saved read, the add and the remove of one item, and the two builders of the add body.
+// INFO: the library service: the caller's unified library, or only one kind of it, a page at a time, over the shared paginated helper; the first unfiltered page starts with the fixed liked entry. Also the saved read, the add and the remove of one item, and the three builders of the add body (album, genre playlist, artist).
 import { z } from "zod";
 
 import type { Album } from "../domain/album.ts";
@@ -64,8 +64,26 @@ export function genrePlaylistLibraryInputOf(
   };
 }
 
+// The body POST /library takes for an artist: its name and photo, no album or artist optionals.
+export function artistLibraryInputOf(
+  externalId: string,
+  name: string,
+  thumbnailUrl: string | null,
+): LibraryItemInput {
+  return {
+    kind: "artist",
+    source: "external",
+    external_id: externalId,
+    title: name,
+    ...(thumbnailUrl !== null ? { thumbnail_url: thumbnailUrl } : {}),
+  };
+}
+
 export interface LibraryService {
-  listLibrary(cursor: string | null): Promise<HttpOutcome<PageResult<LibraryEntry>>>;
+  listLibrary(
+    cursor: string | null,
+    kind?: LibraryItemKind,
+  ): Promise<HttpOutcome<PageResult<LibraryEntry>>>;
   getSavedState(kind: LibraryItemKind, externalId: string): Promise<HttpOutcome<LibrarySavedState>>;
   saveItem(input: LibraryItemInput): Promise<HttpOutcome<LibraryItem>>;
   // library_item_not_found comes back as the api failure it is; the caller decides what it means.
@@ -78,8 +96,8 @@ function itemPath(kind: LibraryItemKind, externalId: string): string {
 
 export function createLibraryService(client: HttpClient): LibraryService {
   return {
-    listLibrary: (cursor) =>
-      fetchPage(client, { path: "/library", item: libraryEntrySchema, cursor }),
+    listLibrary: (cursor, kind) =>
+      fetchPage(client, { path: "/library", item: libraryEntrySchema, cursor, query: { kind } }),
     getSavedState: (kind, externalId) =>
       client.request({ path: itemPath(kind, externalId), schema: librarySavedStateSchema }),
     saveItem: (input) =>
