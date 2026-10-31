@@ -11,13 +11,13 @@
     "artists": "Artistas"
   },
   "meta": "{{kind}} · {{owner}}",
-  "empty": "Crea una playlist o guarda álbumes para verlos aquí.",
-  "emptyArtists": "Marca artistas como favoritos para verlos aquí.",
+  "empty": "Creá una playlist o guardá álbumes para verlos aquí.",
+  "emptyArtists": "Marcá artistas como favoritos para verlos aquí.",
   "create": {
     "open": "Crear playlist",
     "title": "Nueva playlist",
     "name": "Nombre",
-    "nameTooLong": "Usa {{max}} caracteres o menos",
+    "nameTooLong": "Usá {{max}} caracteres o menos",
     "description": "Descripción (opcional)",
     "public": "Pública",
     "publicHelper": "Cualquiera con el enlace puede abrirla.",

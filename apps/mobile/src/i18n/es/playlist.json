@@ -28,7 +28,7 @@
   "edit": {
     "title": "Editar detalles",
     "name": "Nombre",
-    "nameTooLong": "Usa {{max}} caracteres o menos",
+    "nameTooLong": "Usá {{max}} caracteres o menos",
     "description": "Descripción (opcional)",
     "cancel": "Cancelar",
     "submit": "Guardar",
@@ -49,6 +49,6 @@
     "move": "Mover {{title}}",
     "moveUp": "Subir",
     "moveDown": "Bajar",
-    "moveHint": "Arrastra para reordenar"
+    "moveHint": "Arrastrá para reordenar"
   }
 }

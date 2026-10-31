@@ -6,7 +6,7 @@
     "title": "Recientes",
     "clearAll": "Borrar todo",
     "remove": "Quitar {{query}}",
-    "empty": "Busca artistas, canciones y álbumes."
+    "empty": "Buscá artistas, canciones y álbumes."
   },
   "artist": "Artista",
   "songs": "Canciones",
