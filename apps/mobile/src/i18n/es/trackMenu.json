@@ -15,11 +15,11 @@
     "title": "Agregar a una playlist",
     "newPlaylist": "Nueva playlist",
     "name": "Nombre",
-    "nameTooLong": "Usa {{max}} caracteres o menos",
+    "nameTooLong": "Usá {{max}} caracteres o menos",
     "create": "Crear",
     "cancel": "Cancelar",
     "inPlaylist": "Ya está en esta playlist",
-    "empty": "Todavía no tienes playlists.",
+    "empty": "Todavía no tenés playlists.",
     "added": "Agregada a {{title}}"
   },
   "credits": {

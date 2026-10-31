@@ -1,25 +1,25 @@
 {
   "title": "Crear Cuenta",
-  "description": "Completa los datos para registrarte",
-  "subtitle": "Únete a la mejor experiencia musical",
+  "description": "Completá los datos para registrarte",
+  "subtitle": "Unite a la mejor experiencia musical",
   "name": "Nombre completo",
   "email": "Email",
   "password": "Contraseña",
   "submit": "Crear Cuenta",
-  "haveAccount": "¿Ya tienes una cuenta?",
-  "goToLogin": "Inicia sesión aquí",
-  "nameTooLong": "Usa {{max}} caracteres o menos",
+  "haveAccount": "¿Ya tenés una cuenta?",
+  "goToLogin": "Iniciá sesión aquí",
+  "nameTooLong": "Usá {{max}} caracteres o menos",
   "rules": {
     "minLength": "Mínimo {{min}} caracteres"
   },
   "errors": {
-    "weakPassword": "Esa contraseña es demasiado débil. Prueba con otra.",
+    "weakPassword": "Esa contraseña es demasiado débil. Probá con otra.",
     "userAlreadyExists": "Ya existe una cuenta con ese email",
-    "invalidEmail": "Ingresa un email válido",
-    "rateLimited": "Demasiados intentos. Vuelve a intentarlo en unos minutos."
+    "invalidEmail": "Ingresá un email válido",
+    "rateLimited": "Demasiados intentos. Volvé a intentarlo en unos minutos."
   },
   "sent": {
-    "message": "Enviamos un enlace de confirmación a {{email}}. Ábrelo en este dispositivo para terminar.",
+    "message": "Enviamos un enlace de confirmación a {{email}}. Abrilo en este dispositivo para terminar.",
     "backToLogin": "Volver a iniciar sesión"
   }
 }
