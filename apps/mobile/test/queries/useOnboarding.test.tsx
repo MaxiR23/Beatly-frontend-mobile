@@ -74,7 +74,16 @@ function setup(headers: Record<string, string>, post?: { status: number; body: u
                 ? { ok: true, data: { artists: onboardingArtistsFixture.slice(0, 3) } }
                 : {
                     ok: true,
-                    data: { artists: [], albums: [], generated_at: null, valid_until: null },
+                    data: {
+                      albums_for_you: [],
+                      seed_sections: [],
+                      recommended_albums: [],
+                      recommended_artists: [],
+                      artists: [],
+                      albums: [],
+                      generated_at: null,
+                      valid_until: null,
+                    },
                   }),
         ),
       });

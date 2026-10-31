@@ -1,11 +1,11 @@
 # Home
 
 The first tab: the account avatar and sheet, the recently played shelf and the
-caller's own playlists shelf.
+caller's own playlists shelf, and the personalized recommendation sections.
 
 ## Purpose
 
-Show what the user listened to lately and their playlists, and reach the account
+Show what the user listened to lately, their playlists and what Beatly recommends, and reach the account
 sheet with log out from the avatar.
 
 ## Layout
@@ -28,6 +28,10 @@ sheet with log out from the avatar.
 - Cover rule: own playlists draw their `mosaic` (4: a 2 x 2 mosaic, 1 to 3: the
   first, none: the placeholder) at `medium`; a recent draws its `metadata.image` at
   `medium`, or the placeholder. `GET /playlists` has no `image`.
+- Section order: recently played, albums for you, seed section 1, recommended albums, seed section 2, your playlists, seed section 3, recommended artists.
+- Album card (albums for you, recommended albums, and the albums of a seed section): square cover, title, and the album's artists joined with `album:artistSeparator` in `typography.meta` `color.text.secondary`. No reason on any card.
+- Artist card (recommended artists, and the artists of a seed section): round photo, name and `Artist` (`home:kind.artist`), centered in the recommended list. No reason on any card.
+- Seed section header: the seed's round photo at `layout.seedAvatar`, then the prefix by position (`typography.meta`, secondary) over the seed's name (`typography.section`), `layout.gap` apart. The reason lives only here. Items come in the returned order with `Artist`, or the album's artists, below them; artists are round and not centered.
 - Account sheet: on iOS, on `GlassSurface` attached to the bottom and side edges, `radius.xl` top corners, `spacing.xl` padding.
 - Bottom: the content clears the floating tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
@@ -43,12 +47,13 @@ are drawn in every state, so log out is always reachable. A profile that is
 loading or failed (any reason) draws the avatar without a name and own
 playlists without a subtitle.
 
-| State            | What is drawn                                                                                                           | i18n keys                                                    |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Loading          | `LoadingState` while either list loads                                                                                  | `common:loading`                                             |
-| With data        | the non-empty sections; an empty one is hidden                                                                          | `home:recents`, `home:playlists`, `home:kind.*`, `home:meta` |
-| Expected empty   | `EmptyState` when both lists have no items, no action                                                                   | `home:empty`                                                 |
-| Error with retry | `ErrorState` when either list failed, on the first load or on a next page of playlists; retry refetches the failed ones | `common:error.generic`, `common:retry`                       |
+| State                  | What is drawn                                                                                                                                        | i18n keys                                                                                                                                                                            |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Loading                | `LoadingState` while either list loads; once they are in, the recommendation slots draw `CarouselSkeleton` (only the first labelled) while they load | `common:loading`                                                                                                                                                                     |
+| With data              | the non-empty sections; an empty one is hidden                                                                                                       | `home:recents`, `home:playlists`, `home:kind.*`, `home:meta`, `album:artistSeparator`, `home:albumsForYou`, `home:recommendedAlbums`, `home:recommendedArtists`, `home:seedPrefix.*` |
+| Expected empty         | `EmptyState` when recents, playlists and all four recommendation lists are empty, no action                                                          | `home:empty`                                                                                                                                                                         |
+| Recommendations failed | an inline `ErrorState` in place of the recommendation sections; recents and playlists stay; retry calls `POST /recommendations/generate` again       | `common:error.generic`, `common:retry`                                                                                                                                               |
+| Error with retry       | `ErrorState` when either list failed, on the first load or on a next page of playlists; retry refetches the failed ones                              | `common:error.generic`, `common:retry`                                                                                                                                               |
 
 The avatar and the sheet are `AccountButton`, shared with Explore. The sheet's
 first row is the `AvatarRow`, always drawn: with the profile in the cache it shows the header avatar, `display_name` or `common:account.noName`, and `common:account.viewProfile`, labelled `common:account.profileRow`. With no profile yet (loading or failed), a skeleton circle and bar stand in for the avatar and the name, and the row is labelled `common:account.viewProfile`. Either way it opens `/profile` (`profile.md`). Below it the sheet
@@ -58,11 +63,14 @@ holds report a problem and My reports (`common:account.report`, `common:account.
 
 ## Data
 
-| Route             | Paginated                                 | Cache-Control       | Reasons listed                                                                            | Branches on                                                                           |
-| ----------------- | ----------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `GET /playlists`  | yes, cursor, through `useInfiniteList`    | `private, no-cache` | `invalid_request`, `invalid_cursor`, `unauthorized`, `upstream_error`, `upstream_timeout` | none; all draw the generic error; `invalid_cursor` is handled by the paginated helper |
-| `GET /recents`    | single page of at most 30, never a cursor | `private, no-cache` | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                   | none; all draw the generic error                                                      |
-| `GET /profile/me` | no                                        | `private, no-cache` | `profile_not_found`                                                                       | none; feeds the avatar and the own playlists' subtitle                                |
+| Route                            | Paginated                                 | Cache-Control       | Reasons listed                                                                            | Branches on                                                                           |
+| -------------------------------- | ----------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `GET /playlists`                 | yes, cursor, through `useInfiniteList`    | `private, no-cache` | `invalid_request`, `invalid_cursor`, `unauthorized`, `upstream_error`, `upstream_timeout` | none; all draw the generic error; `invalid_cursor` is handled by the paginated helper |
+| `GET /recents`                   | single page of at most 30, never a cursor | `private, no-cache` | `invalid_request`, `unauthorized`, `upstream_error`, `upstream_timeout`                   | none; all draw the generic error                                                      |
+| `POST /recommendations/generate` | no (fixed caps)                           | `private, no-cache` | `unauthorized`, `upstream_error`, `upstream_timeout`                                      | none; any failure is the inline error with retry                                      |
+| `GET /profile/me`                | no                                        | `private, no-cache` | `profile_not_found`                                                                       | none; feeds the avatar and the own playlists' subtitle                                |
+
+`POST /recommendations/generate` is called on every mount of the home (stale at once by `no-cache`); with a valid set that has sections the backend returns it without regenerating. The deprecated `artists` and `albums` are not read. An empty list and a missing seed section are not drawn.
 
 Starting a list in an album, an artist or a playlist registers it with `POST /recents` and invalidates `recents`, so the shelf refetches and shows it first. The stored metadata: album title, its artists as subtitle, its cover; artist name, no subtitle, its image; playlist title, the owner's username or display name for an own playlist, `Beatly` for a genre playlist and none for liked, its first cover, and its `kind`. The Home draws a liked recent's title from i18n (`playlist:liked`) and ignores the stored one, so a language change is reflected.
 
@@ -89,7 +97,7 @@ recently played pushes `/album/[id]` with the entry's `entity_id`, inside the
 Home tab's stack; a card of "Your playlists" pushes `/playlist/[id]?source=user`
 with the playlist's `id`; a playlist recent pushes
 `/playlist/[id]?source=<metadata.kind>` with its `entity_id`; a playlist recent
-without a kind is not pressable; an artist recent pushes `/artist/[id]` with its `entity_id`. Log out from the sheet lands on `/login` through the session gate.
+without a kind is not pressable; an artist recent pushes `/artist/[id]` with its `entity_id`. A recommended album, in any section, pushes `/album/[id]` and a recommended artist `/artist/[id]`. Log out from the sheet lands on `/login` through the session gate.
 
 ## i18n namespace
 
@@ -99,7 +107,7 @@ without a kind is not pressable; an artist recent pushes `/artist/[id]` with its
 
 Screenshots of the home with data and empty, on iOS and Android, are in the pull
 request. The native glass of the sheet on iOS 26+ and the last card clearing the
-tab bar are checked on a device.
+tab bar are checked on a device, and so are the real generation latency with its skeletons, the seed header and the centered artist cards.
 
 ## The sheet on Android
 

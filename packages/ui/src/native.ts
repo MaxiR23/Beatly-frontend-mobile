@@ -30,6 +30,7 @@ export { Sheet } from "./components/Sheet.tsx";
 export { Avatar } from "./components/Avatar.tsx";
 export { AvatarRow } from "./components/AvatarRow.tsx";
 export { ProfileSkeleton } from "./components/ProfileSkeleton.tsx";
+export { CarouselSkeleton } from "./components/CarouselSkeleton.tsx";
 export { SkeletonBar } from "./components/Skeleton.tsx";
 export { Carousel, type CarouselItem } from "./components/Carousel.tsx";
 export { GenreRow } from "./components/GenreRow.tsx";

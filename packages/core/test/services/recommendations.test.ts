@@ -6,8 +6,7 @@
 // - createRecommendationsService().generate
 //
 // What is covered:
-// - with data (artists and albums with their similar_to reason and seed), the expected empty set, and the three transport failures
-// - Not applicable: ok:false, because the screen branches on no reason of this route (the failure passing through is covered in onboarding finish)
+// - with data (the four sections with their similar_to reason and seed; the deprecated artists and albums are not read), the expected empty set, the three reasons of the route as api failures, and the transport failures (timeout, network, schema)
 //
 // Run with: pnpm --filter @beatly/core test -- recommendations
 //
@@ -32,31 +31,41 @@ const artistSeed = {
   image: tiers("seed"),
 };
 const albumSeed = { ...artistSeed, type: "album", id: "MPREseed", name: "Seed Album" };
+const artistItem = {
+  id: "UCrec",
+  name: "Recommended",
+  thumbnail_url: null,
+  image: null,
+  reason: { type: "similar_to", seed: artistSeed },
+};
+const albumItem = {
+  id: "MPREalb",
+  title: "Recommended Album",
+  artists: [{ id: "UCrec", name: "Recommended" }],
+  year: "2024",
+  audio_playlist_id: "OLAK5",
+  thumbnail_url: "test://img/alb",
+  image: tiers("alb"),
+  reason: { type: "similar_to", seed: albumSeed },
+};
 const recommendations = {
-  artists: [
+  albums_for_you: [albumItem, { ...albumItem, id: "MPREalb2", reason: albumItem.reason }],
+  seed_sections: [
     {
-      id: "UCrec",
-      name: "Recommended",
-      thumbnail_url: null,
-      image: null,
-      reason: { type: "similar_to", seed: artistSeed },
+      seed: artistSeed,
+      items: [
+        { type: "artist", ...artistItem },
+        { type: "album", ...albumItem },
+      ],
     },
   ],
-  albums: [
-    {
-      id: "MPREalb",
-      title: "Recommended Album",
-      artists: [{ id: "UCrec", name: "Recommended" }],
-      year: "2024",
-      audio_playlist_id: "OLAK5",
-      thumbnail_url: "test://img/alb",
-      image: tiers("alb"),
-      reason: { type: "similar_to", seed: albumSeed },
-    },
-  ],
+  recommended_albums: [albumItem],
+  recommended_artists: [artistItem],
   generated_at: "2026-10-30T12:00:00+00:00",
   valid_until: "2026-11-06T12:00:00+00:00",
 };
+// The backend still sends these two lists; the client does not read them.
+const deprecated = { artists: [artistItem], albums: [albumItem] };
 
 function setup(handler: Handler) {
   const http = createFakeHttp({ "POST /recommendations/generate": handler }, BASE_URL);
@@ -74,10 +83,10 @@ afterEach(() => {
 });
 
 describe("generate", () => {
-  it("returns the generated artists and albums with their similar_to reason and seed, and both timestamps", async () => {
+  it("returns the four sections with their reasons and seeds and both timestamps, without the deprecated artists and albums", async () => {
     const { service, http } = setup(() => ({
       headers: { "cache-control": "private, no-cache" },
-      body: { ok: true, data: recommendations },
+      body: { ok: true, data: { ...recommendations, ...deprecated } },
     }));
     expect(await service.generate()).toEqual({
       kind: "success",
@@ -90,10 +99,28 @@ describe("generate", () => {
     expect(http.requests[0]?.body).toBeUndefined();
   });
 
-  it("returns artists [], albums [] and null timestamps as a success", async () => {
-    const empty = { artists: [], albums: [], generated_at: null, valid_until: null };
-    const { service } = setup(() => ({ body: { ok: true, data: empty } }));
+  it("returns every list [] and null timestamps as a success", async () => {
+    const empty = {
+      albums_for_you: [],
+      seed_sections: [],
+      recommended_albums: [],
+      recommended_artists: [],
+      generated_at: null,
+      valid_until: null,
+    };
+    const { service } = setup(() => ({
+      body: { ok: true, data: { ...empty, artists: [], albums: [] } },
+    }));
     expect(await service.generate()).toEqual({ kind: "success", data: empty, maxAgeSeconds: 0 });
+  });
+
+  it.each([
+    ["unauthorized", 401],
+    ["upstream_error", 502],
+    ["upstream_timeout", 504],
+  ] as const)("returns %s as an api failure", async (reason, status) => {
+    const { service } = setup(() => ({ status, body: { ok: false, reason } }));
+    expect(await service.generate()).toEqual({ kind: "api_failure", reason });
   });
 
   it("fails with a timeout outcome when the API does not answer", async () => {
@@ -112,14 +139,24 @@ describe("generate", () => {
   it("fails with a schema outcome when a reason is not similar_to", async () => {
     const broken = {
       ...recommendations,
-      artists: [
-        {
-          ...recommendations.artists[0],
-          reason: { type: "popular", seed: artistSeed },
-        },
-      ],
+      recommended_artists: [{ ...artistItem, reason: { type: "popular", seed: artistSeed } }],
     };
     const { service } = setup(() => ({ body: { ok: true, data: broken } }));
+    expect(await service.generate()).toEqual({ kind: "transport_failure", cause: "schema" });
+  });
+
+  it("fails with a schema outcome when a seed section item has an unknown type", async () => {
+    const broken = {
+      ...recommendations,
+      seed_sections: [{ seed: artistSeed, items: [{ type: "playlist", ...artistItem }] }],
+    };
+    const { service } = setup(() => ({ body: { ok: true, data: broken } }));
+    expect(await service.generate()).toEqual({ kind: "transport_failure", cause: "schema" });
+  });
+
+  it("fails with a schema outcome when a new list is missing", async () => {
+    const old = { ...deprecated, generated_at: null, valid_until: null };
+    const { service } = setup(() => ({ body: { ok: true, data: old } }));
     expect(await service.generate()).toEqual({ kind: "transport_failure", cause: "schema" });
   });
 });

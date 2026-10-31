@@ -10,14 +10,22 @@
 // - own playlists named after the profile, and the line of each recent by type (en and es)
 // - the next page of playlists at the end of the carousel
 // - an album recent opens the album, a playlist recent opens with its kind, an artist recent opens the artist, a kind-less playlist recent does not, a card of your playlists opens the playlist
+// - the recommendation sections: their order, hidden empty lists, album artist and artist kind subtitles (no reason on cards), seed sections, navigation, skeletons while loading, and the inline error with retry that keeps recents and playlists (en and es)
 // - the avatar initials, the account sheet and logout in every state, en and es
 //
 // Run with: pnpm --filter @beatly/mobile test -- HomeScreen
 //
 // SEE: apps/mobile/src/screens/home/HomeScreen.tsx
 
-import type { HttpOutcome, PageResult, PlaylistListItem, RecentEntity } from "@beatly/core";
+import type {
+  HttpOutcome,
+  PageResult,
+  PlaylistListItem,
+  RecentEntity,
+  Recommendations,
+} from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
+import { radius } from "@beatly/ui";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
@@ -29,9 +37,11 @@ import {
   playlistFixture,
   profileFixture,
   recentFixture,
+  recommendationsFixture,
   successOf,
   Wrapper,
 } from "../../helpers/core.tsx";
+import { flatStyle } from "../../helpers/flatStyle.ts";
 import { Insets } from "../../helpers/insets.tsx";
 
 const mockPush = jest.fn();
@@ -71,6 +81,12 @@ function recents(items: RecentEntity[]) {
 function playlistsOf(items: PlaylistListItem[]) {
   return () => Promise.resolve(pageOf(items));
 }
+
+const recommendationsOutcome = (data: Recommendations): HttpOutcome<Recommendations> => ({
+  kind: "success",
+  data,
+  maxAgeSeconds: 0,
+});
 
 const failure: HttpOutcome<PageResult<never>> = { kind: "api_failure", reason: "upstream_error" };
 
@@ -155,13 +171,14 @@ describe("HomeScreen", () => {
     expect(screen.queryByText(en.home.playlists)).toBeNull();
   });
 
-  it("draws the empty state with no button when both are empty", async () => {
-    await setup();
+  it("draws the empty state with no button when recents, playlists and recommendations are empty", async () => {
+    const ctx = await setup();
     expect(await screen.findByText(en.home.empty)).toBeTruthy();
     expect(screen.queryByText(en.common.retry)).toBeNull();
     expect(screen.queryByText(en.home.recents)).toBeNull();
     expect(screen.queryByText(en.home.playlists)).toBeNull();
     expect(screen.getAllByRole("button")).toHaveLength(1);
+    expect(ctx.generateRecommendations).toHaveBeenCalledTimes(1);
   });
 
   it("draws the generic error when recents fail and retry refetches only them", async () => {
@@ -357,5 +374,206 @@ describe("HomeScreen", () => {
     expect(row.getByText(en.playlist.liked)).toBeTruthy();
     expect(row.queryByText("Tus me gusta guardado")).toBeNull();
     expect(row.getByText("Own one")).toBeTruthy();
+  });
+
+  describe("recommendations", () => {
+    const full = {
+      listRecents: recents([recentFixture]),
+      listPlaylists: playlistsOf([playlistFixture]),
+      generateRecommendations: () =>
+        Promise.resolve(recommendationsOutcome(recommendationsFixture)),
+    };
+    const ids = [
+      "recents",
+      "rec-albums-for-you",
+      "rec-seed-0",
+      "rec-recommended-albums",
+      "rec-seed-1",
+      "playlists",
+      "rec-seed-2",
+      "rec-recommended-artists",
+    ];
+    const names = (list: ReturnType<typeof within>) =>
+      list.getAllByRole("button").map((node): unknown => node.props.accessibilityLabel);
+    // The corner radius of the cover rendered inside a card or a lead.
+    const coverRadius = (node: ReturnType<ReturnType<typeof within>["getByTestId"]>) =>
+      flatStyle(node.parent?.props.style).borderRadius;
+
+    it("draws the sections in order: recents, albums for you, seed 1, recommended albums, seed 2, your playlists, seed 3, recommended artists", async () => {
+      await setup(full);
+      await screen.findByTestId("rec-recommended-artists");
+      const order = screen
+        .getAllByTestId(
+          /^(recents|playlists|rec-(albums-for-you|seed-\d|recommended-albums|recommended-artists))$/,
+        )
+        .map((node): unknown => node.props.testID);
+      expect(order).toEqual(ids);
+    });
+
+    it("hides an empty recommendation list and a seed section that did not come", async () => {
+      const data: Recommendations = {
+        ...recommendationsFixture,
+        albums_for_you: [],
+        recommended_artists: [],
+        seed_sections: recommendationsFixture.seed_sections.slice(0, 1),
+      };
+      await setup({
+        ...full,
+        generateRecommendations: () => Promise.resolve(recommendationsOutcome(data)),
+      });
+      await screen.findByTestId("rec-seed-0");
+      for (const id of [
+        "rec-albums-for-you",
+        "rec-recommended-artists",
+        "rec-seed-1",
+        "rec-seed-2",
+      ]) {
+        expect(screen.queryByTestId(id)).toBeNull();
+      }
+      expect(screen.queryByText(en.home.albumsForYou)).toBeNull();
+      expect(screen.queryByText(en.home.recommendedArtists)).toBeNull();
+    });
+
+    it("draws an album's cover, title and its artist, with no reason", async () => {
+      await setup(full);
+      const list = within(await screen.findByTestId("rec-albums-for-you"));
+      expect(list.getByText("For You Artist-Seeded")).toBeTruthy();
+      expect(list.getByText("By For You Artist-Seeded")).toBeTruthy();
+      expect(list.getByText("For You Album-Seeded")).toBeTruthy();
+      expect(list.getByText("By For You Album-Seeded")).toBeTruthy();
+      expect(list.queryByText(/Because you|Similar to/)).toBeNull();
+      const covers = list.getAllByTestId("cover-single");
+      expect(covers).toHaveLength(2);
+      for (const cover of covers) {
+        expect(coverRadius(cover)).not.toBe(radius.full);
+      }
+    });
+
+    it("draws the seed prefixes in es and no reason on any card", async () => {
+      await i18n.changeLanguage("es");
+      await setup(full);
+      const list = within(await screen.findByTestId("rec-albums-for-you"));
+      expect(list.getByText("By For You Artist-Seeded")).toBeTruthy();
+      expect(list.queryByText(/Porque|Similar a/)).toBeNull();
+      expect(screen.getByText("Más como")).toBeTruthy();
+      expect(screen.getByText("Porque te gusta", { exact: true })).toBeTruthy();
+      expect(screen.getByText("Si te gusta")).toBeTruthy();
+      const seed = within(screen.getByTestId("rec-seed-0"));
+      expect(seed.getAllByText("Artista")).toHaveLength(1);
+      expect(seed.getByText("By Item Album Seed One")).toBeTruthy();
+      expect(seed.queryByText("Álbum")).toBeNull();
+    });
+
+    it("draws a recommended artist's round photo, name and kind, centered, with no reason", async () => {
+      await setup(full);
+      const list = within(await screen.findByTestId("rec-recommended-artists"));
+      for (const text of ["Rec Artist", en.home.kind.artist]) {
+        expect(flatStyle(list.getByText(text).props.style).textAlign).toBe("center");
+      }
+      expect(list.queryByText(/Similar to/)).toBeNull();
+      expect(coverRadius(list.getByTestId("cover-single"))).toBe(radius.full);
+    });
+
+    it("draws each seed section's photo, prefix by position and name, then its items in order with their type", async () => {
+      await setup(full);
+      await screen.findByTestId("rec-seed-0");
+      const expected = [
+        ["rec-seed-0", "More like", "Seed One"],
+        ["rec-seed-1", "Because you like", "Seed Two"],
+        ["rec-seed-2", "If you like", "Seed Three"],
+      ] as const;
+      for (const [id, prefix, name] of expected) {
+        const lead = within(screen.getByTestId(`${id}-lead`));
+        expect(lead.getByText(prefix)).toBeTruthy();
+        expect(lead.getByText(name)).toBeTruthy();
+        expect(lead.getByTestId("cover-single")).toBeTruthy();
+      }
+      const seed = within(screen.getByTestId("rec-seed-0"));
+      expect(names(seed)).toEqual(["Item Artist Seed One", "Item Album Seed One"]);
+      expect(seed.getByText(en.home.kind.artist)).toBeTruthy();
+      expect(seed.getByText("By Item Album Seed One")).toBeTruthy();
+      expect(seed.queryByText(en.home.kind.album)).toBeNull();
+      const covers = seed.getAllByTestId("cover-single");
+      expect(covers.map(coverRadius)).toEqual([radius.full, covers.map(coverRadius)[1]]);
+      expect(covers.map(coverRadius)[1]).not.toBe(radius.full);
+    });
+
+    it("opens a recommended album and a recommended artist", async () => {
+      await setup(full);
+      await fireEvent.press(await screen.findByRole("button", { name: "For You Artist-Seeded" }));
+      expect(mockPush).toHaveBeenLastCalledWith({
+        pathname: "/album/[id]",
+        params: { id: "MPREfy1" },
+      });
+      await fireEvent.press(screen.getByRole("button", { name: "Rec Artist" }));
+      expect(mockPush).toHaveBeenLastCalledWith({
+        pathname: "/artist/[id]",
+        params: { id: "UCra1" },
+      });
+      await fireEvent.press(screen.getByRole("button", { name: "Item Artist Seed One" }));
+      expect(mockPush).toHaveBeenLastCalledWith({
+        pathname: "/artist/[id]",
+        params: { id: "UCi1" },
+      });
+      await fireEvent.press(screen.getByRole("button", { name: "Item Album Seed One" }));
+      expect(mockPush).toHaveBeenLastCalledWith({
+        pathname: "/album/[id]",
+        params: { id: "MPREi1" },
+      });
+    });
+
+    it("draws skeletons in place of the recommendation sections while they load, with recents and playlists shown", async () => {
+      await setup({ ...full, generateRecommendations: () => new Promise(() => undefined) });
+      expect(await screen.findByText(en.home.recents)).toBeTruthy();
+      expect(screen.getByText(en.home.playlists)).toBeTruthy();
+      expect(screen.getAllByTestId("carousel-skeleton")).toHaveLength(6);
+      expect(screen.getAllByLabelText(en.common.loading)).toHaveLength(1);
+      expect(screen.queryByText(en.home.empty)).toBeNull();
+    });
+
+    it("draws skeletons, not the empty state, while recommendations load and the rest is empty", async () => {
+      await setup({ generateRecommendations: () => new Promise(() => undefined) });
+      expect(await screen.findAllByTestId("carousel-skeleton")).toHaveLength(6);
+      expect(screen.queryByText(en.home.empty)).toBeNull();
+    });
+
+    const failures: [string, HttpOutcome<Recommendations>][] = [
+      ["unauthorized", { kind: "api_failure", reason: "unauthorized" }],
+      ["upstream_error", { kind: "api_failure", reason: "upstream_error" }],
+      ["upstream_timeout", { kind: "api_failure", reason: "upstream_timeout" }],
+      ["a timeout", { kind: "transport_failure", cause: "timeout" }],
+    ];
+    it.each(failures)(
+      "hides the recommendation sections on %s and draws the error with retry, keeping recents and playlists",
+      async (_name, outcome) => {
+        const ctx = await setup({
+          ...full,
+          generateRecommendations: () => Promise.resolve(outcome),
+        });
+        const error = within(await screen.findByTestId("recommendations-error"));
+        expect(error.getByText(en.common.error.generic)).toBeTruthy();
+        expect(screen.queryByTestId("carousel-skeleton")).toBeNull();
+        for (const id of ids.filter((id) => id.startsWith("rec-"))) {
+          expect(screen.queryByTestId(id)).toBeNull();
+        }
+        expect(screen.getByText(en.home.recents)).toBeTruthy();
+        expect(screen.getByText(en.home.playlists)).toBeTruthy();
+        await fireEvent.press(error.getByText(en.common.retry));
+        await waitFor(() => {
+          expect(ctx.generateRecommendations).toHaveBeenCalledTimes(2);
+        });
+        expect(ctx.listRecents).toHaveBeenCalledTimes(1);
+        expect(ctx.listPlaylists).toHaveBeenCalledTimes(1);
+      },
+    );
+
+    it("draws the error with retry, not the empty state, when recommendations fail and the rest is empty", async () => {
+      await setup({
+        generateRecommendations: () =>
+          Promise.resolve({ kind: "api_failure", reason: "upstream_error" }),
+      });
+      expect(await screen.findByTestId("recommendations-error")).toBeTruthy();
+      expect(screen.queryByText(en.home.empty)).toBeNull();
+    });
   });
 });

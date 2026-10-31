@@ -50,11 +50,21 @@ export type {
   OnboardingSimilar,
 } from "./domain/onboarding.ts";
 export {
+  recommendationSeedSchema,
   recommendationsSchema,
   recommendedAlbumSchema,
   recommendedArtistSchema,
+  seedSectionItemSchema,
+  seedSectionSchema,
 } from "./domain/recommendations.ts";
-export type { Recommendations } from "./domain/recommendations.ts";
+export type {
+  RecommendationSeed,
+  Recommendations,
+  RecommendedAlbum,
+  RecommendedArtist,
+  SeedSection,
+  SeedSectionItem,
+} from "./domain/recommendations.ts";
 export { createRecommendationsService } from "./services/recommendations.ts";
 export type { RecommendationsService } from "./services/recommendations.ts";
 export {
