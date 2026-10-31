@@ -1,8 +1,9 @@
-// INFO: the home tab: the account avatar and sheet, and the recently played and own playlists shelves.
+// INFO: the home tab: the account avatar and sheet, the recently played and own playlists shelves, and the recommendation sections between them with their skeletons and their inline error with retry.
 import { profileName, type PlaylistListItem, type RecentEntity } from "@beatly/core";
 import { color, layout, spacing } from "@beatly/ui";
 import {
   Carousel,
+  CarouselSkeleton,
   EmptyState,
   ErrorState,
   LoadingState,
@@ -16,8 +17,10 @@ import { useT } from "../../adapters/i18n.ts";
 import { usePlaylists } from "../../queries/usePlaylists.ts";
 import { useProfile } from "../../queries/useProfile.ts";
 import { useRecents } from "../../queries/useRecents.ts";
+import { useRecommendations } from "../../queries/useRecommendations.ts";
 import { AccountButton } from "../account/AccountButton.tsx";
 import { useTabBarClearance } from "../player/useTabBarClearance.ts";
+import { RecommendationSection, type RecommendationSlot } from "./RecommendationSection.tsx";
 
 export function HomeScreen() {
   const t = useT("home");
@@ -27,6 +30,7 @@ export function HomeScreen() {
   const tabBarClearance = useTabBarClearance();
   const recents = useRecents();
   const playlists = usePlaylists();
+  const recommendations = useRecommendations();
   const profile = useProfile();
   const owner = profile.data ? profileName(profile.data) : null;
 
@@ -84,6 +88,31 @@ export function HomeScreen() {
     },
   });
 
+  const recommendationsEmpty =
+    recommendations.isSuccess &&
+    recommendations.data.albums_for_you.length === 0 &&
+    recommendations.data.seed_sections.length === 0 &&
+    recommendations.data.recommended_albums.length === 0 &&
+    recommendations.data.recommended_artists.length === 0;
+
+  const recommendationSlot = (slot: RecommendationSlot, first: boolean) => {
+    if (recommendations.isPending) {
+      return <CarouselSkeleton label={first ? tc("loading") : undefined} />;
+    }
+    if (recommendations.isError) {
+      return first ? (
+        <View testID="recommendations-error">
+          <ErrorState
+            message={tc("error.generic")}
+            retryLabel={tc("retry")}
+            onRetry={() => void recommendations.refetch()}
+          />
+        </View>
+      ) : null;
+    }
+    return <RecommendationSection slot={slot} data={recommendations.data} />;
+  };
+
   const clearance = { paddingBottom: tabBarClearance };
 
   let body;
@@ -106,7 +135,7 @@ export function HomeScreen() {
         />
       </View>
     );
-  } else if (recents.data.length === 0 && playlists.data.length === 0) {
+  } else if (recents.data.length === 0 && playlists.data.length === 0 && recommendationsEmpty) {
     body = (
       <View style={[styles.state, clearance]}>
         <EmptyState icon="music" message={t("empty")} />
@@ -121,6 +150,10 @@ export function HomeScreen() {
         {recents.data.length > 0 ? (
           <Carousel testID="recents" title={t("recents")} items={recents.data.map(toRecentItem)} />
         ) : null}
+        {recommendationSlot({ kind: "albumsForYou" }, true)}
+        {recommendationSlot({ kind: "seed", index: 0 }, false)}
+        {recommendationSlot({ kind: "recommendedAlbums" }, false)}
+        {recommendationSlot({ kind: "seed", index: 1 }, false)}
         {playlists.data.length > 0 ? (
           <Carousel
             testID="playlists"
@@ -129,6 +162,8 @@ export function HomeScreen() {
             onEndReached={playlists.loadMore}
           />
         ) : null}
+        {recommendationSlot({ kind: "seed", index: 2 }, false)}
+        {recommendationSlot({ kind: "recommendedArtists" }, false)}
       </ScrollView>
     );
   }

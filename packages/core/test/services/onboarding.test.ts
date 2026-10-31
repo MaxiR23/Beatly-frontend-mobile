@@ -39,7 +39,16 @@ const completion = {
   saved: 5,
   skipped: ["UCgone"],
 };
-const noRecommendations = { artists: [], albums: [], generated_at: null, valid_until: null };
+const noRecommendations = {
+  albums_for_you: [],
+  seed_sections: [],
+  recommended_albums: [],
+  recommended_artists: [],
+  artists: [],
+  albums: [],
+  generated_at: null,
+  valid_until: null,
+};
 
 function pageBody(items: unknown[], page: Record<string, unknown>) {
   return { ok: true, data: { items, page } };

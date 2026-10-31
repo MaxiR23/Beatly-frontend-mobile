@@ -1,6 +1,10 @@
 {
   "recents": "Recently played",
   "playlists": "Your playlists",
+  "albumsForYou": "Albums for you",
+  "recommendedAlbums": "Recommended albums",
+  "recommendedArtists": "Recommended artists",
+  "seedPrefix": { "first": "More like", "second": "Because you like", "third": "If you like" },
   "kind": { "artist": "Artist", "album": "Album", "playlist": "Playlist" },
   "meta": "{{kind}} · {{owner}}",
   "empty": "Nothing here yet. Search or explore to start listening."

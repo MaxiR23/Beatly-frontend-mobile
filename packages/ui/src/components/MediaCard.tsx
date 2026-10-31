@@ -14,6 +14,7 @@ interface MediaCardProps {
   images: readonly ImageTiers[];
   shape: "square" | "round";
   size?: number;
+  align?: "left" | "center" | undefined;
   onPress?: (() => void) | undefined;
 }
 
@@ -23,6 +24,7 @@ export function MediaCard({
   images,
   shape,
   size = layout.carouselCard,
+  align = "left",
   onPress,
 }: MediaCardProps) {
   const press = pressFeedback();
@@ -31,12 +33,12 @@ export function MediaCard({
     <>
       <Cover images={images} shape={shape} size={size} />
       {title !== undefined ? (
-        <Text variant="rowTitle" numberOfLines={1}>
+        <Text variant="rowTitle" numberOfLines={1} align={align}>
           {title}
         </Text>
       ) : null}
       {subtitle !== undefined ? (
-        <Text variant="meta" tone="secondary" numberOfLines={1}>
+        <Text variant="meta" tone="secondary" numberOfLines={1} align={align}>
           {subtitle}
         </Text>
       ) : null}

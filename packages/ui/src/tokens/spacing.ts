@@ -1,7 +1,7 @@
 // INFO: spacing tokens, a multiples-of-four scale (and an explicit zero), plus the layout
 // constants (gutter, gap, hitSlop, control height, text area height, and the carousel card,
 // avatar, creator mark, profile avatar, tab item, chip (and the Android chip), the Android tab indicator, the Android switch's track and thumb sizes, genre bar, row cover (and the Android track menu header cover), the Android action row height, detail hero cover, the detail hero wash's extension,
-// track-number column, now playing bar width, large and medium play button, the detail play pill's width, the side buttons' stacking value, seek bar and sheet handle sizes (iOS and Android) and the Android modal sheet handle zone and width, and the skeleton bar widths and row count, the logo's bar geometry and the side of a welcome photo).
+// track-number column, now playing bar width, large and medium play button, the detail play pill's width, the side buttons' stacking value, seek bar and sheet handle sizes (iOS and Android) and the Android modal sheet handle zone and width, and the skeleton bar widths, row count and card count, the seed photo of a recommendation section, the logo's bar geometry and the side of a welcome photo).
 export const spacing = {
   // An explicit zero gap where a native container would otherwise apply a system default.
   none: 0,
@@ -25,6 +25,8 @@ export const layout = {
   textAreaHeight: 120,
   carouselCard: 140,
   avatar: 36,
+  // Side of the round seed photo in the header of a seed recommendation section.
+  seedAvatar: 48,
   creatorMark: 24,
   // Side of the large avatar of the profile screen.
   profileAvatar: 96,
@@ -89,4 +91,6 @@ export const layout = {
   skeletonBar: { title: "70%", meta: "45%", rowTitle: "60%", rowMeta: "35%" },
   // How many placeholder track rows a detail skeleton draws, on first load and under the list while its next page loads.
   skeletonRows: 6,
+  // How many placeholder cards a carousel skeleton draws.
+  skeletonCards: 3,
 } as const;

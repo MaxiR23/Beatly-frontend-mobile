@@ -1,4 +1,4 @@
-// INFO: the static skeleton primitives: a bar the height of a text role's line and a share of its row wide, and a circle the side of an avatar, in the skeleton base color. They draw no motion.
+// INFO: the static skeleton primitives: a bar the height of a text role's line and a share of its row wide, a circle the side of an avatar and a square card block, in the skeleton base color. They draw no motion.
 import { StyleSheet, View } from "react-native";
 
 import { color } from "../tokens/color.ts";
@@ -6,7 +6,7 @@ import { radius } from "../tokens/radius.ts";
 import { layout } from "../tokens/spacing.ts";
 import { typography } from "../tokens/typography.ts";
 
-type BarText = "title" | "body" | "label" | "rowTitle" | "meta";
+type BarText = "title" | "body" | "label" | "section" | "rowTitle" | "meta";
 
 export function SkeletonBar({
   text,
@@ -31,7 +31,17 @@ export function SkeletonCircle({ size }: { size: "header" | "profile" }) {
   return <View accessible={false} style={[styles.circle, { width: side, height: side }]} />;
 }
 
+export function SkeletonCard() {
+  return <View accessible={false} style={styles.card} />;
+}
+
 const styles = StyleSheet.create({
   bar: { borderRadius: radius.sm, backgroundColor: color.surface.border },
+  card: {
+    width: layout.carouselCard,
+    height: layout.carouselCard,
+    borderRadius: radius.sm,
+    backgroundColor: color.surface.border,
+  },
   circle: { borderRadius: radius.full, backgroundColor: color.surface.border },
 });
