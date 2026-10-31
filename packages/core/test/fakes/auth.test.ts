@@ -4,9 +4,10 @@
 //
 // Tested:
 // - createFakeAuth().port.getEmail
+// - createFakeAuth().port.getUserId
 //
 // What is covered:
-// - the email of a signed-in session, and none when signed out
+// - the email and the user id of a signed-in session, and none when signed out
 //
 // Run with: pnpm --filter @beatly/core test -- fakes/auth
 //
@@ -23,5 +24,15 @@ describe("createFakeAuth getEmail", () => {
 
   it("returns no email when signed out", async () => {
     expect(await createFakeAuth(null).port.getEmail()).toBeNull();
+  });
+});
+
+describe("createFakeAuth getUserId", () => {
+  it("returns the user id of the signed-in session", async () => {
+    expect(await createFakeAuth().port.getUserId()).toBe("user-1");
+  });
+
+  it("returns no user id when signed out", async () => {
+    expect(await createFakeAuth(null).port.getUserId()).toBeNull();
   });
 });

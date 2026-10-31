@@ -1,4 +1,4 @@
-// INFO: motion tokens: the duration scale, the easing of a surface entering and leaving the screen, the one spring used app-wide, the opacity a pressed control drops to, the scale a paused player cover drops to, the scale the player drops to behind the open sheet, the scale a control enters from, the detail play button's fade, shrink and scale-in durations, the now playing bars' fall, loop periods and static heights, the points the sheet handle rises in each bounce of its nudge, the thresholds of the vertical drag (the player's close, the sheet's open and close), the speed and rest of a scrolling title, the edge zone and speed of a reorder list's auto-scroll, the scroll each detail header layer takes to fade, the scale the hero cover shrinks to, the share of a fade the top bar leads by, the detail entry cascade's duration, stagger, offset, first row step and post-navigation delay, how long a brief notice stays and how long a picture loaded from the network fades in.
+// INFO: motion tokens: the duration scale, the easing of a surface entering and leaving the screen, the one spring used app-wide, the opacity a pressed control drops to, the scale a paused player cover drops to, the scale the player drops to behind the open sheet, the scale a control enters from, the detail play button's fade, shrink and scale-in durations, the now playing bars' fall, loop periods and static heights, the points the sheet handle rises in each bounce of its nudge, the thresholds of the vertical drag (the player's close, the sheet's open and close), the speed and rest of a scrolling title, the edge zone and speed of a reorder list's auto-scroll, the scroll each detail header layer takes to fade, the scale the hero cover shrinks to, the share of a fade the top bar leads by, the detail entry cascade's duration, stagger, offset, first row step and post-navigation delay, how long a brief notice stays, how long each onboarding phrase stays, the logo's lowest bar scale and each bar's period, and how long a picture loaded from the network fades in.
 export const motion = {
   duration: {
     fast: 150,
@@ -7,6 +7,8 @@ export const motion = {
     shimmer: 1200,
     // How long a brief notice stays.
     notice: 2500,
+    // Milliseconds each phrase of the onboarding's building step stays before the next.
+    phrase: 1800,
     // Milliseconds a picture loaded from the network fades in on Android only (Picture); iOS and a memory or disk hit draw at once.
     imageFade: 300,
   },
@@ -47,6 +49,12 @@ export const motion = {
     durations: [400, 550, 325],
     // Each bar's height while static under reduce motion.
     staticScales: [0.6, 1, 0.45],
+  },
+  logo: {
+    // Lowest a logo bar falls to, as a share of its height.
+    minScale: 0.3,
+    // Milliseconds each logo bar takes to rise or to fall; different, so the bars never move together. A starting point to tune on a device.
+    durations: [520, 380, 600, 440, 560],
   },
   dragToClose: {
     // Travel, in points, before a vertical drag is taken (the player's close, the sheet's open and close).

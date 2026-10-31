@@ -1,0 +1,27 @@
+{
+  "pick": {
+    "title": "Which artists do you like?",
+    "subtitle": "Pick at least 5 to build your home.",
+    "search": "Search artists",
+    "clearSearch": "Clear search",
+    "empty": "No artists to pick yet. Try searching for one.",
+    "noResults": "We couldn't find that artist.",
+    "more": "Pick {{n}} more",
+    "continue": "Continue ({{n}})",
+    "tooFew": "One of your artists is no longer available. Pick one more."
+  },
+  "building": {
+    "title": "Building your home",
+    "phrases": {
+      "similar": "Finding artists like {{artist}}",
+      "albums": "Adding albums for you",
+      "almost": "Almost there"
+    }
+  },
+  "welcome": {
+    "greeting": "Welcome, {{name}}!",
+    "greetingNoName": "Welcome!",
+    "text": "Your home is ready, built from your artists. It will keep getting better as you listen.",
+    "start": "Get started"
+  }
+}

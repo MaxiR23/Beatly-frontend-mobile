@@ -31,6 +31,7 @@ const profile = {
   avatar_url: null,
   created_at: "2026-01-01T00:00:00Z",
   updated_at: "2026-01-01T00:00:00Z",
+  onboarding_completed_at: "2026-01-01T00:00:00Z",
 };
 
 function setup(handlers: Record<string, Handler>) {
@@ -74,11 +75,27 @@ describe("getMyProfile", () => {
   });
 
   it("returns a profile with no username, display name or avatar as a success", async () => {
-    const empty = { ...profile, username: null, display_name: null, avatar_url: null };
+    const empty = {
+      ...profile,
+      username: null,
+      display_name: null,
+      avatar_url: null,
+      onboarding_completed_at: null,
+    };
     const { service } = setupGet(() => ({ body: { ok: true, data: empty } }));
     expect(await service.getMyProfile()).toEqual({
       kind: "success",
       data: empty,
+      maxAgeSeconds: 0,
+    });
+  });
+
+  it("returns a profile whose onboarding is pending (onboarding_completed_at null) as a success", async () => {
+    const pending = { ...profile, onboarding_completed_at: null };
+    const { service } = setupGet(() => ({ body: { ok: true, data: pending } }));
+    expect(await service.getMyProfile()).toEqual({
+      kind: "success",
+      data: pending,
       maxAgeSeconds: 0,
     });
   });

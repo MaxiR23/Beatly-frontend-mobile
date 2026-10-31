@@ -4,33 +4,36 @@ The first feature doc: the routes the auth screens use and the states they draw.
 
 ## Screens and routes
 
-| Route              | Screen                               | Guard                                                                                                                                           |
-| ------------------ | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/login`           | `LoginScreen`                        | signed out only (`Stack.Protected` on `status === "signed_out"`; signed in lands on `/`, or on a kept cold link, see Cold deep links)           |
-| `/sign-up`         | `SignUpScreen`                       | signed out only                                                                                                                                 |
-| `/auth/callback`   | `AuthCallbackScreen`                 | none: reachable in `unknown`, `signed_out` and `signed_in`                                                                                      |
-| `/session-pending` | `SessionPendingScreen`               | `unknown` only: the app background under the splash while the stored session is read                                                            |
-| any unknown link   | `NotFoundScreen`                     | none: redirects to `/`, so the guards pick the landing; the router's built-in not-found, which hides the splash on mount (SDK 58), never mounts |
-| `/`                | `HomeScreen` (first tab of `(tabs)`) | signed in only; see `home.md`                                                                                                                   |
+| Route              | Screen                               | Guard                                                                                                                                                                                                                   |
+| ------------------ | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/login`           | `LoginScreen`                        | signed out only (`Stack.Protected` on `gate === "signed_out" \|\| opening !== null` from `useOnboardingGate`; signed in lands on `/`, or on a kept cold link, see Cold deep links)                                      |
+| `/sign-up`         | `SignUpScreen`                       | signed out only                                                                                                                                                                                                         |
+| `/auth/callback`   | `AuthCallbackScreen`                 | none: reachable in `unknown`, `signed_out` and `signed_in`                                                                                                                                                              |
+| `/session-pending` | `SessionPendingScreen`               | `unknown`, or signed in while the profile is read (when the onboarding is not stored as done on the device), or its read failed (draws the error with retry); it draws a loading state, in view after an in-app sign-in |
+| `/onboarding`      | `OnboardingScreen`                   | signed in with `onboarding_completed_at` null; see `onboarding.md`                                                                                                                                                      |
+| any unknown link   | `NotFoundScreen`                     | none: redirects to `/`, so the guards pick the landing; the router's built-in not-found, which hides the splash on mount (SDK 58), never mounts                                                                         |
+| `/`                | `HomeScreen` (first tab of `(tabs)`) | signed in with `onboarding_completed_at` set; see `home.md`                                                                                                                                                             |
 
 While the status is `unknown`, only `session-pending`, `auth/callback` and `+not-found` (which redirects to `/`) are available and the
 native splash stays up. `session-pending` is the one shown; `auth/callback` mounts only when an
-email link opens it. On `signed_out`, `login` and `sign-up` mount. On `signed_in`, `(tabs)`
-and `player` mount. The splash hides once the status is known and the root route has left
-`session-pending`, after the commit that mounts the screen it lands on.
+email link opens it. On `signed_out`, `login` and `sign-up` mount. On `signed_in`, the onboarding gate decides
+(`useOnboardingGate`): while the device does not hold the onboarding as done for this account, the
+profile's `onboarding_completed_at` picks `/onboarding` (null) or `(tabs)` and `player` (set), and
+`session-pending` holds, drawing the error with retry when the profile read failed. The splash hides
+once the gate is decided and the root route has left `session-pending` (a failed profile read stays on it), after the commit that mounts the screen it lands on.
 
 A route whose guard fails renders a redirect to the screen the status allows (`redirectTo` on
-each `Stack.Protected`: `/session-pending` while `unknown`, `/login` signed out, `/` signed in).
+each `Stack.Protected`: `/session-pending` while the gate is deciding or failed, `/login` signed out, `/onboarding` when the onboarding is pending, `/` otherwise).
 Without it the router falls back to the first unguarded route in file order, which is
 `auth/callback`, and a cold start would stay on the callback's invalid-link state.
 
 Cold deep links. While the status is `unknown`, the gate keeps the cold URL if it is a route of
-the signed-in tabs other than `/`. Signed in, the gate holds
-`session-pending` (or the login it is on) and opens the URL itself with the tab's anchor seeded
+the signed-in tabs other than `/`. Once the gate is `home`, it holds
+`session-pending` (or the login or onboarding it is on) and opens the URL itself with the tab's anchor seeded
 under it (see `tabs.md`): a shared detail route opens in the Home tab over `index`, and a tab's
 own route over that tab's base. A guard's redirect cannot seed an anchor, which is why the gate
 opens it. Signed out, it shows the login and opens the URL after signing in. It
-is dropped once the tabs are shown, so it is used once. `/player`, `/login`, `/sign-up` and
+is dropped once the tabs are shown, so it is used once; with the onboarding pending it opens after "Empezar". `/player`, `/login`, `/sign-up` and
 `/auth/callback` are not kept. Links that arrive while the app runs are unchanged.
 
 ## Layout
@@ -57,7 +60,7 @@ account. The name shown is `username`, or `display_name` when `username` is null
 
 ## Auth port operations
 
-`signIn`, `signUp`, `signOut`, `confirmEmail`, `getStatus`, `getEmail` and `onAuthChange`.
+`signIn`, `signUp`, `signOut`, `confirmEmail`, `getStatus`, `getEmail`, `getUserId` and `onAuthChange`.
 None of the sign operations rejects: every failure, including a 15 second
 timeout, is a typed `AuthFailure`.
 
@@ -86,6 +89,7 @@ timeout, is a typed `AuthFailure`.
 - `getStatus` reads the stored session from the secure store without the network,
   so the gate decides at once.
 - `getEmail` reads the email of the stored session from the secure store without the network (never the library's session read, which refreshes an expired session); the profile screen draws it.
+- `getUserId` reads the user id of the stored session the same way; the onboarding mark is scoped by it.
 - Change events from `onAuthChange` flip the gate; a `signed_in` to `signed_out`
   change clears the query cache.
 - Token refresh follows the app's foreground state (`AppState`).

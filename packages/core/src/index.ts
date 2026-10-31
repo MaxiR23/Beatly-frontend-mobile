@@ -40,6 +40,30 @@ export type { Profile } from "./domain/profile.ts";
 export { createProfileService, profileReasonSchema } from "./services/profile.ts";
 export type { ProfileReason, ProfileService, UpdateProfileInput } from "./services/profile.ts";
 export {
+  onboardingArtistSchema,
+  onboardingCompletionSchema,
+  onboardingSimilarSchema,
+} from "./domain/onboarding.ts";
+export type {
+  OnboardingArtist,
+  OnboardingCompletion,
+  OnboardingSimilar,
+} from "./domain/onboarding.ts";
+export {
+  recommendationsSchema,
+  recommendedAlbumSchema,
+  recommendedArtistSchema,
+} from "./domain/recommendations.ts";
+export type { Recommendations } from "./domain/recommendations.ts";
+export { createRecommendationsService } from "./services/recommendations.ts";
+export type { RecommendationsService } from "./services/recommendations.ts";
+export {
+  MAX_ONBOARDING_ARTISTS,
+  MIN_ONBOARDING_ARTISTS,
+  createOnboardingService,
+} from "./services/onboarding.ts";
+export type { OnboardingService } from "./services/onboarding.ts";
+export {
   likedPlaylistSchema,
   playlistDetailSchema,
   ownedPlaylistIdsSchema,
@@ -199,6 +223,8 @@ export { createTracksService, upNextSourceOf } from "./services/tracks.ts";
 export type { TracksService, UpNextSource } from "./services/tracks.ts";
 export { AUTOPLAY_KEY, createAutoplayService } from "./services/autoplay.ts";
 export type { AutoplayOutcome, AutoplayService } from "./services/autoplay.ts";
+export { ONBOARDING_MARK_KEY, createOnboardingMarkService } from "./services/onboardingMark.ts";
+export type { OnboardingMarkOutcome, OnboardingMarkService } from "./services/onboardingMark.ts";
 export { createSheetNudgeService } from "./services/sheetNudge.ts";
 export type { SheetNudgeService } from "./services/sheetNudge.ts";
 export {

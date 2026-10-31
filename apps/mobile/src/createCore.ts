@@ -11,11 +11,14 @@ import {
   createLibraryService,
   createLikesService,
   createListeningCounter,
+  createOnboardingMarkService,
+  createOnboardingService,
   createPlaybackController,
   createPlaybackErrorReporter,
   createPlaylistsService,
   createProfileService,
   createPublicService,
+  createRecommendationsService,
   createRecentSearchesService,
   createSearchService,
   createSheetNudgeService,
@@ -34,10 +37,13 @@ import type {
   LibraryService,
   LikesService,
   LogPort,
+  OnboardingMarkService,
+  OnboardingService,
   PlaybackController,
   PlaylistsService,
   ProfileService,
   PublicService,
+  RecommendationsService,
   RecentSearchesService,
   SearchService,
   SheetNudgeService,
@@ -67,12 +73,15 @@ export interface Core {
   readonly library: LibraryService;
   readonly likes: LikesService;
   readonly log: LogPort;
+  readonly onboarding: OnboardingService;
+  readonly onboardingMark: OnboardingMarkService;
   readonly playback: PlaybackController;
   readonly playlists: PlaylistsService;
   readonly profile: ProfileService;
   // Named publicShare because public is a reserved word in strict mode.
   readonly publicShare: PublicService;
   readonly recentSearches: RecentSearchesService;
+  readonly recommendations: RecommendationsService;
   readonly search: SearchService;
   readonly sheetNudge: SheetNudgeService;
   readonly tracks: TracksService;
@@ -96,6 +105,7 @@ export function createCore(): Core {
     baseUrl: env.apiUrl,
   });
   const activity = createActivityService(client);
+  const recommendations = createRecommendationsService(client);
   const playback = createPlaybackController({
     player: createPlayerAdapter({ log }),
     streams: createStreamResolver({
@@ -128,11 +138,14 @@ export function createCore(): Core {
     library: createLibraryService(client),
     likes: createLikesService({ client, db, log, migrated }),
     log,
+    onboarding: createOnboardingService(client, recommendations),
+    onboardingMark: createOnboardingMarkService({ storage, auth, log }),
     playback,
     playlists: createPlaylistsService(client),
     profile: createProfileService(client),
     publicShare: createPublicService(client),
     recentSearches: createRecentSearchesService({ storage, log }),
+    recommendations,
     search: createSearchService(client),
     sheetNudge: createSheetNudgeService(),
     tracks: createTracksService(client),

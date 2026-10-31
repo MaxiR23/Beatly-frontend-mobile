@@ -48,6 +48,8 @@ export interface AuthPort {
   getStatus(): Promise<AuthStatus>;
   // The signed-in user's email from the stored session, read without the network; null when signed out or the session has none. Rejects only if the store cannot be read.
   getEmail(): Promise<string | null>;
+  // The signed-in account's id from the stored session, read without the network; null when signed out or the session has none. Rejects only if the store cannot be read.
+  getUserId(): Promise<string | null>;
   // Returns the unsubscribe function.
   onAuthChange(listener: (change: AuthChange) => void): () => void;
   // The four operations below never reject: every failure, including a timeout, is an AuthFailure.

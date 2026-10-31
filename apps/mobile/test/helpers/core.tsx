@@ -7,7 +7,7 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the stateful likes mirror, credits, membership, add, create-with-track, remove and move fakes, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile and its update, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, library artist entry, library item, the saved read, add and remove, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, the autoplay setting, the bug reports fixtures and fakes (including the triage fixtures with a reporter, the list and the status update), and the page builder)
+// (the stateful likes mirror, credits, membership, add, create-with-track, remove and move fakes, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile and its update, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, library artist entry, library item, the saved read, add and remove, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, the autoplay setting, the onboarding mark over the in-memory storage, the onboarding artists, similar artists (empty by default), completion and finish fakes with the recommendations generate,  the bug reports fixtures and fakes (including the triage fixtures with a reporter, the list and the status update), and the page builder)
 //
 import type {
   ActivityService,
@@ -31,6 +31,9 @@ import type {
   LibraryService,
   LikesService,
   LogPort,
+  OnboardingArtist,
+  OnboardingCompletion,
+  OnboardingService,
   PageResult,
   Playlist,
   PlaylistDetail,
@@ -44,6 +47,8 @@ import type {
   PublicGenrePlaylist,
   PublicService,
   RecentEntity,
+  Recommendations,
+  RecommendationsService,
   SearchResult,
   SearchService,
   StoragePort,
@@ -58,6 +63,7 @@ import type { SheetNudgeService } from "@beatly/core";
 import {
   createPlaybackController,
   createAutoplayService,
+  createOnboardingMarkService,
   createRecentSearchesService,
   createSheetNudgeService,
 } from "@beatly/core";
@@ -85,6 +91,28 @@ export const profileFixture: Profile = {
   avatar_url: null,
   created_at: "2026-01-01T00:00:00Z",
   updated_at: "2026-01-01T00:00:00Z",
+  onboarding_completed_at: "2026-01-01T00:00:00Z",
+};
+
+// The curated artists of the onboarding: UCo1 to UCo6, in the order the API returns them.
+export const onboardingArtistsFixture: OnboardingArtist[] = [1, 2, 3, 4, 5, 6].map((n) => ({
+  id: `UCo${String(n)}`,
+  name: `Onboarding Artist ${String(n)}`,
+  thumbnail_url: `test://img/o${String(n)}`,
+  image: tiers(`o${String(n)}`),
+}));
+
+export const completionFixture: OnboardingCompletion = {
+  onboarding_completed_at: "2026-10-30T12:00:00+00:00",
+  saved: 5,
+  skipped: [],
+};
+
+export const noRecommendationsFixture: Recommendations = {
+  artists: [],
+  albums: [],
+  generated_at: null,
+  valid_until: null,
 };
 
 export const recentFixture: RecentEntity = {
@@ -536,6 +564,7 @@ function baseAuth() {
     getAccessToken: jest.fn<AuthPort["getAccessToken"]>(() => Promise.resolve("test-token")),
     getStatus: jest.fn<AuthPort["getStatus"]>(() => Promise.resolve("signed_in")),
     getEmail: jest.fn<AuthPort["getEmail"]>(() => Promise.resolve("listener@example.com")),
+    getUserId: jest.fn<AuthPort["getUserId"]>(() => Promise.resolve("user-1")),
     onAuthChange: jest.fn<AuthPort["onAuthChange"]>(() => () => undefined),
     signIn: jest.fn<AuthPort["signIn"]>(() => Promise.resolve({ kind: "success" })),
     signUp: jest.fn<AuthPort["signUp"]>(() => Promise.resolve({ kind: "confirmation_sent" })),
@@ -639,6 +668,11 @@ export function makeCore(
     // What setLiked answers after it flipped the mirror, as the real service does before the network.
     likeOutcome?: () => Promise<LikeOutcome>;
     likedIds?: readonly string[];
+    listOnboardingArtists?: OnboardingService["listArtists"];
+    similarArtists?: OnboardingService["similar"];
+    completeOnboarding?: OnboardingService["complete"];
+    finishOnboarding?: OnboardingService["finish"];
+    generateRecommendations?: RecommendationsService["generate"];
     storage?: StoragePort;
     sheetNudge?: SheetNudgeService;
     resolve?: StreamResolver["resolve"];
@@ -650,6 +684,27 @@ export function makeCore(
   );
   const updateMyProfile = jest.fn<ProfileService["updateMyProfile"]>(
     options.updateMyProfile ?? (() => Promise.resolve(successOf(profileFixture))),
+  );
+  const listOnboardingArtists = jest.fn<OnboardingService["listArtists"]>(
+    options.listOnboardingArtists ??
+      (() => Promise.resolve(pageOf<OnboardingArtist>(onboardingArtistsFixture))),
+  );
+  const similarArtists = jest.fn<OnboardingService["similar"]>(
+    options.similarArtists ??
+      (() => Promise.resolve({ kind: "success", data: { artists: [] }, maxAgeSeconds: 0 })),
+  );
+  const completeOnboarding = jest.fn<OnboardingService["complete"]>(
+    options.completeOnboarding ??
+      (() => Promise.resolve({ kind: "success", data: completionFixture, maxAgeSeconds: 0 })),
+  );
+  const finishOnboarding = jest.fn<OnboardingService["finish"]>(
+    options.finishOnboarding ??
+      (() => Promise.resolve({ kind: "success", data: completionFixture, maxAgeSeconds: 0 })),
+  );
+  const generateRecommendations = jest.fn<RecommendationsService["generate"]>(
+    options.generateRecommendations ??
+      (() =>
+        Promise.resolve({ kind: "success", data: noRecommendationsFixture, maxAgeSeconds: 0 })),
   );
   const listRecents = jest.fn<ActivityService["listRecents"]>(
     options.listRecents ?? (() => Promise.resolve(pageOf<RecentEntity>([]))),
@@ -860,6 +915,13 @@ export function makeCore(
     library: { listLibrary, getSavedState, saveItem, removeItem },
     likes,
     log,
+    onboarding: {
+      listArtists: listOnboardingArtists,
+      similar: similarArtists,
+      complete: completeOnboarding,
+      finish: finishOnboarding,
+    },
+    onboardingMark: createOnboardingMarkService({ storage, auth, log }),
     playback,
     playlists: {
       listPlaylists,
@@ -880,6 +942,7 @@ export function makeCore(
     publicShare: { getGenrePlaylist },
     autoplay: createAutoplayService({ storage, log }),
     recentSearches: createRecentSearchesService({ storage, log }),
+    recommendations: { generate: generateRecommendations },
     search: { search },
     sheetNudge: options.sheetNudge ?? createSheetNudgeService(),
     tracks: { getUpNext, getLyrics, getRelated, getCredits },
@@ -890,6 +953,11 @@ export function makeCore(
     log,
     getMyProfile,
     updateMyProfile,
+    listOnboardingArtists,
+    similarArtists,
+    completeOnboarding,
+    finishOnboarding,
+    generateRecommendations,
     listRecents,
     logPlay,
     registerRecent,

@@ -12,6 +12,10 @@
 // - a cold deep link to a tab route is kept while unknown: opened over the tab's base with a session, or after signing in from login; used once; the splash hides only with the target drawn
 // - a cold /login is not kept
 // - a cold unknown link keeps the splash while unknown (the router's built-in not-found never mounts) and lands where / lands
+// - the onboarding gate: a pending profile opens the onboarding and not home, a completed one opens home and never the onboarding, an unknown profile holds the placeholder and the splash, a failed profile read draws the error with retry on the placeholder and retry lands where the profile says
+// - a kept cold link opens after the onboarding, Get started lands on home without one and stores the onboarding as done on the phone
+// - after signing in, the placeholder draws the loading state while the profile is unknown
+// - the two startup paths of the device mark: stored for this account, home opens without waiting for the profile; not stored (nothing, or another account's), the profile decides
 //
 // Run with: pnpm --filter @beatly/mobile test -- app/_layout
 //
@@ -20,7 +24,7 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import type * as Expo from "expo";
 import { router } from "expo-router";
-import { act, fireEvent, renderRouter, screen } from "expo-router/testing-library";
+import { act, fireEvent, renderRouter, screen, waitFor, within } from "expo-router/testing-library";
 import * as SplashScreen from "expo-splash-screen";
 import { useLayoutEffect, type ComponentType } from "react";
 
@@ -28,9 +32,12 @@ import type * as AlbumModule from "../../src/screens/album/AlbumScreen.tsx";
 import type * as HomeModule from "../../src/screens/home/HomeScreen.tsx";
 import type * as LoginModule from "../../src/screens/login/LoginScreen.tsx";
 import type * as PlayerModule from "../../src/screens/player/PlayerScreen.tsx";
+import type * as OnboardingModule from "../../src/screens/onboarding/OnboardingScreen.tsx";
 import type * as PendingModule from "../../src/screens/sessionPending/SessionPendingScreen.tsx";
 import type * as SignUpModule from "../../src/screens/signUp/SignUpScreen.tsx";
+import { ONBOARDING_MARK_KEY } from "@beatly/core";
 import { resources } from "../../src/i18n/resources.ts";
+import { memoryStorage, profileFixture, successOf } from "../helpers/core.tsx";
 import { installCore } from "../helpers/routeCore.ts";
 
 jest.mock("../../src/createCore.ts", () => ({ createCore: () => mockCore.current }));
@@ -104,6 +111,12 @@ jest.mock("../../src/screens/player/PlayerScreen.tsx", () => {
     "../../src/screens/player/PlayerScreen.tsx",
   );
   return { ...actual, PlayerScreen: mockTracked("player", actual.PlayerScreen) };
+});
+jest.mock("../../src/screens/onboarding/OnboardingScreen.tsx", () => {
+  const actual = jest.requireActual<typeof OnboardingModule>(
+    "../../src/screens/onboarding/OnboardingScreen.tsx",
+  );
+  return { ...actual, OnboardingScreen: mockTracked("onboarding", actual.OnboardingScreen) };
 });
 jest.mock("../../src/screens/sessionPending/SessionPendingScreen.tsx", () => {
   const actual = jest.requireActual<typeof PendingModule>(
@@ -324,5 +337,144 @@ describe("the root layout session gate", () => {
     });
     expect(await screen.findByTestId("home")).toBeTruthy();
     expect(everMounted.has("album")).toBe(false);
+  });
+});
+
+const pendingProfile = () =>
+  Promise.resolve(successOf({ ...profileFixture, onboarding_completed_at: null }));
+
+async function pickFive() {
+  for (let n = 1; n <= 5; n += 1) {
+    await fireEvent.press(
+      await screen.findByRole("button", { name: `Onboarding Artist ${String(n)}` }),
+    );
+  }
+}
+
+describe("the root layout onboarding gate", () => {
+  it("opens the onboarding, not home, when signed in with onboarding_completed_at null", async () => {
+    mockCore.set("signed_in", { getMyProfile: pendingProfile });
+    await renderRouter("app", { initialUrl: "/" });
+    expect(await screen.findByTestId("onboarding")).toBeTruthy();
+    expect(everMounted.has("home")).toBe(false);
+    expect(SplashScreen.hideAsync).toHaveBeenCalled();
+    const first = drawnAtHide[0] ?? [];
+    expect(first).toContain("onboarding");
+    expect(first).not.toContain("sessionPending");
+  });
+
+  it("opens home, never the onboarding, with a timestamp", async () => {
+    mockCore.set("signed_in");
+    await renderRouter("app", { initialUrl: "/" });
+    expect(await screen.findByTestId("home")).toBeTruthy();
+    expect(everMounted.has("onboarding")).toBe(false);
+  });
+
+  it("holds the placeholder and the splash while the profile is unknown", async () => {
+    mockCore.set("signed_in", { getMyProfile: () => new Promise(() => undefined) });
+    await renderRouter("app", { initialUrl: "/" });
+    expect(await screen.findByTestId("sessionPending")).toBeTruthy();
+    await act(() => Promise.resolve());
+    expect(SplashScreen.hideAsync).not.toHaveBeenCalled();
+    expect(everMounted.has("home")).toBe(false);
+    expect(everMounted.has("onboarding")).toBe(false);
+  });
+
+  it("draws the loading state on the placeholder after signing in while the profile is unknown", async () => {
+    mockCore.set("signed_out", { getMyProfile: () => new Promise(() => undefined) });
+    await renderRouter("app", { initialUrl: "/" });
+    await screen.findByTestId("login");
+    await act(() => {
+      mockCore.emit("signed_in");
+      return Promise.resolve();
+    });
+    const pending = await screen.findByTestId("sessionPending");
+    expect(within(pending).getByLabelText(resources.en.common.loading)).toBeTruthy();
+    expect(everMounted.has("home")).toBe(false);
+    expect(everMounted.has("onboarding")).toBe(false);
+  });
+
+  it("draws the error with retry on the placeholder when the profile read fails, not home or the onboarding", async () => {
+    mockCore.set("signed_in", {
+      getMyProfile: () => Promise.resolve({ kind: "api_failure", reason: "upstream_error" }),
+    });
+    await renderRouter("app", { initialUrl: "/" });
+    expect(await screen.findByText(resources.en.common.error.generic)).toBeTruthy();
+    expect(everMounted.has("home")).toBe(false);
+    expect(everMounted.has("onboarding")).toBe(false);
+    expect(SplashScreen.hideAsync).toHaveBeenCalled();
+    expect(drawnAtHide[0]).toContain("sessionPending");
+  });
+
+  it("retries the profile read and lands where the profile says", async () => {
+    let reads = 0;
+    mockCore.set("signed_in", {
+      getMyProfile: () => {
+        reads += 1;
+        return reads === 1
+          ? Promise.resolve({ kind: "api_failure", reason: "upstream_error" })
+          : pendingProfile();
+      },
+    });
+    await renderRouter("app", { initialUrl: "/" });
+    await fireEvent.press(await screen.findByRole("button", { name: resources.en.common.retry }));
+    expect(await screen.findByTestId("onboarding")).toBeTruthy();
+    expect(everMounted.has("home")).toBe(false);
+  });
+
+  it("keeps a cold link through the onboarding and opens it after Get started", async () => {
+    mockCore.set("signed_in", { getMyProfile: pendingProfile });
+    await renderRouter("app", { initialUrl: "/album/MPREb_1" });
+    await screen.findByTestId("onboarding");
+    expect(everMounted.has("album")).toBe(false);
+    await pickFive();
+    await fireEvent.press(await screen.findByRole("button", { name: "Continue (5)" }));
+    await fireEvent.press(
+      await screen.findByRole("button", { name: resources.en.onboarding.welcome.start }),
+    );
+    expect(await screen.findByTestId("album")).toBeTruthy();
+    expect(router.canGoBack()).toBe(true);
+    await fireEvent.press(screen.getByRole("button", { name: resources.en.album.back }));
+    expect(await screen.findByTestId("home")).toBeTruthy();
+  });
+
+  it("Get started lands on home without a kept link and stores the onboarding as done for this account", async () => {
+    const storage = memoryStorage();
+    const set = jest.spyOn(storage, "set");
+    mockCore.set("signed_in", { getMyProfile: pendingProfile, storage });
+    await renderRouter("app", { initialUrl: "/" });
+    await screen.findByTestId("onboarding");
+    await pickFive();
+    await fireEvent.press(await screen.findByRole("button", { name: "Continue (5)" }));
+    await fireEvent.press(
+      await screen.findByRole("button", { name: resources.en.onboarding.welcome.start }),
+    );
+    expect(await screen.findByTestId("home")).toBeTruthy();
+    await waitFor(() => {
+      expect(set).toHaveBeenCalledWith(ONBOARDING_MARK_KEY, "user-1");
+    });
+  });
+
+  it("starts on home without waiting for the profile when the onboarding is stored as done on this phone", async () => {
+    mockCore.set("signed_in", {
+      storage: memoryStorage({ [ONBOARDING_MARK_KEY]: "user-1" }),
+      getMyProfile: () => new Promise(() => undefined),
+    });
+    await renderRouter("app", { initialUrl: "/" });
+    expect(await screen.findByTestId("home")).toBeTruthy();
+    expect(SplashScreen.hideAsync).toHaveBeenCalled();
+    expect(drawnAtHide[0]).toContain("home");
+    expect(drawnAtHide[0]).not.toContain("sessionPending");
+    expect(everMounted.has("onboarding")).toBe(false);
+  });
+
+  it("another account's mark on this phone does not skip the onboarding", async () => {
+    mockCore.set("signed_in", {
+      storage: memoryStorage({ [ONBOARDING_MARK_KEY]: "user-2" }),
+      getMyProfile: pendingProfile,
+    });
+    await renderRouter("app", { initialUrl: "/" });
+    expect(await screen.findByTestId("onboarding")).toBeTruthy();
+    expect(everMounted.has("home")).toBe(false);
   });
 });
