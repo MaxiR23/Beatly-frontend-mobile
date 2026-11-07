@@ -12,7 +12,7 @@ import { layout, spacing } from "../tokens/spacing.ts";
 import { ColorFade } from "./ColorFade.tsx";
 
 interface GlassSurfaceProps {
-  variant: "bar" | "sheet" | "circle";
+  variant: "bar" | "barRect" | "sheet" | "circle";
   children: ReactNode;
   // A runtime color (a cover's color from the backend) over the surface; null or unset keeps it neutral.
   tint?: string | null;
@@ -74,6 +74,13 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: "row",
     borderRadius: radius.full,
+    padding: spacing.xs,
+    gap: spacing.xs,
+  },
+  // The Android mini player: the bar with small corners instead of the pill (issue 154).
+  barRect: {
+    flexDirection: "row",
+    borderRadius: radius.sm,
     padding: spacing.xs,
     gap: spacing.xs,
   },

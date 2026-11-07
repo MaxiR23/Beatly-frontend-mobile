@@ -1,7 +1,7 @@
 // INFO: spacing tokens, a multiples-of-four scale (and an explicit zero), plus the layout
 // constants (gutter, gap, hitSlop, control height, text area height, and the carousel card,
 // avatar, creator mark, profile avatar, tab item, chip (and the Android chip), the Android tab indicator, the Android switch's track and thumb sizes, genre bar, row cover (and the Android track menu header cover), the Android action row height, detail hero cover, the detail hero wash's extension,
-// track-number column, now playing bar width, large and medium play button, the detail play pill's width, the side buttons' stacking value, seek bar and sheet handle sizes (iOS and Android) and the Android modal sheet handle zone and width, and the skeleton bar widths, row count and card count, the seed photo of a recommendation section, the logo's bar geometry and the side of a welcome photo).
+// track-number column, now playing bar width, large and medium play button, the detail play pill's width, the side buttons' stacking value, seek bar and sheet handle sizes (iOS and Android) and the Android modal sheet handle zone and width, and the skeleton bar widths, row count and card count, the seed photo of a recommendation section, the logo's bar geometry and the side of a welcome photo, the narrow icon button's width and the player's side inset).
 export const spacing = {
   // An explicit zero gap where a native container would otherwise apply a system default.
   none: 0,
@@ -19,6 +19,10 @@ export const layout = {
   gap: 12,
   hitSlop: 8,
   controlHeight: 48,
+  // Width of a narrow icon button: the Android mini player's play and next; its height stays controlHeight.
+  iconButtonNarrow: 40,
+  // Side inset of the player's titles, seek bar, controls and its error and empty states.
+  playerInset: 28,
   // Height of an ActionRow on Android (Material 3 one-line list item).
   actionRowHeightAndroid: 56,
   // Minimum height of a multiline form field.

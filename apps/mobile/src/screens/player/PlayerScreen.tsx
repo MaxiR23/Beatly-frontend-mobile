@@ -1,4 +1,4 @@
-// INFO: the player: dragged down from its header, or from its column at the top, it closes (springs back if released early); the cover shrinks while paused; iOS has no close button, Android does; reduce motion keeps the player and the cover still; a handle at the bottom opens the up next, lyrics and related sheet, and the drag to close is off while it is open, and the system back and the accessibility escape close the sheet first, then the player; close (chevron down, Android only), the source and the track's menu button in a control-height header, then a scrolling column: the full-width cover, the title (scrolls when it does not fit) and artists with the heart beside them when the track can be liked, the seek bar and the controls row (shuffle, previous, play or pause, next, repeat one); loading spins the play button, a failure draws the error with retry in place of the controls, nothing loaded draws the empty state.
+// INFO: the player: dragged down from its header, or from its column at the top, it closes (springs back if released early); the cover shrinks while paused; iOS has no close button, Android does; reduce motion keeps the player and the cover still; a handle at the bottom opens the up next, lyrics and related sheet, and the drag to close is off while it is open, and the system back and the accessibility escape close the sheet first, then the player; close (chevron down, Android only), the source and the track's menu button in a control-height header, then a scrolling column: the cover, the window width less the gutter on each side, then the title (scrolls when it does not fit) and artists with the heart beside them when the track can be liked, the seek bar and the controls row at the player's inset from the edges (shuffle, previous, play or pause, next, repeat one); loading spins the play button, a failure draws the error with retry in place of the controls, nothing loaded draws the empty state.
 import { likeInputOf, type PlayableTrack } from "@beatly/core";
 import { color, layout, spacing } from "@beatly/ui";
 import {
@@ -114,7 +114,7 @@ export function PlayerScreen() {
               {leading}
             </View>
           </View>
-          <View style={styles.state}>
+          <View style={styles.state} testID="player-empty">
             <EmptyState icon="music" message={t("empty")} />
           </View>
         </View>
@@ -206,7 +206,7 @@ export function PlayerScreen() {
             <ScrollView
               bounces={false}
               style={styles.scroll}
-              contentContainerStyle={[styles.content, bottom]}
+              contentContainerStyle={bottom}
               onScroll={(event) => {
                 setAtTop(event.nativeEvent.contentOffset.y <= 0);
               }}
@@ -221,7 +221,7 @@ export function PlayerScreen() {
                   <Cover
                     images={current.image === null ? [] : [current.image]}
                     shape="square"
-                    corner="md"
+                    corner="sm"
                     size={coverSize}
                     elevated
                     priority="high"
@@ -230,7 +230,7 @@ export function PlayerScreen() {
               </View>
               <PlayerTitles track={current} reduceMotion={reduceMotion} />
               {failed ? (
-                <View style={styles.below}>
+                <View style={styles.below} testID="player-error">
                   <ErrorState
                     message={t("error.unplayable")}
                     retryLabel={tc("retry")}
@@ -327,18 +327,23 @@ const styles = StyleSheet.create({
   },
   source: { flex: 1, alignItems: "center" },
   balance: { width: layout.controlHeight },
-  state: { flex: 1 },
+  state: { flex: 1, paddingHorizontal: layout.playerInset },
   scroll: { flex: 1 },
-  content: { paddingHorizontal: spacing.xl },
-  cover: { marginTop: spacing.xl },
+  cover: { marginTop: spacing.xl, paddingHorizontal: layout.gutter },
   titleRow: {
     marginTop: spacing.xxl,
+    marginHorizontal: layout.playerInset,
     flexDirection: "row",
     alignItems: "center",
     gap: layout.gap,
   },
   titles: { flex: 1, gap: spacing.xs },
-  below: { marginTop: spacing.xl },
-  controls: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  below: { marginTop: spacing.xl, marginHorizontal: layout.playerInset },
+  controls: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginHorizontal: layout.playerInset,
+  },
   afterSeek: { marginTop: spacing.lg },
 });

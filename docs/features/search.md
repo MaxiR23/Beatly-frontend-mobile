@@ -24,7 +24,7 @@ API returns. An album card opens the album; pressing a song plays the songs from
 - Top artist (`MediaRow`, large): a round `Cover` of `layout.rowCoverLarge`, the name in
   `typography.subtitle`, "Artist" in `typography.meta` and `color.text.secondary`.
 - Song row (`MediaRow`): a `Cover` of `layout.rowCover` with `radius.sm`, the title in
-  `typography.rowTitle`, artists and duration in `typography.meta`; `spacing.sm` above and below.
+  `typography.rowTitle`, artists and duration in `typography.meta`; `spacing.xs` above and below.
 - Sections: `spacing.xl` between them, `spacing.md` between the songs header and its rows; the
   albums are a `Carousel`.
 - Bottom: the list clears the floating tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).

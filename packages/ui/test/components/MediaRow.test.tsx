@@ -9,6 +9,7 @@
 // - the menu size: a cover of layout.rowCoverMenu
 // - the cover keyed by its item's image URL, a new item's images changing the key
 // - the title and subtitle in their tones, an unavailable row drawn disabled
+// - the regular and medium rows, with and without trailing, padded by spacing.xs above and below; the menu and large rows keep spacing.sm
 // - a trailing element drawn outside the pressable body
 // - the current track: bars in place of the number over the cover on a scrim, no row background, selected state, paused and reduce motion passed on, nothing without nowPlaying or on an unavailable row
 // - an unavailable row never a button, announced as one element by its label (or the title), its trailing control still pressable
@@ -26,7 +27,7 @@ import { MediaRow } from "../../src/components/MediaRow.tsx";
 import { color } from "../../src/tokens/color.ts";
 import { motion } from "../../src/tokens/motion.ts";
 import { radius } from "../../src/tokens/radius.ts";
-import { layout } from "../../src/tokens/spacing.ts";
+import { layout, spacing } from "../../src/tokens/spacing.ts";
 
 const tiers = (n: string) => ({
   small: `test://img/${n}/s`,
@@ -71,6 +72,40 @@ describe("MediaRow", () => {
       height: layout.rowCoverMenu,
     });
   });
+
+  it.each([
+    ["regular", spacing.xs],
+    ["medium", spacing.xs],
+    ["menu", spacing.sm],
+    ["large", spacing.sm],
+  ] as const)(
+    "pads a %s row, with and without trailing, by its own vertical room",
+    async (size, padding) => {
+      const view = await render(
+        <MediaRow
+          title="Row"
+          images={[]}
+          shape="square"
+          size={size}
+          onPress={jest.fn()}
+          testID="row"
+        />,
+      );
+      expect(screen.getByTestId("row")).toHaveStyle({ paddingVertical: padding });
+      await view.rerender(
+        <MediaRow
+          title="Row"
+          images={[]}
+          shape="square"
+          size={size}
+          onPress={jest.fn()}
+          trailing={<Pressable accessibilityRole="button" accessibilityLabel="More" />}
+          testID="row"
+        />,
+      );
+      expect(screen.getByTestId("row")).toHaveStyle({ paddingVertical: padding });
+    },
+  );
 
   it("draws the title and subtitle in their tones when available", async () => {
     await render(

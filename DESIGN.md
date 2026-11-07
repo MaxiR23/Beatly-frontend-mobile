@@ -18,7 +18,7 @@ value: the value lives once, in the token file.
 | Sheet, modal, dialog and form `Card` background (the `ui` `Card` is only this raised card; a list card is a different component)                                                                                                                      | `color.surface.raised`                                                                                              |
 | List card, input and image-placeholder background                                                                                                                                                                                                     | `color.surface.card`                                                                                                |
 | Secondary control background (secondary button, inactive iOS chip/tab, the Android switch track when off)                                                                                                                                             | `color.surface.control`                                                                                             |
-| Card/sheet/input border, divider, skeleton base, the outline of an unselected Android chip, the outline of the Android text field at rest, the divider under the Android tabs, the outline of the Android switch track when off                       | `color.surface.border`                                                                                              |
+| Card/sheet/input border, divider, skeleton base, the outline of an unselected Android chip, the outline of the Android text field at rest, the outline of the Android switch track when off                                                           | `color.surface.border`                                                                                              |
 | Inverse surface: the Android snackbar's light fill (Material 3 inverse surface)                                                                                                                                                                       | `color.surface.inverse`                                                                                             |
 | Primary text                                                                                                                                                                                                                                          | `color.text.primary`                                                                                                |
 | Secondary text (subtitles, artist names, descriptions)                                                                                                                                                                                                | `color.text.secondary`                                                                                              |
@@ -41,6 +41,7 @@ value: the value lives once, in the token file.
 | Opacity stops of the iOS detail strip: its wash (the dominant color or the base surface) and the base-surface shade over it, both transparent at the bottom edge                                                                                      | `color.gradient.detailStrip.wash` / `.shade`                                                                        |
 | Opacity stops of the mask of the iOS detail strip's blur: opaque to 55% of the strip's height, transparent at its bottom edge                                                                                                                         | `color.gradient.detailStrip.blurMask`                                                                               |
 | Opacity curve of the dominant-color wash of the detail hero (album, playlist), the full player and its sheet: the dominant color over the base surface, the shape's opacities times the intensity, transparent at the bottom; tune the intensity only | `color.gradient.detailHero.shape` / `.intensity` / `.stops`                                                         |
+| Share of white mixed into a cover's color for the Android tab indicator (`mixWithWhite`)                                                                                                                                                              | `color.mix.tabIndicator`                                                                                            |
 
 A token may be computed from other tokens of the same file when it is a curve tuned by one value: `color.gradient.detailHero.stops` is the shape times the intensity, so tuning is one number and the stops follow.
 
@@ -53,6 +54,8 @@ A token may be computed from other tokens of the same file when it is a curve tu
 | Gap between items in a list/row                                                                                                                                                                | `layout.gap`                                                                                        |
 | Minimum touch target padding (`hitSlop`)                                                                                                                                                       | `layout.hitSlop`                                                                                    |
 | Height of a form control (input, form button) or a floating tab bar item or an Android tab, the height of the player header row, the detail top bar's row, and side of its square touch target | `layout.controlHeight`                                                                              |
+| Width of a narrow icon button (the Android mini player's play and next), at `layout.controlHeight` tall                                                                                        | `layout.iconButtonNarrow`                                                                           |
+| Side inset of the player's titles, seek bar, controls and its error and empty states                                                                                                           | `layout.playerInset`                                                                                |
 | Minimum height of a multiline form field                                                                                                                                                       | `layout.textAreaHeight`                                                                             |
 | Width of a carousel card and side of its cover                                                                                                                                                 | `layout.carouselCard`                                                                               |
 | Side of the header account avatar                                                                                                                                                              | `layout.avatar`                                                                                     |
@@ -95,26 +98,26 @@ A token may be computed from other tokens of the same file when it is a curve tu
 
 Every remote image is one of the three tiers the API sends (`image`, `mosaic`). The tier is the smallest whose side covers the drawn side at 3 pixels per point: `small` up to 64 pt, `medium` up to 200 pt, `large` above. `Cover` and the detail image hero apply it from the side they draw (`packages/ui/src/components/imageTier.ts`); a screen never picks a tier and never builds or edits a URL. With no image (`image: null`, `mosaic: []`) the cover draws the placeholder. The cover color is the backend's `image.color`, never read from a picture on the device. Every image is drawn with `Picture`, the only importer of `expo-image`: memory and disk cache, no transition on iOS, a `motion.duration.imageFade` fade on Android only for a picture loaded from the network, a remote source's URL as its recycling key (ADR 029). The main cover of a screen (the detail cover and image heroes, the player cover) loads at high priority, every other image at normal. The player prefetches the next queued track's cover at its own tier on every track change.
 
-| Place                                                                                | Drawn side                                   | Tier                                      |
-| ------------------------------------------------------------------------------------ | -------------------------------------------- | ----------------------------------------- |
-| Row cover (songs, up next, related, edit list, track menu sheet) and the mini player | `layout.rowCover`                            | `small`                                   |
-| Medium row (library, playlist picker) and the player sheet's song row                | `layout.rowCoverMedium`                      | `small`                                   |
-| Large row (search top artist)                                                        | `layout.rowCoverLarge`                       | `small`                                   |
-| Mosaic cell of any row                                                               | half the row cover                           | `small`                                   |
-| Carousel card                                                                        | `layout.carouselCard`                        | `medium`                                  |
-| Mosaic cell of a carousel card                                                       | half `layout.carouselCard`                   | `medium`                                  |
-| Grid card (genre)                                                                    | `gridCardSize(window width)`                 | `medium` on a phone, `large` above 200 pt |
-| Mosaic cell of the detail hero cover                                                 | half `layout.heroCover`                      | `medium`                                  |
-| Detail hero cover (album, playlist)                                                  | `layout.heroCover`                           | `large`                                   |
-| Player cover                                                                         | window width minus `spacing.xl` on each side | `large`                                   |
-| Detail image hero (artist photo)                                                     | window width                                 | `large`                                   |
+| Place                                                                                | Drawn side                                      | Tier                                      |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------- | ----------------------------------------- |
+| Row cover (songs, up next, related, edit list, track menu sheet) and the mini player | `layout.rowCover`                               | `small`                                   |
+| Medium row (library, playlist picker) and the player sheet's song row                | `layout.rowCoverMedium`                         | `small`                                   |
+| Large row (search top artist)                                                        | `layout.rowCoverLarge`                          | `small`                                   |
+| Mosaic cell of any row                                                               | half the row cover                              | `small`                                   |
+| Carousel card                                                                        | `layout.carouselCard`                           | `medium`                                  |
+| Mosaic cell of a carousel card                                                       | half `layout.carouselCard`                      | `medium`                                  |
+| Grid card (genre)                                                                    | `gridCardSize(window width)`                    | `medium` on a phone, `large` above 200 pt |
+| Mosaic cell of the detail hero cover                                                 | half `layout.heroCover`                         | `medium`                                  |
+| Detail hero cover (album, playlist)                                                  | `layout.heroCover`                              | `large`                                   |
+| Player cover                                                                         | window width minus `layout.gutter` on each side | `large`                                   |
+| Detail image hero (artist photo)                                                     | window width                                    | `large`                                   |
 
 ## Floating surfaces
 
 `GlassSurface` from `@beatly/ui/native`, the only importer of
 `expo-glass-effect`: native glass on iOS 26+, elsewhere
 `color.surface.raised` with a `border.width` border in
-`color.surface.border` and `shadow.floating`. Variants: `bar` (the tab bar pill),
+`color.surface.border` and `shadow.floating`. Variants: `bar` (the tab bar pill), `barRect` (the Android mini player: the bar with `radius.sm` corners),
 `sheet` (the iOS `Sheet`: `radius.xl` top corners and square bottom ones, `spacing.xl` padding, attached to the bottom and side edges) and `circle` (a `layout.controlHeight` circle for the floating detail
 buttons). An optional `tint` (a cover's `image.color`, a runtime value) colors the glass or lays over the
 fallback's `color.surface.raised`, fading in over `motion.duration.base` when it arrives after mount.
@@ -188,7 +191,7 @@ Entry: in the ready body the content enters once per mount in a top-down cascade
   `hero: "image"` (artist) the cover is a full-width `layout.heroImageRatio` block, capped like the loaded hero, with the
   title bar at its bottom left, then the meta bar and the rows.
 - While the next page of a paged detail list loads, `DetailScreen` draws `layout.skeletonRows` of the same `SkeletonRow` under the rows (`layout.gutter` sides, `spacing.md` apart and above), announced as a progress bar; the list asks for that page `END_REACHED_THRESHOLD` (2) visible lengths before its end.
-- Track row: `TrackRow`, a `meta` number in a `layout.trackNumber` column, the
+- Track row: `MediaRow` pads `spacing.xs` above and below in the `regular` and `medium` sizes; the `menu` and `large` sizes keep `spacing.sm`. `TrackRow` (rows pad `spacing.xs` above and below: 56 with the more button), a `meta` number in a `layout.trackNumber` column, the
   title in `typography.rowTitle` and the artists in `typography.meta`;
   unavailable uses `color.text.disabled`. `MediaRow` with `available={false}` draws its title
   and meta in `color.text.disabled` the same way. An unavailable row is never pressable and is one
@@ -220,7 +223,7 @@ Three steps on `color.surface.base`, drawn by `OnboardingScreen` (see `docs/feat
 
 ## Player
 
-- Mini player: `MiniPlayer` on a `GlassSurface` `bar` with `tint`, a round `Cover` of `layout.rowCover`, the
+- Mini player: `MiniPlayer` on a `GlassSurface` `bar` with `tint` and a round `Cover` of `layout.rowCover` below iOS 26; on Android a `GlassSurface` `barRect` with a square `Cover`, and the play or pause and next `IconButton`s `filled` and `narrow` (`layout.iconButtonNarrow` wide, `layout.controlHeight` tall), with no gap between them. The
   title in `typography.rowTitle`, the subtitle in `typography.meta` (`color.status.error` on a failure), then
   play or pause and next as `IconButton`s. Content height `layout.controlHeight`, so the pill has the tab bar's height.
   A `spacing.md` gap above the floating tab bar. Width: the window width minus `layout.gutter` on each side on Android
@@ -230,10 +233,10 @@ Three steps on `color.surface.base`, drawn by `OnboardingScreen` (see `docs/feat
   `color.text.primary`, a `layout.seekThumb` thumb in `color.accent.primary` with `shadow.control`, a
   `layout.seekThumb` tall bar with a vertical `hitSlop` up to `layout.controlHeight`, the times `spacing.sm` below in
   `typography.meta` and `color.text.secondary`.
-- Player screen: `spacing.xl` sides; a `layout.controlHeight` header with the chevron-down close (`icon.size.lg`), "Playing from" in
+- Player screen: the header keeps `spacing.xl` sides; the titles, seek bar, controls and the error and empty states are `layout.playerInset` from the edges; a `layout.controlHeight` header with the chevron-down close (`icon.size.lg`), "Playing from" in
   `typography.label` / `color.text.secondary` over the source in `typography.rowTitle`, and the track menu's more button at its end (the leading side, the close or an empty `layout.controlHeight` balance on iOS, and the more button are both `layout.controlHeight` wide, so the source is centered on the screen); a wash of the dominant color over
   `color.surface.base` at the opacities of `color.gradient.detailHero` (the hero's curve, its intensity included), a vertical gradient over the player's full height, transparent only at its bottom edge; without a color, the base surface; `spacing.xl` below, a square cover as wide as the
-  content, `radius.md`, `shadow.cover`; `spacing.xxl` below, a row with `layout.gap`: the titles (`typography.title` in a `Marquee`, `typography.body` in
+  window less `layout.gutter` on each side, `radius.sm`, `shadow.cover`; `spacing.xxl` below, a row with `layout.gap`: the titles (`typography.title` in a `Marquee`, `typography.body` in
   `color.text.secondary`) and the heart `IconButton` (`icon.size.lg`, filled and `color.text.primary` when liked, `color.text.secondary` otherwise); `spacing.xl` below, the seek bar; `spacing.lg` below, the controls spread across the width:
   shuffle and repeat at `icon.size.md` (`color.text.secondary`, `color.text.primary` on), previous and next filled at
   `icon.size.xl`, and play or pause in a `layout.playButton` circle in `color.accent.primary` with a `color.text.inverse`
@@ -247,7 +250,7 @@ Three steps on `color.surface.base`, drawn by `OnboardingScreen` (see `docs/feat
   `layout.rowCoverMedium` cover at `radius.sm`, `typography.title`, `typography.body` in `color.text.secondary`, and an
   `IconButton` `primaryCompact`, a `layout.controlHeight` circle in `color.accent.primary` with a `color.text.inverse` glyph),
   then a `SegmentedControl` (options of `layout.chipHeight` on `color.overlay.subtle`, the selected one on `color.overlay.muted`
-  in `color.text.primary`). On Android (ADR 027) the selector is the Material 3 primary tabs across the full width: `layout.controlHeight` tabs with the label centered in `typography.button`, `color.text.primary` when selected and `color.text.secondary` otherwise, a `border.width` divider in `color.surface.border` under the row, and a `layout.tabIndicatorHeightAndroid` indicator in `color.accent.primary` with `radius.full` top corners, as wide as the selected label, sliding to the new tab over `motion.duration.base` (only its position slides, on the native driver; its width changes at once, because the native driver animates only transforms and opacity, and a `scaleX` slide was rejected: it would distort the rounded top corners and need an origin compensation); under reduce motion it moves without sliding. It is placed in a layout effect, so it never draws a frame at the old position. Rows are `MediaRow`s; synced lyrics are `typography.title` lines, `color.text.primary` for the playing
+  in `color.text.primary`). On Android (ADR 027) the selector is the Material 3 primary tabs across the full width: `layout.controlHeight` tabs with the label centered, no divider and no press, the selected label in `typography.subtitle` and `color.text.primary` and the others in `typography.button` and `color.text.secondary`, and a `layout.tabIndicatorHeightAndroid` indicator in the current cover's `image.color` mixed with white at `color.mix.tabIndicator` (`mixWithWhite`, passed by `PlayerSheet`; `color.accent.primary` without a color) with `radius.full` top corners, as wide as the selected label, sliding to the new tab over `motion.duration.base` (only its position slides, on the native driver; its width changes at once, because the native driver animates only transforms and opacity, and a `scaleX` slide was rejected: it would distort the rounded top corners and need an origin compensation); under reduce motion it moves without sliding. It is placed in a layout effect, so it never draws a frame at the old position. Deliberate departures from Material 3 (ADR 027), not to be "fixed": the Android tabs draw no divider under the row and no press ripple (Material 3 has both); the selected label is heavier than the others; the indicator takes the cover's lightened color instead of the primary color. Rows are `MediaRow`s; synced lyrics are `typography.title` lines, `color.text.primary` for the playing
   one and `color.text.tertiary` for the others. Under reduce motion the sheet and the dim fade and nothing moves or scales.
 
 ## Track menu
@@ -325,20 +328,20 @@ A deliberate departure from Material 3, not to be fixed: there is no 40dp state-
 Roles, not raw sizes. Every role uses the platform's system font (no
 `fontFamily` override).
 
-| Role                    | Token                 | Used for                                                               |
-| ----------------------- | --------------------- | ---------------------------------------------------------------------- |
-| Display                 | `typography.display`  | The largest number/title on a screen                                   |
-| Brand                   | `typography.brand`    | The Beatly wordmark on the auth screens                                |
-| Title                   | `typography.title`    | Screen title                                                           |
-| Section                 | `typography.section`  | Section heading                                                        |
-| Subtitle                | `typography.subtitle` | Card/sheet subtitle, the detail top bar's title                        |
-| Row title               | `typography.rowTitle` | Track/list row title                                                   |
-| Body                    | `typography.body`     | Default paragraph/body text                                            |
-| Link                    | `typography.link`     | Inline link inside body text                                           |
-| Meta                    | `typography.meta`     | Secondary/meta text (duration, counts)                                 |
-| Label                   | `typography.label`    | Uppercase label (badge, form label)                                    |
-| Button                  | `typography.button`   | Button text                                                            |
-| Accessibility scale cap | `maxFontScale`        | `maxFontSizeMultiplier` the `ui` Text, Input and Link components apply |
+| Role                    | Token                 | Used for                                                                  |
+| ----------------------- | --------------------- | ------------------------------------------------------------------------- |
+| Display                 | `typography.display`  | The largest number/title on a screen                                      |
+| Brand                   | `typography.brand`    | The Beatly wordmark on the auth screens                                   |
+| Title                   | `typography.title`    | Screen title                                                              |
+| Section                 | `typography.section`  | Section heading                                                           |
+| Subtitle                | `typography.subtitle` | Card/sheet subtitle, the detail top bar's title, the selected Android tab |
+| Row title               | `typography.rowTitle` | Track/list row title                                                      |
+| Body                    | `typography.body`     | Default paragraph/body text                                               |
+| Link                    | `typography.link`     | Inline link inside body text                                              |
+| Meta                    | `typography.meta`     | Secondary/meta text (duration, counts)                                    |
+| Label                   | `typography.label`    | Uppercase label (badge, form label)                                       |
+| Button                  | `typography.button`   | Button text                                                               |
+| Accessibility scale cap | `maxFontScale`        | `maxFontSizeMultiplier` the `ui` Text, Input and Link components apply    |
 
 ## Motion (`motion`)
 
@@ -382,7 +385,7 @@ Roles, not raw sizes. Every role uses the platform's system font (no
 
 `VerticalDrag` (the one vertical drag), `DragToClose`, `PullUpSheet` and `Sheet` (its drag on Android) over it, `Sheet` (its open and close on both platforms), `PauseScale`, `Marquee`, `NowPlayingBars`, `PlayButton` and `ReorderList`, `SegmentedControl` (on Android), `Input` (on Android), `SwitchRow` (on Android) and `DetailScreen` in `@beatly/ui/native` are the only animated components. They use React Native's `Animated` (and `Animated.event` for the detail scroll, `Animated.timing` for its entry cascade) with the native driver and `PanResponder`, and take `reduceMotion` from the app.
 
-Every pressable control that shows a press gets it from `pressFeedback` in `packages/ui/src/components/pressFeedback.ts`, which decides the platform through `isAndroidVariant()` (ADR 027); no component defines its own. On iOS the pressed control fades to `motion.pressOpacity`. On Android it draws the Material 3 ripple instead, with no change of opacity: over the content, in `color.overlay.ripple`, or `color.overlay.rippleOnAccent` on the white accent fill or the Android snackbar's inverse surface, and bounded to the control's shape. Rows and cards clip it to a rectangle; buttons, chips, iOS segments and the avatar to their own `radius` corners; the Android tabs to a rectangle; the Android switch, icon buttons, the detail play button, the mini player body and the snackbar action to `radius.full` (a circle on a square, a pill otherwise). The sheet backdrop, the input's reveal button, `Link` and the pull-up sheet handle show no press. On Android the ripple is a foreground drawable and the pressable clips with `overflow: "hidden"` at rest, because React Native's bounded ripple mask is a plain rectangle and only a foreground drawable is reached by the clip; the cost is that a child drawing outside a pressable, or into its rounded corners (a badge, a shadow, an overflowing child), is cut on Android, so keep such content out of the 17 pressables or inside the clip. The mini player body adds `spacing.md` of end padding on Android so its text stays inside the pill cap.
+Every pressable control that shows a press gets it from `pressFeedback` in `packages/ui/src/components/pressFeedback.ts`, which decides the platform through `isAndroidVariant()` (ADR 027); no component defines its own. On iOS the pressed control fades to `motion.pressOpacity`. On Android it draws the Material 3 ripple instead, with no change of opacity: over the content, in `color.overlay.ripple`, or `color.overlay.rippleOnAccent` on the white accent fill or the Android snackbar's inverse surface, and bounded to the control's shape. Rows and cards clip it to a rectangle; buttons, chips, iOS segments and the avatar to their own `radius` corners; the Android mini player body to a rectangle; the Android switch, icon buttons, the detail play button and the snackbar action to `radius.full` (a circle on a square, a pill otherwise). The sheet backdrop, the input's reveal button, `Link`, the pull-up sheet handle and the Android tabs show no press (the tabs are a documented departure, see Player). On Android the ripple is a foreground drawable and the pressable clips with `overflow: "hidden"` at rest, because React Native's bounded ripple mask is a plain rectangle and only a foreground drawable is reached by the clip; the cost is that a child drawing outside a pressable, or into its rounded corners (a badge, a shadow, an overflowing child), is cut on Android, so keep such content out of the 17 pressables or inside the clip.
 
 ## Icons (`icon`)
 

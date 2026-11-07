@@ -8,6 +8,7 @@
 // What is covered:
 // - the number, title and artists drawn, an unavailable track marked as disabled
 // - a button named by the title with onPress, no button role without it
+// - the row and the row with a trailing element padded by spacing.xs above and below
 // - a trailing element drawn outside the pressable body
 // - the current track: bars in place of the number, no row background, selected state, paused and reduce motion passed on, nothing without nowPlaying or on an unavailable row
 // - an unavailable row never a button, announced as one element by its label (or the title), its trailing control still pressable
@@ -24,6 +25,7 @@ import { Animated, Pressable } from "react-native";
 import { TrackRow } from "../../src/components/TrackRow.tsx";
 import { color } from "../../src/tokens/color.ts";
 import { motion } from "../../src/tokens/motion.ts";
+import { spacing } from "../../src/tokens/spacing.ts";
 
 describe("TrackRow", () => {
   it("draws the number, the title and the artists", async () => {
@@ -31,6 +33,24 @@ describe("TrackRow", () => {
     expect(screen.getByText("3")).toBeTruthy();
     expect(screen.getByText("Song")).toHaveStyle({ color: color.text.primary });
     expect(screen.getByText("Artist")).toBeTruthy();
+  });
+
+  it("pads the row and the row with trailing by spacing.xs", async () => {
+    const view = await render(
+      <TrackRow number={1} title="Song" available onPress={jest.fn()} testID="row" />,
+    );
+    expect(screen.getByTestId("row")).toHaveStyle({ paddingVertical: spacing.xs });
+    await view.rerender(
+      <TrackRow
+        number={1}
+        title="Song"
+        available
+        onPress={jest.fn()}
+        trailing={<Pressable accessibilityRole="button" accessibilityLabel="More" />}
+        testID="row"
+      />,
+    );
+    expect(screen.getByTestId("row")).toHaveStyle({ paddingVertical: spacing.xs });
   });
 
   it("marks an unavailable track as disabled", async () => {

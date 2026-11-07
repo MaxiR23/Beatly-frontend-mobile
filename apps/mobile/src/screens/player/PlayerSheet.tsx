@@ -1,10 +1,11 @@
-// INFO: the player's up next, lyrics and related sheet over PullUpSheet: the song row (its title scrolls when it does not fit) that closes it, play or pause, the three options (primary tabs on Android) and the selected tab's body, mounted from the moment the sheet starts opening (a drag on the handle or open) until its close ends, so it is drawn while the sheet moves and each tab loads only once shown (up next asks for the source's suggestions, read once per source); nudges the handle the first time the player opens on each track in the app's session.
-import { layout, spacing } from "@beatly/ui";
+// INFO: the player's up next, lyrics and related sheet over PullUpSheet: the song row (its title scrolls when it does not fit) that closes it, play or pause, the three options (primary tabs on Android, their indicator in the cover's color mixed with white, white without one) and the selected tab's body, mounted from the moment the sheet starts opening (a drag on the handle or open) until its close ends, so it is drawn while the sheet moves and each tab loads only once shown (up next asks for the source's suggestions, read once per source); nudges the handle the first time the player opens on each track in the app's session.
+import { color, layout, spacing } from "@beatly/ui";
 import {
   Cover,
   IconButton,
   isAndroidVariant,
   Marquee,
+  mixWithWhite,
   PullUpSheet,
   SegmentedControl,
   Text,
@@ -57,6 +58,9 @@ export function PlayerSheet({
 
   if (current === null) return <>{children}</>;
 
+  const cover = current.image?.color ?? null;
+  const indicator = cover === null ? null : mixWithWhite(cover, color.mix.tabIndicator);
+
   const options = [
     { key: "upNext", label: t("sheet.tabs.upNext") },
     { key: "lyrics", label: t("sheet.tabs.lyrics") },
@@ -107,6 +111,7 @@ export function PlayerSheet({
             setBodyAtTop(true);
           }}
           reduceMotion={reduceMotion}
+          indicatorColor={indicator}
           testID="player-sheet-tabs"
         />
       </View>

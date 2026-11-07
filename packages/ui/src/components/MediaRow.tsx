@@ -51,6 +51,7 @@ export function MediaRow({
   const marked = available && nowPlaying !== undefined;
   const large = size === "large";
   const medium = size === "medium";
+  const roomy = large || size === "menu";
   const coverSize = large
     ? layout.rowCoverLarge
     : medium
@@ -124,7 +125,7 @@ export function MediaRow({
         </Pressable>
       );
     return (
-      <View style={[styles.split, medium ? styles.rowMedium : undefined]} testID={testID}>
+      <View style={[styles.split, roomy ? styles.rowRoomy : undefined]} testID={testID}>
         {body}
         {trailing}
       </View>
@@ -133,7 +134,7 @@ export function MediaRow({
 
   if (onPress === undefined) {
     return (
-      <View style={[styles.row, medium ? styles.rowMedium : undefined]} {...still} testID={testID}>
+      <View style={[styles.row, roomy ? styles.rowRoomy : undefined]} {...still} testID={testID}>
         {content}
       </View>
     );
@@ -148,7 +149,7 @@ export function MediaRow({
       onPress={onPress}
       style={({ pressed }) => [
         styles.row,
-        medium ? styles.rowMedium : undefined,
+        roomy ? styles.rowRoomy : undefined,
         press.style(pressed),
       ]}
       testID={testID}
@@ -163,14 +164,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: layout.gutter,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
     gap: layout.gap,
   },
-  rowMedium: { paddingVertical: spacing.xs },
+  // The menu header and the large row keep their own room: only the song and medium rows tighten to spacing.xs.
+  rowRoomy: { paddingVertical: spacing.sm },
   split: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
     paddingRight: layout.gutter,
   },
   body: {

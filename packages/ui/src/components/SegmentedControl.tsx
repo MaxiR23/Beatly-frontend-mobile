@@ -1,8 +1,7 @@
-// INFO: a segmented control: equal options, one selected; the caller passes the labels translated. iOS draws them in a pill; on Android they are the Material 3 primary tabs (ADR 027): full width, a divider under the row and an indicator under the selected label that slides to it, without sliding under reduce motion.
+// INFO: a segmented control: equal options, one selected; the caller passes the labels translated. iOS draws them in a pill; on Android they are the Material 3 primary tabs (ADR 027): full width, no divider and no press, the selected label heavier, and an indicator under it in the caller's color (white without one) that slides to it, without sliding under reduce motion.
 import { useLayoutEffect, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, View } from "react-native";
 
-import { border } from "../tokens/border.ts";
 import { color } from "../tokens/color.ts";
 import { motion } from "../tokens/motion.ts";
 import { radius } from "../tokens/radius.ts";
@@ -16,6 +15,8 @@ interface SegmentedControlProps<K extends string> {
   selected: K;
   onChange: (key: K) => void;
   reduceMotion: boolean;
+  // Android only: the color of the indicator under the selected tab; null or unset keeps the primary accent.
+  indicatorColor?: string | null;
   testID?: string;
 }
 
@@ -24,6 +25,7 @@ export function SegmentedControl<K extends string>({
   selected,
   onChange,
   reduceMotion,
+  indicatorColor,
   testID,
 }: SegmentedControlProps<K>) {
   if (isAndroidVariant()) {
@@ -33,6 +35,7 @@ export function SegmentedControl<K extends string>({
         selected={selected}
         onChange={onChange}
         reduceMotion={reduceMotion}
+        {...(indicatorColor !== undefined ? { indicatorColor } : {})}
         {...(testID !== undefined ? { testID } : {})}
       />
     );
@@ -68,14 +71,15 @@ export function SegmentedControl<K extends string>({
   );
 }
 
+// Deliberate departures from Material 3 (DESIGN.md, Android tabs): no press feedback and no divider; the selected label is heavier and the indicator takes the caller's color.
 function AndroidTabs<K extends string>({
   options,
   selected,
   onChange,
   reduceMotion,
+  indicatorColor,
   testID,
 }: SegmentedControlProps<K>) {
-  const press = pressFeedback();
   const [tabs, setTabs] = useState<Partial<Record<K, { x: number; width: number }>>>({});
   const [labels, setLabels] = useState<Partial<Record<K, number>>>({});
   const tab = tabs[selected];
@@ -110,7 +114,6 @@ function AndroidTabs<K extends string>({
         const isSelected = option.key === selected;
         return (
           <Pressable
-            android_ripple={press.android_ripple}
             key={option.key}
             accessibilityRole="tab"
             accessibilityLabel={option.label}
@@ -122,7 +125,7 @@ function AndroidTabs<K extends string>({
               const { x, width } = event.nativeEvent.layout;
               setTabs((prev) => ({ ...prev, [option.key]: { x, width } }));
             }}
-            style={({ pressed }) => [styles.androidTab, press.style(pressed)]}
+            style={styles.androidTab}
           >
             <View
               onLayout={(event) => {
@@ -131,7 +134,10 @@ function AndroidTabs<K extends string>({
               }}
               {...(testID !== undefined ? { testID: `${testID}-label-${option.key}` } : {})}
             >
-              <Text variant="button" tone={isSelected ? "primary" : "secondary"}>
+              <Text
+                variant={isSelected ? "subtitle" : "button"}
+                tone={isSelected ? "primary" : "secondary"}
+              >
                 {option.label}
               </Text>
             </View>
@@ -142,7 +148,14 @@ function AndroidTabs<K extends string>({
         <Animated.View
           pointerEvents="none"
           {...(testID !== undefined ? { testID: `${testID}-indicator` } : {})}
-          style={[styles.indicator, { width: target.width, transform: [{ translateX: offset }] }]}
+          style={[
+            styles.indicator,
+            {
+              width: target.width,
+              backgroundColor: indicatorColor ?? color.accent.primary,
+              transform: [{ translateX: offset }],
+            },
+          ]}
         />
       ) : null}
     </View>
@@ -164,11 +177,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   selected: { backgroundColor: color.overlay.muted },
-  androidRow: {
-    flexDirection: "row",
-    borderBottomWidth: border.width,
-    borderBottomColor: color.surface.border,
-  },
+  androidRow: { flexDirection: "row" },
   androidTab: {
     flex: 1,
     height: layout.controlHeight,
@@ -182,6 +191,5 @@ const styles = StyleSheet.create({
     height: layout.tabIndicatorHeightAndroid,
     borderTopLeftRadius: radius.full,
     borderTopRightRadius: radius.full,
-    backgroundColor: color.accent.primary,
   },
 });
