@@ -1,4 +1,4 @@
-// INFO: an icon-only square pressable with a control-height touch target; primary is the large accent play button, primaryCompact is the control-height accent circle, disabled greys it out and ignores presses, selected is a toggle's on and off tone, busy swaps the glyph for a spinner; an optional icon size and a filled glyph.
+// INFO: an icon-only square pressable with a control-height touch target; primary is the large accent play button, primaryCompact is the control-height accent circle, disabled greys it out and ignores presses, selected is a toggle's on and off tone, busy swaps the glyph for a spinner; an optional icon size and a filled glyph; narrow keeps the control height on a narrower width.
 import { ActivityIndicator, Pressable, StyleSheet } from "react-native";
 
 import { color } from "../tokens/color.ts";
@@ -20,6 +20,7 @@ interface IconButtonProps {
   disabled?: boolean;
   iconSize?: keyof typeof iconTokens.size;
   filled?: boolean;
+  narrow?: boolean;
 }
 
 export function IconButton({
@@ -32,6 +33,7 @@ export function IconButton({
   disabled,
   iconSize,
   filled,
+  narrow,
 }: IconButtonProps) {
   const primary = variant === "primary";
   const compact = variant === "primaryCompact";
@@ -63,6 +65,7 @@ export function IconButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.box,
+        narrow === true && styles.narrow,
         primary && styles.primary,
         compact && styles.compact,
         accent && disabled === true && styles.inactive,
@@ -85,6 +88,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  narrow: { width: layout.iconButtonNarrow },
   primary: {
     width: layout.playButton,
     height: layout.playButton,

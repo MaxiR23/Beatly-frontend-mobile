@@ -8,7 +8,7 @@
 // What is covered:
 // - the source, title, artists and the elapsed and remaining times, a search source and a track source drawn as their own label
 // - play or pause, next, previous, shuffle, repeat one and the seek bar reaching the controller
-// - the spec's layout: header, full-width cover at high priority, gaps, controls row, the wash from the track's image.color at the color.gradient.detailHero stops on iOS and Android, over the base surface and the player's full height, transparent only at its bottom edge (the neutral base surface without a color, fading in when the next track brings one), the transport icon sizes, the source centered between a leading side and a more button both layout.controlHeight wide on iOS with the native menu, iOS without it and Android
+// - the spec's layout: header, the cover (window width less the gutter on each side, radius.sm) at high priority, the titles, seek bar, controls and the error and empty states at layout.playerInset, gaps, controls row, the wash from the track's image.color at the color.gradient.detailHero stops on iOS and Android, over the base surface and the player's full height, transparent only at its bottom edge (the neutral base surface without a color, fading in when the next track brings one), the transport icon sizes, the source centered between a leading side and a more button both layout.controlHeight wide on iOS with the native menu, iOS without it and Android
 // - the empty state, the resolution failure with retry, loading, close and its fallback, es
 // - the platform split of the close button, the drag down closing, the scroll gate of the drag
 // - the cover shrinking while paused and springing back, reduce motion keeping the cover and the player still
@@ -22,7 +22,15 @@ import type { PlayableTrack, PlaybackSource } from "@beatly/core";
 import { color, icon, layout, motion, radius, spacing } from "@beatly/ui";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
-import { AccessibilityInfo, Animated, Dimensions, Platform, processColor } from "react-native";
+import {
+  AccessibilityInfo,
+  Animated,
+  Dimensions,
+  Platform,
+  processColor,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
@@ -291,18 +299,35 @@ describe("PlayerScreen", () => {
       height: layout.controlHeight,
       paddingHorizontal: spacing.xl,
     });
-    expect(screen.getByTestId("player-cover")).toHaveStyle({ marginTop: spacing.xl });
+    expect(2 * layout.gutter).toBe(32);
+    expect(radius.sm).toBe(8);
+    expect(layout.playerInset).toBe(28);
+    expect(screen.getByTestId("player-cover")).toHaveStyle({
+      marginTop: spacing.xl,
+      paddingHorizontal: layout.gutter,
+    });
     const box = screen.getByTestId("cover-placeholder").parent;
-    const side = Dimensions.get("window").width - 2 * spacing.xl;
+    const side = Dimensions.get("window").width - 2 * layout.gutter;
     expect(flatStyle(box?.props.style)).toEqual(
-      expect.objectContaining({ width: side, height: side, borderRadius: radius.md }),
+      expect.objectContaining({ width: side, height: side, borderRadius: radius.sm }),
     );
-    expect(screen.getByTestId("player-titles")).toHaveStyle({ marginTop: spacing.xxl });
-    expect(screen.getByTestId("player-seek")).toHaveStyle({ marginTop: spacing.xl });
+    expect(screen.getByTestId("player-titles")).toHaveStyle({
+      marginTop: spacing.xxl,
+      marginHorizontal: layout.playerInset,
+    });
+    expect(screen.getByTestId("player-seek")).toHaveStyle({
+      marginTop: spacing.xl,
+      marginHorizontal: layout.playerInset,
+    });
     expect(screen.getByTestId("player-controls")).toHaveStyle({
       marginTop: spacing.lg,
+      marginHorizontal: layout.playerInset,
       justifyContent: "space-between",
     });
+    const column = flatStyle(
+      screen.getByTestId("player-content").props.contentContainerStyle as StyleProp<ViewStyle>,
+    );
+    expect(column).not.toHaveProperty("paddingHorizontal");
   });
 
   it("puts the controls xl below the titles while the seek bar is not drawn", async () => {
@@ -471,6 +496,9 @@ describe("PlayerScreen", () => {
     await setup();
     expect(screen.getByText(en.player.empty)).toBeTruthy();
     expect(screen.getByRole("button", { name: en.player.close })).toBeTruthy();
+    expect(screen.getByTestId("player-empty")).toHaveStyle({
+      paddingHorizontal: layout.playerInset,
+    });
   });
 
   it("draws the error with retry on a resolution failure and retry asks the resolver again", async () => {
@@ -479,6 +507,9 @@ describe("PlayerScreen", () => {
     });
     await start(ctx);
     expect(screen.getByText(en.player.error.unplayable)).toBeTruthy();
+    expect(screen.getByTestId("player-error")).toHaveStyle({
+      marginHorizontal: layout.playerInset,
+    });
     expect(screen.getByText("Song 1")).toBeTruthy();
     expect(screen.queryByTestId("seek-touch")).toBeNull();
     const before = ctx.resolve.mock.calls.length;

@@ -16,7 +16,7 @@
 // - a more button on each up next and related row
 // - the current track's row marked with the now playing bars: a later repeat in up next, and the track among the related songs
 // - the handle's nudge: the first opening on a track bouncing it, a second opening on it and a track change while open not, an opening on another track bouncing it, none under reduce motion
-// - the tabs: primary tabs across the full width on Android switching the panel, the pill with the gutter on iOS
+// - the tabs: primary tabs across the full width on Android with no divider, switching the panel, the indicator in the cover's color mixed with white (the accent without a color), the pill with the gutter on iOS
 // - es
 //
 // Run with: pnpm --filter @beatly/mobile test -- PlayerSheet
@@ -26,7 +26,7 @@
 import { AUTOPLAY_KEY } from "@beatly/core";
 import type { HttpOutcome, PlayableTrack, TrackLyrics, TrackRelated, UpNext } from "@beatly/core";
 import { color, layout, motion } from "@beatly/ui";
-import { border } from "@beatly/ui/native";
+import { border, mixWithWhite } from "@beatly/ui/native";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import {
@@ -431,6 +431,33 @@ const autoplayOff = () => memoryStorage({ [AUTOPLAY_KEY]: "off" });
 const flushAll = () => act(() => Promise.resolve());
 
 describe("the tabs", () => {
+  it.each([
+    ["#336699", mixWithWhite("#336699", color.mix.tabIndicator)],
+    [null, color.accent.primary],
+  ] as const)("draws the Android indicator for the cover color %s", async (cover, expected) => {
+    Platform.OS = "android";
+    const ctx = await setup();
+    await act(async () => {
+      await ctx.playback.playList([{ ...track("t1"), image: tiers("t1", cover) }], 0, album);
+    });
+    await openSheet();
+    const tabs = screen.getAllByRole("tab");
+    for (const [i, tab] of tabs.entries()) {
+      await fireEvent(tab, "layout", {
+        nativeEvent: { layout: { x: i * 120, y: 0, width: 120, height: 48 } },
+      });
+    }
+    for (const key of ["upNext", "lyrics", "related"]) {
+      await fireEvent(screen.getByTestId(`player-sheet-tabs-label-${key}`), "layout", {
+        nativeEvent: { layout: { x: 0, y: 0, width: 60, height: 20 } },
+      });
+    }
+    const indicator = flatStyle(
+      screen.getByTestId("player-sheet-tabs-indicator").props.style as StyleProp<ViewStyle>,
+    );
+    expect(indicator.backgroundColor).toBe(expected);
+  });
+
   it("draws the tabs across the full width and switches the panel on Android", async () => {
     Platform.OS = "android";
     const ctx = await setup();
@@ -442,7 +469,10 @@ describe("the tabs", () => {
     const tabs = flatStyle(
       screen.getByTestId("player-sheet-tabs").props.style as StyleProp<ViewStyle>,
     );
-    expect(tabs.borderBottomWidth).toBe(border.width);
+    expect(tabs).not.toHaveProperty("borderBottomWidth");
+    expect(tabs).not.toHaveProperty("borderBottomColor");
+    expect(row).not.toHaveProperty("borderBottomWidth");
+    expect(row).not.toHaveProperty("borderBottomColor");
     await selectTab(en.player.sheet.tabs.lyrics);
     expect(ctx.getLyrics).toHaveBeenCalledWith("t1");
     expect(
@@ -474,6 +504,9 @@ describe("up next", () => {
       borderBottomWidth: border.hairline,
       borderBottomColor: color.surface.border,
     });
+    expect(
+      flatStyle(screen.getByTestId("player-sheet-upnext-divider").props.style),
+    ).not.toHaveProperty("marginVertical");
   });
 
   it("draws no divider when nothing is left in the queue", async () => {

@@ -8,6 +8,7 @@
 //
 // What is covered:
 // - the solid fallback when glass is unavailable, the glass view when it is, the availability test
+// - the barRect variant: small corners and the bar's padding, while the bar keeps the pill
 // - the tint on the fallback as a layer over the raised surface and on the glass view
 //
 // Run with: pnpm --filter @beatly/ui test -- GlassSurface
@@ -21,7 +22,7 @@ import { Platform, Text } from "react-native";
 import { GlassSurface, isGlassAvailable } from "../../src/components/GlassSurface.tsx";
 import { color } from "../../src/tokens/color.ts";
 import { radius } from "../../src/tokens/radius.ts";
-import { layout } from "../../src/tokens/spacing.ts";
+import { layout, spacing } from "../../src/tokens/spacing.ts";
 
 interface ReactNativeView {
   View: unknown;
@@ -67,6 +68,29 @@ describe("GlassSurface", () => {
     expect(screen.getByTestId("surface")).not.toHaveStyle({
       backgroundColor: color.surface.raised,
     });
+  });
+
+  it("draws the barRect variant with small corners and the bar's padding", async () => {
+    await render(
+      <GlassSurface variant="barRect" testID="surface">
+        <Text>inside</Text>
+      </GlassSurface>,
+    );
+    expect(screen.getByTestId("surface")).toHaveStyle({
+      borderRadius: radius.sm,
+      padding: spacing.xs,
+      flexDirection: "row",
+    });
+    expect(screen.getByTestId("surface")).not.toHaveStyle({ borderRadius: radius.full });
+  });
+
+  it("keeps the bar variant as a pill", async () => {
+    await render(
+      <GlassSurface variant="bar" testID="surface">
+        <Text>inside</Text>
+      </GlassSurface>,
+    );
+    expect(screen.getByTestId("surface")).toHaveStyle({ borderRadius: radius.full });
   });
 
   it("draws the circle variant as a control-height circle", async () => {

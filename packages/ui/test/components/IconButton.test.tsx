@@ -8,6 +8,7 @@
 // What is covered:
 // - the plain default, the primary variant box, the primaryCompact variant, the disabled state, the selected toggle states and their glyph tone, the busy indicator, the press
 // - the glyph size by default, by variant and by iconSize, and the filled glyph
+// - the narrow button: layout.iconButtonNarrow wide at the control height
 //
 // Run with: pnpm --filter @beatly/ui test -- IconButton
 //
@@ -50,6 +51,15 @@ describe("IconButton", () => {
     const button = screen.getByRole("button", { name: "Close" });
     expect(button).toHaveStyle({ width: layout.controlHeight, height: layout.controlHeight });
     expect(button.props.accessibilityState).toEqual({});
+  });
+
+  it("draws a narrow button at the control height", async () => {
+    await render(<IconButton icon="x" accessibilityLabel="Narrow" narrow onPress={jest.fn()} />);
+    expect(screen.getByRole("button", { name: "Narrow" })).toHaveStyle({
+      width: layout.iconButtonNarrow,
+      height: layout.controlHeight,
+    });
+    expect(layout.iconButtonNarrow).toBeLessThan(layout.controlHeight);
   });
 
   it("draws the primary variant as an accent circle of the play button size", async () => {

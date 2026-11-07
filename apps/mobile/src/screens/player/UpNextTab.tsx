@@ -1,6 +1,6 @@
 // INFO: the up next tab of the player sheet: the rest of the queue (a press jumps inside it), then the suggestions of the source (the up next of the track it started on, with the source, requested once per source when this tab opens or the last track starts, and never refetched by the tab) without that first track, under the autoplay switch, with autoplay on a divider between the rest of the queue and the suggestions when both have rows, and with autoplay off only the rest, without the suggestions' loading or error (a press plays the suggestions from it under a track source of that track); the rest of the queue is local, so it is drawn while the suggestions load or fail; every row ends with the track menu button; a row of the current track (a later repeat in the rest of the queue) is marked.
 import type { PlayableTrack } from "@beatly/core";
-import { color, layout, spacing } from "@beatly/ui";
+import { color, layout } from "@beatly/ui";
 import { EmptyState, ErrorState, LoadingState, MediaRow, border } from "@beatly/ui/native";
 import { useEffect, type ReactElement } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
@@ -126,7 +126,6 @@ export function UpNextTab({ seed, onAtTopChange }: UpNextTabProps) {
 const styles = StyleSheet.create({
   divider: {
     marginHorizontal: layout.gutter,
-    marginVertical: spacing.sm,
     borderBottomWidth: border.hairline,
     borderBottomColor: color.surface.border,
   },

@@ -130,13 +130,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: layout.gutter,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
     gap: layout.gap,
   },
   split: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
     paddingRight: layout.gutter,
   },
   body: {

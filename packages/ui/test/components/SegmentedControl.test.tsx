@@ -7,8 +7,8 @@
 //
 // What is covered:
 // - iOS: the options as tabs with the selected state, the press of another option and of the selected one, the container and selected backgrounds and the option height from tokens, no indicator
-// - Android: the Material 3 primary tabs: full-width row with the divider, each tab layout.controlHeight with the label centered, the selected label in the primary tone and the others in the secondary, the tab role and selected state, the press of another tab and of the selected one
-// - Android: no indicator before the layout; the indicator under the selected label, as wide as it, layout.tabIndicatorHeightAndroid tall with radius.full top corners in color.accent.primary; placed without sliding at first; sliding to the new tab with Animated.timing on the native driver for motion.duration.base; under reduce motion moved without sliding
+// - Android: the Material 3 primary tabs: full-width row with no divider, each tab layout.controlHeight with the label centered, the selected label in the primary tone and the subtitle weight and the others in the secondary and the button weight, no ripple and no fade on a tab, the tab role and selected state, the press of another tab and of the selected one
+// - Android: no indicator before the layout; the indicator under the selected label, as wide as it, layout.tabIndicatorHeightAndroid tall with radius.full top corners in color.accent.primary or in the given indicator color; the iOS row draws no indicator even with one; placed without sliding at first; sliding to the new tab with Animated.timing on the native driver for motion.duration.base; under reduce motion moved without sliding
 //
 // Run with: pnpm --filter @beatly/ui test -- SegmentedControl
 //
@@ -19,10 +19,10 @@ import { fireEvent, render, screen } from "@testing-library/react-native";
 import { Animated, Platform, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 
 import { SegmentedControl } from "../../src/components/SegmentedControl.tsx";
-import { border } from "../../src/tokens/border.ts";
 import { color } from "../../src/tokens/color.ts";
 import { motion } from "../../src/tokens/motion.ts";
 import { radius } from "../../src/tokens/radius.ts";
+import { typography } from "../../src/tokens/typography.ts";
 import { layout } from "../../src/tokens/spacing.ts";
 import { flatStyle } from "../helpers/flatStyle.ts";
 
@@ -124,6 +124,22 @@ describe("SegmentedControl on iOS", () => {
   });
 });
 
+describe("SegmentedControl on iOS with an indicator color", () => {
+  it("draws no indicator", async () => {
+    await render(
+      <SegmentedControl
+        options={options}
+        selected="b"
+        onChange={jest.fn()}
+        reduceMotion={false}
+        indicatorColor="#99b3cc"
+        testID="segments"
+      />,
+    );
+    expect(screen.queryByTestId("segments-indicator")).toBeNull();
+  });
+});
+
 describe("SegmentedControl on Android", () => {
   const draw = (selected: "a" | "b" | "c", reduceMotion = false) => (
     <SegmentedControl
@@ -135,13 +151,13 @@ describe("SegmentedControl on Android", () => {
     />
   );
 
-  it("draws a full-width row with a divider and tabs of the control height", async () => {
+  it("draws a full-width row without a divider and tabs of the control height", async () => {
     Platform.OS = "android";
     await render(draw("b"));
     const row = flat(screen.getByTestId("segments"));
     expect(screen.getByTestId("segments").props.accessibilityRole).toBe("tablist");
-    expect(row.borderBottomWidth).toBe(border.width);
-    expect(row.borderBottomColor).toBe(color.surface.border);
+    expect(row).not.toHaveProperty("borderBottomWidth");
+    expect(row).not.toHaveProperty("borderBottomColor");
     expect(row).not.toHaveProperty("backgroundColor");
     expect(row).not.toHaveProperty("borderRadius");
     const tabs = screen.getAllByRole("tab");
@@ -162,12 +178,31 @@ describe("SegmentedControl on Android", () => {
     expect(labelColor("Lyrics")).toBe(color.text.primary);
     expect(labelColor("Up next")).toBe(color.text.secondary);
     expect(labelColor("Related")).toBe(color.text.secondary);
+    const weight = (label: string) =>
+      flatStyle(screen.getByText(label).props.style as StyleProp<TextStyle>).fontWeight;
+    expect(weight("Lyrics")).toBe(typography.subtitle.fontWeight);
+    expect(weight("Up next")).toBe(typography.button.fontWeight);
+    expect(weight("Related")).toBe(typography.button.fontWeight);
     expect(screen.getByRole("tab", { name: "Lyrics" }).props.accessibilityState).toEqual({
       selected: true,
     });
     expect(screen.getByRole("tab", { name: "Up next" }).props.accessibilityState).toEqual({
       selected: false,
     });
+  });
+
+  it("shows no ripple and no fade on an Android tab", async () => {
+    Platform.OS = "android";
+    await render(draw("b"));
+    for (const tab of screen.getAllByRole("tab")) {
+      expect(tab.props.nativeForegroundAndroid).toBeUndefined();
+      await fireEvent(tab, "responderGrant", {
+        nativeEvent: { touches: [], pageX: 0, pageY: 0, timestamp: 0 },
+        persist: () => undefined,
+        currentTarget: 1,
+      });
+      expect(flat(tab)).not.toHaveProperty("opacity");
+    }
   });
 
   it("calls onChange for another tab and not for the selected one", async () => {
@@ -197,6 +232,35 @@ describe("SegmentedControl on Android", () => {
     expect(style.backgroundColor).toBe(color.accent.primary);
     expect(style.transform).toEqual([{ translateX: 155 }]);
     expect(timing).not.toHaveBeenCalled();
+  });
+
+  it("draws the indicator in the given color, and in the accent without one", async () => {
+    Platform.OS = "android";
+    const rendered = await render(
+      <SegmentedControl
+        options={options}
+        selected="b"
+        onChange={jest.fn()}
+        reduceMotion={false}
+        indicatorColor="#99b3cc"
+        testID="segments"
+      />,
+    );
+    await layoutAll();
+    expect(flat(screen.getByTestId("segments-indicator")).backgroundColor).toBe("#99b3cc");
+    await rendered.rerender(
+      <SegmentedControl
+        options={options}
+        selected="b"
+        onChange={jest.fn()}
+        reduceMotion={false}
+        indicatorColor={null}
+        testID="segments"
+      />,
+    );
+    expect(flat(screen.getByTestId("segments-indicator")).backgroundColor).toBe(
+      color.accent.primary,
+    );
   });
 
   it("slides the indicator to the new tab on the native driver", async () => {
