@@ -23,7 +23,7 @@ the info block:
   `mosaic`, the single image with one, the placeholder with none. Liked: the accent tile with the heart. Genre:
   its `mosaic`, or `image` with none. The hero cover draws `large` (its mosaic cells `medium`). The wash is `image.color` of the first mosaic element, or of the image when the mosaic is empty (genre) (ADR 030); liked stays neutral. A color arriving on a refetch fades in over `motion.duration.base`. The responses are `private, no-cache` and `no-store`, so a pending color is picked up on the next mount of the screen.
 - Info: `layout.gutter` on the sides, `spacing.xs` gap, nothing below it (the detail base owns the space to the action row).
-  - Creator row, `layout.creatorGap` gap: a `layout.creatorMark` (20) mark (the user's avatar, drawing one initial, for
+  - Creator row, `layout.creatorGap` (4) gap: a `layout.creatorMark` (20) mark (the user's avatar, drawing one initial, for
     an own playlist, the brand mark on `color.accent.primary` in `radius.full` for a
     genre playlist) and the name in `typography.rowTitle` and `color.text.secondary`.
     Liked has none; an own playlist has none when the profile fails.

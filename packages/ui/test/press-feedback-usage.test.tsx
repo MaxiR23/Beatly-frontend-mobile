@@ -8,7 +8,7 @@
 // What is covered:
 // - iOS: no ripple prop on the pressable, no opacity while unpressed, motion.pressOpacity while pressed
 // - Android: a foreground ripple in the expected token color, no background ripple, the clip (overflow hidden, radius.full for the round ones), no opacity
-// - Android: the mini player's play and next and the SegmentedControl tabs fade instead of rippling (DESIGN.md, Motion); the MiniPlayer body has no end padding of its own
+// - Android: the mini player's play and next, the SegmentedControl tabs and the MediaRow and TrackRow bodies fade instead of rippling (DESIGN.md, Motion); the MiniPlayer body has no end padding of its own
 //
 // Run with: pnpm --filter @beatly/ui test -- press-feedback-usage
 //
@@ -175,6 +175,7 @@ const sites: readonly Site[] = [
     find: () => screen.getByRole("button", { name: "Row" }),
     on: "surface",
     shape: "rect",
+    androidFade: true,
   },
   {
     name: "MediaRow with trailing",
@@ -184,6 +185,7 @@ const sites: readonly Site[] = [
     find: () => screen.getByRole("button", { name: "Row" }),
     on: "surface",
     shape: "rect",
+    androidFade: true,
   },
   {
     name: "MiniPlayer",
@@ -306,6 +308,7 @@ const sites: readonly Site[] = [
     find: () => screen.getByRole("button", { name: "Track" }),
     on: "surface",
     shape: "rect",
+    androidFade: true,
   },
   {
     name: "Notice action",
@@ -349,6 +352,7 @@ const sites: readonly Site[] = [
     find: () => screen.getByRole("button", { name: "Track" }),
     on: "surface",
     shape: "rect",
+    androidFade: true,
   },
 ];
 

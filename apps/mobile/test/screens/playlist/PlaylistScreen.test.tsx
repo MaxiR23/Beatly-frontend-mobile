@@ -195,7 +195,7 @@ describe("PlaylistScreen", () => {
     await setup({ listPlaylistTracks: tracksOf(two) });
     await screen.findByText("maxi_23");
     expect(layout.creatorMark).toBe(20);
-    expect(layout.creatorGap).toBe(6);
+    expect(layout.creatorGap).toBe(4);
     expect(flatStyle(screen.getByTestId("playlist-creator").props.style).gap).toBe(
       layout.creatorGap,
     );

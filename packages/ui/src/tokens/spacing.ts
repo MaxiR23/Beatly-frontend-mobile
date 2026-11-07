@@ -34,7 +34,7 @@ export const layout = {
   // Side of the leading mark (avatar or brand mark) of a detail creator line.
   creatorMark: 20,
   // Space between the creator mark and the creator's name.
-  creatorGap: 6,
+  creatorGap: 4,
   // Side of the large avatar of the profile screen.
   profileAvatar: 96,
   chipHeight: 36,
