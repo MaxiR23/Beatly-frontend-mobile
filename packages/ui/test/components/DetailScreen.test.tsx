@@ -10,6 +10,7 @@
 // - the four bodies: the skeleton, the error with retry, the unavailable message, the ready hero with its title and children
 // - the next-page footer of skeleton rows, its count and label, none without it, the end-reached threshold, the loading skeleton's row count
 // - the slot after the rows: under the rows and after the next-page skeleton, none without it, drawn with no rows
+// - the action row slot (spacing.lg under the children, spacing.sm above the first row, none without it) and the empty slot (only while there are no rows), no separator between the rows
 // - the hero title in typography.title
 // - the cover and image heroes at high priority, the rows' covers at normal
 // - the image hero: full width at the hero image ratio, the title over it in typography.display, the fade, the placeholder without an image, no centered cover or wash
@@ -206,6 +207,20 @@ describe("DetailScreen", () => {
     expect(screen.getByRole("button", { name: "Back" })).toBeTruthy();
   });
 
+  it("leaves the ready action row's spacing in both skeletons", async () => {
+    await draw({ kind: "loading", label: "Loading" });
+    const cover = flatStyle(screen.getByTestId("detail-skeleton-actions").props.style as ViewStyle);
+    expect(cover.paddingTop).toBe(spacing.lg);
+    expect(cover.paddingBottom).toBe(spacing.sm);
+  });
+
+  it("leaves the ready action row's spacing in the image skeleton", async () => {
+    await draw({ kind: "loading", label: "Loading", hero: "image" });
+    const image = flatStyle(screen.getByTestId("detail-skeleton-actions").props.style as ViewStyle);
+    expect(image.paddingTop).toBe(spacing.lg);
+    expect(image.paddingBottom).toBe(spacing.sm);
+  });
+
   it("draws the cover skeleton, without the image block, by default", async () => {
     await draw({ kind: "loading", label: "Loading" });
     expect(screen.queryByTestId("detail-skeleton-image")).toBeNull();
@@ -330,6 +345,63 @@ describe("DetailScreen", () => {
     expect(
       within(screen.getByTestId("detail-loading-more")).getAllByTestId("detail-skeleton-row"),
     ).toHaveLength(layout.skeletonRows);
+  });
+
+  it("draws the actions spacing.lg under the children and spacing.sm above the first row", async () => {
+    await draw({
+      ...(ready() as Extract<DetailBody, { kind: "ready" }>),
+      actions: <Text>action row</Text>,
+      rows: [{ key: "a", element: <Text>row a</Text> }],
+    });
+    const actions = screen.getByTestId("detail-actions");
+    expect(flatStyle(actions.props.style)).toEqual({
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.sm,
+    });
+    expect(
+      within(screen.getByTestId("detail-cascade-children")).getByTestId("detail-actions"),
+    ).toBe(actions);
+    expect(within(actions).getByText("action row")).toBeTruthy();
+  });
+
+  it("draws no actions wrapper without actions", async () => {
+    await draw(ready());
+    expect(screen.queryByTestId("detail-actions")).toBeNull();
+  });
+
+  it("draws the empty slot only while there are no rows", async () => {
+    const body = {
+      ...(ready() as Extract<DetailBody, { kind: "ready" }>),
+      empty: <Text>nothing here</Text>,
+    };
+    const first = await draw(body);
+    expect(screen.getByText("nothing here")).toBeTruthy();
+    await first.unmount();
+    await draw({ ...body, rows: [{ key: "a", element: <Text>row a</Text> }] });
+    expect(screen.queryByText("nothing here")).toBeNull();
+  });
+
+  it("adds no separator between the rows", async () => {
+    await draw({
+      ...(ready() as Extract<DetailBody, { kind: "ready" }>),
+      rows: [
+        { key: "a", element: <Text>row a</Text> },
+        { key: "b", element: <Text>row b</Text> },
+      ],
+    });
+    const list = screen.getByTestId("detail-list");
+    expect(list.props.ItemSeparatorComponent).toBeUndefined();
+    expect(flatStyle(list.props.contentContainerStyle)).toEqual({ paddingBottom: 0 });
+  });
+
+  it("draws the next-page skeleton rows spacing.md apart", async () => {
+    await draw({
+      ...(ready() as Extract<DetailBody, { kind: "ready" }>),
+      rows: [{ key: "a", element: <Text>row a</Text> }],
+      loadingMore: { label: "Loading more" },
+    });
+    const footer = flatStyle(screen.getByTestId("detail-loading-more").props.style);
+    expect(footer.gap).toBe(spacing.md);
   });
 
   it("draws the slot with no rows", async () => {

@@ -1,4 +1,4 @@
-// INFO: the mini player: a pill with a round cover on iOS below 26; on Android a rectangle with small corners, a square cover and filled play and next sitting together, narrower than a control, at control height. A title that scrolls when it does not fit and a subtitle line, play or pause and next; tinted, with no progress line, or bare inside a surface the system draws (the iOS 26+ tab accessory); tapping the body opens the player.
+// INFO: the mini player: a pill with a round cover on iOS below 26; on Android a rectangle with small corners, a square cover and filled play and next spacing.xs apart, pressed with the fade instead of the ripple, narrower than a control, at control height. A title that scrolls when it does not fit and a subtitle line, play or pause and next; tinted, with no progress line, or bare inside a surface the system draws (the iOS 26+ tab accessory); tapping the body opens the player.
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { layout, spacing } from "../tokens/spacing.ts";
@@ -51,7 +51,7 @@ export function MiniPlayer({
       accessibilityLabel={playing ? labels.pause : labels.play}
       busy={busy}
       onPress={onToggle}
-      {...(android ? { filled: true, narrow: true } : {})}
+      {...(android ? { filled: true, narrow: true, androidPress: "fade" } : {})}
     />
   );
   const next = (
@@ -59,7 +59,7 @@ export function MiniPlayer({
       icon="skipForward"
       accessibilityLabel={labels.next}
       onPress={onNext}
-      {...(android ? { filled: true, narrow: true } : {})}
+      {...(android ? { filled: true, narrow: true, androidPress: "fade" } : {})}
     />
   );
 
@@ -129,6 +129,6 @@ const styles = StyleSheet.create({
     gap: layout.gap,
     paddingHorizontal: spacing.xs,
   },
-  controls: { flexDirection: "row", gap: spacing.none },
+  controls: { flexDirection: "row", gap: spacing.xs },
   text: { flex: 1, gap: spacing.xxs },
 });

@@ -13,9 +13,9 @@ inside the current queue, keeping its order, shuffle and source; a tap on a sugg
 
 ## Layout
 
-- Mini player: `GlassSurface` `bar` tinted with the track's `image.color` (below iOS 26; the iOS 26+ accessory is bare), a round `Cover` of `layout.rowCover` (`small`); on Android a `GlassSurface` `barRect` (`radius.sm` corners) with a square cover and `filled`, `narrow` play and next (`layout.iconButtonNarrow` wide) sitting together with no gap, iOS unchanged,
+- Mini player: `GlassSurface` `bar` tinted with the track's `image.color` (below iOS 26; the iOS 26+ accessory is bare), a round `Cover` of `layout.rowCover` (`small`); on Android a `GlassSurface` `barRect` (`radius.sm` corners) with a square cover and `filled`, `narrow` play and next (`layout.iconButtonNarrow` wide) `spacing.xs` apart, pressed with the fade instead of the ripple, iOS unchanged,
   the title in `typography.rowTitle` (scrolling with `Marquee` unless reduce motion is on) and the artists in `typography.meta`, play or pause and next as `IconButton`s.
-  No progress line. `spacing.md` above the floating tab bar.
+  No progress line. `spacing.xs` above the floating tab bar.
 - Player screen: the header keeps `spacing.xl` sides; the titles, seek bar, controls and the error and empty states are `layout.playerInset` from the edges; a `layout.controlHeight` header with the chevron-down close (`icon.size.lg`), "Playing from" in
   `typography.label` / `color.text.secondary` over the source in `typography.rowTitle`, and the more button at its end (three vertical dots on Android, ADR 027); both sides `layout.controlHeight` wide, so "Playing from" and the source are centered on the screen on iOS and Android; a wash of the track's color over
   `color.surface.base` at `color.gradient.detailHero` over the player's full height, transparent only at its bottom edge (the base surface without a color); `spacing.xl` below, a square cover as wide as the
@@ -32,18 +32,18 @@ inside the current queue, keeping its order, shuffle and source; a tap on a sugg
   wash of the track's color over `color.surface.base` at `color.gradient.detailHero` over the panel's full height, transparent only at its bottom edge (the base surface without a color); the song row is a `layout.rowCoverMedium` cover (`radius.sm`, `small`),
   `typography.title`, `typography.body` in `color.text.secondary` and an `IconButton` `primaryCompact`; then a `SegmentedControl` (a pill on iOS, the Material 3 primary tabs on Android);
   rows are `MediaRow`s; lyrics lines are `typography.title`, `color.text.primary` for the playing one and `color.text.tertiary`
-  for the others; related artists and albums are `Carousel`s. Under reduce motion the sheet and the dim fade, nothing moves
+  for the others; the related songs are a `RowSection`; related artists and albums are `Carousel`s. Under reduce motion the sheet and the dim fade, nothing moves
   or scales, the handle does not nudge, and a bounce under way stops when reduce motion turns on.
 
 ## Platform differences
 
 - iOS 26+: the mini player is `NativeTabs.BottomAccessory`, the system sizes the frame, draws the glass capsule and sets the gap to the tab bar; the mini player draws bare inside it (no own surface, no tint), clipped to the frame.
-- Android and older iOS: the `accessory` of `FloatingTabBar`, at the pill's width (the window width minus `layout.gutter` on each side), `spacing.md` above the pill.
+- Android and older iOS: the `accessory` of `FloatingTabBar`, at the pill's width (the window width minus `layout.gutter` on each side), `spacing.xs` above the pill.
 - iOS: no close button; the player closes by dragging down, or with the VoiceOver escape gesture.
 - The sheet handle: 48 x 5 in white at 45% on Android (`layout.handleWidthAndroid`, `layout.handleHeightAndroid`, `color.overlay.handleAndroid`); iOS keeps `layout.handleWidth` x `layout.handleHeight` in `color.overlay.muted`. Its position is the same row on both.
 - Android: the chevron-down close button stays, next to the drag; the system back closes too. The header's more button draws three vertical dots (ADR 027).
 - Android, where the column scrolls: a drag that starts inside the column may be taken by the scroll; the header always closes.
-- The sheet's selector: on Android, Material 3 primary tabs across the full width (`layout.controlHeight` tabs, no divider and no press, the selected label in `typography.subtitle`, a `layout.tabIndicatorHeightAndroid` indicator in the cover's `image.color` mixed with white at `color.mix.tabIndicator` (`color.accent.primary` without a color) with `radius.full` top corners, as wide as the selected label, sliding over `motion.duration.base`, without sliding under reduce motion); iOS keeps the pill `SegmentedControl` with `layout.gutter` at the sides.
+- The sheet's selector: on Android, Material 3 primary tabs across the full width (`layout.controlHeight` tabs, no divider, and the press is the fade to `motion.pressOpacity`, the selected label in `typography.subtitle`, a `layout.tabIndicatorHeightAndroid` indicator in the cover's `image.color` mixed with white at `color.mix.tabIndicator` (`color.accent.primary` without a color) with `radius.full` top corners, as wide as the selected label, sliding over `motion.duration.base`, without sliding under reduce motion); iOS keeps the pill `SegmentedControl` with `layout.gutter` at the sides.
 - Foreground only (`shouldPlayInBackground: false`); `playsInSilentMode` is on.
 
 ## States

@@ -7,7 +7,7 @@
 //
 // What is covered:
 // - the skeleton, the title, artists and meta line with plural forms, null year and count omitted
-// - one spacing token between the title block, the action row, the tracks and the carousels
+// - the info, the action row and the tracks spaced by the detail base alone, the carousels by one spacing token
 // - the wash and the bar from image.color, neutral when it is null or absent
 // - the tracks as rows of the detail base in API order, the carousels in the slot after the rows, the empty message in the body with no rows
 // - the tracks with an unavailable one disabled, the empty tracks message, hidden empty carousels
@@ -150,13 +150,12 @@ describe("AlbumScreen", () => {
     expect(screen.getByText("Album · 2013 · 13 songs · 1 h 14 min")).toBeTruthy();
   });
 
-  it("leaves exactly one spacing token between the title block and the tracks", async () => {
+  it("leaves the info to actions and actions to rows spacing to the detail base", async () => {
     await setup();
-    const sectionsNode = await screen.findByTestId("album-sections");
-    const sections = flatStyle(sectionsNode.props.style as ViewStyle);
+    await screen.findByTestId("album-actions");
+    expect(within(screen.getByTestId("detail-actions")).getByTestId("album-actions")).toBeTruthy();
+    expect(screen.queryByTestId("album-sections")).toBeNull();
     const info = flatStyle(screen.getByTestId("album-info").props.style as ViewStyle);
-    expect(sections.gap).toBe(spacing.xl);
-    expect(sections.paddingBottom).toBe(spacing.xl);
     // The row wrapper carries only the cascade's opacity and translation: no layout of its own.
     const wrapper = flatStyle(screen.getByTestId("detail-cascade-row-1").props.style as ViewStyle);
     expect(Object.keys(wrapper).sort()).toEqual(["opacity", "transform"]);
@@ -177,7 +176,7 @@ describe("AlbumScreen", () => {
     expect(
       screen.queryAllByTestId(/^detail-cascade-row-/).map((node) => node.props.testID as string),
     ).toEqual(["detail-cascade-row-1", "detail-cascade-row-2"]);
-    expect(within(screen.getByTestId("album-sections")).queryByText("First Song")).toBeNull();
+    expect(within(screen.getByTestId("detail-actions")).queryByText("First Song")).toBeNull();
   });
 
   it("draws the carousels after the tracks, in the slot after the rows", async () => {
@@ -222,9 +221,10 @@ describe("AlbumScreen", () => {
     expect(screen.getAllByText("Test Album").length).toBeGreaterThan(0);
     expect(screen.queryByText(en.common.retry)).toBeNull();
     expect(screen.queryAllByTestId(/^detail-cascade-row-/)).toHaveLength(0);
-    const sections = screen.getByTestId("album-sections");
-    expect(within(sections).getByText(en.album.empty)).toBeTruthy();
-    expect(flatStyle(sections.props.style as ViewStyle).paddingBottom).toBeUndefined();
+    expect(screen.queryByTestId("album-sections")).toBeNull();
+    expect(
+      within(screen.getByTestId("detail-cascade-children")).getByText(en.album.empty),
+    ).toBeTruthy();
   });
 
   it("draws the wash and the bar from image.color", async () => {

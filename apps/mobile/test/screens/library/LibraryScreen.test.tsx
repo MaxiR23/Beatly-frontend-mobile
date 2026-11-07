@@ -44,6 +44,7 @@ import {
 } from "../../helpers/core.tsx";
 import { expectSheetOverWindow, Insets } from "../../helpers/insets.tsx";
 import { flatStyle } from "../../helpers/flatStyle.ts";
+import { expectNoRowSeparator } from "../../helpers/rowSpacing.ts";
 import { holdSheetMotion } from "../../helpers/sheetMotion.ts";
 
 const mockPush = jest.fn();
@@ -186,6 +187,12 @@ describe("LibraryScreen", () => {
     await fireEvent(screen.getByTestId("library-list"), "onEndReached");
     expect(await screen.findByText("Saved album")).toBeTruthy();
     expect(ctx.listLibrary).toHaveBeenLastCalledWith("c1");
+  });
+
+  it("draws the list with no separator between its rows", async () => {
+    await setup();
+    await screen.findByText(en.library.liked);
+    expectNoRowSeparator(screen.getByTestId("library-list"));
   });
 
   it("draws the liked entry and the empty message when the library has nothing else", async () => {

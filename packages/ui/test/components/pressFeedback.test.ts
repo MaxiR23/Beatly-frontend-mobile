@@ -8,6 +8,7 @@
 // What is covered:
 // - iOS: no ripple, the pressed control fades to motion.pressOpacity
 // - Android: a foreground ripple in the token color for the surface and for the accent, never an opacity, the clip bounds or round
+// - Android with android fade: no ripple, no clip, the iOS fade to motion.pressOpacity; the same on iOS
 // - the platform is read on every call
 //
 // Run with: pnpm --filter @beatly/ui test -- pressFeedback
@@ -84,6 +85,23 @@ describe("pressFeedback on Android", () => {
       overflow: "hidden",
       borderRadius: radius.full,
     });
+  });
+
+  it("with android fade has no ripple and fades to motion.pressOpacity while pressed", () => {
+    Platform.OS = "android";
+    for (const option of options) {
+      const press = pressFeedback({ ...option, android: "fade" });
+      expect(press.android_ripple).toBeUndefined();
+      expect(press.style(true)).toEqual({ opacity: motion.pressOpacity });
+      expect(press.style(false)).toBeNull();
+    }
+  });
+
+  it("with android fade on iOS is the iOS fade", () => {
+    Platform.OS = "ios";
+    const press = pressFeedback({ android: "fade" });
+    expect(press.android_ripple).toBeUndefined();
+    expect(press.style(true)).toEqual({ opacity: motion.pressOpacity });
   });
 
   it("follows a switch of the platform between calls", () => {

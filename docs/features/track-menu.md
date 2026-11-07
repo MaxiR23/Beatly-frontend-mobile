@@ -21,7 +21,7 @@ Token names only.
 
 - Button: an `IconButton` `more` (three vertical dots on Android, the horizontal ellipsis on iOS without the native module; `layout.controlHeight`, `icon.size.lg`) at the end of the row, outside the row's pressable body.
 - Menu sheet: a `Sheet` on a `GlassSurface` `sheet` on iOS (attached to the bottom and side edges, `radius.xl` top corners, `spacing.xl` padding, `spacing.lg` gap): a `MediaRow` header
-  with the track (its song row draws `image.small`), then one `ActionRow` per item (`layout.controlHeight` tall, `layout.gap` between the icon and the label,
+  with the track (its song row draws `image.small`), then one `ActionRow` per item, with no gap between them (on Android the divider under the header has `spacing.sm` below it), (`layout.controlHeight` tall, `layout.gap` between the icon and the label,
   `typography.body`, the icon at `icon.size.md`; the heart filled when liked; Remove from this playlist in `color.status.error`).
 - Playlist picker: a `Sheet` kept `topInset` below the status bar; `typography.subtitle` title, a New playlist `MediaRow` (`size="medium"`,
   the plus tile), then the playlists as `MediaRow`s of `layout.rowCoverMedium`; a playlist that holds the track has a trailing

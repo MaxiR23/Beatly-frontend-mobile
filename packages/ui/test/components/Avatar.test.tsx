@@ -6,7 +6,7 @@
 // - Avatar
 //
 // What is covered:
-// - initials or the user icon, the gradient stop from the name, the press and its role, the plain view without onPress, the creator size, the profile size
+// - initials or the user icon, the gradient stop from the name, the press and its role, the plain view without onPress, the creator size (20, one initial, the user icon at icon.size.sm), the profile size
 //
 // Run with: pnpm --filter @beatly/ui test -- Avatar
 //
@@ -17,6 +17,7 @@ import { fireEvent, render, screen } from "@testing-library/react-native";
 import { processColor, type ViewStyle } from "react-native";
 
 import { Avatar } from "../../src/components/Avatar.tsx";
+import { icon } from "../../src/tokens/icon.ts";
 import { layout } from "../../src/tokens/spacing.ts";
 import { avatarGradient } from "../../src/components/avatarIdentity.ts";
 import { flatStyle } from "../helpers/flatStyle.ts";
@@ -74,6 +75,20 @@ describe("Avatar", () => {
     const style = flatStyle((isJsonNode(root) ? root.props.style : undefined) as ViewStyle);
     expect(style.width).toBe(layout.creatorMark);
     expect(style.height).toBe(layout.creatorMark);
+    expect(layout.creatorMark).toBe(20);
+  });
+
+  it("draws one initial at the creator size", async () => {
+    await render(<Avatar name="Max Reb" size="creator" />);
+    expect(screen.getByText("M")).toBeTruthy();
+    expect(screen.queryByText("MR")).toBeNull();
+  });
+
+  it("draws the user icon at icon.size.sm at the creator size without a name", async () => {
+    await render(<Avatar name={null} size="creator" />);
+    const [glyph] = nodesWithProp(screen.toJSON(), "xmlns");
+    expect(glyph?.props).toMatchObject({ width: icon.size.sm, height: icon.size.sm });
+    expect(icon.size.sm).toBeLessThanOrEqual(layout.creatorMark);
   });
 
   it("draws the profile size at layout.profileAvatar", async () => {

@@ -21,8 +21,8 @@ accessible label. Each tab has its own screen (`home.md`, `explore.md`,
   `color.text.secondary`, `spacing.sm` above the bottom safe area.
 
 The mini player sits above the bar when a track is loaded: on iOS 26+ as
-`NativeTabs.BottomAccessory`, bare inside the system's capsule, elsewhere as the `accessory` of `FloatingTabBar`, drawn `spacing.md` above the
-pill (a rectangle with `radius.sm` corners on Android) at the same width, the window width minus `layout.gutter` on each side. Screens clear both with `useTabBarClearance`, built on the window's bottom inset: on iOS 26+ a native tab's own inset already holds the tab bar, and the clearance adds the bar itself (issue 144). See `player.md`.
+`NativeTabs.BottomAccessory`, bare inside the system's capsule, elsewhere as the `accessory` of `FloatingTabBar`, drawn `spacing.xs` above the
+pill (a rectangle with `radius.sm` corners on Android) at the same width, the window width minus `layout.gutter` on each side. Screens clear both with `useTabBarClearance`, built on the window's bottom inset: on iOS 26+ a native tab's own inset already holds the tab bar, and the clearance adds the bar itself (issue 144). With a track loaded, `floatingTabBarClearance` adds `ACCESSORY_GAP` (`spacing.xs`) on every platform, one source for the gap, so on iOS 26+ the content's bottom padding is 8 smaller than before while the native accessory stays where it was; checked on a device. See `player.md`.
 
 ## Platform differences
 

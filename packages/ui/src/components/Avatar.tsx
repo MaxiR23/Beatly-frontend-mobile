@@ -1,7 +1,7 @@
 // INFO: the avatar: the user's initials on a palette gradient chosen from
 // the name, or a user icon when there is no name. Pressable (a button) when
 // given onPress, decorative otherwise; the header size is layout.avatar and
-// the creator size, for a detail creator line, layout.creatorMark, and
+// the creator size, for a detail creator line, layout.creatorMark (it draws one initial, so it fits at maxFontScale), and
 // the profile size, for the profile screen, layout.profileAvatar.
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -22,7 +22,7 @@ interface AvatarProps {
 
 export function Avatar({ name, accessibilityLabel, onPress, size = "header" }: AvatarProps) {
   const [from, to] = avatarGradient(name);
-  const initials = initialsOf(name);
+  const initials = initialsOf(name, size === "creator" ? 1 : 2);
   const side =
     size === "profile"
       ? layout.profileAvatar

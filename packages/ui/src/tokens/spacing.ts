@@ -1,6 +1,6 @@
 // INFO: spacing tokens, a multiples-of-four scale (and an explicit zero), plus the layout
 // constants (gutter, gap, hitSlop, control height, text area height, and the carousel card,
-// avatar, creator mark, profile avatar, tab item, chip (and the Android chip), the Android tab indicator, the Android switch's track and thumb sizes, genre bar, row cover (and the Android track menu header cover), the Android action row height, detail hero cover, the detail hero wash's extension,
+// avatar, creator mark and its gap, profile avatar, tab item, chip (and the Android chip), the Android tab indicator, the Android switch's track and thumb sizes, genre bar, row cover (and the Android track menu header cover), the Android action row height, detail hero cover, the detail hero wash's extension,
 // track-number column, now playing bar width, large and medium play button, the detail play pill's width, the side buttons' stacking value, seek bar and sheet handle sizes (iOS and Android) and the Android modal sheet handle zone and width, and the skeleton bar widths, row count and card count, the seed photo of a recommendation section, the logo's bar geometry and the side of a welcome photo, the narrow icon button's width and the player's side inset).
 export const spacing = {
   // An explicit zero gap where a native container would otherwise apply a system default.
@@ -31,7 +31,10 @@ export const layout = {
   avatar: 36,
   // Side of the round seed photo in the header of a seed recommendation section.
   seedAvatar: 48,
-  creatorMark: 24,
+  // Side of the leading mark (avatar or brand mark) of a detail creator line.
+  creatorMark: 20,
+  // Space between the creator mark and the creator's name.
+  creatorGap: 6,
   // Side of the large avatar of the profile screen.
   profileAvatar: 96,
   chipHeight: 36,
@@ -61,8 +64,8 @@ export const layout = {
   heroImageRatio: 1,
   // Most of the window height, as a share, the detail image hero may take.
   heroImageMaxHeightShare: 0.5,
-  // How far the detail hero's wash reaches below the hero's bottom edge, behind the title, the actions and the first rows.
-  heroWashExtension: 280,
+  // How far the detail hero's wash reaches below the hero's bottom edge: past the title and the info, so they sit on the base surface (the contrast test pins it).
+  heroWashExtension: 112,
   trackNumber: 24,
   // Width of one bar of the now playing indicator.
   nowPlayingBarWidth: 3,

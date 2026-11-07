@@ -1,4 +1,4 @@
-// INFO: a segmented control: equal options, one selected; the caller passes the labels translated. iOS draws them in a pill; on Android they are the Material 3 primary tabs (ADR 027): full width, no divider and no press, the selected label heavier, and an indicator under it in the caller's color (white without one) that slides to it, without sliding under reduce motion.
+// INFO: a segmented control: equal options, one selected; the caller passes the labels translated. iOS draws them in a pill; on Android they are the Material 3 primary tabs (ADR 027): full width, no divider and the fade on press, the selected label heavier, and an indicator under it in the caller's color (white without one) that slides to it, without sliding under reduce motion.
 import { useLayoutEffect, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, View } from "react-native";
 
@@ -71,7 +71,7 @@ export function SegmentedControl<K extends string>({
   );
 }
 
-// Deliberate departures from Material 3 (DESIGN.md, Android tabs): no press feedback and no divider; the selected label is heavier and the indicator takes the caller's color.
+// Deliberate departures from Material 3 (DESIGN.md, Android tabs): no divider, and the press is the fade, not the ripple (`pressFeedback` `android: "fade"`); the selected label is heavier and the indicator takes the caller's color.
 function AndroidTabs<K extends string>({
   options,
   selected,
@@ -80,6 +80,7 @@ function AndroidTabs<K extends string>({
   indicatorColor,
   testID,
 }: SegmentedControlProps<K>) {
+  const press = pressFeedback({ android: "fade" });
   const [tabs, setTabs] = useState<Partial<Record<K, { x: number; width: number }>>>({});
   const [labels, setLabels] = useState<Partial<Record<K, number>>>({});
   const tab = tabs[selected];
@@ -114,6 +115,7 @@ function AndroidTabs<K extends string>({
         const isSelected = option.key === selected;
         return (
           <Pressable
+            android_ripple={press.android_ripple}
             key={option.key}
             accessibilityRole="tab"
             accessibilityLabel={option.label}
@@ -125,7 +127,7 @@ function AndroidTabs<K extends string>({
               const { x, width } = event.nativeEvent.layout;
               setTabs((prev) => ({ ...prev, [option.key]: { x, width } }));
             }}
-            style={styles.androidTab}
+            style={({ pressed }) => [styles.androidTab, press.style(pressed)]}
           >
             <View
               onLayout={(event) => {

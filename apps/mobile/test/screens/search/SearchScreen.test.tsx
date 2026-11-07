@@ -27,6 +27,7 @@ import { resources } from "../../../src/i18n/resources.ts";
 import { SearchScreen } from "../../../src/screens/search/SearchScreen.tsx";
 import { makeCore, memoryStorage, searchResultFixture, Wrapper } from "../../helpers/core.tsx";
 import { Insets } from "../../helpers/insets.tsx";
+import { expectFlushRows } from "../../helpers/rowSpacing.ts";
 
 const mockPush = jest.fn();
 jest.mock("expo-router", () => ({ useRouter: () => ({ push: mockPush }) }));
@@ -76,6 +77,15 @@ describe("SearchScreen recents", () => {
       .map((b) => b.props.accessibilityLabel as string)
       .filter((l) => l === "a" || l === "b");
     expect(labels).toEqual(["b", "a"]);
+  });
+
+  it("draws the recents as a row section with the clear link in its title and flush rows", async () => {
+    await setup({ storage: seed(["b", "a"]) });
+    await screen.findByText(en.search.recent.title);
+    const section = screen.getByTestId("search-recents");
+    expect(within(section).getByText(en.search.recent.clearAll)).toBeTruthy();
+    expect(within(screen.getByTestId("search-recents-rows")).getByLabelText("b")).toBeTruthy();
+    expectFlushRows(screen.getByTestId("search-recents-rows"));
   });
 
   it("draws the empty state when nothing was searched", async () => {
@@ -185,6 +195,16 @@ describe("SearchScreen results", () => {
     expect(
       within(screen.getByRole("button", { name: "Test Song" })).getByTestId("now-playing-bars"),
     ).toBeTruthy();
+  });
+
+  it("draws the songs as a row section with flush rows", async () => {
+    await setup();
+    await fireEvent.changeText(input(), "test");
+    await screen.findByText("Test Song");
+    const section = screen.getByTestId("search-songs");
+    expect(within(section).getByText(en.search.songs)).toBeTruthy();
+    expect(within(screen.getByTestId("search-songs-rows")).getByText("Test Song")).toBeTruthy();
+    expectFlushRows(screen.getByTestId("search-songs-rows"));
   });
 
   it("draws the top artist, then songs, then albums", async () => {

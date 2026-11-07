@@ -33,6 +33,7 @@ export function DetailSkeleton({ label, topInset, hero }: DetailSkeletonProps) {
         </View>
         <View style={styles.imageBody}>
           <View style={styles.metaBar} />
+          <View style={styles.actionsGap} testID="detail-skeleton-actions" />
           {Array.from({ length: layout.skeletonRows }, (_, row) => (
             <SkeletonRow key={row} />
           ))}
@@ -50,6 +51,7 @@ export function DetailSkeleton({ label, topInset, hero }: DetailSkeletonProps) {
       <View style={styles.cover} />
       <View style={styles.titleBar} />
       <View style={styles.metaBar} />
+      <View style={styles.actionsGap} testID="detail-skeleton-actions" />
       {Array.from({ length: layout.skeletonRows }, (_, row) => (
         <SkeletonRow key={row} />
       ))}
@@ -100,6 +102,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     backgroundColor: color.surface.border,
   },
+  // The ready body's action row spacing: spacing.lg above, spacing.sm below.
+  actionsGap: { paddingTop: spacing.lg, paddingBottom: spacing.sm },
   row: { flexDirection: "row", alignItems: "center", gap: layout.gap },
   number: {
     width: layout.trackNumber,

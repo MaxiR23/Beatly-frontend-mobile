@@ -7,7 +7,7 @@
 //
 // What is covered:
 // - iOS: the options as tabs with the selected state, the press of another option and of the selected one, the container and selected backgrounds and the option height from tokens, no indicator
-// - Android: the Material 3 primary tabs: full-width row with no divider, each tab layout.controlHeight with the label centered, the selected label in the primary tone and the subtitle weight and the others in the secondary and the button weight, no ripple and no fade on a tab, the tab role and selected state, the press of another tab and of the selected one
+// - Android: the Material 3 primary tabs: full-width row with no divider, each tab layout.controlHeight with the label centered, the selected label in the primary tone and the subtitle weight and the others in the secondary and the button weight, no ripple on a tab and the fade to motion.pressOpacity while pressed, the tab role and selected state, the press of another tab and of the selected one
 // - Android: no indicator before the layout; the indicator under the selected label, as wide as it, layout.tabIndicatorHeightAndroid tall with radius.full top corners in color.accent.primary or in the given indicator color; the iOS row draws no indicator even with one; placed without sliding at first; sliding to the new tab with Animated.timing on the native driver for motion.duration.base; under reduce motion moved without sliding
 //
 // Run with: pnpm --filter @beatly/ui test -- SegmentedControl
@@ -191,17 +191,18 @@ describe("SegmentedControl on Android", () => {
     });
   });
 
-  it("shows no ripple and no fade on an Android tab", async () => {
+  it("shows no ripple on an Android tab and fades it to motion.pressOpacity while pressed", async () => {
     Platform.OS = "android";
     await render(draw("b"));
     for (const tab of screen.getAllByRole("tab")) {
       expect(tab.props.nativeForegroundAndroid).toBeUndefined();
+      expect(flat(tab)).not.toHaveProperty("opacity");
       await fireEvent(tab, "responderGrant", {
         nativeEvent: { touches: [], pageX: 0, pageY: 0, timestamp: 0 },
         persist: () => undefined,
         currentTarget: 1,
       });
-      expect(flat(tab)).not.toHaveProperty("opacity");
+      expect(flat(tab).opacity).toBe(motion.pressOpacity);
     }
   });
 

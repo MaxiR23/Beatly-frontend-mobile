@@ -28,6 +28,7 @@ import {
   Wrapper,
 } from "../../helpers/core.tsx";
 import { expectSheetOverWindow, Insets } from "../../helpers/insets.tsx";
+import { expectNoRowSeparator } from "../../helpers/rowSpacing.ts";
 
 const en = resources.en;
 afterEach(() => {
@@ -81,6 +82,7 @@ describe("the My reports sheet", () => {
         ),
     });
     await screen.findByTestId("report-r1");
+    expectNoRowSeparator(screen.getByTestId("reports-list"));
     await fireEvent(screen.getByTestId("reports-list"), "onEndReached");
     expect(ctx.listMyBugReports).toHaveBeenLastCalledWith("c1");
     expect(await screen.findByTestId("report-r2")).toBeTruthy();

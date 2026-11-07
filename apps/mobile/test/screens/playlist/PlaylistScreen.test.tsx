@@ -18,6 +18,7 @@
 // - save only on a genre playlist: its state, its body, rolling back, disabled while loading or failing, none on own and liked
 // - the options button only on an own playlist, after play, opening the sheet with edit, edit tracks and delete in that order, edit tracks opening the edit mode without asking; a saved rename shown as the player's source with the queue kept; the edit sheet prefilled, Save disabled unchanged or invalid, only changed fields, empty description as null, a failed save keeping the sheet and input, a saved edit closing it and redrawing the header; delete asking first, cancel doing nothing, confirm going back, a failed delete showing the notice and staying, playback untouched; no recent registered by an edit or a delete
 // - the list playing under its own source kind: playlist, genre_playlist and liked
+// - the info and the actions spaced by the detail base alone, the creator mark at layout.creatorMark with layout.creatorGap, the options sheet's rows flush
 // - the skeleton, back and its fallback, es
 // - the options and the edit sheets attached to the bottom and side edges, their content 34 above the bottom edge inside a native tab (the window's inset, not the tab's 83)
 // - the options sheet drawn through its close, the edit sheet opening only once it has closed
@@ -31,7 +32,7 @@ import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { Alert, Animated, processColor } from "react-native";
 
-import { motion } from "@beatly/ui";
+import { layout, motion } from "@beatly/ui";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
@@ -51,6 +52,8 @@ import {
   Wrapper,
 } from "../../helpers/core.tsx";
 import { expectSheetOverWindow, Insets } from "../../helpers/insets.tsx";
+import { flatStyle } from "../../helpers/flatStyle.ts";
+import { expectFlushRows } from "../../helpers/rowSpacing.ts";
 import { holdSheetMotion } from "../../helpers/sheetMotion.ts";
 
 const mockBack = jest.fn();
@@ -174,6 +177,33 @@ describe("PlaylistScreen", () => {
     expect(screen.getByText("Windows down")).toBeTruthy();
     expect(screen.getByText("Private · 2 songs · 1 h 14 min")).toBeTruthy();
     expect(screen.getByTestId("cover-mosaic")).toBeTruthy();
+  });
+
+  it("leaves the spacing around the info and the actions to the detail base", async () => {
+    await setup({ listPlaylistTracks: tracksOf(two) });
+    await screen.findByText("First Song");
+    expect(
+      within(screen.getByTestId("detail-actions")).getByTestId("playlist-actions"),
+    ).toBeTruthy();
+    const info = flatStyle(screen.getByTestId("playlist-info").props.style);
+    expect(info.paddingBottom).toBeUndefined();
+    expect(info.marginBottom).toBeUndefined();
+    expect(info.padding).toBeUndefined();
+  });
+
+  it("draws the creator mark at layout.creatorMark, layout.creatorGap from the name", async () => {
+    await setup({ listPlaylistTracks: tracksOf(two) });
+    await screen.findByText("maxi_23");
+    expect(layout.creatorMark).toBe(20);
+    expect(layout.creatorGap).toBe(6);
+    expect(flatStyle(screen.getByTestId("playlist-creator").props.style).gap).toBe(
+      layout.creatorGap,
+    );
+    const mark = screen.getByTestId("playlist-creator").children[0];
+    expect(typeof mark === "string" ? {} : flatStyle(mark?.props.style)).toMatchObject({
+      width: layout.creatorMark,
+      height: layout.creatorMark,
+    });
   });
 
   it("draws the wash from the first mosaic element's color", async () => {
@@ -1178,6 +1208,12 @@ describe("PlaylistScreen own playlist options", () => {
     await setup({ listPlaylistTracks: tracksOf(two) }, true);
     await openEdit();
     expectSheetOverWindow({ top: false });
+  });
+
+  it("puts no gap or margin between the options sheet's rows", async () => {
+    await setup({ listPlaylistTracks: tracksOf(two) });
+    await openOptions();
+    expectFlushRows(screen.getByTestId("playlist-options-sheet"));
   });
 
   it("draws the options button after play on an own playlist", async () => {

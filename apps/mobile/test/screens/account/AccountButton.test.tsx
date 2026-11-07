@@ -25,6 +25,7 @@ import { resources } from "../../../src/i18n/resources.ts";
 import { AccountButton } from "../../../src/screens/account/AccountButton.tsx";
 import { makeCore, profileFixture, successOf, Wrapper } from "../../helpers/core.tsx";
 import { expectSheetOverWindow, Insets } from "../../helpers/insets.tsx";
+import { expectFlushRows } from "../../helpers/rowSpacing.ts";
 import { holdSheetMotion } from "../../helpers/sheetMotion.ts";
 
 const mockPush = jest.fn();
@@ -70,6 +71,12 @@ describe("the account sheet", () => {
     expect(names.indexOf(profileLabel("Maxi"))).toBeLessThan(
       names.indexOf(en.common.account.report),
     );
+  });
+
+  it("puts no gap or margin between the account entries", async () => {
+    await setup();
+    await screen.findByRole("button", { name: profileLabel("Maxi") });
+    expectFlushRows(screen.getByTestId("account-entries"));
   });
 
   it("draws No name on the row when the profile has none", async () => {

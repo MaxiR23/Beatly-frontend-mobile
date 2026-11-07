@@ -167,82 +167,79 @@ export function AlbumScreen() {
       cover: { images: data.image === null ? [] : [data.image] },
       washColor: wash,
       children: (
-        <View
-          style={[styles.sections, data.tracks.length > 0 ? styles.beforeRows : null]}
-          testID="album-sections"
-        >
-          <View style={styles.info} testID="album-info">
-            {data.artists.length > 0 ? (
-              <Text variant="rowTitle" tone="secondary">
-                {data.artists.map((artist, index) => {
-                  const artistId = artist.id;
-                  return (
-                    <Fragment key={`${String(index)}:${artist.name}`}>
-                      {index > 0 ? t("artistSeparator") : null}
-                      {artistId !== null ? (
-                        <Link
-                          label={artist.name}
-                          onPress={() => {
-                            router.push({ pathname: "/artist/[id]", params: { id: artistId } });
-                          }}
-                        />
-                      ) : (
-                        artist.name
-                      )}
-                    </Fragment>
-                  );
-                })}
-              </Text>
-            ) : null}
-            <Text variant="meta" tone="tertiary">
-              {albumMeta(data, t)}
+        <View style={styles.info} testID="album-info">
+          {data.artists.length > 0 ? (
+            <Text variant="rowTitle" tone="secondary">
+              {data.artists.map((artist, index) => {
+                const artistId = artist.id;
+                return (
+                  <Fragment key={`${String(index)}:${artist.name}`}>
+                    {index > 0 ? t("artistSeparator") : null}
+                    {artistId !== null ? (
+                      <Link
+                        label={artist.name}
+                        onPress={() => {
+                          router.push({ pathname: "/artist/[id]", params: { id: artistId } });
+                        }}
+                      />
+                    ) : (
+                      artist.name
+                    )}
+                  </Fragment>
+                );
+              })}
             </Text>
-          </View>
-          <DetailActions
-            testID="album-actions"
-            play={{
-              state: listPlayback,
-              label: t("play"),
-              pauseLabel: t("pause"),
-              busy: false,
-              onStart: () => {
-                start(wholeQueue(data.tracks, playable, "first"), "play");
-              },
-              onToggle: () => {
-                void playback.toggle();
-              },
-            }}
-            reduceMotion={nowPlaying.reduceMotion}
-            shuffle={{
-              label: t("shuffle"),
-              busy: false,
-              // Shuffle needs two playable tracks; track_count is the provider's count, unavailable ones included.
-              disabled: (wholeQueue(data.tracks, playable, "first")?.tracks.length ?? 0) < 2,
-              onPress: () => {
-                start(wholeQueue(data.tracks, playable, "random"), "shuffle");
-              },
-            }}
-            disabled={wholeQueue(data.tracks, playable, "first") === null}
-            save={{
-              label: saved.data === true ? t("unsave") : t("save"),
-              saved: saved.data === true,
-              disabled: !saved.isSuccess,
-              onPress: () => {
-                if (setSaved.isPending) return;
-                setSaved.mutate({
-                  saved: saved.data !== true,
-                  input: albumLibraryInputOf(
-                    id,
-                    data,
-                    data.artists.length > 0 ? artistNames(data.artists) : null,
-                  ),
-                });
-              },
-            }}
-          />
-          {data.tracks.length === 0 ? <EmptyState icon="music" message={t("empty")} /> : null}
+          ) : null}
+          <Text variant="meta" tone="tertiary">
+            {albumMeta(data, t)}
+          </Text>
         </View>
       ),
+      actions: (
+        <DetailActions
+          testID="album-actions"
+          play={{
+            state: listPlayback,
+            label: t("play"),
+            pauseLabel: t("pause"),
+            busy: false,
+            onStart: () => {
+              start(wholeQueue(data.tracks, playable, "first"), "play");
+            },
+            onToggle: () => {
+              void playback.toggle();
+            },
+          }}
+          reduceMotion={nowPlaying.reduceMotion}
+          shuffle={{
+            label: t("shuffle"),
+            busy: false,
+            // Shuffle needs two playable tracks; track_count is the provider's count, unavailable ones included.
+            disabled: (wholeQueue(data.tracks, playable, "first")?.tracks.length ?? 0) < 2,
+            onPress: () => {
+              start(wholeQueue(data.tracks, playable, "random"), "shuffle");
+            },
+          }}
+          disabled={wholeQueue(data.tracks, playable, "first") === null}
+          save={{
+            label: saved.data === true ? t("unsave") : t("save"),
+            saved: saved.data === true,
+            disabled: !saved.isSuccess,
+            onPress: () => {
+              if (setSaved.isPending) return;
+              setSaved.mutate({
+                saved: saved.data !== true,
+                input: albumLibraryInputOf(
+                  id,
+                  data,
+                  data.artists.length > 0 ? artistNames(data.artists) : null,
+                ),
+              });
+            },
+          }}
+        />
+      ),
+      empty: <EmptyState icon="music" message={t("empty")} />,
       rows,
       afterRows: hasCarousels ? (
         <View style={styles.afterTracks} testID="album-after-tracks">
@@ -288,11 +285,8 @@ export function AlbumScreen() {
   );
 }
 
-// The gap between the title block and the tracks is `sections.gap`, chosen once; `info` adds none.
-// `beforeRows` gives the same gap between the action row and the first track, `afterTracks` the one before the carousels.
+// The detail base owns the spacing between the info, the actions and the first track; `afterTracks` is the gap before the carousels.
 const styles = StyleSheet.create({
-  sections: { gap: spacing.xl },
-  beforeRows: { paddingBottom: spacing.xl },
   afterTracks: { gap: spacing.xl, paddingTop: spacing.xl },
   info: { paddingHorizontal: layout.gutter, gap: spacing.xs },
 });

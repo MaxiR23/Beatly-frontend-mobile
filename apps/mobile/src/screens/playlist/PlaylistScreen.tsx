@@ -285,96 +285,94 @@ export function PlaylistScreen() {
       onEndReached: tracks.loadMore,
       loadingMore: tracks.isFetchingNextPage ? { label: tc("loading") } : undefined,
       children: (
-        <>
-          <View style={styles.info} testID="playlist-info">
-            {creator !== null ? (
-              <View style={styles.creator} testID="playlist-creator">
-                {creator.mark === "avatar" ? (
-                  <Avatar name={creator.name} size="creator" />
-                ) : (
-                  <View style={styles.brandMark}>
-                    <Picture
-                      source={brandIcon}
-                      style={styles.brandMarkImage}
-                      contentFit="contain"
-                      accessibilityIgnoresInvertColors
-                      accessible={false}
-                    />
-                  </View>
-                )}
-                <Text variant="rowTitle" tone="secondary">
-                  {creator.name}
-                </Text>
-              </View>
-            ) : null}
-            {description !== null && description !== "" ? (
-              <Text tone="secondary">{description}</Text>
-            ) : null}
-            <Text variant="meta" tone="tertiary">
-              {playlistMeta(meta, t)}
-            </Text>
-          </View>
-          <View style={styles.actions}>
-            <DetailActions
-              testID="playlist-actions"
-              variant={data.source === "liked" ? "wide" : "centered"}
-              play={{
-                state: listPlayback,
-                label: t("play"),
-                pauseLabel: t("pause"),
-                busy: starting === "play",
-                onStart: () => {
-                  void startWhole("play");
-                },
-                onToggle: () => {
-                  void playback.toggle();
-                },
-              }}
-              reduceMotion={nowPlaying.reduceMotion}
-              shuffle={{
-                label: t("shuffle"),
-                busy: starting === "shuffle",
-                // Shuffle needs two tracks: the backend's total (own and liked page, so never the loaded list), the genre playlist's count.
-                disabled: meta.count < 2,
-                onPress: () => {
-                  void startWhole("shuffle");
-                },
-              }}
-              disabled={list.length === 0}
-              {...(data.source === "user"
-                ? {
-                    options: (
-                      <IconButton
-                        icon="more"
-                        accessibilityLabel={t("options.more")}
-                        onPress={() => {
-                          sheet.show("options");
-                        }}
-                      />
-                    ),
-                  }
-                : {})}
-              {...(data.source === "genre"
-                ? {
-                    save: {
-                      label: saved.data === true ? t("unsave") : t("save"),
-                      saved: saved.data === true,
-                      disabled: !saved.isSuccess,
-                      onPress: () => {
-                        if (setSaved.isPending) return;
-                        setSaved.mutate({
-                          saved: saved.data !== true,
-                          input: genrePlaylistLibraryInputOf(id, data.playlist.title, coverUrl),
-                        });
-                      },
-                    },
-                  }
-                : {})}
-            />
-          </View>
-          {list.length === 0 ? <EmptyState icon="music" message={t("empty")} /> : null}
-        </>
+        <View style={styles.info} testID="playlist-info">
+          {creator !== null ? (
+            <View style={styles.creator} testID="playlist-creator">
+              {creator.mark === "avatar" ? (
+                <Avatar name={creator.name} size="creator" />
+              ) : (
+                <View style={styles.brandMark}>
+                  <Picture
+                    source={brandIcon}
+                    style={styles.brandMarkImage}
+                    contentFit="contain"
+                    accessibilityIgnoresInvertColors
+                    accessible={false}
+                  />
+                </View>
+              )}
+              <Text variant="rowTitle" tone="secondary">
+                {creator.name}
+              </Text>
+            </View>
+          ) : null}
+          {description !== null && description !== "" ? (
+            <Text tone="secondary">{description}</Text>
+          ) : null}
+          <Text variant="meta" tone="tertiary">
+            {playlistMeta(meta, t)}
+          </Text>
+        </View>
       ),
+      actions: (
+        <DetailActions
+          testID="playlist-actions"
+          variant={data.source === "liked" ? "wide" : "centered"}
+          play={{
+            state: listPlayback,
+            label: t("play"),
+            pauseLabel: t("pause"),
+            busy: starting === "play",
+            onStart: () => {
+              void startWhole("play");
+            },
+            onToggle: () => {
+              void playback.toggle();
+            },
+          }}
+          reduceMotion={nowPlaying.reduceMotion}
+          shuffle={{
+            label: t("shuffle"),
+            busy: starting === "shuffle",
+            // Shuffle needs two tracks: the backend's total (own and liked page, so never the loaded list), the genre playlist's count.
+            disabled: meta.count < 2,
+            onPress: () => {
+              void startWhole("shuffle");
+            },
+          }}
+          disabled={list.length === 0}
+          {...(data.source === "user"
+            ? {
+                options: (
+                  <IconButton
+                    icon="more"
+                    accessibilityLabel={t("options.more")}
+                    onPress={() => {
+                      sheet.show("options");
+                    }}
+                  />
+                ),
+              }
+            : {})}
+          {...(data.source === "genre"
+            ? {
+                save: {
+                  label: saved.data === true ? t("unsave") : t("save"),
+                  saved: saved.data === true,
+                  disabled: !saved.isSuccess,
+                  onPress: () => {
+                    if (setSaved.isPending) return;
+                    setSaved.mutate({
+                      saved: saved.data !== true,
+                      input: genrePlaylistLibraryInputOf(id, data.playlist.title, coverUrl),
+                    });
+                  },
+                },
+              }
+            : {})}
+        />
+      ),
+      empty: <EmptyState icon="music" message={t("empty")} />,
     };
   }
 
@@ -432,9 +430,8 @@ export function PlaylistScreen() {
 }
 
 const styles = StyleSheet.create({
-  info: { paddingHorizontal: layout.gutter, paddingBottom: spacing.xl, gap: spacing.xs },
-  actions: { paddingBottom: spacing.xl },
-  creator: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  info: { paddingHorizontal: layout.gutter, gap: spacing.xs },
+  creator: { flexDirection: "row", alignItems: "center", gap: layout.creatorGap },
   notice: { position: "absolute", left: layout.gutter, right: layout.gutter },
   brandMark: {
     width: layout.creatorMark,

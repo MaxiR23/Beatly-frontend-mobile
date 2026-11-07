@@ -1,4 +1,4 @@
-// INFO: an icon-only square pressable with a control-height touch target; primary is the large accent play button, primaryCompact is the control-height accent circle, disabled greys it out and ignores presses, selected is a toggle's on and off tone, busy swaps the glyph for a spinner; an optional icon size and a filled glyph; narrow keeps the control height on a narrower width.
+// INFO: an icon-only square pressable with a control-height touch target; primary is the large accent play button, primaryCompact is the control-height accent circle, disabled greys it out and ignores presses, selected is a toggle's on and off tone, busy swaps the glyph for a spinner; an optional icon size and a filled glyph; narrow keeps the control height on a narrower width; androidPress fade drops the Android ripple for the fade.
 import { ActivityIndicator, Pressable, StyleSheet } from "react-native";
 
 import { color } from "../tokens/color.ts";
@@ -21,6 +21,7 @@ interface IconButtonProps {
   iconSize?: keyof typeof iconTokens.size;
   filled?: boolean;
   narrow?: boolean;
+  androidPress?: "ripple" | "fade";
 }
 
 export function IconButton({
@@ -34,6 +35,7 @@ export function IconButton({
   iconSize,
   filled,
   narrow,
+  androidPress,
 }: IconButtonProps) {
   const primary = variant === "primary";
   const compact = variant === "primaryCompact";
@@ -52,7 +54,11 @@ export function IconButton({
   if (selected !== undefined) state.selected = selected;
   if (busy !== undefined) state.busy = busy;
   if (disabled !== undefined) state.disabled = disabled;
-  const press = pressFeedback({ on: accent ? "accent" : "surface", shape: "round" });
+  const press = pressFeedback({
+    on: accent ? "accent" : "surface",
+    shape: "round",
+    ...(androidPress !== undefined ? { android: androidPress } : {}),
+  });
   return (
     <Pressable
       android_ripple={press.android_ripple}

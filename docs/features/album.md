@@ -27,7 +27,7 @@ the body:
   `typography.meta` and `color.text.tertiary`: the kind, the year, the song count
   and the duration in hours and minutes, each omitted when the API sends none.
 - Action row: `DetailActions` (`DESIGN.md`, "Detail screen base") between the info and the
-  tracks, a centered group `layout.gap` apart: shuffle, play (`PlayButton`) and save (plus, or check when saved), both side buttons `layout.controlHeight`; when the pill shrinks (on the native driver, no layout animated) shuffle and save follow it toward the center and end `layout.gap` from the circle. No share,
+  tracks, drawn by the detail base's `actions` slot with `spacing.lg` above it and `spacing.sm` below it (the screen adds no padding, margin or wrapper), a centered group `layout.gap` apart: shuffle, play (`PlayButton`) and save (plus, or check when saved), both side buttons `layout.controlHeight`; when the pill shrinks (on the native driver, no layout animated) shuffle and save follow it toward the center and end `layout.gap` from the circle. No share,
   search or options button yet. Play is disabled when no track is playable, and shuffle when fewer than two are (unavailable tracks are not counted, and `track_count` is not used: it is the provider's count); disabled shuffle looks and is announced like disabled play; save is
   disabled while its state loads or when reading it failed.
 - Play button: idle (the album is not the playback source) it is a pill with the play glyph and
@@ -42,8 +42,7 @@ the body:
 - Carousels: other versions and recommended albums, each hidden when empty. A
   card is `layout.carouselCard` wide with a `radius.sm` cover at `medium`; its subtitle is the
   artists, or the year when there are none.
-- Sections are `spacing.xl` apart, and that one gap is also the space between the info
-  (the end of the title block) and the tracks: nothing else adds to it. The action row adds `spacing.xl` under itself when there are tracks and the carousels `spacing.xl` above themselves, so every gap stays `spacing.xl`. The bottom clears the floating tab bar with
+- The spacing between the info, the action row and the first track belongs to the detail base alone (`spacing.lg` and `spacing.sm`, plus the row's own padding); the album has no sections gap. The carousels sit `spacing.xl` after the last track. The bottom clears the floating tab bar with
   `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
 ## Platform differences
