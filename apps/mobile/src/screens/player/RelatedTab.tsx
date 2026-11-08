@@ -1,17 +1,17 @@
 // INFO: the related tab of the player sheet, from GET /tracks/{id}/related: the songs (a press plays them from it), the artists and the albums (a press opens them); an empty section is hidden and three empty lists draw the empty state; every song row ends with the track menu button and the current track's row is marked.
 import type { AlbumRef, ImageTiers, RelatedArtist } from "@beatly/core";
-import { layout, spacing } from "@beatly/ui";
+import { spacing } from "@beatly/ui";
 import {
   Carousel,
   EmptyState,
   ErrorState,
   LoadingState,
   MediaRow,
-  Text,
+  RowSection,
   type CarouselItem,
 } from "@beatly/ui/native";
 import { useEffect } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet } from "react-native";
 
 import { useT } from "../../adapters/i18n.ts";
 import { useRelated } from "../../queries/useTracks.ts";
@@ -91,10 +91,7 @@ export function RelatedTab({ trackId, onAtTopChange, onOpenAlbum, onOpenArtist }
       testID="player-sheet-related"
     >
       {songs.length > 0 ? (
-        <View style={styles.songs} testID="player-sheet-related-songs">
-          <View style={styles.sectionHeader}>
-            <Text variant="section">{t("sheet.songs")}</Text>
-          </View>
+        <RowSection title={t("sheet.songs")} testID="player-sheet-related-songs">
           {songs.map((song, position) => (
             <MediaRow
               key={`${String(position)}:${song.track_id}`}
@@ -116,7 +113,7 @@ export function RelatedTab({ trackId, onAtTopChange, onOpenAlbum, onOpenArtist }
               }}
             />
           ))}
-        </View>
+        </RowSection>
       ) : null}
       {artists.length > 0 ? (
         <Carousel
@@ -138,6 +135,4 @@ export function RelatedTab({ trackId, onAtTopChange, onOpenAlbum, onOpenArtist }
 
 const styles = StyleSheet.create({
   sections: { gap: spacing.xl },
-  songs: { gap: spacing.md },
-  sectionHeader: { paddingHorizontal: layout.gutter },
 });

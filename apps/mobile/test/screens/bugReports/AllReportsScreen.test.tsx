@@ -31,6 +31,7 @@ import {
   Wrapper,
 } from "../../helpers/core.tsx";
 import { Insets } from "../../helpers/insets.tsx";
+import { expectNoRowSeparator } from "../../helpers/rowSpacing.ts";
 import { holdSheetMotion } from "../../helpers/sheetMotion.ts";
 
 const mockBack = jest.fn();
@@ -124,6 +125,7 @@ describe("the All reports screen", () => {
         ),
     });
     await screen.findByTestId("triage-r1");
+    expectNoRowSeparator(screen.getByTestId("all-reports-list"));
     await fireEvent(screen.getByTestId("all-reports-list"), "onEndReached");
     expect(ctx.listBugReports).toHaveBeenLastCalledWith(null, "c1");
     expect(await screen.findByTestId("triage-r3")).toBeTruthy();

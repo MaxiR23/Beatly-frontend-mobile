@@ -26,9 +26,12 @@ interface FloatingTabBarProps {
   accessory?: ReactNode;
 }
 
+// The gap between the accessory (the mini player) and the pill; the style and the clearance read it.
+const ACCESSORY_GAP = spacing.xs;
+
 // The space a screen leaves at its bottom so its last item clears the bar:
 // the bar's offset, its height and one section gap of air, plus the
-// accessory's height and its `spacing.md` gap when there is one.
+// accessory's height and its gap when there is one.
 export function floatingTabBarClearance(bottomInset: number, accessory = false): number {
   return (
     bottomInset +
@@ -36,7 +39,7 @@ export function floatingTabBarClearance(bottomInset: number, accessory = false):
     layout.controlHeight +
     2 * spacing.xs +
     spacing.xl +
-    (accessory ? layout.controlHeight + 2 * spacing.xs + spacing.md : 0)
+    (accessory ? layout.controlHeight + 2 * spacing.xs + ACCESSORY_GAP : 0)
   );
 }
 
@@ -83,7 +86,7 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: "center",
   },
-  accessory: { marginBottom: spacing.md },
+  accessory: { marginBottom: ACCESSORY_GAP },
   item: {
     flex: 1,
     height: layout.controlHeight,

@@ -46,7 +46,7 @@ export function TrackMenuSheet({ visible, onClosed, track, onClose }: TrackMenuS
       closeLabel={t("close")}
       bottomInset={insets.bottom}
     >
-      <View style={styles.body} testID="track-menu-sheet">
+      <View testID="track-menu-sheet">
         {android ? (
           <View style={styles.headerAndroid} testID="track-menu-sheet-header">
             {header("menu")}
@@ -73,13 +73,12 @@ export function TrackMenuSheet({ visible, onClosed, track, onClose }: TrackMenuS
 }
 
 const styles = StyleSheet.create({
-  body: { gap: spacing.xs },
   // Full width inside the Android sheet; the MediaRow's own gutter puts the cover 16 from the edge.
   headerAndroid: { marginHorizontal: -spacing.xl },
-  // With the body's spacing.xs gap, the 8 below the divider.
+  // The 8 below the divider.
   divider: {
     borderBottomWidth: border.hairline,
     borderBottomColor: color.surface.border,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
 });

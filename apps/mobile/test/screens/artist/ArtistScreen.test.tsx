@@ -262,11 +262,21 @@ describe("ArtistScreen", () => {
     const popular = screen.getByTestId("artist-popular");
     expect(within(popular).queryByText("Popular Song")).toBeNull();
     expect(within(popular).getByText(en.artist.popular)).toBeTruthy();
-    for (const song of screen.getAllByTestId("artist-song")) {
-      expect(flatStyle(song.props.style as ViewStyle)).toEqual({
-        paddingTop: spacing.md,
-      });
+    // No row carries space of its own: the wrapper is only the cascade, the song only its row.
+    for (const wrapper of screen.getAllByTestId(/^detail-cascade-row-/)) {
+      expect(Object.keys(flatStyle(wrapper.props.style as ViewStyle)).sort()).toEqual([
+        "opacity",
+        "transform",
+      ]);
     }
+    for (const song of screen.getAllByTestId("artist-song")) {
+      const style = flatStyle(song.props.style as ViewStyle);
+      expect(style.paddingTop).toBeUndefined();
+      expect(style.margin).toBeUndefined();
+      expect(style.marginTop).toBeUndefined();
+      expect(style.marginBottom).toBeUndefined();
+    }
+    expect(flatStyle(popular.props.style as ViewStyle).paddingBottom).toBe(spacing.md);
   });
 
   it("draws the carousels after the songs, in the slot after the rows", async () => {

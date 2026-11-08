@@ -12,7 +12,7 @@ import {
   DetailScreen,
   MediaRow,
   Notice,
-  Text,
+  SectionTitle,
   type CarouselItem,
   type DetailBody,
   type DetailRow,
@@ -169,26 +169,25 @@ export function ArtistScreen() {
       return {
         key: `${String(index)}:${song.track_id ?? song.title}`,
         element: (
-          <View style={styles.song} testID="artist-song">
-            <MediaRow
-              shape="square"
-              images={imagesOf(song.image)}
-              title={song.title}
-              subtitle={song.album ?? undefined}
-              available={playable !== null}
-              unavailableLabel={t("trackUnavailable", { title: song.title })}
-              nowPlaying={nowPlaying.of(playable?.trackId ?? null)}
-              reduceMotion={nowPlaying.reduceMotion}
-              trailing={playable !== null ? <TrackMenuButton track={playable} /> : undefined}
-              onPress={
-                playable !== null
-                  ? () => {
-                      playSong(index);
-                    }
-                  : undefined
-              }
-            />
-          </View>
+          <MediaRow
+            testID="artist-song"
+            shape="square"
+            images={imagesOf(song.image)}
+            title={song.title}
+            subtitle={song.album ?? undefined}
+            available={playable !== null}
+            unavailableLabel={t("trackUnavailable", { title: song.title })}
+            nowPlaying={nowPlaying.of(playable?.trackId ?? null)}
+            reduceMotion={nowPlaying.reduceMotion}
+            trailing={playable !== null ? <TrackMenuButton track={playable} /> : undefined}
+            onPress={
+              playable !== null
+                ? () => {
+                    playSong(index);
+                  }
+                : undefined
+            }
+          />
         ),
       };
     });
@@ -202,9 +201,7 @@ export function ArtistScreen() {
       washColor: null,
       children:
         data.songs.length > 0 ? (
-          <View style={styles.sectionHeader} testID="artist-popular">
-            <Text variant="section">{t("popular")}</Text>
-          </View>
+          <SectionTitle title={t("popular")} testID="artist-popular" />
         ) : null,
       rows,
       afterRows: hasCarousels ? (
@@ -286,9 +283,7 @@ export function ArtistScreen() {
 
 const styles = StyleSheet.create({
   sections: { gap: spacing.xl },
-  // The popular title and the songs keep their spacing.md column gap; the carousels keep spacing.xl after the last song.
+  // The carousels keep spacing.xl after the last song.
   afterSongs: { paddingTop: spacing.xl },
-  song: { paddingTop: spacing.md },
   notice: { position: "absolute", left: layout.gutter, right: layout.gutter },
-  sectionHeader: { paddingHorizontal: layout.gutter },
 });

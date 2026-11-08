@@ -19,8 +19,8 @@ Everything is drawn by `DetailScreen` (`DESIGN.md`, "Detail screen base"), excep
 
 - Hero: the image variant (`image.large`), full width at `layout.heroImageRatio` on `color.surface.card`, faded into
   `color.surface.base`, the name over it in `typography.display`.
-- Popular songs: rows of the base, each `spacing.md` under the previous one or the title, under a `typography.section` title with `layout.gutter` on
-  the sides; one `MediaRow` per song in API order, a `layout.rowCover` cover (`small`), the title in
+- Popular songs: rows of the base with no space between them, under a `SectionTitle` (`typography.section`, `layout.gutter` on
+  the sides, `spacing.md` under it); one `MediaRow` per song in API order, a `layout.rowCover` cover (`small`), the title in
   `typography.rowTitle`, the album in `typography.meta`. A song without `track_id` draws in
   `color.text.disabled`.
 - Albums, singles and EPs, similar artists: a `Carousel` each, a card `layout.carouselCard` wide;

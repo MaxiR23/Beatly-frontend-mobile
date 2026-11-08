@@ -2,14 +2,14 @@
 // is the legacy one so a user keeps their color.
 import { avatarPalette } from "../tokens/palette.ts";
 
-export function initialsOf(name: string | null): string {
+export function initialsOf(name: string | null, max = 2): string {
   if (name === null) return "";
   const words = name
     .trim()
     .split(/\s+/)
     .filter((word) => word !== "");
   return words
-    .slice(0, 2)
+    .slice(0, max)
     .map((word) => Array.from(word)[0] ?? "")
     .join("")
     .toUpperCase();

@@ -31,6 +31,7 @@ import { resources } from "../../../src/i18n/resources.ts";
 import { expectSheetOverWindow } from "../../helpers/insets.tsx";
 import { fullTrack, setupMenu } from "./trackMenuHelpers.tsx";
 import { flatStyle } from "../../helpers/flatStyle.ts";
+import { expectFlushRows } from "../../helpers/rowSpacing.ts";
 import { holdSheetMotion } from "../../helpers/sheetMotion.ts";
 
 const en = resources.en;
@@ -83,12 +84,18 @@ describe("the track menu", () => {
     expect(flatStyle(screen.getByTestId("track-menu-sheet-divider").props.style)).toEqual({
       borderBottomColor: color.surface.border,
       borderBottomWidth: border.hairline,
-      marginBottom: spacing.xs,
+      marginBottom: spacing.sm,
     });
     expect(flatStyle(screen.getByTestId("cover-single").props.style)).toMatchObject({
       width: layout.rowCoverMenu,
       height: layout.rowCoverMenu,
     });
+  });
+
+  it("puts no gap or margin between the action rows", async () => {
+    await setupMenu();
+    await openMenu();
+    expectFlushRows(screen.getByTestId("track-menu-sheet"));
   });
 
   it("opens the sheet with only the items that apply", async () => {

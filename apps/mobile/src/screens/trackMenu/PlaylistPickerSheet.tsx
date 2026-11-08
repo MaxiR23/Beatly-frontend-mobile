@@ -135,6 +135,7 @@ function PickerBody({ track, onClose }: Pick<PlaylistPickerSheetProps, "track" |
     list = (
       <FlatList
         style={styles.list}
+        testID="picker-list"
         data={playlists.data}
         keyExtractor={(playlist) => playlist.id}
         onEndReached={playlists.loadMore}
@@ -171,56 +172,58 @@ function PickerBody({ track, onClose }: Pick<PlaylistPickerSheetProps, "track" |
   return (
     <View style={styles.body} testID="playlist-picker">
       <Text variant="subtitle">{t("picker.title")}</Text>
-      {naming ? (
-        <View style={styles.form}>
-          <Input
-            reduceMotion={reduceMotion}
-            label={t("picker.name")}
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="sentences"
-            {...(isTitleTooLong(name)
-              ? { error: t("picker.nameTooLong", { max: PLAYLIST_TITLE_MAX_LENGTH }) }
-              : {})}
-          />
-          <View style={styles.actions}>
-            <View style={styles.action}>
-              <Button
-                variant="secondary"
-                shape="field"
-                label={t("picker.cancel")}
-                onPress={() => {
-                  setNaming(false);
-                  setName("");
-                  create.reset();
-                }}
-              />
-            </View>
-            <View style={styles.action}>
-              <Button
-                variant="primary"
-                shape="field"
-                label={t("picker.create")}
-                loading={create.isPending}
-                disabled={!canCreatePlaylist(name)}
-                onPress={submit}
-              />
+      <View style={styles.rows} testID="picker-rows">
+        {naming ? (
+          <View style={styles.form}>
+            <Input
+              reduceMotion={reduceMotion}
+              label={t("picker.name")}
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="sentences"
+              {...(isTitleTooLong(name)
+                ? { error: t("picker.nameTooLong", { max: PLAYLIST_TITLE_MAX_LENGTH }) }
+                : {})}
+            />
+            <View style={styles.actions}>
+              <View style={styles.action}>
+                <Button
+                  variant="secondary"
+                  shape="field"
+                  label={t("picker.cancel")}
+                  onPress={() => {
+                    setNaming(false);
+                    setName("");
+                    create.reset();
+                  }}
+                />
+              </View>
+              <View style={styles.action}>
+                <Button
+                  variant="primary"
+                  shape="field"
+                  label={t("picker.create")}
+                  loading={create.isPending}
+                  disabled={!canCreatePlaylist(name)}
+                  onPress={submit}
+                />
+              </View>
             </View>
           </View>
-        </View>
-      ) : (
-        <MediaRow
-          icon="plus"
-          size="medium"
-          shape="square"
-          images={[]}
-          title={t("picker.newPlaylist")}
-          onPress={() => {
-            setNaming(true);
-          }}
-        />
-      )}
-      {list}
+        ) : (
+          <MediaRow
+            icon="plus"
+            size="medium"
+            shape="square"
+            images={[]}
+            title={t("picker.newPlaylist")}
+            onPress={() => {
+              setNaming(true);
+            }}
+          />
+        )}
+        {list}
+      </View>
       {add.isError || create.isError ? (
         <Text variant="meta" tone="error">
           {tc("error.generic")}
@@ -232,8 +235,9 @@ function PickerBody({ track, onClose }: Pick<PlaylistPickerSheetProps, "track" |
 
 const styles = StyleSheet.create({
   body: { flexShrink: 1, gap: spacing.md },
+  rows: { flexShrink: 1 },
   list: { flexShrink: 1 },
-  form: { gap: spacing.lg },
+  form: { gap: spacing.lg, paddingBottom: spacing.md },
   actions: { flexDirection: "row", gap: spacing.md },
   action: { flex: 1 },
   held: { padding: spacing.sm },

@@ -47,7 +47,7 @@ export function MediaRow({
   testID,
 }: MediaRowProps) {
   const onPress = available ? onPressProp : undefined;
-  const press = pressFeedback();
+  const press = pressFeedback({ android: "fade" });
   const marked = available && nowPlaying !== undefined;
   const large = size === "large";
   const medium = size === "medium";

@@ -10,6 +10,7 @@ import {
   LoadingState,
   MediaRow,
   RecentRow,
+  RowSection,
   SearchBar,
   Text,
 } from "@beatly/ui/native";
@@ -129,29 +130,33 @@ export function SearchScreen() {
           keyboardDismissMode="on-drag"
           contentContainerStyle={clearance}
         >
-          <View style={styles.recentHeader}>
-            <Text variant="section">{t("recent.title")}</Text>
-            <Link
-              label={t("recent.clearAll")}
-              onPress={() => {
-                clear.mutate();
-              }}
-            />
-          </View>
-          {recents.data.map((query) => (
-            <RecentRow
-              key={query}
-              label={query}
-              onPress={() => {
-                setText(query);
-                add.mutate(query);
-              }}
-              removeLabel={t("recent.remove", { query })}
-              onRemove={() => {
-                remove.mutate(query);
-              }}
-            />
-          ))}
+          <RowSection
+            title={t("recent.title")}
+            action={
+              <Link
+                label={t("recent.clearAll")}
+                onPress={() => {
+                  clear.mutate();
+                }}
+              />
+            }
+            testID="search-recents"
+          >
+            {recents.data.map((query) => (
+              <RecentRow
+                key={query}
+                label={query}
+                onPress={() => {
+                  setText(query);
+                  add.mutate(query);
+                }}
+                removeLabel={t("recent.remove", { query })}
+                onRemove={() => {
+                  remove.mutate(query);
+                }}
+              />
+            ))}
+          </RowSection>
         </ScrollView>
       );
     }
@@ -213,10 +218,7 @@ export function SearchScreen() {
           />
         ) : null}
         {songs.length > 0 ? (
-          <View style={styles.songs}>
-            <View style={styles.sectionHeader}>
-              <Text variant="section">{t("songs")}</Text>
-            </View>
+          <RowSection title={t("songs")} testID="search-songs">
             {songs.map((song, index) => (
               <MediaRow
                 key={song.track_id}
@@ -232,7 +234,7 @@ export function SearchScreen() {
                 trailing={<TrackMenuButton track={toPlayable(song)} />}
               />
             ))}
-          </View>
+          </RowSection>
         ) : null}
         {albums.length > 0 ? (
           <Carousel testID="search-albums" title={t("albums")} items={albums.map(toAlbumItem)} />
@@ -297,14 +299,5 @@ const styles = StyleSheet.create({
   failure: { paddingHorizontal: layout.gutter, paddingBottom: spacing.sm },
   state: { flex: 1 },
   recoverAction: { alignItems: "center", paddingVertical: spacing.sm },
-  recentHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: layout.gutter,
-    paddingVertical: spacing.sm,
-  },
   sections: { gap: spacing.xl },
-  songs: { gap: spacing.md },
-  sectionHeader: { paddingHorizontal: layout.gutter },
 });

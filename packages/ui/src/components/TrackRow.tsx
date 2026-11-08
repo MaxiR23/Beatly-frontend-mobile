@@ -38,7 +38,7 @@ export function TrackRow({
   testID,
 }: TrackRowProps) {
   const onPress = available ? onPressProp : undefined;
-  const press = pressFeedback();
+  const press = pressFeedback({ android: "fade" });
   const marked = available && nowPlaying !== undefined;
   const state = marked ? { disabled: false, selected: true } : { disabled: !available };
   const still = available

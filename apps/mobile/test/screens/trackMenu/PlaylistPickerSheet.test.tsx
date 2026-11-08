@@ -25,6 +25,7 @@ import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { resources } from "../../../src/i18n/resources.ts";
 import { pageOf, playlistFixture, stateFlag } from "../../helpers/core.tsx";
 import { expectSheetOverWindow } from "../../helpers/insets.tsx";
+import { expectFlushRows, expectNoRowSeparator } from "../../helpers/rowSpacing.ts";
 import { setupMenu } from "./trackMenuHelpers.tsx";
 
 const en = resources.en;
@@ -77,6 +78,13 @@ describe("the playlist picker", () => {
     await openPicker({ listPlaylists: () => Promise.resolve(pageOf<PlaylistListItem>([])) });
     expect(await screen.findByText(en.trackMenu.picker.empty)).toBeTruthy();
     expect(screen.getByRole("button", { name: en.trackMenu.picker.newPlaylist })).toBeTruthy();
+  });
+
+  it("puts no gap between the new playlist row and the playlists, nor a separator in the list", async () => {
+    await openPicker(lists);
+    await screen.findByText("Gym");
+    expectFlushRows(screen.getByTestId("picker-rows"));
+    expectNoRowSeparator(screen.getByTestId("picker-list"));
   });
 
   it("checks the playlists that hold the track and ignores a tap on them", async () => {

@@ -9,7 +9,7 @@
 // What is covered:
 // - icon-only tabs with roles and labels, the selected one, the press, the clearance formula
 // - the accessory and the pill at the same width, the window width minus the gutter on each side; the tabs
-//   sharing it evenly at the control height; the accessory's md gap
+//   sharing it evenly at the control height; the accessory's xs gap
 //
 // Run with: pnpm --filter @beatly/ui test -- FloatingTabBar
 //
@@ -78,7 +78,7 @@ describe("accessory", () => {
     expect(screen.getByText("mini")).toBeTruthy();
     expect(screen.getByTestId("tab-accessory")).toHaveStyle({
       width: Dimensions.get("window").width - 2 * layout.gutter,
-      marginBottom: spacing.md,
+      marginBottom: spacing.xs,
     });
   });
 
@@ -115,7 +115,7 @@ describe("accessory", () => {
 describe("floatingTabBarClearance", () => {
   it("adds the accessory's height and gap when there is one", () => {
     expect(floatingTabBarClearance(10, true)).toBe(
-      floatingTabBarClearance(10) + layout.controlHeight + 2 * spacing.xs + spacing.md,
+      floatingTabBarClearance(10) + layout.controlHeight + 2 * spacing.xs + spacing.xs,
     );
   });
 

@@ -9,17 +9,20 @@
 // - the plain default, the primary variant box, the primaryCompact variant, the disabled state, the selected toggle states and their glyph tone, the busy indicator, the press
 // - the glyph size by default, by variant and by iconSize, and the filled glyph
 // - the narrow button: layout.iconButtonNarrow wide at the control height
+// - androidPress fade: on Android no ripple and the fade while pressed; without it the round ripple
 //
 // Run with: pnpm --filter @beatly/ui test -- IconButton
 //
 // SEE: packages/ui/src/components/IconButton.tsx
 
-import { describe, expect, it, jest } from "@jest/globals";
+import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react-native";
+import { Platform } from "react-native";
 
 import { IconButton } from "../../src/components/IconButton.tsx";
 import { color } from "../../src/tokens/color.ts";
 import { icon } from "../../src/tokens/icon.ts";
+import { motion } from "../../src/tokens/motion.ts";
 import { radius } from "../../src/tokens/radius.ts";
 import { layout } from "../../src/tokens/spacing.ts";
 
@@ -45,7 +48,39 @@ function glyphs(tree: unknown): JsonNode[] {
   return found;
 }
 
+const grant = {
+  nativeEvent: { touches: [], pageX: 0, pageY: 0, timestamp: 0 },
+  persist: () => undefined,
+  currentTarget: 1,
+};
+
 describe("IconButton", () => {
+  afterEach(() => {
+    Platform.OS = "ios";
+  });
+
+  it("androidPress fade on Android draws no ripple and fades while pressed", async () => {
+    Platform.OS = "android";
+    await render(
+      <IconButton icon="x" accessibilityLabel="Fade" androidPress="fade" onPress={jest.fn()} />,
+    );
+    const button = screen.getByRole("button", { name: "Fade" });
+    expect(button.props.nativeForegroundAndroid).toBeUndefined();
+    expect(button).not.toHaveStyle({ overflow: "hidden" });
+    await fireEvent(button, "responderGrant", grant);
+    expect(screen.getByRole("button", { name: "Fade" })).toHaveStyle({
+      opacity: motion.pressOpacity,
+    });
+  });
+
+  it("without androidPress keeps the round ripple", async () => {
+    Platform.OS = "android";
+    await render(<IconButton icon="x" accessibilityLabel="Ripple" onPress={jest.fn()} />);
+    const button = screen.getByRole("button", { name: "Ripple" });
+    expect(button.props.nativeForegroundAndroid).toMatchObject({ type: "RippleAndroid" });
+    expect(button).toHaveStyle({ overflow: "hidden", borderRadius: radius.full });
+  });
+
   it("draws the plain default at the control height with no state", async () => {
     await render(<IconButton icon="x" accessibilityLabel="Close" onPress={jest.fn()} />);
     const button = screen.getByRole("button", { name: "Close" });

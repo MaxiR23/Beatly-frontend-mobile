@@ -32,6 +32,12 @@ describe("initialsOf", () => {
     expect(initialsOf("ana pérez")).toBe("AP");
   });
 
+  it("takes at most max initials", () => {
+    expect(initialsOf("Max Reb", 1)).toBe("M");
+    expect(initialsOf("ana maría lópez", 3)).toBe("AML");
+    expect(initialsOf("Max Reb")).toBe("MR");
+  });
+
   it("is empty for no name or a blank one", () => {
     expect(initialsOf(null)).toBe("");
     expect(initialsOf("   ")).toBe("");

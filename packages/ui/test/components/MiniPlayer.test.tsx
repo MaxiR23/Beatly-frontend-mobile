@@ -8,7 +8,7 @@
 // What is covered:
 // - the title and subtitle, the failed subtitle in the error tone, the open, toggle and next presses, the pause label while playing, no progress element
 // - the tint handed to the glass surface with reduce motion: no fade under it
-// - Android: a rectangle with radius.sm corners, a square cover, filled narrow play and next together; iOS keeps the pill, the round cover and the outlined control-size buttons
+// - Android: a rectangle with radius.sm corners, a square cover, filled narrow play and next spacing.xs apart; iOS keeps the pill, the round cover and the outlined control-size buttons
 // - the bare surface: filling and clipping, no glass and no tint, with the presses still working
 //
 // Run with: pnpm --filter @beatly/ui test -- MiniPlayer
@@ -119,7 +119,7 @@ describe("MiniPlayer", () => {
     await draw();
     expect(flatStyle(screen.getByTestId("mini-player-controls").props.style)).toMatchObject({
       flexDirection: "row",
-      gap: spacing.none,
+      gap: spacing.xs,
     });
     for (const name of ["Play", "Next"]) {
       expect(box(name)).toMatchObject({

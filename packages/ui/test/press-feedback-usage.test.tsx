@@ -8,7 +8,7 @@
 // What is covered:
 // - iOS: no ripple prop on the pressable, no opacity while unpressed, motion.pressOpacity while pressed
 // - Android: a foreground ripple in the expected token color, no background ripple, the clip (overflow hidden, radius.full for the round ones), no opacity
-// - Android: the SegmentedControl tabs show no press (DESIGN.md, Android tabs); the MiniPlayer body has no end padding of its own
+// - Android: the mini player's play and next, the SegmentedControl tabs and the MediaRow and TrackRow bodies fade instead of rippling (DESIGN.md, Motion); the MiniPlayer body has no end padding of its own
 //
 // Run with: pnpm --filter @beatly/ui test -- press-feedback-usage
 //
@@ -72,8 +72,8 @@ interface Site {
   shape: "rect" | "round" | "own";
   // The pressable exists on Android only.
   androidOnly?: true;
-  // The pressable shows no press on Android (a documented departure).
-  androidNoPress?: true;
+  // The pressable fades instead of rippling on Android (a documented departure, DESIGN.md, Motion).
+  androidFade?: true;
 }
 
 const sites: readonly Site[] = [
@@ -175,6 +175,7 @@ const sites: readonly Site[] = [
     find: () => screen.getByRole("button", { name: "Row" }),
     on: "surface",
     shape: "rect",
+    androidFade: true,
   },
   {
     name: "MediaRow with trailing",
@@ -184,6 +185,7 @@ const sites: readonly Site[] = [
     find: () => screen.getByRole("button", { name: "Row" }),
     on: "surface",
     shape: "rect",
+    androidFade: true,
   },
   {
     name: "MiniPlayer",
@@ -207,6 +209,54 @@ const sites: readonly Site[] = [
     find: () => screen.getByRole("button", { name: "Open" }),
     on: "surface",
     shape: "rect",
+  },
+  {
+    name: "MiniPlayer play",
+    element: () => (
+      <MiniPlayer
+        title="Song"
+        subtitle="Artist"
+        failed={false}
+        image={null}
+        tint={null}
+        surface="bare"
+        playing={false}
+        reduceMotion
+        busy={false}
+        labels={labels}
+        onOpen={noop}
+        onToggle={noop}
+        onNext={noop}
+      />
+    ),
+    find: () => screen.getByRole("button", { name: "Play" }),
+    on: "surface",
+    shape: "round",
+    androidFade: true,
+  },
+  {
+    name: "MiniPlayer next",
+    element: () => (
+      <MiniPlayer
+        title="Song"
+        subtitle="Artist"
+        failed={false}
+        image={null}
+        tint={null}
+        surface="bare"
+        playing={false}
+        reduceMotion
+        busy={false}
+        labels={labels}
+        onOpen={noop}
+        onToggle={noop}
+        onNext={noop}
+      />
+    ),
+    find: () => screen.getByRole("button", { name: "Next" }),
+    on: "surface",
+    shape: "round",
+    androidFade: true,
   },
   {
     name: "PlayButton",
@@ -250,7 +300,7 @@ const sites: readonly Site[] = [
     },
     on: "surface",
     shape: "rect",
-    androidNoPress: true,
+    androidFade: true,
   },
   {
     name: "TrackRow",
@@ -258,6 +308,7 @@ const sites: readonly Site[] = [
     find: () => screen.getByRole("button", { name: "Track" }),
     on: "surface",
     shape: "rect",
+    androidFade: true,
   },
   {
     name: "Notice action",
@@ -301,6 +352,7 @@ const sites: readonly Site[] = [
     find: () => screen.getByRole("button", { name: "Track" }),
     on: "surface",
     shape: "rect",
+    androidFade: true,
   },
 ];
 
@@ -346,25 +398,26 @@ describe("press feedback usage", () => {
     expect(flat(site.find()).paddingHorizontal).toBe(spacing.xs);
   });
 
-  it("SegmentedControl's Android tabs show no press", async () => {
-    const site = sites.find((s) => s.name === "SegmentedControl");
-    if (site === undefined) throw new Error("SegmentedControl site missing");
-    Platform.OS = "android";
-    await render(site.element());
-    const node = site.find();
-    expect(node.props.nativeForegroundAndroid).toBeUndefined();
-    expect(node.props.nativeBackgroundAndroid).toBeUndefined();
-    expect(flat(node)).not.toHaveProperty("overflow");
-    expect(flat(node)).not.toHaveProperty("opacity");
-    await fireEvent(node, "responderGrant", {
-      nativeEvent: { touches: [], pageX: 0, pageY: 0, timestamp: 0 },
-      persist: () => undefined,
-      currentTarget: 1,
-    });
-    expect(flat(site.find())).not.toHaveProperty("opacity");
-  });
+  it.each(sites.filter((s) => s.androidFade === true))(
+    "$name fades instead of rippling on Android",
+    async (site) => {
+      Platform.OS = "android";
+      await render(site.element());
+      const node = site.find();
+      expect(node.props.nativeForegroundAndroid).toBeUndefined();
+      expect(node.props.nativeBackgroundAndroid).toBeUndefined();
+      expect(flat(node)).not.toHaveProperty("overflow");
+      expect(flat(node)).not.toHaveProperty("opacity");
+      await fireEvent(node, "responderGrant", {
+        nativeEvent: { touches: [], pageX: 0, pageY: 0, timestamp: 0 },
+        persist: () => undefined,
+        currentTarget: 1,
+      });
+      expect(flat(site.find()).opacity).toBe(motion.pressOpacity);
+    },
+  );
 
-  it.each(sites.filter((s) => s.androidNoPress !== true))(
+  it.each(sites.filter((s) => s.androidFade !== true))(
     "$name ripples over its content on Android",
     async (site) => {
       Platform.OS = "android";

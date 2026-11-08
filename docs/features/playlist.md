@@ -22,8 +22,8 @@ the info block:
   from `image.color` (neutral for liked). Own: its
   `mosaic`, the single image with one, the placeholder with none. Liked: the accent tile with the heart. Genre:
   its `mosaic`, or `image` with none. The hero cover draws `large` (its mosaic cells `medium`). The wash is `image.color` of the first mosaic element, or of the image when the mosaic is empty (genre) (ADR 030); liked stays neutral. A color arriving on a refetch fades in over `motion.duration.base`. The responses are `private, no-cache` and `no-store`, so a pending color is picked up on the next mount of the screen.
-- Info: `layout.gutter` on the sides, `spacing.xs` gap, `spacing.xl` below.
-  - Creator row, `spacing.sm` gap: a `layout.creatorMark` mark (the user's avatar for
+- Info: `layout.gutter` on the sides, `spacing.xs` gap, nothing below it (the detail base owns the space to the action row).
+  - Creator row, `layout.creatorGap` (4) gap: a `layout.creatorMark` (20) mark (the user's avatar, drawing one initial, for
     an own playlist, the brand mark on `color.accent.primary` in `radius.full` for a
     genre playlist) and the name in `typography.rowTitle` and `color.text.secondary`.
     Liked has none; an own playlist has none when the profile fails.
@@ -31,7 +31,7 @@ the info block:
   - Meta line in `typography.meta` and `color.text.tertiary`: Private or Public (own
     only), the song count and the duration in hours and minutes.
 - Action row: `DetailActions` (`DESIGN.md`, "Detail screen base") between the info and the
-  tracks, `spacing.xl` below it (the info ends with the same gap): play and shuffle always;
+  tracks, drawn by the detail base's `actions` slot with `spacing.lg` above it and `spacing.sm` below it (the screen adds no padding, margin or wrapper): play and shuffle always;
   play disabled when the loaded list is empty, shuffle when the playlist has fewer than two
   tracks by the backend's count, `total_count` for own and liked (never the loaded pages) and
   `track_count` for genre (`len(tracks)` on `GET /public/genre-playlists/{id}`); playlist tracks

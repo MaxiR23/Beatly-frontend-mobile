@@ -54,6 +54,7 @@ import {
 } from "../../helpers/core.tsx";
 import { Insets } from "../../helpers/insets.tsx";
 import { flatStyle } from "../../helpers/flatStyle.ts";
+import { expectFlushRows, expectNoRowSeparator } from "../../helpers/rowSpacing.ts";
 
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
@@ -782,6 +783,18 @@ describe("related", () => {
     const state = ctx.playback.getState();
     expect(state.current?.trackId).toBe("r1");
     expect(state.source).toEqual({ kind: "track", id: "t1", name: "Song t1" });
+  });
+
+  it("draws the related songs as a row section with flush rows and the up next list with no separator", async () => {
+    await setup();
+    await openSheet();
+    await screen.findByText("Up u2");
+    expectNoRowSeparator(screen.getByTestId("player-sheet-upnext"));
+    await selectTab(en.player.sheet.tabs.related);
+    await screen.findByText("Up r1");
+    const section = screen.getByTestId("player-sheet-related-songs");
+    expect(within(section).getByText(en.player.sheet.songs)).toBeTruthy();
+    expectFlushRows(screen.getByTestId("player-sheet-related-songs-rows"));
   });
 
   it("marks the current track among the related songs", async () => {

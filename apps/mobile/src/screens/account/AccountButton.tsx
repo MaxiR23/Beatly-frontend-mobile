@@ -1,9 +1,8 @@
 // INFO: the header's account avatar and its sheet with the profile row, report a problem, my reports, all reports (only for a developer or an admin) and log out; the row opens the profile screen, the report entries open the form or the reports sheet in its place, the all reports entry opens its screen, shared by the home, explore, search and library tabs.
 import { profileName } from "@beatly/core";
-import { spacing } from "@beatly/ui";
 import { ActionRow, Avatar, AvatarRow, Button, Sheet, Text } from "@beatly/ui/native";
 import { useRouter } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 
 import { useT } from "../../adapters/i18n.ts";
 import { useWindowInsets } from "../../providers/WindowInsetsProvider.tsx";
@@ -68,7 +67,7 @@ export function AccountButton() {
             router.push("/profile");
           }}
         />
-        <View style={styles.entries}>
+        <View testID="account-entries">
           <ActionRow
             icon="flag"
             label={tc("account.report")}
@@ -123,7 +122,3 @@ export function AccountButton() {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  entries: { gap: spacing.xs },
-});

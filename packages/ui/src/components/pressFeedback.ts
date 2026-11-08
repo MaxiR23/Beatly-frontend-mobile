@@ -1,4 +1,4 @@
-// INFO: the one press feedback of ui (ADR 027): on Android a Material 3 ripple over the content, clipped to the pressable's shape, and no opacity; on iOS the pressed control fades to motion.pressOpacity.
+// INFO: the one press feedback of ui (ADR 027): on Android a Material 3 ripple over the content, clipped to the pressable's shape, and no opacity, or, with `android: "fade"` (a documented departure), no ripple and the iOS fade; on iOS the pressed control fades to motion.pressOpacity.
 import { StyleSheet, type PressableAndroidRippleConfig, type ViewStyle } from "react-native";
 
 import { color } from "../tokens/color.ts";
@@ -11,6 +11,8 @@ interface PressFeedbackOptions {
   on?: "surface" | "accent";
   // "bounds" clips the ripple to the pressable's own corners (a rectangle without them); "round" rounds it fully: a circle on a square, a pill otherwise.
   shape?: "bounds" | "round";
+  // "fade" drops the Android ripple for the iOS fade to motion.pressOpacity (DESIGN.md, Motion).
+  android?: "ripple" | "fade";
 }
 
 export interface PressFeedback {
@@ -22,8 +24,9 @@ export interface PressFeedback {
 export function pressFeedback({
   on = "surface",
   shape = "bounds",
+  android = "ripple",
 }: PressFeedbackOptions = {}): PressFeedback {
-  if (!isAndroidVariant()) {
+  if (!isAndroidVariant() || android === "fade") {
     return { android_ripple: undefined, style: (pressed) => (pressed ? styles.faded : null) };
   }
   const clip = shape === "round" ? styles.clipRound : styles.clip;

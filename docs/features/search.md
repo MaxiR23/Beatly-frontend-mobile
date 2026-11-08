@@ -16,7 +16,7 @@ API returns. An album card opens the album; pressing a song plays the songs from
   tall, `radius.full`, `color.surface.card` with a `border.width` border in `color.surface.border`.
   A `search` icon in `icon.size.md` and `color.text.tertiary`, the text in `typography.body`, and a
   clear `IconButton` (`layout.controlHeight` square) while there is text.
-- Recent header: `layout.gutter` on the sides, `spacing.sm` vertical, `typography.section` and a
+- Recent header: the `RowSection` title (`layout.gutter` on the sides, `spacing.md` under it, no vertical padding above), `typography.section` and a
   `Link` "Clear all" (also drawn under the error state of the recents).
 - Recent row (`RecentRow`): `layout.gutter` at the start, `spacing.xs` at the end, `layout.gap`
   between parts; a `clock` icon, the query in `typography.body` in a pressable part, and a remove `IconButton` beside it (a sibling,
@@ -25,7 +25,7 @@ API returns. An album card opens the album; pressing a song plays the songs from
   `typography.subtitle`, "Artist" in `typography.meta` and `color.text.secondary`.
 - Song row (`MediaRow`): a `Cover` of `layout.rowCover` with `radius.sm`, the title in
   `typography.rowTitle`, artists and duration in `typography.meta`; `spacing.xs` above and below.
-- Sections: `spacing.xl` between them, `spacing.md` between the songs header and its rows; the
+- Sections: `spacing.xl` between them, the songs are a `RowSection` (its title with `spacing.md` under it) and there is no gap between rows; the
   albums are a `Carousel`.
 - Bottom: the list clears the floating tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
