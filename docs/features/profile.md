@@ -67,6 +67,8 @@ The email is `getEmail()` on the auth port, read from the stored session without
 
 ## Checked by hand
 
+- VoiceOver on the iPhone: the error of a field or a form announced when it appears and again on a repeated failure, and focusing a field reading its label and then its error.
+
 Saving a name and a username against the real API, including a real 409, and seeing the header avatar, the account row and the screen change without reopening the app; the real stored session yielding the email in airplane mode;
 Member since on Hermes in both languages with the database's microsecond timestamp; the sheet closing and the push to `/profile` on iOS 26 native tabs and on Android; the sheet above the keyboard; the `@` prefix alignment and the 96 avatar's look;
 the skeleton blocks against the glass and the base surface, and their handoff to content on a throttled network; screen reader reading of the profile row, the badge and the prefixed field.
@@ -79,4 +81,4 @@ On Android the `Sheet` is the Material 3 modal bottom sheet (ADR 027, `ui` `Shee
 
 Left to verify by hand. On an Android phone: the sheet meeting the bottom and side edges and the content ending above the gesture bar, the drag feel and the spring back on a finger, the system back closing it, and the scroll of a long list next to the handle zone.
 
-On Android the `Input`s are the Material 3 outlined text field (ADR 027, `ui` `Input`; see DESIGN.md, Text field): outline, label inside rising onto it on focus or with text, accent outline on focus, error color and the error under the field; iOS unchanged. Left to verify by hand on an Android phone: the label animation feel, the notch over the sheet surface, with the `@` prefix shown only while the label is raised, TalkBack reading the label once and announcing the error.
+On Android the `Input`s are the Material 3 outlined text field (ADR 027, `ui` `Input`; see DESIGN.md, Text field): outline, label inside rising onto it on focus or with text, accent outline on focus, error color and the error under the field; iOS keeps its look; on iOS the field's error is announced and is the field's hint. The error line is the `ui` `ErrorText`: announced by VoiceOver when it appears and again on each new attempt, a polite live region on Android. Left to verify by hand on an Android phone: the label animation feel, the notch over the sheet surface, with the `@` prefix shown only while the label is raised, TalkBack reading the label once and announcing the error.

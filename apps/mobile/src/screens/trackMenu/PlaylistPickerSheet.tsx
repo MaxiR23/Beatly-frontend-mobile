@@ -12,6 +12,7 @@ import {
   Notice,
   Sheet,
   Text,
+  ErrorText,
 } from "@beatly/ui/native";
 import { useEffect, useState, type ReactNode } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
@@ -225,9 +226,10 @@ function PickerBody({ track, onClose }: Pick<PlaylistPickerSheetProps, "track" |
         {list}
       </View>
       {add.isError || create.isError ? (
-        <Text variant="meta" tone="error">
-          {tc("error.generic")}
-        </Text>
+        <ErrorText
+          message={tc("error.generic")}
+          attempt={Math.max(add.submittedAt, create.submittedAt)}
+        />
       ) : null}
     </View>
   );

@@ -47,7 +47,7 @@ The tab bar differs between iOS 26+ (native tabs) and elsewhere (floating bar); 
 The song row of the current track (whoever started it) draws the now playing bars over its cover on a
 scrim, with no row background; the bars are frozen while paused and static under reduce motion.
 
-A failed add, remove or clear shows an inline `common:error.generic` line above the recents. The
+A failed add, remove or clear shows an inline `common:error.generic` line above the recents. The error line is the `ui` `ErrorText`: announced by VoiceOver when it appears and again on each new attempt, a polite live region on Android. The
 search field uses `search:placeholder` and `search:clear`; row buttons use `search:recent.remove`.
 
 ## Data

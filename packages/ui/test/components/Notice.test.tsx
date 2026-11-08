@@ -10,14 +10,21 @@
 // - inline on both platforms: the icon row with no snackbar
 // - Android floating: the inverse surface with extra-small corners, no icon, the message in the inverse body text, with and without an action, the action at the end running its callback
 // - the alert role and polite live region on every variant
+// - iOS announces the message once when it appears or changes, not on every render; Android does not announce
 //
 // Run with: pnpm --filter @beatly/ui test -- Notice.test
 //
 // SEE: packages/ui/src/components/Notice.tsx
 
-import { afterEach, describe, expect, it, jest } from "@jest/globals";
+import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import { Platform, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
+import {
+  AccessibilityInfo,
+  Platform,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from "react-native";
 
 import { Notice } from "../../src/components/Notice.tsx";
 import { color } from "../../src/tokens/color.ts";
@@ -159,5 +166,33 @@ describe("Notice floating on Android", () => {
     expect(styleOf("n").paddingEnd).toBe(spacing.sm);
     await fireEvent.press(button);
     expect(onPress).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("Notice announcements", () => {
+  const announce = jest.spyOn(AccessibilityInfo, "announceForAccessibility");
+  beforeEach(() => {
+    announce.mockClear();
+  });
+
+  it("announces the message once on iOS, not on every render", async () => {
+    await render(<Notice tone="success" message="Saved" />);
+    await screen.rerender(<Notice tone="success" message="Saved" />);
+    expect(announce).toHaveBeenCalledTimes(1);
+    expect(announce).toHaveBeenCalledWith("Saved");
+  });
+
+  it("announces a changed message", async () => {
+    await render(<Notice tone="success" message="Saved" />);
+    await screen.rerender(<Notice tone="error" message="Failed" />);
+    expect(announce.mock.calls).toEqual([["Saved"], ["Failed"]]);
+  });
+
+  it.each([false, true])("does not announce on Android (floating %s)", async (floating) => {
+    Platform.OS = "android";
+    await render(<Notice tone="success" message="Saved" floating={floating} testID="n" />);
+    expect(announce).not.toHaveBeenCalled();
+    expect(screen.getByTestId("n").props.accessibilityRole).toBe("alert");
+    expect(screen.getByTestId("n").props.accessibilityLiveRegion).toBe("polite");
   });
 });

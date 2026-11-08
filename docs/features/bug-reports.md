@@ -96,6 +96,8 @@ Dates: the first date drawn in the app is the report date in My reports. It uses
 
 ## Checked by hand
 
+- VoiceOver on the iPhone: the error of a field or a form announced when it appears and again on a repeated failure, and focusing a field reading its label and then its error.
+
 The Android chip on a phone: 32 tall, 8 corners, outline, the check, the ripple inside the corners, TalkBack reading selected.
 
 All reports against the backend with its status filter: the three filters, `forbidden` after a role change, closing and reopening, the role gate for user, tester, developer and admin accounts, the `eye` glyph in the account sheet, and VoiceOver/TalkBack on the chips, rows, badge and action.
@@ -112,4 +114,4 @@ On Android the `Sheet` is the Material 3 modal bottom sheet (ADR 027, `ui` `Shee
 
 Left to verify by hand. On an Android phone: the sheet meeting the bottom and side edges and the content ending above the gesture bar, the drag feel and the spring back on a finger, the system back closing it, and the scroll of a long list next to the handle zone.
 
-On Android the `Input`s are the Material 3 outlined text field (ADR 027, `ui` `Input`; see DESIGN.md, Text field): outline, label inside rising onto it on focus or with text, accent outline on focus, error color and the error under the field; iOS unchanged. Left to verify by hand on an Android phone: the label animation feel, the notch over the sheet (multiline) surface, TalkBack reading the label once and announcing the error.
+On Android the `Input`s are the Material 3 outlined text field (ADR 027, `ui` `Input`; see DESIGN.md, Text field): outline, label inside rising onto it on focus or with text, accent outline on focus, error color and the error under the field; iOS keeps its look; on iOS the field's error is announced and is the field's hint. The error line is the `ui` `ErrorText`: announced by VoiceOver when it appears and again on each new attempt, a polite live region on Android. Left to verify by hand on an Android phone: the label animation feel, the notch over the sheet (multiline) surface, TalkBack reading the label once and announcing the error.

@@ -1,6 +1,6 @@
 // INFO: the autoplay switch at the top of up next: the stored setting in a SwitchRow; a failed read draws the error with retry, a failed write the generic error line; nothing while the first read is pending (the root Autoplay has read it already).
 import { layout, spacing } from "@beatly/ui";
-import { ErrorState, SwitchRow, Text } from "@beatly/ui/native";
+import { ErrorState, SwitchRow, ErrorText } from "@beatly/ui/native";
 import { StyleSheet, View } from "react-native";
 
 import { useT } from "../../adapters/i18n.ts";
@@ -39,11 +39,7 @@ export function AutoplaySwitch({ reduceMotion }: AutoplaySwitchProps) {
         }}
         reduceMotion={reduceMotion}
       />
-      {set.isError ? (
-        <Text variant="meta" tone="error">
-          {tc("error.generic")}
-        </Text>
-      ) : null}
+      {set.isError ? <ErrorText message={tc("error.generic")} attempt={set.submittedAt} /> : null}
     </View>
   );
 }

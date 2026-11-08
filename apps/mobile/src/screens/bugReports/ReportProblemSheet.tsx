@@ -1,7 +1,7 @@
 // INFO: the report form as a sheet: a category among the five and a description, sent to POST /bug-reports with the track attached when it comes from the track menu; Send is disabled until both are valid; it confirms inside the sheet and closes on success, and stays open with an inline error and the input kept on failure.
 import { BUG_REPORT_CATEGORIES, type BugReportCategory } from "@beatly/core";
 import { motion, spacing } from "@beatly/ui";
-import { Button, Chip, Input, Notice, Sheet, Text } from "@beatly/ui/native";
+import { Button, Chip, Input, Notice, Sheet, Text, ErrorText } from "@beatly/ui/native";
 import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -120,9 +120,7 @@ export function ReportProblemSheet({ visible, onClosed, track, onClose }: Report
             </Text>
           ) : null}
           {create.isError ? (
-            <Text variant="meta" tone="error">
-              {tc("error.generic")}
-            </Text>
+            <ErrorText message={tc("error.generic")} attempt={create.submittedAt} />
           ) : null}
           <View style={styles.actions}>
             <View style={styles.action}>

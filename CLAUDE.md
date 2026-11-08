@@ -176,7 +176,8 @@ that needs it opens a backend issue instead of computing it here.
                             loop-path.sh: prints short or full from the changed files
                             gate-limit.mjs: PreToolUse hook that enforces the gate
                             attempt limit of implement-issue
-    scripts/test/           node --test cases for the scripts
+    scripts/test/           node --test cases for the scripts, plus repo-wide source
+                            guards (Node types are not in the workspaces)
     .claude/settings.json   project permissions and the gate-limit PreToolUse
                             hook; permissions: the gate commands, pnpm
                             format, pnpm --filter, pnpm exec commitlint,

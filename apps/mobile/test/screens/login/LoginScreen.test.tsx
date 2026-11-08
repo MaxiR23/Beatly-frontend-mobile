@@ -6,7 +6,7 @@
 // - LoginScreen
 //
 // What is covered:
-// - the form in en and es, the brand block and footer, the eye button, the submit rules, the mapped failure messages, navigation to sign up
+// - the form in en and es, the brand block and footer, the eye button, the submit rules, the mapped failure messages, the failure message announced again on a repeated attempt (VoiceOver), navigation to sign up
 //
 // Run with: pnpm --filter @beatly/mobile test -- LoginScreen
 //
@@ -15,6 +15,7 @@
 import type { AuthFailureReason, AuthResult } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { AccessibilityInfo } from "react-native";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
@@ -124,6 +125,21 @@ describe("LoginScreen", () => {
     await fill();
     await fireEvent.press(screen.getByRole("button", { name: resources.en.login.submit }));
     expect(await screen.findByText(text)).toBeTruthy();
+  });
+
+  it("announces a repeated failure again on the second attempt", async () => {
+    const announce = jest.spyOn(AccessibilityInfo, "announceForAccessibility");
+    announce.mockClear();
+    const text = resources.en.login.errors.invalidCredentials;
+    await setup({ kind: "failure", reason: "invalid_credentials" });
+    await fill();
+    await fireEvent.press(screen.getByRole("button", { name: resources.en.login.submit }));
+    expect(await screen.findByText(text)).toBeTruthy();
+    await fireEvent.press(screen.getByRole("button", { name: resources.en.login.submit }));
+    await waitFor(() => {
+      expect(announce.mock.calls.filter(([said]) => said === text)).toHaveLength(2);
+    });
+    announce.mockRestore();
   });
 
   it("navigates to sign up", async () => {

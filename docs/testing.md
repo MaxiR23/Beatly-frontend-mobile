@@ -46,7 +46,10 @@ Three runners, chosen by what the code imports, not by preference:
 
 - **node --test** for the repo scripts under `scripts/`, with the
   cases in `scripts/test/*.test.mjs` (plain Node, no dependencies). The
-  root `pnpm test` runs it after the workspaces.
+  root `pnpm test` runs it after the workspaces. It also holds repo-wide
+  source guards, such as `error-text-usage.test.mjs`: the mobile and `ui`
+  programs have no Node types, and adding `@types/node` would be a new
+  dependency.
 
 ## File location
 

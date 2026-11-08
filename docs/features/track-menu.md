@@ -90,6 +90,8 @@ Go to artist and Go to album push `/artist/[id]` and `/album/[id]` in the curren
 
 ## Checked by hand
 
+- VoiceOver on the iPhone: the error of a field or a form announced when it appears and again on a repeated failure, and focusing a field reading its label and then its error.
+
 The iOS system menu opening from the button with its SF Symbols and the destructive red; the three dots in the icon color, not the system blue; the button 48 wide and in the same place in a row as the Android and fallback button;
 the marquee's real motion and its ellipsis under the system Reduce Motion setting; a sheet opened from inside the player route, including that the sheets mount on open and unmount once their close has ended, and the swap from the menu to the picker, the credits or the report form, the menu sliding down before the next one slides up (ADR 023), and the sheet's open and close with Reduce Motion on (no slide on the first open after launch);
 the notice above the iOS 26 tab accessory and the Android floating bar; screenshots of the heart, the menu, the picker and the credits on iOS and Android.
@@ -104,4 +106,4 @@ Left to verify by hand on an iPhone: the first tap opening the system menu from 
 
 Left to verify by hand. On an Android phone: the sheet meeting the bottom and side edges and the content ending above the gesture bar, the drag feel and the spring back on a finger, the system back closing it, and the scroll of a long list next to the handle zone.
 
-On Android the `Input`s are the Material 3 outlined text field (ADR 027, `ui` `Input`; see DESIGN.md, Text field): outline, label inside rising onto it on focus or with text, accent outline on focus, error color and the error under the field; iOS unchanged. Left to verify by hand on an Android phone: the label animation feel, the notch over the sheet surface, TalkBack reading the label once and announcing the error.
+On Android the `Input`s are the Material 3 outlined text field (ADR 027, `ui` `Input`; see DESIGN.md, Text field): outline, label inside rising onto it on focus or with text, accent outline on focus, error color and the error under the field; iOS keeps its look; on iOS the field's error is announced and is the field's hint. The error line is the `ui` `ErrorText`: announced by VoiceOver when it appears and again on each new attempt, a polite live region on Android. Left to verify by hand on an Android phone: the label animation feel, the notch over the sheet surface, TalkBack reading the label once and announcing the error.

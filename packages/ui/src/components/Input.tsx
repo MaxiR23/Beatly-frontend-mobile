@@ -6,7 +6,9 @@
 // inside at rest rising onto the outline on focus or with text (without an
 // animation under reduce motion), a thicker accent outline on focus, the error
 // color on error, the error under the field announced. The label's notch
-// assumes the field sits on color.surface.raised. iOS is unchanged.
+// assumes the field sits on color.surface.raised. On iOS the error is announced
+// (ErrorText) when it appears, changes or repeats on a new attempt, and it is
+// the field's accessibilityHint, so focus reads the label and then the error.
 import { useLayoutEffect, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, TextInput, View } from "react-native";
 
@@ -16,6 +18,7 @@ import { motion } from "../tokens/motion.ts";
 import { radius } from "../tokens/radius.ts";
 import { layout, spacing } from "../tokens/spacing.ts";
 import { maxFontScale, typography } from "../tokens/typography.ts";
+import { ErrorText } from "./ErrorText.tsx";
 import { Icon } from "./Icon.tsx";
 import { isAndroidVariant } from "./platform.ts";
 import { Text } from "./Text.tsx";
@@ -26,6 +29,8 @@ interface InputProps {
   onChangeText: (text: string) => void;
   placeholder?: string;
   error?: string;
+  // The attempt the error belongs to (a mutation's submittedAt), so the same error is announced again on a new submit.
+  errorAttempt?: number | undefined;
   secureTextEntry?: boolean;
   multiline?: boolean;
   reveal?: { show: string; hide: string };
@@ -50,6 +55,7 @@ export function Input({
   onChangeText,
   placeholder,
   error,
+  errorAttempt,
   secureTextEntry,
   multiline,
   reveal,
@@ -70,6 +76,7 @@ export function Input({
         onChangeText={onChangeText}
         placeholder={placeholder}
         error={error}
+        errorAttempt={errorAttempt}
         secureTextEntry={secureTextEntry}
         multiline={multiline}
         reveal={reveal}
@@ -108,6 +115,7 @@ export function Input({
         ) : null}
         <TextInput
           accessibilityLabel={label}
+          accessibilityHint={error === "" ? undefined : error}
           maxFontSizeMultiplier={maxFontScale}
           placeholderTextColor={color.text.tertiary}
           selectionColor={color.accent.primary}
@@ -139,11 +147,7 @@ export function Input({
           </Pressable>
         ) : null}
       </View>
-      {error ? (
-        <Text variant="meta" tone="error">
-          {error}
-        </Text>
-      ) : null}
+      {error ? <ErrorText message={error} attempt={errorAttempt} /> : null}
     </View>
   );
 }
@@ -156,6 +160,7 @@ function AndroidInput({
   onChangeText,
   placeholder,
   error,
+  errorAttempt,
   multiline,
   reveal,
   keyboardType,
@@ -273,15 +278,8 @@ function AndroidInput({
         </Animated.View>
       </View>
       {error ? (
-        <View
-          accessibilityRole="alert"
-          accessibilityLiveRegion="polite"
-          style={styles.androidSupporting}
-          testID="input-error"
-        >
-          <Text variant="meta" tone="error">
-            {error}
-          </Text>
+        <View style={styles.androidSupporting} testID="input-error">
+          <ErrorText message={error} attempt={errorAttempt} testID="input-error-message" />
         </View>
       ) : null}
     </View>
