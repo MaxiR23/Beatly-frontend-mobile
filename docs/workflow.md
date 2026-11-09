@@ -49,18 +49,30 @@ Flow for every feature, fix or non-trivial change in this repo.
 4. **Verify locally**
    - `implement-issue` runs `pnpm gate` (`pnpm typecheck`, `pnpm lint`
      and `pnpm test`, in that order) once, when the plan is
-     implemented. If it fails, it fixes and reruns, at most three
-     attempts, then stops and reports. In plan mode the report names a
+     implemented, as a call of its own: `pnpm gate` alone, in the
+     foreground, with `timeout: 600000`, after editing with Edit/Write
+     and running the scoped checks of the touched workspace. If it
+     fails, it fixes and reruns: attempts 1 to 3 always run, the fourth
+     to sixth only after progress (a later stage, a later step in the
+     same stage, or the same step with fewer failures), absolute cap 6; then it stops and reports
+     what fails, why and what it tried. In plan mode the report names a
      `plan-issue` addendum as the next stage; that one addendum per
      issue is implemented without a new owner approval (see Recovery).
-     The PreToolUse hook `scripts/gate-limit.mjs`, declared in
-     `.claude/settings.json`, enforces the limit: inside
-     `implement-issue` it blocks the fourth `pnpm gate` before it runs,
-     and also the gate's parts at the root (`pnpm typecheck`,
+     The hook `scripts/gate-limit.mjs`, declared in
+     `.claude/settings.json` for PreToolUse, PostToolUse,
+     PostToolUseFailure and SubagentStop, enforces it: inside `implement-issue` it
+     denies, without counting an attempt, a gate that is chained,
+     piped or redirected, has no `timeout` of at least 600000 or runs
+     in the background; it reads the gate output after the call to
+     record the stage reached and the failures; it denies the gate
+     when the last attempt made no progress or at the cap, and that
+     denial stays in force for every later gate call of the same run; and it
+     denies the gate's parts at the root (`pnpm typecheck`,
      `pnpm lint`, `pnpm test`, with or without `run`). Commands scoped
      to a workspace or a file (`pnpm --filter <pkg> test`,
      `pnpm exec jest <path>`) and `pnpm format` stay allowed. The count
-     is per `agent_id`, kept under `.claude/loop/`, so every pass (plan
+     is per `agent_id`, kept under `.claude/loop/` and removed when the
+     gate passes and when the agent stops, so every pass (plan
      mode, the gate-recovery run, fix mode, issue mode) is a new
      dispatch, never a continuation of an earlier one: a continuation
      would keep the earlier count. Project hooks load from the
@@ -121,10 +133,12 @@ Flow for every feature, fix or non-trivial change in this repo.
 
 Four cases, covering steps 4 to 7:
 
-- Three gate failures inside `implement-issue` (step 4) in plan mode:
+- A gate stopped by `implement-issue` (step 4, no progress or the
+  cap) in plan mode. The orchestrator does not move to review or ship
+  while the gate is not green: it resolves it or stops and reports.
   `plan-issue` writes an addendum from the failing output and
   `implement-issue` implements it without a new approval. If that run
-  also fails three times, or the first failure was in issue mode or fix
+  also stops, or the first failure was in issue mode or fix
   mode, the owner decides between a `plan-issue` addendum or
   `implement-issue` in fix mode, with the failing output as its list.
 - A gate failure inside `scripts/ship.sh prepare` (step 6), or inside
