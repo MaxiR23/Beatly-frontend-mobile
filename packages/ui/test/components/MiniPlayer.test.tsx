@@ -6,7 +6,7 @@
 // - MiniPlayer
 //
 // What is covered:
-// - the title and subtitle, the failed subtitle in the error tone, the open, toggle and next presses, the pause label while playing, no progress element
+// - the title and subtitle, the subtitle in the secondary tone, the open, toggle and next presses, the pause label while playing, no progress element
 // - the tint handed to the glass surface with reduce motion: no fade under it
 // - Android: a rectangle with radius.sm corners, a square cover, filled narrow play and next spacing.xs apart; iOS keeps the pill, the round cover and the outlined control-size buttons
 // - the bare surface: filling and clipping, no glass and no tint, with the presses still working
@@ -49,7 +49,6 @@ async function draw(over: Partial<ComponentProps<typeof MiniPlayer>> = {}) {
     <MiniPlayer
       title="Song"
       subtitle="Artist"
-      failed={false}
       image={null}
       tint={null}
       playing={false}
@@ -165,9 +164,9 @@ describe("MiniPlayer", () => {
     expect(screen.getByText("Artist")).toHaveStyle({ color: color.text.secondary });
   });
 
-  it("draws the failed subtitle in the error tone", async () => {
-    await draw({ subtitle: "Can't play", failed: true });
-    expect(screen.getByText("Can't play")).toHaveStyle({ color: color.status.error });
+  it("draws the subtitle in the secondary tone", async () => {
+    await draw({ subtitle: "Artist" });
+    expect(screen.getByText("Artist")).toHaveStyle({ color: color.text.secondary });
   });
 
   it("opens on the body, toggles on play and goes next", async () => {
@@ -198,7 +197,6 @@ describe("MiniPlayer", () => {
       const props = {
         title: "Song",
         subtitle: "Artist",
-        failed: false,
         image: null,
         playing: false,
         busy: false,

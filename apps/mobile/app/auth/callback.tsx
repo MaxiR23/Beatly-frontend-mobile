@@ -4,3 +4,5 @@ import { AuthCallbackScreen } from "../../src/screens/authCallback/AuthCallbackS
 export default function AuthCallback() {
   return <AuthCallbackScreen />;
 }
+
+export { UnexpectedErrorScreen as ErrorBoundary } from "../../src/screens/unexpectedError/UnexpectedErrorScreen.tsx";

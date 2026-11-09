@@ -27,11 +27,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import brandIcon from "../../../assets/brand-icon.png";
 import { useT } from "../../adapters/i18n.ts";
+import { queryFailure } from "../../queries/failureCause.ts";
 import { OutcomeError } from "../../queries/outcomeError.ts";
 import { usePlaylistHeader, usePlaylistTracks } from "../../queries/usePlaylist.ts";
 import { useLibrarySaved, useSetSaved } from "../../queries/useLibrary.ts";
 import { useDeletePlaylist } from "../../queries/usePlaylists.ts";
 import { useProfile } from "../../queries/useProfile.ts";
+import { useOnline } from "../../queries/useOnline.ts";
 import { useRegisterRecent } from "../../queries/useRecents.ts";
 import { EditPlaylistSheet } from "./EditPlaylistSheet.tsx";
 import { useSheetPresence } from "../trackMenu/useSheetPresence.ts";
@@ -39,6 +41,8 @@ import { PlaylistOptionsSheet } from "./PlaylistOptionsSheet.tsx";
 import type { PlaylistOptionKey } from "./playlistOptions.ts";
 import { playlistMeta } from "./playlistMeta.ts";
 import { playbackKindOf, playlistSource } from "./playlistSource.ts";
+import { clearPlayStart, failPlayStart } from "../connection/playStart.ts";
+import { useFailureCopy } from "../failure/useFailureCopy.ts";
 import { toQueue, wholeQueue } from "../player/queue.ts";
 import { useListPlayback, useNowPlaying } from "../player/useNowPlaying.ts";
 import { usePlaybackActions } from "../player/usePlayback.ts";
@@ -69,11 +73,18 @@ function isNotFound(error: unknown): boolean {
 export function PlaylistScreen() {
   const t = useT("playlist");
   const tc = useT("common");
+  const failureCopy = useFailureCopy();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const tabBarClearance = useTabBarClearance();
   const playback = usePlaybackActions();
   const registerRecent = useRegisterRecent();
+  const online = useOnline();
+  // The retry of a failed play all runs from an older render: it reads the connection as it is now.
+  const onlineNow = useRef(online);
+  useEffect(() => {
+    onlineNow.current = online;
+  }, [online]);
   const { id = "", source } = useLocalSearchParams<{ id?: string; source?: string }>();
   const kind = playlistSource(source);
   const playbackKind = playbackKindOf(kind);
@@ -90,8 +101,9 @@ export function PlaylistScreen() {
     mounted.current = true;
     return () => {
       mounted.current = false;
+      clearPlayStart(id);
     };
-  }, []);
+  }, [id]);
   const sheet = useSheetPresence<"options" | "edit">();
   const [failed, setFailed] = useState<{ at: number } | null>(null);
   const deletion = useDeletePlaylist();
@@ -166,21 +178,23 @@ export function PlaylistScreen() {
 
   const notFound = isNotFound(header.error) || isNotFound(tracks.error);
 
+  const failure = queryFailure(header, tracks);
+
   let body: DetailBody;
-  if (header.isPending || (kind !== "genre" && tracks.isPending)) {
-    body = { kind: "loading", label: tc("loading") };
-  } else if (notFound) {
+  if (notFound) {
     body = { kind: "unavailable", message: t("notFound") };
-  } else if (header.isError || tracks.isError) {
+  } else if (failure !== null) {
     body = {
       kind: "error",
-      message: tc("error.generic"),
-      retryLabel: tc("retry"),
+      cause: failure,
+      ...failureCopy(failure),
       onRetry: () => {
         if (header.isError) void header.refetch();
         if (tracks.isError) void tracks.refetch();
       },
     };
+  } else if (!header.isSuccess || (kind !== "genre" && !tracks.isSuccess)) {
+    body = { kind: "loading", label: tc("loading") };
   } else {
     const data = header.data;
     const list = data.source === "genre" ? data.playlist.tracks : (tracks.data ?? []);
@@ -242,6 +256,15 @@ export function PlaylistScreen() {
     // Own and liked lists page: the whole list is loaded first. A failed page puts the query in
     // error, which draws the error body; a screen that went away starts nothing.
     const startWhole = async (mode: "play" | "shuffle") => {
+      // Offline, play all fails at once instead of waiting on a paused page (owner change 2).
+      if (data.source !== "genre" && !onlineNow.current && tracks.hasNextPage) {
+        failPlayStart({
+          owner: id,
+          sourceStart: playback.getState().sourceStart,
+          retry: () => void startWhole(mode),
+        });
+        return;
+      }
       setStarting(mode);
       const whole =
         data.source === "genre"

@@ -64,17 +64,20 @@ account. The name shown is `username`, or `display_name` when `username` is null
 None of the sign operations rejects: every failure, including a 15 second
 timeout, is a typed `AuthFailure`.
 
-| Port reason           | Screen   | i18n key                          |
-| --------------------- | -------- | --------------------------------- |
-| `invalid_credentials` | login    | `login:errors.invalidCredentials` |
-| `email_not_confirmed` | login    | `login:errors.emailNotConfirmed`  |
-| `rate_limited`        | login    | `login:errors.rateLimited`        |
-| `rate_limited`        | sign up  | `signUp:errors.rateLimited`       |
-| `weak_password`       | sign up  | `signUp:errors.weakPassword`      |
-| `user_already_exists` | sign up  | `signUp:errors.userAlreadyExists` |
-| `invalid_email`       | sign up  | `signUp:errors.invalidEmail`      |
-| `link_invalid`        | callback | `authCallback:invalidLink`        |
-| `unknown` and others  | all      | `common:error.generic`            |
+| Port reason           | Screen         | i18n key                          |
+| --------------------- | -------------- | --------------------------------- |
+| `invalid_credentials` | login          | `login:errors.invalidCredentials` |
+| `email_not_confirmed` | login          | `login:errors.emailNotConfirmed`  |
+| `rate_limited`        | login          | `login:errors.rateLimited`        |
+| `rate_limited`        | sign up        | `signUp:errors.rateLimited`       |
+| `weak_password`       | sign up        | `signUp:errors.weakPassword`      |
+| `user_already_exists` | sign up        | `signUp:errors.userAlreadyExists` |
+| `invalid_email`       | sign up        | `signUp:errors.invalidEmail`      |
+| `link_invalid`        | callback       | `authCallback:invalidLink`        |
+| `unknown` and others  | login, sign up | `common:error.generic`            |
+| `unknown` and others  | callback       | `common:error.{offline,server}.*` |
+
+The callback's invalid link (a malformed link or `link_invalid`) is an `EmptyState` with the back-to-login action, not an error state. Any other callback failure draws `FailureState` (`authFailureCause`: offline when the device is offline, otherwise server); an offline one retries by itself when the connection returns. The session pending placeholder draws `FailureState` with the cause of the profile read, offline for a paused one.
 
 ## States per screen
 

@@ -6,7 +6,6 @@ import {
   Cover,
   DragToClose,
   EmptyState,
-  ErrorState,
   GradientFill,
   IconButton,
   isAndroidVariant,
@@ -21,7 +20,9 @@ import { BackHandler, ScrollView, StyleSheet, useWindowDimensions, View } from "
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { playbackFailureCause } from "../../queries/failureCause.ts";
 import { useIsLiked } from "../../queries/useLikes.ts";
+import { FailureState } from "../failure/FailureState.tsx";
 import { formatDuration } from "../search/formatDuration.ts";
 import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
 import { useTrackMenu } from "../trackMenu/trackMenuContext.ts";
@@ -61,7 +62,6 @@ function PlayerTitles({ track, reduceMotion }: { track: PlayableTrack; reduceMot
 
 export function PlayerScreen() {
   const t = useT("player");
-  const tc = useT("common");
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -126,6 +126,7 @@ export function PlayerScreen() {
   const coverSize = playerCoverSize(width);
   const hasSeek = duration !== null && duration > 0;
   const failed = status === "failed";
+  const cause = failed ? playbackFailureCause(state.failure) : null;
   const sourceName =
     source === null
       ? ""
@@ -229,11 +230,11 @@ export function PlayerScreen() {
                 </PauseScale>
               </View>
               <PlayerTitles track={current} reduceMotion={reduceMotion} />
-              {failed ? (
+              {cause !== null ? (
                 <View style={styles.below} testID="player-error">
-                  <ErrorState
-                    message={t("error.unplayable")}
-                    retryLabel={tc("retry")}
+                  <FailureState
+                    cause={cause}
+                    message={cause === "offline" ? t("error.offline") : undefined}
                     onRetry={() => {
                       void playback.retry();
                     }}

@@ -18,7 +18,8 @@
 // SEE: apps/mobile/src/queries/useAuth.ts
 
 import { RECENT_SEARCHES_KEY } from "@beatly/core";
-import { describe, expect, it, jest } from "@jest/globals";
+import { afterEach, describe, expect, it, jest } from "@jest/globals";
+import { onlineManager } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 import type { ReactNode } from "react";
 
@@ -40,6 +41,22 @@ function setup(storage = seeded()) {
   );
   return { ctx, client, storage, wrapper };
 }
+
+afterEach(() => {
+  onlineManager.setOnline(true);
+});
+
+describe("useEmail", () => {
+  it("reads the stored session's email while offline", async () => {
+    onlineManager.setOnline(false);
+    const { wrapper } = setup();
+    const { result } = await renderHook(() => useEmail(), { wrapper });
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+    expect(result.current.isPaused).toBe(false);
+  });
+});
 
 describe("useSignOut", () => {
   it("clears the stored recents and drops the cached list on success", async () => {

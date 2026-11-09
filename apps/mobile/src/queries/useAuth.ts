@@ -9,7 +9,12 @@ export const emailQueryKey = ["auth", "email"] as const;
 
 export function useEmail() {
   const { auth } = useCore();
-  return useQuery({ queryKey: emailQueryKey, queryFn: () => auth.getEmail() });
+  // Device data: runs offline.
+  return useQuery({
+    queryKey: emailQueryKey,
+    networkMode: "always",
+    queryFn: () => auth.getEmail(),
+  });
 }
 
 export function useSignIn() {

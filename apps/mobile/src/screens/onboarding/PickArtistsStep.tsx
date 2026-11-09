@@ -4,7 +4,6 @@ import { color, layout, spacing } from "@beatly/ui";
 import {
   Button,
   EmptyState,
-  ErrorState,
   GradientFill,
   LoadingState,
   Notice,
@@ -18,8 +17,10 @@ import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { queryFailure } from "../../queries/failureCause.ts";
 import { useOnboardingArtists, useSimilarArtists } from "../../queries/useOnboarding.ts";
 import { useSearch } from "../../queries/useSearch.ts";
+import { FailureState } from "../failure/FailureState.tsx";
 import { SEARCH_DEBOUNCE_MS } from "../search/SearchScreen.tsx";
 import { useDebouncedValue } from "../search/useDebouncedValue.ts";
 import {
@@ -129,31 +130,22 @@ export function PickArtistsStep({
     })),
   }));
 
+  const searchFailure = queryFailure(search);
+  const artistsFailure = queryFailure(artists);
+
   let empty;
   if (searching) {
-    if (search.isPending) {
+    if (searchFailure !== null) {
+      empty = <FailureState cause={searchFailure} onRetry={() => void search.refetch()} />;
+    } else if (search.isPending) {
       empty = <LoadingState label={tc("loading")} />;
-    } else if (search.isError) {
-      empty = (
-        <ErrorState
-          message={tc("error.generic")}
-          retryLabel={tc("retry")}
-          onRetry={() => void search.refetch()}
-        />
-      );
     } else {
       empty = <EmptyState icon="search" message={t("pick.noResults")} />;
     }
+  } else if (artistsFailure !== null) {
+    empty = <FailureState cause={artistsFailure} onRetry={() => void artists.refetch()} />;
   } else if (artists.isPending) {
     empty = <LoadingState label={tc("loading")} />;
-  } else if (artists.isError) {
-    empty = (
-      <ErrorState
-        message={tc("error.generic")}
-        retryLabel={tc("retry")}
-        onRetry={() => void artists.refetch()}
-      />
-    );
   } else {
     empty = <EmptyState icon="user" message={t("pick.empty")} />;
   }

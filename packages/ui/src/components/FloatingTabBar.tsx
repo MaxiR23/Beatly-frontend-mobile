@@ -1,4 +1,4 @@
-// INFO: the tab bar for Android and iOS below 26: on iOS below 26 icon-only tabs spread evenly on a GlassSurface pill above the bottom safe area with an optional accessory (the mini player) above it, both at the window width minus the gutter on each side; on Android (ADR 035) one block docked to the bottom edge, full width, with the tab row and the bottom inset on the opaque base surface and a fade into it above them, icon and name per tab, the accessory inside the block; dockedTabBarHeight is the one source of the Android block's height and clearance.
+// INFO: the tab bar for Android and iOS below 26: on iOS below 26 icon-only tabs spread evenly on a GlassSurface pill above the bottom safe area with an optional accessory (the mini player) above it, both at the window width minus the gutter on each side; on Android (ADR 035) one block docked to the bottom edge, full width, with the tab row and the bottom inset on the opaque base surface and a fade into it above them, icon and name per tab, the accessory inside the block; an optional status strip above the accessory in both bars, inside the Android block's fade; dockedTabBarHeight is the one source of the Android block's height and clearance.
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 
@@ -28,6 +28,8 @@ interface FloatingTabBarProps {
   tabs: readonly FloatingTab[];
   bottomInset: number;
   accessory?: ReactNode;
+  // The status strip (offline, a failed track), drawn above the accessory, or above the pill or the tab row when there is none.
+  status?: ReactNode;
 }
 
 // The gap between the accessory (the mini player) and the pill; the style and the clearance read it.
@@ -43,10 +45,28 @@ const TAB_ROW_HEIGHT =
 // The fade zone above the Android block's top element: one section gap of air.
 const DOCK_FADE = spacing.xl;
 
-// The Android block's height, the one source of its layout and of the screens' clearance: the fade zone, the accessory and its gap when there is one, the tab row and the bottom inset.
-export function dockedTabBarHeight(bottomInset: number, accessory = false): number {
+// The room the status strip takes above what it rests on: its height and one gap.
+const STATUS_ROOM = layout.statusStripHeight + ACCESSORY_GAP;
+
+// The Android block's height, the one source of its layout and of the screens' clearance: the fade zone, the status strip and its gap when there is one, the accessory and its gap when there is one, the tab row and the bottom inset.
+export function dockedTabBarHeight(bottomInset: number, accessory = false, status = false): number {
   return (
-    DOCK_FADE + (accessory ? ACCESSORY_HEIGHT + ACCESSORY_GAP : 0) + TAB_ROW_HEIGHT + bottomInset
+    DOCK_FADE +
+    (status ? STATUS_ROOM : 0) +
+    (accessory ? ACCESSORY_HEIGHT + ACCESSORY_GAP : 0) +
+    TAB_ROW_HEIGHT +
+    bottomInset
+  );
+}
+
+// iOS only (the pill's geometry, read by the iOS 26+ strip overlay); Android's block is dockedTabBarHeight. The pill's offset, its height and the accessory's height and gap when there is one.
+export function floatingTabBarStackHeight(bottomInset: number, accessory = false): number {
+  return (
+    bottomInset +
+    spacing.sm +
+    layout.controlHeight +
+    2 * spacing.xs +
+    (accessory ? layout.controlHeight + 2 * spacing.xs + ACCESSORY_GAP : 0)
   );
 }
 
@@ -54,15 +74,14 @@ export function dockedTabBarHeight(bottomInset: number, accessory = false): numb
 // Android the docked block's height (the last item rests at the fade's top);
 // elsewhere the bar's offset, its height and one section gap of air, plus the
 // accessory's height and its gap when there is one.
-export function floatingTabBarClearance(bottomInset: number, accessory = false): number {
-  if (isAndroidVariant()) return dockedTabBarHeight(bottomInset, accessory);
+export function floatingTabBarClearance(
+  bottomInset: number,
+  accessory = false,
+  status = false,
+): number {
+  if (isAndroidVariant()) return dockedTabBarHeight(bottomInset, accessory, status);
   return (
-    bottomInset +
-    spacing.sm +
-    layout.controlHeight +
-    2 * spacing.xs +
-    spacing.xl +
-    (accessory ? layout.controlHeight + 2 * spacing.xs + ACCESSORY_GAP : 0)
+    floatingTabBarStackHeight(bottomInset, accessory) + spacing.xl + (status ? STATUS_ROOM : 0)
   );
 }
 
@@ -70,12 +89,17 @@ export function FloatingTabBar(props: FloatingTabBarProps) {
   return isAndroidVariant() ? <DockedTabBar {...props} /> : <PillTabBar {...props} />;
 }
 
-function PillTabBar({ tabs, bottomInset, accessory }: FloatingTabBarProps) {
+function PillTabBar({ tabs, bottomInset, accessory, status }: FloatingTabBarProps) {
   const { width } = useWindowDimensions();
   const barWidth = width - 2 * layout.gutter;
   const press = pressFeedback();
   return (
     <View style={[styles.outer, { bottom: bottomInset + spacing.sm }]} pointerEvents="box-none">
+      {status === undefined ? null : (
+        <View style={[styles.accessory, { width: barWidth }]} testID="tab-status">
+          {status}
+        </View>
+      )}
       {accessory === undefined ? null : (
         <View style={[styles.accessory, { width: barWidth }]} testID="tab-accessory">
           {accessory}
@@ -108,11 +132,16 @@ function PillTabBar({ tabs, bottomInset, accessory }: FloatingTabBarProps) {
 
 // The fade covers only the zone above the tab row; the tab row and the inset sit on the opaque base surface.
 // Deliberate departures from Material 3 (ADR 035): no indicator, no surface of its own, the fade on press, the heavier selected label.
-function DockedTabBar({ tabs, bottomInset, accessory }: FloatingTabBarProps) {
+function DockedTabBar({ tabs, bottomInset, accessory, status }: FloatingTabBarProps) {
   const press = pressFeedback({ android: "fade" });
   return (
     <View
-      style={[styles.dock, { height: dockedTabBarHeight(bottomInset, accessory !== undefined) }]}
+      style={[
+        styles.dock,
+        {
+          height: dockedTabBarHeight(bottomInset, accessory !== undefined, status !== undefined),
+        },
+      ]}
       pointerEvents="box-none"
       testID="tab-dock"
     >
@@ -129,6 +158,11 @@ function DockedTabBar({ tabs, bottomInset, accessory }: FloatingTabBarProps) {
         testID="tab-dock-base"
       />
       <View style={{ paddingBottom: bottomInset }}>
+        {status === undefined ? null : (
+          <View style={styles.dockAccessory} testID="tab-status">
+            {status}
+          </View>
+        )}
         {accessory === undefined ? null : (
           <View style={styles.dockAccessory} testID="tab-accessory">
             {accessory}

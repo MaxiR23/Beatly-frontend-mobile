@@ -4,7 +4,6 @@ import { motion, spacing } from "@beatly/ui";
 import {
   Button,
   EmptyState,
-  ErrorState,
   Icon,
   Input,
   LoadingState,
@@ -19,6 +18,7 @@ import { FlatList, StyleSheet, View } from "react-native";
 
 import { useT } from "../../adapters/i18n.ts";
 import { useWindowInsets } from "../../providers/WindowInsetsProvider.tsx";
+import { queryFailure } from "../../queries/failureCause.ts";
 import {
   useAddToPlaylist,
   useCreatePlaylistWithTrack,
@@ -30,6 +30,7 @@ import {
   canCreatePlaylist,
   isTitleTooLong,
 } from "../library/playlistRules.ts";
+import { FailureState } from "../failure/FailureState.tsx";
 import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface PlaylistPickerSheetProps {
@@ -116,20 +117,20 @@ function PickerBody({ track, onClose }: Pick<PlaylistPickerSheetProps, "track" |
   };
 
   const heldIds = owned.data ?? [];
+  const failure = queryFailure(playlists, owned);
   let list: ReactNode;
-  if (playlists.isPending || owned.isPending) {
-    list = <LoadingState label={tc("loading")} />;
-  } else if (playlists.isError || owned.isError) {
+  if (failure !== null) {
     list = (
-      <ErrorState
-        message={tc("error.generic")}
-        retryLabel={tc("retry")}
+      <FailureState
+        cause={failure}
         onRetry={() => {
           if (playlists.isError) void playlists.refetch();
           if (owned.isError) void owned.refetch();
         }}
       />
     );
+  } else if (!playlists.isSuccess || !owned.isSuccess) {
+    list = <LoadingState label={tc("loading")} />;
   } else if (playlists.data.length === 0) {
     list = <EmptyState icon="music" message={t("picker.empty")} />;
   } else {

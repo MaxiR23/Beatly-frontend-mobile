@@ -101,7 +101,7 @@ describe("the My reports sheet", () => {
       .mockResolvedValueOnce({ kind: "transport_failure", cause: "network" })
       .mockResolvedValue(pageOf([bugReportFixture]));
     const ctx = await setup({ listMyBugReports });
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.offline.title)).toBeTruthy();
     await fireEvent.press(screen.getByRole("button", { name: en.common.retry }));
     expect(await screen.findByTestId("report-r1")).toBeTruthy();
     expect(ctx.listMyBugReports).toHaveBeenCalledTimes(2);

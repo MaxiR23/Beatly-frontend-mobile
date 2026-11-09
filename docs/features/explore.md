@@ -27,12 +27,12 @@ see `tabs.md`.
 
 ## States
 
-| State            | What is drawn                                 | i18n keys                              |
-| ---------------- | --------------------------------------------- | -------------------------------------- |
-| Loading          | `LoadingState`                                | `common:loading`                       |
-| With data        | the genre rows in API order                   | `explore:title`                        |
-| Expected empty   | `EmptyState` with the compass icon, no action | `explore:empty`                        |
-| Error with retry | `ErrorState`; retry refetches the genres      | `common:error.generic`, `common:retry` |
+| State            | What is drawn                                                          | i18n keys                                                         |
+| ---------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Loading          | `LoadingState`                                                         | `common:loading`                                                  |
+| With data        | the genre rows in API order                                            | `explore:title`                                                   |
+| Expected empty   | `EmptyState` with the compass icon, no action                          | `explore:empty`                                                   |
+| Error with retry | `FailureState` (cause from `queryFailure`); retry refetches the genres | `common:error.{offline,slow,server}.{title,body}`, `common:retry` |
 
 The avatar and its sheet use `common:account.open`, `common:account.close`,
 `common:account.viewProfile`, `common:account.noName`, `common:account.profileRow`,

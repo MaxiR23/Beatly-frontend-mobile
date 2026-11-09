@@ -4,3 +4,5 @@ import { SessionPendingScreen } from "../src/screens/sessionPending/SessionPendi
 export default function SessionPending() {
   return <SessionPendingScreen />;
 }
+
+export { UnexpectedErrorScreen as ErrorBoundary } from "../src/screens/unexpectedError/UnexpectedErrorScreen.tsx";

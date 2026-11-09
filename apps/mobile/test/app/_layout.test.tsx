@@ -15,6 +15,7 @@
 // - the onboarding gate: a pending profile opens the onboarding and not home, a completed one opens home and never the onboarding, an unknown profile holds the placeholder and the splash, a failed profile read draws the error with retry on the placeholder and retry lands where the profile says
 // - a kept cold link opens after the onboarding, Get started lands on home without one and stores the onboarding as done on the phone
 // - after signing in, the placeholder draws the loading state while the profile is unknown
+// - an error thrown while drawing a screen shows the unexpected error screen in place of the tabs, is logged through the log port and Back to home draws home
 // - the two startup paths of the device mark: stored for this account, home opens without waiting for the profile; not stored (nothing, or another account's), the profile decides
 //
 // Run with: pnpm --filter @beatly/mobile test -- app/_layout
@@ -73,10 +74,13 @@ const routerSplash = () =>
 const mockCore = installCore();
 
 const mockMounted = new Set<string>();
+// A screen id a test makes throw on render, to reach the route's error boundary.
+const mockBroken = new Set<string>();
 const everMounted = new Set<string>();
 
 function mockTracked(id: string, Screen: ComponentType) {
   return function Tracked() {
+    if (mockBroken.has(id)) throw new Error("boom");
     useLayoutEffect(() => {
       mockMounted.add(id);
       everMounted.add(id);
@@ -131,6 +135,7 @@ jest.mock("../../src/screens/sessionPending/SessionPendingScreen.tsx", () => {
 const drawnAtHide: string[][] = [];
 
 beforeEach(() => {
+  mockBroken.clear();
   drawnAtHide.length = 0;
   routerSplash().hide.mockClear();
   mockMounted.clear();
@@ -399,7 +404,7 @@ describe("the root layout onboarding gate", () => {
       getMyProfile: () => Promise.resolve({ kind: "api_failure", reason: "upstream_error" }),
     });
     await renderRouter("app", { initialUrl: "/" });
-    expect(await screen.findByText(resources.en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(resources.en.common.error.server.title)).toBeTruthy();
     expect(everMounted.has("home")).toBe(false);
     expect(everMounted.has("onboarding")).toBe(false);
     expect(SplashScreen.hideAsync).toHaveBeenCalled();
@@ -476,5 +481,44 @@ describe("the root layout onboarding gate", () => {
     await renderRouter("app", { initialUrl: "/" });
     expect(await screen.findByTestId("onboarding")).toBeTruthy();
     expect(everMounted.has("home")).toBe(false);
+  });
+});
+
+describe("the route error boundary", () => {
+  async function breakAlbum() {
+    mockCore.set("signed_in");
+    mockBroken.add("album");
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+    await renderRouter("app", { initialUrl: "/album/MPREb_1" });
+    return screen.findByText(resources.en.common.unexpected.title);
+  }
+
+  it("shows the unexpected error screen in place of the tabs when a screen throws", async () => {
+    expect(await breakAlbum()).toBeTruthy();
+    expect(screen.getByText(resources.en.common.unexpected.body)).toBeTruthy();
+    expect(screen.queryByTestId("tab-pill")).toBeNull();
+  });
+
+  it("logs the error through the log port", async () => {
+    mockCore.set("signed_in");
+    const logged = jest.spyOn(mockCore.current.log, "error");
+    mockBroken.add("album");
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+    await renderRouter("app", { initialUrl: "/album/MPREb_1" });
+    await screen.findByText(resources.en.common.unexpected.title);
+    expect(logged).toHaveBeenCalledWith("unexpected_error", {
+      name: "Error",
+      message: "boom",
+    });
+  });
+
+  it("draws home after Back to home", async () => {
+    await breakAlbum();
+    mockBroken.clear();
+    await fireEvent.press(
+      screen.getByRole("button", { name: resources.en.common.unexpected.home }),
+    );
+    expect(await screen.findByTestId("home")).toBeTruthy();
+    expect(screen.queryByText(resources.en.common.unexpected.title)).toBeNull();
   });
 });

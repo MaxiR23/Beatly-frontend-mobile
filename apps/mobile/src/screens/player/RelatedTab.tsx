@@ -4,7 +4,6 @@ import { spacing } from "@beatly/ui";
 import {
   Carousel,
   EmptyState,
-  ErrorState,
   LoadingState,
   MediaRow,
   RowSection,
@@ -14,7 +13,9 @@ import { useEffect } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 
 import { useT } from "../../adapters/i18n.ts";
+import { queryFailure } from "../../queries/failureCause.ts";
 import { useRelated } from "../../queries/useTracks.ts";
+import { FailureState } from "../failure/FailureState.tsx";
 import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
 import { playableOf } from "./queue.ts";
 import { useNowPlaying } from "./useNowPlaying.ts";
@@ -46,16 +47,11 @@ export function RelatedTab({ trackId, onAtTopChange, onOpenAlbum, onOpenArtist }
     if (listed) onAtTopChange(true);
   }, [listed, trackId, onAtTopChange]);
 
-  if (related.isPending) return <LoadingState label={tc("loading")} />;
-  if (related.isError) {
-    return (
-      <ErrorState
-        message={tc("error.generic")}
-        retryLabel={tc("retry")}
-        onRetry={() => void related.refetch()}
-      />
-    );
+  const failure = queryFailure(related);
+  if (failure !== null) {
+    return <FailureState cause={failure} onRetry={() => void related.refetch()} />;
   }
+  if (!related.isSuccess) return <LoadingState label={tc("loading")} />;
   const { songs, artists, albums } = related.data;
   if (songs.length === 0 && artists.length === 0 && albums.length === 0) {
     return <EmptyState icon="music" message={t("sheet.relatedEmpty")} />;

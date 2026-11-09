@@ -1,29 +1,29 @@
-// INFO: step 2 of the onboarding: the logo, the title and the phrases that advance while the home is built, on the base surface; when the build failed, the generic error with retry.
+// INFO: step 2 of the onboarding: the logo, the title and the phrases that advance while the home is built, on the base surface; when the build failed, the error state with its cause and retry.
 import { color, spacing } from "@beatly/ui";
-import { BeatlyLogo, ErrorState, PhraseCycle, Text } from "@beatly/ui/native";
+import { BeatlyLogo, PhraseCycle, Text, type ErrorCause } from "@beatly/ui/native";
 import { StyleSheet, View } from "react-native";
 
 import { useT } from "../../adapters/i18n.ts";
+import { FailureState } from "../failure/FailureState.tsx";
 
 interface BuildingHomeStepProps {
   readonly artistName: string;
-  readonly failed: boolean;
+  readonly failure: ErrorCause | null;
   readonly onRetry: () => void;
   readonly reduceMotion: boolean;
 }
 
 export function BuildingHomeStep({
   artistName,
-  failed,
+  failure,
   onRetry,
   reduceMotion,
 }: BuildingHomeStepProps) {
   const t = useT("onboarding");
-  const tc = useT("common");
-  if (failed) {
+  if (failure !== null) {
     return (
       <View testID="buildingHome" style={styles.screen}>
-        <ErrorState message={tc("error.generic")} retryLabel={tc("retry")} onRetry={onRetry} />
+        <FailureState cause={failure} onRetry={onRetry} />
       </View>
     );
   }

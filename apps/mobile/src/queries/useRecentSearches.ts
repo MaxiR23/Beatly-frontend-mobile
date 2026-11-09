@@ -14,8 +14,10 @@ function unwrap(outcome: RecentSearchesOutcome): RecentSearchesOutcome {
 
 export function useRecentSearches() {
   const { recentSearches } = useCore();
+  // Device data: runs offline.
   return useQuery({
     queryKey: recentSearchesQueryKey,
+    networkMode: "always",
     queryFn: async () => unwrap(await recentSearches.list()),
     select: (outcome) => (outcome.kind === "success" ? outcome.data : []),
   });

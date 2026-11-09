@@ -228,7 +228,15 @@ describe("DetailScreen", () => {
 
   it("draws the error with retry and calls onRetry", async () => {
     const onRetry = jest.fn();
-    await draw({ kind: "error", message: "Went wrong", retryLabel: "Retry", onRetry });
+    await draw({
+      kind: "error",
+      cause: "server",
+      title: "Oops",
+      message: "Went wrong",
+      retryLabel: "Retry",
+      onRetry,
+    });
+    expect(screen.getByText("Oops")).toBeTruthy();
     expect(screen.getByText("Went wrong")).toBeTruthy();
     await fireEvent.press(screen.getByRole("button", { name: "Retry" }));
     expect(onRetry).toHaveBeenCalledTimes(1);
@@ -947,7 +955,14 @@ describe("DetailScreen", () => {
     it("keeps the skeleton, the error and the unavailable bodies as they were", async () => {
       const bodies: DetailBody[] = [
         { kind: "loading", label: "Loading" },
-        { kind: "error", message: "Went wrong", retryLabel: "Retry", onRetry: () => undefined },
+        {
+          kind: "error",
+          cause: "server",
+          title: "Oops",
+          message: "Went wrong",
+          retryLabel: "Retry",
+          onRetry: () => undefined,
+        },
         { kind: "unavailable", message: "Not available" },
       ];
       for (const body of bodies) {
@@ -968,6 +983,8 @@ describe("DetailScreen", () => {
       await scrollEvent(r.bar[0] + 5);
       const error: DetailBody = {
         kind: "error",
+        cause: "server",
+        title: "Oops",
         message: "Went wrong",
         retryLabel: "Retry",
         onRetry: () => undefined,
@@ -1277,7 +1294,14 @@ describe("DetailScreen", () => {
         await unmeasured.view.unmount();
         const bodies: DetailBody[] = [
           { kind: "loading", label: "Loading" },
-          { kind: "error", message: "Went wrong", retryLabel: "Retry", onRetry: () => undefined },
+          {
+            kind: "error",
+            cause: "server",
+            title: "Oops",
+            message: "Went wrong",
+            retryLabel: "Retry",
+            onRetry: () => undefined,
+          },
           { kind: "unavailable", message: "Not available" },
         ];
         for (const body of bodies) {
@@ -1411,7 +1435,14 @@ describe("DetailScreen", () => {
       it("keeps the other bodies as they were on iOS", async () => {
         const bodies: DetailBody[] = [
           { kind: "loading", label: "Loading" },
-          { kind: "error", message: "Went wrong", retryLabel: "Retry", onRetry: () => undefined },
+          {
+            kind: "error",
+            cause: "server",
+            title: "Oops",
+            message: "Went wrong",
+            retryLabel: "Retry",
+            onRetry: () => undefined,
+          },
           { kind: "unavailable", message: "Not available" },
         ];
         for (const body of bodies) {
@@ -1602,6 +1633,8 @@ describe("DetailScreen", () => {
       await view.rerender(
         element({
           kind: "error",
+          cause: "server",
+          title: "Oops",
           message: "Went wrong",
           retryLabel: "Retry",
           onRetry: () => undefined,
@@ -1715,7 +1748,14 @@ describe("DetailScreen", () => {
     it("draws no cascade wrapper in the loading, error and unavailable bodies", async () => {
       const bodies: DetailBody[] = [
         { kind: "loading", label: "Loading" },
-        { kind: "error", message: "Went wrong", retryLabel: "Retry", onRetry: () => undefined },
+        {
+          kind: "error",
+          cause: "server",
+          title: "Oops",
+          message: "Went wrong",
+          retryLabel: "Retry",
+          onRetry: () => undefined,
+        },
         { kind: "unavailable", message: "Not available" },
       ];
       for (const body of bodies) {

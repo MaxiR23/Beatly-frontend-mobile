@@ -12,7 +12,7 @@ import { layout, spacing } from "../tokens/spacing.ts";
 import { ColorFade } from "./ColorFade.tsx";
 
 interface GlassSurfaceProps {
-  variant: "bar" | "barRect" | "sheet" | "circle";
+  variant: "bar" | "barRect" | "strip" | "stripRect" | "sheet" | "circle";
   children: ReactNode;
   // A runtime color (a cover's color from the backend) over the surface; null or unset keeps it neutral.
   tint?: string | null;
@@ -83,6 +83,24 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     padding: spacing.xs,
     gap: spacing.xs,
+  },
+  // The status strip (iOS): one line about the connection or a failed track, a capsule above the mini player or the tab bar.
+  strip: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: layout.statusStripHeight,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+  },
+  // The status strip on Android: the same strip with small corners.
+  stripRect: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: layout.statusStripHeight,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
   },
   // The iOS Sheet: attached to the bottom and side edges like the system sheet, so only the top corners round; a corner key wins over borderRadius in RN and in the glass view.
   sheet: {

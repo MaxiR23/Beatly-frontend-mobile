@@ -4,7 +4,6 @@ import { color, layout, spacing } from "@beatly/ui";
 import {
   Chip,
   EmptyState,
-  ErrorState,
   IconButton,
   LoadingState,
   MediaGrid,
@@ -17,7 +16,9 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { queryFailure } from "../../queries/failureCause.ts";
 import { useGenreCategories, useGenrePlaylists } from "../../queries/useGenres.ts";
+import { FailureState } from "../failure/FailureState.tsx";
 import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 
 export function GenreScreen() {
@@ -56,24 +57,25 @@ export function GenreScreen() {
     };
   }
 
+  const failure = queryFailure(playlists, categories);
+
   let body;
-  if (playlists.isPending || categories.isPending) {
+  if (failure !== null) {
     body = (
       <View style={[styles.state, clearance]}>
-        <LoadingState label={tc("loading")} />
-      </View>
-    );
-  } else if (playlists.isError || categories.isError) {
-    body = (
-      <View style={[styles.state, clearance]}>
-        <ErrorState
-          message={tc("error.generic")}
-          retryLabel={tc("retry")}
+        <FailureState
+          cause={failure}
           onRetry={() => {
             if (playlists.isError) void playlists.refetch();
             if (categories.isError) void categories.refetch();
           }}
         />
+      </View>
+    );
+  } else if (!playlists.isSuccess || !categories.isSuccess) {
+    body = (
+      <View style={[styles.state, clearance]}>
+        <LoadingState label={tc("loading")} />
       </View>
     );
   } else if (playlists.data.length === 0) {

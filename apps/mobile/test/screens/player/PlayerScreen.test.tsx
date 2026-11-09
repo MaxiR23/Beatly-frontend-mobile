@@ -21,6 +21,7 @@
 import type { PlayableTrack, PlaybackSource } from "@beatly/core";
 import { color, icon, layout, motion, radius, spacing } from "@beatly/ui";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
+import { onlineManager } from "@tanstack/react-query";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import {
   AccessibilityInfo,
@@ -79,6 +80,7 @@ const timing = jest.spyOn(Animated, "timing");
 const reduce = jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled");
 
 afterEach(async () => {
+  onlineManager.setOnline(true);
   Platform.OS = "ios";
   mockNativeMenu = false;
   mockMenuHost.props = {};
@@ -506,13 +508,49 @@ describe("PlayerScreen", () => {
       resolve: () => Promise.resolve({ kind: "failure", cause: "unplayable" }),
     });
     await start(ctx);
-    expect(screen.getByText(en.player.error.unplayable)).toBeTruthy();
+    expect(screen.getByText(en.common.error.server.title)).toBeTruthy();
     expect(screen.getByTestId("player-error")).toHaveStyle({
       marginHorizontal: layout.playerInset,
     });
     expect(screen.getByText("Song 1")).toBeTruthy();
     expect(screen.queryByTestId("seek-touch")).toBeNull();
     const before = ctx.resolve.mock.calls.length;
+    await fireEvent.press(screen.getByRole("button", { name: en.common.retry }));
+    expect(ctx.resolve.mock.calls.length).toBe(before + 1);
+  });
+
+  it("draws the offline cause with a body that asks for a tap on a network failure", async () => {
+    const ctx = await setup({
+      resolve: () => Promise.resolve({ kind: "failure", cause: "network" }),
+    });
+    await start(ctx);
+    expect(screen.getByText(en.common.error.offline.title)).toBeTruthy();
+    expect(screen.getByText(en.player.error.offline)).toBeTruthy();
+    expect(screen.queryByText(en.common.error.offline.body)).toBeNull();
+  });
+
+  it("draws the slow cause on a timeout", async () => {
+    const ctx = await setup({
+      resolve: () => Promise.resolve({ kind: "failure", cause: "timeout" }),
+    });
+    await start(ctx);
+    expect(screen.getByText(en.common.error.slow.title)).toBeTruthy();
+    expect(screen.getByText(en.common.error.slow.body)).toBeTruthy();
+  });
+
+  it("does not restart the track when the connection returns, and Retry asks the resolver once", async () => {
+    const ctx = await setup({
+      resolve: () => Promise.resolve({ kind: "failure", cause: "network" }),
+    });
+    await start(ctx);
+    const before = ctx.resolve.mock.calls.length;
+    await act(() => {
+      onlineManager.setOnline(false);
+    });
+    await act(() => {
+      onlineManager.setOnline(true);
+    });
+    expect(ctx.resolve.mock.calls.length).toBe(before);
     await fireEvent.press(screen.getByRole("button", { name: en.common.retry }));
     expect(ctx.resolve.mock.calls.length).toBe(before + 1);
   });

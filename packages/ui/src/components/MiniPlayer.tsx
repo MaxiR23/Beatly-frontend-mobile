@@ -14,7 +14,6 @@ import { pressFeedback } from "./pressFeedback.ts";
 interface MiniPlayerProps {
   title: string;
   subtitle: string;
-  failed: boolean;
   image: ImageTiers | null;
   tint: string | null;
   surface?: "glass" | "bare";
@@ -30,7 +29,6 @@ interface MiniPlayerProps {
 export function MiniPlayer({
   title,
   subtitle,
-  failed,
   image,
   tint,
   surface = "glass",
@@ -79,7 +77,7 @@ export function MiniPlayer({
         />
         <View style={styles.text}>
           <Marquee text={title} variant="rowTitle" reduceMotion={reduceMotion} />
-          <Text variant="meta" tone={failed ? "error" : "secondary"} numberOfLines={1}>
+          <Text variant="meta" tone="secondary" numberOfLines={1}>
             {subtitle}
           </Text>
         </View>

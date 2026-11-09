@@ -5,7 +5,6 @@ import {
   Carousel,
   CarouselSkeleton,
   EmptyState,
-  ErrorState,
   LoadingState,
   type CarouselItem,
 } from "@beatly/ui/native";
@@ -14,11 +13,13 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { queryFailure } from "../../queries/failureCause.ts";
 import { usePlaylists } from "../../queries/usePlaylists.ts";
 import { useProfile } from "../../queries/useProfile.ts";
 import { useRecents } from "../../queries/useRecents.ts";
 import { useRecommendations } from "../../queries/useRecommendations.ts";
 import { AccountButton } from "../account/AccountButton.tsx";
+import { FailureState } from "../failure/FailureState.tsx";
 import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 import { RecommendationSection, type RecommendationSlot } from "./RecommendationSection.tsx";
 
@@ -96,43 +97,41 @@ export function HomeScreen() {
     recommendations.data.recommended_artists.length === 0;
 
   const recommendationSlot = (slot: RecommendationSlot, first: boolean) => {
-    if (recommendations.isPending) {
-      return <CarouselSkeleton label={first ? tc("loading") : undefined} />;
-    }
-    if (recommendations.isError) {
+    const failure = queryFailure(recommendations);
+    if (failure !== null) {
       return first ? (
         <View testID="recommendations-error">
-          <ErrorState
-            message={tc("error.generic")}
-            retryLabel={tc("retry")}
-            onRetry={() => void recommendations.refetch()}
-          />
+          <FailureState cause={failure} onRetry={() => void recommendations.refetch()} />
         </View>
       ) : null;
+    }
+    if (!recommendations.isSuccess) {
+      return <CarouselSkeleton label={first ? tc("loading") : undefined} />;
     }
     return <RecommendationSection slot={slot} data={recommendations.data} />;
   };
 
   const clearance = { paddingBottom: tabBarClearance };
 
+  const failure = queryFailure(recents, playlists);
+
   let body;
-  if (recents.isPending || playlists.isPending) {
+  if (failure !== null) {
     body = (
       <View style={[styles.state, clearance]}>
-        <LoadingState label={tc("loading")} />
-      </View>
-    );
-  } else if (recents.isError || playlists.isError) {
-    body = (
-      <View style={[styles.state, clearance]}>
-        <ErrorState
-          message={tc("error.generic")}
-          retryLabel={tc("retry")}
+        <FailureState
+          cause={failure}
           onRetry={() => {
             if (recents.isError) void recents.refetch();
             if (playlists.isError) void playlists.refetch();
           }}
         />
+      </View>
+    );
+  } else if (!recents.isSuccess || !playlists.isSuccess) {
+    body = (
+      <View style={[styles.state, clearance]}>
+        <LoadingState label={tc("loading")} />
       </View>
     );
   } else if (recents.data.length === 0 && playlists.data.length === 0 && recommendationsEmpty) {

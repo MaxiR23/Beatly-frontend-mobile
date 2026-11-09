@@ -19,6 +19,7 @@
 
 import type { OnboardingService, Profile, Success } from "@beatly/core";
 import { afterEach, describe, expect, it } from "@jest/globals";
+import { onlineManager } from "@tanstack/react-query";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
@@ -40,6 +41,7 @@ import { createTestQueryClient } from "../../helpers/queryClient.ts";
 const en = resources.en;
 
 afterEach(async () => {
+  onlineManager.setOnline(true);
   await i18n.changeLanguage("en");
 });
 
@@ -132,7 +134,7 @@ describe("OnboardingScreen finish", () => {
     });
     await pick(5);
     await fireEvent.press(screen.getByRole("button", { name: "Continue (5)" }));
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.slow.title)).toBeTruthy();
     await fireEvent.press(screen.getByRole("button", { name: en.common.retry }));
     await waitFor(() => {
       expect(ctx.finishOnboarding).toHaveBeenCalledTimes(2);
@@ -149,7 +151,26 @@ describe("OnboardingScreen finish", () => {
     });
     await pick(5);
     await fireEvent.press(screen.getByRole("button", { name: "Continue (5)" }));
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.slow.title)).toBeTruthy();
+  });
+
+  it("a network failure shows the offline cause and finishes again by itself when the connection returns", async () => {
+    const { ctx } = await setup({
+      finishOnboarding: () => Promise.resolve({ kind: "transport_failure", cause: "network" }),
+    });
+    await pick(5);
+    await fireEvent.press(screen.getByRole("button", { name: "Continue (5)" }));
+    expect(await screen.findByText(en.common.error.offline.title)).toBeTruthy();
+    expect(ctx.finishOnboarding).toHaveBeenCalledTimes(1);
+    await act(() => {
+      onlineManager.setOnline(false);
+    });
+    await act(() => {
+      onlineManager.setOnline(true);
+    });
+    await waitFor(() => {
+      expect(ctx.finishOnboarding).toHaveBeenCalledTimes(2);
+    });
   });
 });
 

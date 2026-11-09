@@ -35,7 +35,10 @@ legacy audit that drives the port lives in the old repo under
   imports it.
 - Supabase for auth only, behind the `auth` port. Every other byte
   goes through the backend API, except the stream resolution request
-  and the audio itself, which go to the external provider (ADR 021).
+  and the audio itself, which go to the external provider (ADR 021),
+  and the connectivity library's own reachability probe on iOS, which
+  goes to its default URL, a third-party host, to tell no internet apart
+  from a backend outage (ADR 036).
 - i18n in `es` and `en` from the first screen. Single dark theme,
   defined once in `packages/ui` tokens.
 - Tests: vitest in `core`; jest-expo only where React Native is
@@ -120,7 +123,9 @@ that needs it opens a backend issue instead of computing it here.
   in the same change.
 - No HTTP call outside `core`: the Beatly API goes through the `core`
   client, and the external provider's stream endpoint through the stream
-  resolver (ADR 021). The global `fetch` appears in exactly one file,
+  resolver (ADR 021). The one other exception is the connectivity
+  library's own reachability probe on iOS, left at its default URL (a
+  third-party host) to tell no internet apart from a backend outage (ADR 036). The global `fetch` appears in exactly one file,
   `apps/mobile/src/adapters/http.ts`, behind the `http` port. Screens
   and hooks never build a URL.
 - No external library imported outside its adapter. `expo-audio`,
@@ -152,7 +157,7 @@ that needs it opens a backend issue instead of computing it here.
       app/                  expo-router routes, thin files that render a screen
       src/screens/          one folder per screen
       src/queries/          TanStack Query hooks over core services
-      src/adapters/         one file per external library: http, auth, player, config, log, storage, db, i18n
+      src/adapters/         one file per external library: http, auth, player, config, log, storage, db, i18n, device, network
       src/i18n/es/ en/      one namespace per screen, key parity enforced by a test
       src/providers/        thin React providers over core and over the window's insets
       src/auth/             pure helpers of the auth adapter (no library import)
@@ -305,7 +310,8 @@ the secret and provider ones (and for `https://`) before
 
 Blocking:
 
-- An HTTP call outside the `core` client and the stream resolver, or
+- An HTTP call outside the `core` client, the stream resolver and the
+  connectivity library's own reachability probe (ADR 036), or
   the global `fetch` outside its adapter.
 - An external library imported outside its adapter.
 - A `useMemo`, `useCallback` or `memo` without the comment that says

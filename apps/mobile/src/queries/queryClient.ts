@@ -1,4 +1,4 @@
-// INFO: the app's single QueryClient factory. staleTime comes from the max-age of the response (a core success outcome), never from a literal. When the data is an infinite query's pages, the smallest max-age of its pages wins, because a refetch refetches every page. A failed query is not retried: the error state has its own retry, and each attempt can cost the full client timeout.
+// INFO: the app's single QueryClient factory. staleTime comes from the max-age of the response (a core success outcome), never from a literal. When the data is an infinite query's pages, the smallest max-age of its pages wins, because a refetch refetches every page. A failed query is not retried: the error state has its own retry, and each attempt can cost the full client timeout. Queries pause while the device is offline and resume (stale and errored ones refetch) when the connection returns; mutations run offline and fail as before.
 import { DEFAULT_MAX_AGE_SECONDS } from "@beatly/core";
 import { QueryClient } from "@tanstack/react-query";
 
@@ -26,6 +26,7 @@ export function createQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: { staleTime: (query) => staleTimeFor(query.state.data), retry: false },
+      mutations: { networkMode: "always" },
     },
   });
 }

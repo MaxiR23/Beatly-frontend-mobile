@@ -2,6 +2,7 @@
 import type { AuthStatus, Profile } from "@beatly/core";
 import { useEffect } from "react";
 
+import { queryFailure } from "../../queries/failureCause.ts";
 import { useSession } from "../../providers/SessionProvider.tsx";
 import { useOnboardingMark, useRecordOnboarded } from "../../queries/useOnboarding.ts";
 import { useProfile } from "../../queries/useProfile.ts";
@@ -41,8 +42,12 @@ export function useOnboardingGate() {
     if (signedIn && markRead && !marked && completedAt !== null) mutate();
   }, [signedIn, markRead, marked, completedAt, mutate]);
 
+  // A profile read paused offline is a failure too, so the gate does not hold the splash forever.
+  const profileFailure = queryFailure(profile);
+
   return {
-    gate: gateOf(status, mark, profile),
+    gate: gateOf(status, mark, { data: profile.data, isError: profileFailure !== null }),
+    failure: profileFailure ?? "server",
     retry: () => void profile.refetch(),
     retrying: profile.isFetching,
   };

@@ -153,7 +153,7 @@ describe("the All reports screen", () => {
       .mockResolvedValueOnce({ kind: "transport_failure", cause: "network" })
       .mockResolvedValue(pageOf([triageReportFixture]));
     const ctx = await setup({ listBugReports });
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.offline.title)).toBeTruthy();
     await fireEvent.press(screen.getByRole("button", { name: en.common.retry }));
     expect(await screen.findByTestId("triage-r1")).toBeTruthy();
     expect(ctx.listBugReports).toHaveBeenCalledTimes(2);
@@ -163,7 +163,7 @@ describe("the All reports screen", () => {
     await setup({
       listBugReports: () => Promise.resolve({ kind: "api_failure", reason: "upstream_error" }),
     });
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.server.title)).toBeTruthy();
     expect(screen.getByRole("button", { name: en.common.retry })).toBeTruthy();
   });
 

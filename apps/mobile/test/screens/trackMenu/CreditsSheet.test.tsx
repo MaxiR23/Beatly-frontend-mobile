@@ -85,7 +85,7 @@ describe("the credits sheet", () => {
     const ctx = await openCredits({
       getCredits: () => Promise.resolve({ kind: "transport_failure", cause: "network" }),
     });
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.offline.title)).toBeTruthy();
     await fireEvent.press(screen.getByRole("button", { name: en.common.retry }));
     expect(ctx.getCredits).toHaveBeenCalledTimes(2);
   });

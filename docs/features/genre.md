@@ -38,12 +38,12 @@ The back button draws an arrow on Android (ADR 027); otherwise none beyond the t
 
 The header is drawn in every state.
 
-| State            | What is drawn                                                                                                            | i18n keys                              |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------- |
-| Loading          | `LoadingState` while either list loads                                                                                   | `common:loading`                       |
-| With data        | the chips and the grid; the track count with plural forms                                                                | `genre:all`, `genre:tracks`            |
-| Expected empty   | `EmptyState` when the genre has no playlists; when the selected category has none, `genre:emptyCategory` under the chips | `genre:empty`, `genre:emptyCategory`   |
-| Error with retry | `ErrorState` when either list failed; retry refetches the failed ones                                                    | `common:error.generic`, `common:retry` |
+| State            | What is drawn                                                                                                            | i18n keys                                                         |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| Loading          | `LoadingState` while either list loads                                                                                   | `common:loading`                                                  |
+| With data        | the chips and the grid; the track count with plural forms                                                                | `genre:all`, `genre:tracks`                                       |
+| Expected empty   | `EmptyState` when the genre has no playlists; when the selected category has none, `genre:emptyCategory` under the chips | `genre:empty`, `genre:emptyCategory`                              |
+| Error with retry | `FailureState` (cause from `queryFailure`) when either list failed; retry refetches the failed ones                      | `common:error.{offline,slow,server}.{title,body}`, `common:retry` |
 
 The back button is labeled `genre:back`.
 

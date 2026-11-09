@@ -8,7 +8,7 @@
 // What is covered:
 // - the logo, the title and the first phrase with the first picked artist's name, en and es
 // - the phrases advance
-// - the generic error with retry when failed
+// - the error state of each cause with retry when failed
 // - reduce motion: the first phrase and no loop
 //
 // Run with: pnpm --filter @beatly/mobile test -- BuildingHomeStep
@@ -17,6 +17,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
+import type { ErrorCause } from "@beatly/ui/native";
 import { Animated } from "react-native";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
@@ -40,11 +41,11 @@ afterEach(async () => {
 });
 
 const element = (
-  patch: { failed?: boolean; reduceMotion?: boolean; onRetry?: () => void } = {},
+  patch: { failure?: ErrorCause | null; reduceMotion?: boolean; onRetry?: () => void } = {},
 ) => (
   <BuildingHomeStep
     artistName="Nirvana"
-    failed={patch.failed ?? false}
+    failure={patch.failure ?? null}
     reduceMotion={patch.reduceMotion ?? false}
     onRetry={patch.onRetry ?? (() => undefined)}
   />
@@ -94,10 +95,14 @@ describe("BuildingHomeStep", () => {
     expect(screen.getByText(en.onboarding.building.phrases.almost)).toBeTruthy();
   });
 
-  it("draws the error with retry when failed", async () => {
+  it.each([
+    ["offline", en.common.error.offline.title],
+    ["slow", en.common.error.slow.title],
+    ["server", en.common.error.server.title],
+  ] as const)("draws the %s cause with retry when failed", async (failure, title) => {
     const onRetry = jest.fn();
-    await render(element({ failed: true, onRetry }));
-    expect(screen.getByText(en.common.error.generic)).toBeTruthy();
+    await render(element({ failure, onRetry }));
+    expect(screen.getByText(title)).toBeTruthy();
     expect(screen.queryAllByTestId("logo-bar")).toHaveLength(0);
     await fireEvent.press(screen.getByRole("button", { name: en.common.retry }));
     expect(onRetry).toHaveBeenCalledTimes(1);

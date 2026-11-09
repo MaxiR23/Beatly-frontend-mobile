@@ -15,7 +15,7 @@
   "remaining": "-{{time}}",
   "empty": "Nothing is playing.",
   "error": {
-    "unplayable": "This song can't be played right now."
+    "offline": "Check your wifi or mobile data. When you're back online, tap Retry."
   },
   "sheet": {
     "open": "Up next, lyrics and related",
@@ -33,5 +33,10 @@
     "songs": "Songs",
     "artists": "Artists",
     "albums": "Albums"
+  },
+  "strip": {
+    "offline": "No connection. Couldn't play.",
+    "slow": "It took too long. Tap to retry.",
+    "failed": "Couldn't play. Tap to retry."
   }
 }

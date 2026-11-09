@@ -1,21 +1,15 @@
 // INFO: the caller's own reports as a sheet, newest first as the API sends them, paged: each row its category, its date, what it is about and an excerpt, and an open or closed badge; loading, the empty list and an error with retry are drawn.
 import type { BugReport } from "@beatly/core";
 import { spacing } from "@beatly/ui";
-import {
-  Badge,
-  EmptyState,
-  ErrorState,
-  LoadingState,
-  MediaRow,
-  Sheet,
-  Text,
-} from "@beatly/ui/native";
+import { Badge, EmptyState, LoadingState, MediaRow, Sheet, Text } from "@beatly/ui/native";
 import type { ReactNode } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
 
 import { useT } from "../../adapters/i18n.ts";
 import { useWindowInsets } from "../../providers/WindowInsetsProvider.tsx";
+import { queryFailure } from "../../queries/failureCause.ts";
 import { useMyBugReports } from "../../queries/useBugReports.ts";
+import { FailureState } from "../failure/FailureState.tsx";
 import { reportDate } from "./reportDate.ts";
 import { useReduceMotion } from "../player/useReduceMotion.ts";
 
@@ -60,17 +54,13 @@ function ReportsBody() {
     return parts.join(t("list.metaSeparator"));
   };
 
+  const failure = queryFailure(reports);
+
   let list: ReactNode;
-  if (reports.isPending) {
+  if (failure !== null) {
+    list = <FailureState cause={failure} onRetry={() => void reports.refetch()} />;
+  } else if (!reports.isSuccess) {
     list = <LoadingState label={tc("loading")} />;
-  } else if (reports.isError) {
-    list = (
-      <ErrorState
-        message={tc("error.generic")}
-        retryLabel={tc("retry")}
-        onRetry={() => void reports.refetch()}
-      />
-    );
   } else if (reports.data.length === 0) {
     list = <EmptyState icon="inbox" message={t("list.empty")} />;
   } else {

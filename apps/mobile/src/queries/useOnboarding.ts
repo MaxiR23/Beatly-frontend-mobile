@@ -66,8 +66,10 @@ export function useMarkOnboarded() {
 
 export function useOnboardingMark(enabled: boolean) {
   const { onboardingMark } = useCore();
+  // Device data: runs offline.
   return useQuery({
     queryKey: onboardingMarkQueryKey,
+    networkMode: "always",
     enabled,
     queryFn: async () => unwrap(await onboardingMark.isDone()),
     select: (outcome) => outcome.data,

@@ -37,12 +37,12 @@ The tab bar differs between iOS 26+ (native tabs) and elsewhere (a floating pill
 
 ## States
 
-| State            | What is drawn                                                           | i18n keys                                                                                   |
-| ---------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Loading          | `LoadingState`, while the recents load, or while debouncing or fetching | `common:loading`                                                                            |
-| With data        | recents newest first; or artist, songs, albums                          | `search:recent.title`, `search:songs`, `search:albums`, `search:artist`, `search:song.meta` |
-| Expected empty   | no recents: `EmptyState`; no results: `EmptyState` with the query       | `search:recent.empty`, `search:empty`                                                       |
-| Error with retry | `ErrorState`; retry reloads the recents or the search                   | `common:error.generic`, `common:retry`                                                      |
+| State            | What is drawn                                                                       | i18n keys                                                                                   |
+| ---------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Loading          | `LoadingState`, while the recents load, or while debouncing or fetching             | `common:loading`                                                                            |
+| With data        | recents newest first; or artist, songs, albums                                      | `search:recent.title`, `search:songs`, `search:albums`, `search:artist`, `search:song.meta` |
+| Expected empty   | no recents: `EmptyState`; no results: `EmptyState` with the query                   | `search:recent.empty`, `search:empty`                                                       |
+| Error with retry | `FailureState` (cause from `queryFailure`); retry reloads the recents or the search | `common:error.{offline,slow,server}.{title,body}`, `common:retry`                           |
 
 The song row of the current track (whoever started it) draws the now playing bars over its cover on a
 scrim, with no row background; the bars are frozen while paused and static under reduce motion.
@@ -73,7 +73,7 @@ instead of invalidating, so there is no refetch of the store. They are stored pe
 cleared on sign-out: after a successful sign-out the service clears the store and the cached list
 is dropped, so the next account starts with none. A failed clear does not fail the sign-out.
 
-A stored value that is not a list of strings is a typed `schema` failure and draws the error state
+A stored value that is not a list of strings is a typed `schema` failure and draws the error state (`FailureState`, the server cause)
 with retry. The state also draws "Clear all", which deletes the key without reading it; adding a
 query over a corrupted value starts a fresh list, so the feature always recovers.
 
