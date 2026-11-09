@@ -1,4 +1,4 @@
-// INFO: the tab bar for Android and iOS below 26: on iOS below 26 icon-only tabs spread evenly on a GlassSurface pill above the bottom safe area with an optional accessory (the mini player) above it, both at the window width minus the gutter on each side; on Android (ADR 035) one block docked to the bottom edge, full width, over a fade into the base surface, icon and name per tab, the accessory inside the block; dockedTabBarHeight is the one source of the Android block's height and clearance.
+// INFO: the tab bar for Android and iOS below 26: on iOS below 26 icon-only tabs spread evenly on a GlassSurface pill above the bottom safe area with an optional accessory (the mini player) above it, both at the window width minus the gutter on each side; on Android (ADR 035) one block docked to the bottom edge, full width, with the tab row and the bottom inset on the opaque base surface and a fade into it above them, icon and name per tab, the accessory inside the block; dockedTabBarHeight is the one source of the Android block's height and clearance.
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 
@@ -106,6 +106,7 @@ function PillTabBar({ tabs, bottomInset, accessory }: FloatingTabBarProps) {
   );
 }
 
+// The fade covers only the zone above the tab row; the tab row and the inset sit on the opaque base surface.
 // Deliberate departures from Material 3 (ADR 035): no indicator, no surface of its own, the fade on press, the heavier selected label.
 function DockedTabBar({ tabs, bottomInset, accessory }: FloatingTabBarProps) {
   const press = pressFeedback({ android: "fade" });
@@ -117,15 +118,15 @@ function DockedTabBar({ tabs, bottomInset, accessory }: FloatingTabBarProps) {
     >
       <View
         pointerEvents="none"
-        style={[styles.fade, { bottom: bottomInset }]}
+        style={[styles.fade, { bottom: bottomInset + TAB_ROW_HEIGHT }]}
         testID="tab-dock-fade"
       >
         <GradientFill direction="vertical" colors={[color.overlay.clear, color.surface.base]} />
       </View>
       <View
         pointerEvents="none"
-        style={[styles.insetFill, { height: bottomInset }]}
-        testID="tab-dock-inset"
+        style={[styles.baseFill, { height: TAB_ROW_HEIGHT + bottomInset }]}
+        testID="tab-dock-base"
       />
       <View style={{ paddingBottom: bottomInset }}>
         {accessory === undefined ? null : (
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
   selected: { backgroundColor: color.overlay.muted },
   dock: { position: "absolute", left: 0, right: 0, bottom: 0, justifyContent: "flex-end" },
   fade: { position: "absolute", top: 0, left: 0, right: 0, overflow: "hidden" },
-  insetFill: {
+  baseFill: {
     position: "absolute",
     left: 0,
     right: 0,

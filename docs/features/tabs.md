@@ -19,7 +19,7 @@ name on Android, each with an accessible label from `tabs`. Each tab has its own
   `layout.controlHeight` high, icon `icon.size.lg`, the active item on
   `color.overlay.muted` with `color.text.primary`, inactive in
   `color.text.secondary`, `spacing.sm` above the bottom safe area.
-- Android (ADR 035): the docked bar, a block at the bottom edge, full width, with no surface of its own: a `GradientFill` from `color.overlay.clear` to `color.surface.base` starting `spacing.xl` above its top element, and `color.surface.base` in the bottom inset. Four equal tabs, `TAB_ROW_HEIGHT` tall (at least `layout.controlHeight`), the icon `icon.size.lg` above the name, `spacing.xs` apart. Selected: `color.text.primary` and `typography.tabLabelSelected`, Home's icon filled. Unselected: `color.text.secondary` and `typography.meta`. No indicator; the press fades to `motion.pressOpacity`.
+- Android (ADR 035): the docked bar, a block at the bottom edge, full width, with no surface of its own: a `GradientFill` from `color.overlay.clear` to `color.surface.base` starting `spacing.xl` above its top element and ending at the tab row's top, and the tab row and the bottom inset on an opaque `color.surface.base` view. Four equal tabs, `TAB_ROW_HEIGHT` tall (at least `layout.controlHeight`), the icon `icon.size.lg` above the name, `spacing.xs` apart. Selected: `color.text.primary` and `typography.tabLabelSelected`, Home's icon filled. Unselected: `color.text.secondary` and `typography.meta`. No indicator; the press fades to `motion.pressOpacity`.
 
 The mini player sits above the bar when a track is loaded: on iOS 26+ as
 `NativeTabs.BottomAccessory`, bare inside the system's capsule, on iOS before 26 as the `accessory` of `FloatingTabBar`, drawn `spacing.xs` above the

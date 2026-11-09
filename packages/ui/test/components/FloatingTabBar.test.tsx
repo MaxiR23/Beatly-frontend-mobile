@@ -12,7 +12,7 @@
 // - the accessory and the pill at the same width, the window width minus the gutter on each side; the tabs
 //   sharing it evenly at the control height; the accessory's xs gap
 // - on Android: the docked full-width block instead of the pill, icon and visible name per tab, the selected tab's
-//   role and tone, Home filled only when selected, the fade and the opaque inset, the accessory's side inset and
+//   role and tone, Home filled only when selected, the fade only above the tab row and the opaque base under the row and the inset, the accessory's side inset and
 //   gap, the block's height and the clearance from dockedTabBarHeight
 //
 // Run with: pnpm --filter @beatly/ui test -- FloatingTabBar
@@ -236,14 +236,27 @@ describe("Android docked bar", () => {
     expect(glyphs(screen.toJSON())[0]?.props.fill).toBe("none");
   });
 
-  it("draws the fade into the base surface and an opaque inset", async () => {
-    await render(<FloatingTabBar tabs={makeTabs()} bottomInset={10} />);
-    expect(screen.getByTestId("tab-dock-fade")).toHaveStyle({ bottom: 10 });
-    expect(screen.getByTestId("tab-dock-inset")).toHaveStyle({
-      height: 10,
-      backgroundColor: color.surface.base,
-    });
-  });
+  it.each([false, true])(
+    "keeps the tab row and the inset on opaque base surface, the fade ending at the row's top (accessory %s)",
+    async (withAccessory) => {
+      await render(
+        <FloatingTabBar
+          tabs={makeTabs()}
+          bottomInset={10}
+          accessory={withAccessory ? <Text>mini</Text> : undefined}
+        />,
+      );
+      const rowHeight = dockedTabBarHeight(0) - spacing.xl;
+      // The fade ends exactly where the tab row starts, above the row and the inset.
+      const fade = flatStyle(screen.getByTestId("tab-dock-fade").props.style);
+      expect(fade.bottom).toBe(rowHeight + 10);
+      // The opaque base view covers the tab row and the inset.
+      const base = flatStyle(screen.getByTestId("tab-dock-base").props.style);
+      expect(base.backgroundColor).toBe(color.surface.base);
+      expect(base.height).toBe(rowHeight + 10);
+      expect(base.bottom).toBe(0);
+    },
+  );
 
   it("rests the accessory inside the block, spacing.sm from the sides and spacing.xs above the tabs", async () => {
     const { rerender } = await render(
