@@ -13,6 +13,7 @@ import {
   RowSection,
   SearchBar,
   Text,
+  ErrorText,
 } from "@beatly/ui/native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -246,9 +247,10 @@ export function SearchScreen() {
   const mutationFailed =
     trimmed === "" && (add.isError || remove.isError || clear.isError) ? (
       <View style={styles.failure}>
-        <Text variant="meta" tone="error">
-          {tc("error.generic")}
-        </Text>
+        <ErrorText
+          message={tc("error.generic")}
+          attempt={Math.max(add.submittedAt, remove.submittedAt, clear.submittedAt)}
+        />
       </View>
     ) : null;
 

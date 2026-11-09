@@ -1,6 +1,6 @@
 // INFO: the create-playlist sheet: a name, an optional description and a public switch, sent to POST /playlists; it stays open with an inline error when creation fails.
 import { spacing } from "@beatly/ui";
-import { Button, Input, Sheet, SwitchRow, Text } from "@beatly/ui/native";
+import { Button, Input, Sheet, SwitchRow, Text, ErrorText } from "@beatly/ui/native";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -85,9 +85,7 @@ export function CreatePlaylistSheet({ visible, onClose }: CreatePlaylistSheetPro
           reduceMotion={reduceMotion}
         />
         {create.isError ? (
-          <Text variant="meta" tone="error">
-            {tc("error.generic")}
-          </Text>
+          <ErrorText message={tc("error.generic")} attempt={create.submittedAt} />
         ) : null}
         <View style={styles.actions}>
           <View style={styles.action}>

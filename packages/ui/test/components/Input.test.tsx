@@ -11,15 +11,23 @@
 // - multiline passes through to the text entry
 // - the prefix is drawn before the entry and is not part of its value
 // - iOS: the label above, the box on the card surface, no outline overlay, no animation
+// - iOS: the error is drawn by ErrorText, announced once when it appears or changes and again on a new errorAttempt, never on every render or when it goes away, and is the text entry's accessibilityHint; Android does not announce and keeps the alert role and polite live region
 // - Android: the outline with radius.xs corners and no fill; the label resting inside and raised onto the outline on focus or with text; Animated.timing on the native driver for motion.duration.fast; no animation under reduce motion; the focused outline in border.widthFocused and the accent; the error color on outline and label and the error under the field; the label as accessible name and the error announced; the eye, multiline and the prefix
 //
 // Run with: pnpm --filter @beatly/ui test -- Input
 //
 // SEE: packages/ui/src/components/Input.tsx
 
-import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import { fireEvent, render, screen } from "@testing-library/react-native";
-import { Animated, Platform, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
+import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { fireEvent, render, screen, within } from "@testing-library/react-native";
+import {
+  AccessibilityInfo,
+  Animated,
+  Platform,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from "react-native";
 
 import { Input } from "../../src/components/Input.tsx";
 import { border } from "../../src/tokens/border.ts";
@@ -248,9 +256,10 @@ describe("Input on Android", () => {
     await renderAndroid({ error: "Too long" });
     expect(screen.getByLabelText("Name").type).toBe("TextInput");
     expect(label().props.importantForAccessibility).toBe("no-hide-descendants");
-    const error = screen.getByTestId("input-error");
+    const error = screen.getByTestId("input-error-message");
     expect(error.props.accessibilityLiveRegion).toBe("polite");
     expect(error.props.accessibilityRole).toBe("alert");
+    expect(within(screen.getByTestId("input-error")).getByText("Too long")).toBeTruthy();
   });
 
   it("keeps the eye toggle", async () => {
@@ -273,5 +282,74 @@ describe("Input on Android", () => {
     await fireEvent(screen.getByLabelText("Name"), "focus");
     expect(screen.getByText("@")).toBeTruthy();
     expect(screen.getByLabelText("Name").props.value).toBe("");
+  });
+});
+
+describe("Input announcements", () => {
+  const announce = jest.spyOn(AccessibilityInfo, "announceForAccessibility");
+  beforeEach(() => {
+    announce.mockClear();
+  });
+
+  it("announces the iOS error once when it appears, not on every render", async () => {
+    const props = { reduceMotion: false, label: "Name", value: "", onChangeText: jest.fn() };
+    await render(<Input {...props} />);
+    expect(announce).not.toHaveBeenCalled();
+    await screen.rerender(<Input {...props} error="Too long" />);
+    await screen.rerender(<Input {...props} error="Too long" value="a" />);
+    expect(announce).toHaveBeenCalledTimes(1);
+    expect(announce).toHaveBeenCalledWith("Too long");
+  });
+
+  it("announces the same iOS error again on a new attempt", async () => {
+    const props = { reduceMotion: false, label: "Name", value: "", onChangeText: jest.fn() };
+    await render(<Input {...props} error="Taken" errorAttempt={1} />);
+    await screen.rerender(<Input {...props} error="Taken" errorAttempt={1} />);
+    expect(announce.mock.calls).toEqual([["Taken"]]);
+    await screen.rerender(<Input {...props} error="Taken" errorAttempt={2} />);
+    expect(announce.mock.calls).toEqual([["Taken"], ["Taken"]]);
+  });
+
+  it("announces a changed iOS error and stays quiet when it goes away", async () => {
+    const props = { reduceMotion: false, label: "Name", value: "", onChangeText: jest.fn() };
+    await render(<Input {...props} error="Too long" />);
+    await screen.rerender(<Input {...props} error="Required" />);
+    await screen.rerender(<Input {...props} />);
+    expect(announce.mock.calls).toEqual([["Too long"], ["Required"]]);
+  });
+
+  it("exposes the iOS error as the hint of the text entry", async () => {
+    await render(
+      <Input
+        reduceMotion={false}
+        label="Name"
+        value=""
+        onChangeText={jest.fn()}
+        error="Too long"
+      />,
+    );
+    expect(screen.getByLabelText("Name").props.accessibilityHint).toBe("Too long");
+  });
+
+  it("has no hint without an error", async () => {
+    await render(<Input reduceMotion={false} label="Name" value="" onChangeText={jest.fn()} />);
+    expect(screen.getByLabelText("Name").props.accessibilityHint).toBeUndefined();
+  });
+
+  it("does not announce on Android, which keeps the alert live region", async () => {
+    Platform.OS = "android";
+    await render(
+      <Input
+        reduceMotion={false}
+        label="Name"
+        value=""
+        onChangeText={jest.fn()}
+        error="Too long"
+      />,
+    );
+    expect(announce).not.toHaveBeenCalled();
+    const error = screen.getByTestId("input-error-message");
+    expect(error.props.accessibilityRole).toBe("alert");
+    expect(error.props.accessibilityLiveRegion).toBe("polite");
   });
 });

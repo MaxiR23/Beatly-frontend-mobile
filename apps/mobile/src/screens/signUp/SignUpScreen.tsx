@@ -1,6 +1,6 @@
 // INFO: the sign up screen: name, email and password with live rules, the mapped failure message, and the "check your email" success state.
 import { color } from "@beatly/ui";
-import { Button, EmptyState, Input, Text } from "@beatly/ui/native";
+import { Button, EmptyState, Input, ErrorText } from "@beatly/ui/native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet } from "react-native";
@@ -106,11 +106,7 @@ export function SignUpScreen() {
         autoComplete="new-password"
       />
       <PasswordRules password={password} />
-      {message !== null ? (
-        <Text variant="meta" tone="error">
-          {message}
-        </Text>
-      ) : null}
+      {message !== null ? <ErrorText message={message} attempt={signUp.submittedAt} /> : null}
       <Button
         label={t("submit")}
         shape="field"

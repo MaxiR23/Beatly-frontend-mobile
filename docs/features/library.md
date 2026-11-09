@@ -89,6 +89,7 @@ entry's `id` and `source`; a playlist with another source is not pressable.
 
 ## Checked by hand
 
+- VoiceOver on the iPhone: the error of a field or a form announced when it appears and again on a repeated failure, and focusing a field reading its label and then its error.
 - The row measures 64 with a 56 cover, the liked tile contrast, the last row
   clearing the floating tab bar.
 - The keyboard not covering the sheet inputs on iOS and Android, the native
@@ -102,6 +103,6 @@ On Android the `Sheet` is the Material 3 modal bottom sheet (ADR 027, `ui` `Shee
 
 Left to verify by hand. On an Android phone: the sheet meeting the bottom and side edges and the content ending above the gesture bar, the drag feel and the spring back on a finger, the system back closing it, and the scroll of a long list next to the handle zone.
 
-On Android the `Input`s are the Material 3 outlined text field (ADR 027, `ui` `Input`; see DESIGN.md, Text field): outline, label inside rising onto it on focus or with text, accent outline on focus, error color and the error under the field; iOS unchanged. Left to verify by hand on an Android phone: the label animation feel, the notch over the sheet surface, TalkBack reading the label once and announcing the error.
+On Android the `Input`s are the Material 3 outlined text field (ADR 027, `ui` `Input`; see DESIGN.md, Text field): outline, label inside rising onto it on focus or with text, accent outline on focus, error color and the error under the field; iOS keeps its look; on iOS the field's error is announced and is the field's hint. The error line is the `ui` `ErrorText`: announced by VoiceOver when it appears and again on each new attempt, a polite live region on Android. Left to verify by hand on an Android phone: the label animation feel, the notch over the sheet surface, TalkBack reading the label once and announcing the error.
 
 On Android the public `SwitchRow` is the Material 3 switch (ADR 027, `ui` `SwitchRow`; see DESIGN.md, Switch): a 52×32 track, outlined with a small thumb when off, accent-filled with a large thumb when on, sliding on the native driver and at once under reduce motion; iOS unchanged. Left to verify by hand on an Android phone: the look of the off outline on the sheet surface, the slide and pressed feel, TalkBack reading the label and the state.
