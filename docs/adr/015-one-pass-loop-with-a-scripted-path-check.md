@@ -32,8 +32,9 @@ issue, not by a tool against the diff.
   `review-changes`. This supersedes the three conditions of 013 and
   the "when in doubt" clause: there is nothing to doubt.
 - `implement-issue` runs the gate once, when the plan is implemented.
-  If it fails, it fixes and reruns, at most three attempts, then stops
-  and reports. It reads the plan, not the sources the plan already
+  If it fails, it fixes and reruns, then stops and reports. The
+  "at most three attempts" rule was replaced by a limit by progress,
+  see ADR 034. It reads the plan, not the sources the plan already
   cites, and hands back with the diff stat.
 - `plan-issue` runs only when the issue touches `packages/core` or a
   screen. Any other issue goes from its body to `implement-issue`.

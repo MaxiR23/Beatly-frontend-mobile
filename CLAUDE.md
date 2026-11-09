@@ -174,12 +174,12 @@ that needs it opens a backend issue instead of computing it here.
     docs/features/          one file per screen: endpoints it uses, states it draws
     scripts/                ship.sh: the mechanical half of shipping an issue
                             loop-path.sh: prints short or full from the changed files
-                            gate-limit.mjs: PreToolUse hook that enforces the gate
-                            attempt limit of implement-issue
+                            gate-limit.mjs: hook that runs the gate of implement-issue
+                            alone and limits it by progress
     scripts/test/           node --test cases for the scripts, plus repo-wide source
                             guards (Node types are not in the workspaces)
-    .claude/settings.json   project permissions and the gate-limit PreToolUse
-                            hook; permissions: the gate commands, pnpm
+    .claude/settings.json   project permissions and the gate-limit
+                            hooks; permissions: the gate commands, pnpm
                             format, pnpm --filter, pnpm exec commitlint,
                             the scripts, read-only git (fetch, diff,
                             status, log, ls-files), gh issue
@@ -233,11 +233,21 @@ verification and goes to `ship`; full goes to `review-changes`. There is
 no partial path: the script decides, not judgment.
 
 Gate: `pnpm gate` runs `pnpm typecheck && pnpm lint && pnpm test`.
-`implement-issue` runs it once, when the plan is implemented. If it
-fails, it fixes and reruns, at most three attempts, then stops and
-reports. A PreToolUse hook, `scripts/gate-limit.mjs`, enforces the limit:
-inside `implement-issue` it blocks the fourth `pnpm gate` of a run, and
-the gate's parts at the root (`pnpm typecheck`, `pnpm lint`,
+`implement-issue` runs it once, when the plan is implemented, as a call
+of its own (`pnpm gate` alone, foreground, `timeout: 600000`), after
+editing with Edit/Write and running the scoped checks. If it fails, it
+fixes and reruns: attempts 1 to 3 always run, the fourth to sixth only
+if the last one made progress (a later stage, a later step in the same
+stage, or the same step with fewer failures), absolute cap 6; then it stops and reports what fails,
+why and what it tried. The orchestrator does not move to review or ship
+while the gate is not green: it resolves it or stops and reports. The
+hook `scripts/gate-limit.mjs` (PreToolUse, PostToolUse,
+PostToolUseFailure and SubagentStop) enforces it: inside `implement-issue` it denies,
+without counting an attempt, a gate that is chained, piped, redirected,
+without that timeout or in the background; it records the stage and the
+failures from the output; it denies the gate with no progress or at the
+cap, and that denial stays in force for the rest of the run; it removes
+the records when the gate passes and when the agent stops; and it denies the gate's parts at the root (`pnpm typecheck`, `pnpm lint`,
 `pnpm test`). Each pass is a new dispatch with its own count, never a
 continuation. Project hooks load from the `.claude/` of the directory
 where the session starts, so the loop's orchestrator session starts at
