@@ -56,6 +56,7 @@ export {
 } from "./components/DetailScreen.tsx";
 export { TrackRow } from "./components/TrackRow.tsx";
 export { Marquee } from "./components/Marquee.tsx";
+export { ErrorText } from "./components/ErrorText.tsx";
 export { Notice } from "./components/Notice.tsx";
 export { ActionRow } from "./components/ActionRow.tsx";
 export {

@@ -112,6 +112,7 @@ timeout, is a typed `AuthFailure`.
 
 ## Checked by hand
 
+- VoiceOver on the iPhone: the error of a field or a form announced when it appears and again on a repeated failure, and focusing a field reading its label and then its error.
 - Both screens against the layout of issue 25, on a device (screenshots in the PR).
 - Sign up, email confirmation, login and logout end to end, on a device, with the
   real provider, a real email and the backend.
@@ -125,6 +126,6 @@ timeout, is a typed `AuthFailure`.
 - A cold deep link (`beatly://album/<id>`) with and without a session, on a device.
 - A cold start on an unknown `beatly://` link, with and without a session: the splash stays up until the session is read, then home or login.
 
-On Android the `Input`s are the Material 3 outlined text field (ADR 027, `ui` `Input`; see DESIGN.md, Text field): outline, label inside rising onto it on focus or with text, accent outline on focus, error color and the error under the field; iOS unchanged. Left to verify by hand on an Android phone: the label animation feel, the notch over the card surface, TalkBack reading the label once and announcing the error.
+On Android the `Input`s are the Material 3 outlined text field (ADR 027, `ui` `Input`; see DESIGN.md, Text field): outline, label inside rising onto it on focus or with text, accent outline on focus, error color and the error under the field; iOS keeps its look; on iOS the field's error is announced and is the field's hint. The error line is the `ui` `ErrorText`: announced by VoiceOver when it appears and again on each new attempt, a polite live region on Android. Left to verify by hand on an Android phone: the label animation feel, the notch over the card surface, TalkBack reading the label once and announcing the error.
 
 The brand icon (ADR 029) unchanged on iOS and Android, also under iOS Smart Invert.

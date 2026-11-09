@@ -1,4 +1,4 @@
-// INFO: a brief message, announced politely to screen readers. Inline and on iOS: a check or an x and one meta line in the success or error tone, floating on a glass bar. Floating on Android: the Material 3 snackbar (ADR 027), an inverse surface with extra-small corners, the message from the start and an optional action at the end; iOS does not draw the action yet.
+// INFO: a brief message, announced politely to screen readers (a live region on Android, useAnnounce on iOS). Inline and on iOS: a check or an x and one meta line in the success or error tone, floating on a glass bar. Floating on Android: the Material 3 snackbar (ADR 027), an inverse surface with extra-small corners, the message from the start and an optional action at the end; iOS does not draw the action yet.
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { color } from "../tokens/color.ts";
@@ -10,6 +10,7 @@ import { Icon } from "./Icon.tsx";
 import { Text } from "./Text.tsx";
 import { isAndroidVariant } from "./platform.ts";
 import { pressFeedback } from "./pressFeedback.ts";
+import { useAnnounce } from "./useAnnounce.ts";
 
 interface NoticeProps {
   tone: "success" | "error";
@@ -26,6 +27,7 @@ interface NoticeAction {
 }
 
 export function Notice({ tone, message, floating = false, action, testID }: NoticeProps) {
+  useAnnounce(message);
   if (floating && isAndroidVariant()) {
     return <Snackbar message={message} action={action} testID={testID} />;
   }

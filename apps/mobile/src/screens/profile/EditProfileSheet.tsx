@@ -1,7 +1,7 @@
 // INFO: the edit-profile sheet: the name and the username prefilled, Save sends only what changed to PATCH /profile/me and is disabled while nothing changed or the input is invalid; a taken username shows under its field, any other failure the generic error, both keeping the input; it closes once the profile has refetched.
 import type { Profile } from "@beatly/core";
 import { spacing } from "@beatly/ui";
-import { Button, Input, Sheet, Text } from "@beatly/ui/native";
+import { Button, Input, Sheet, Text, ErrorText } from "@beatly/ui/native";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -99,11 +99,10 @@ export function EditProfileSheet({ visible, onClosed, profile, onClose }: EditPr
           placeholder={t("edit.usernamePlaceholder")}
           autoCapitalize="none"
           {...(usernameError !== undefined ? { error: usernameError } : {})}
+          errorAttempt={update.submittedAt}
         />
         {update.isError && !isUsernameTaken(update.error) ? (
-          <Text variant="meta" tone="error">
-            {tc("error.generic")}
-          </Text>
+          <ErrorText message={tc("error.generic")} attempt={update.submittedAt} />
         ) : null}
         <View style={styles.actions}>
           <View style={styles.action}>

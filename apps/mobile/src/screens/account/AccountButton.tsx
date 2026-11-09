@@ -1,6 +1,6 @@
 // INFO: the header's account avatar and its sheet with the profile row, report a problem, my reports, all reports (only for a developer or an admin) and log out; the row opens the profile screen, the report entries open the form or the reports sheet in its place, the all reports entry opens its screen, shared by the home, explore, search and library tabs.
 import { profileName } from "@beatly/core";
-import { ActionRow, Avatar, AvatarRow, Button, Sheet, Text } from "@beatly/ui/native";
+import { ActionRow, Avatar, AvatarRow, Button, Sheet, ErrorText } from "@beatly/ui/native";
 import { useRouter } from "expo-router";
 import { View } from "react-native";
 
@@ -103,9 +103,7 @@ export function AccountButton() {
           }}
         />
         {signOut.data?.kind === "failure" ? (
-          <Text variant="meta" tone="error">
-            {tc("error.generic")}
-          </Text>
+          <ErrorText message={tc("error.generic")} attempt={signOut.submittedAt} />
         ) : null}
       </Sheet>
       {sheet.current === "report" ? (

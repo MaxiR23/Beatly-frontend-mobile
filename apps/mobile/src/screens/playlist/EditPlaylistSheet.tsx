@@ -1,6 +1,6 @@
 // INFO: the edit-playlist sheet: the title and the description prefilled, Save sends only what changed to PATCH /playlists/{id} and is disabled while nothing changed or the title is invalid; it closes on success and stays open with an inline error and the input kept on failure.
 import { spacing } from "@beatly/ui";
-import { Button, Input, Sheet, Text } from "@beatly/ui/native";
+import { Button, Input, Sheet, Text, ErrorText } from "@beatly/ui/native";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -76,9 +76,7 @@ export function EditPlaylistSheet({
           autoCapitalize="sentences"
         />
         {update.isError ? (
-          <Text variant="meta" tone="error">
-            {tc("error.generic")}
-          </Text>
+          <ErrorText message={tc("error.generic")} attempt={update.submittedAt} />
         ) : null}
         <View style={styles.actions}>
           <View style={styles.action}>

@@ -1,7 +1,7 @@
 // INFO: one report in full as a sheet for a developer or an admin: description, category, reporter, linked entity and date, its status badge and the button that closes or reopens it, optimistic with a rollback; a forbidden, a missing report or any other failure shows an inline line.
 import type { BugReportWithReporter } from "@beatly/core";
 import { spacing } from "@beatly/ui";
-import { Badge, Button, Sheet, Text } from "@beatly/ui/native";
+import { Badge, Button, Sheet, Text, ErrorText } from "@beatly/ui/native";
 import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
@@ -115,13 +115,16 @@ export function ReportDetailSheet({ visible, onClosed, report, onClose }: Report
           }}
         />
         {update.isError ? (
-          <Text variant="meta" tone="error">
-            {reason === "forbidden"
-              ? t("triage.detail.forbidden")
-              : reason === "report_not_found"
-                ? t("triage.detail.notFound")
-                : tc("error.generic")}
-          </Text>
+          <ErrorText
+            message={
+              reason === "forbidden"
+                ? t("triage.detail.forbidden")
+                : reason === "report_not_found"
+                  ? t("triage.detail.notFound")
+                  : tc("error.generic")
+            }
+            attempt={update.submittedAt}
+          />
         ) : null}
       </ScrollView>
     </Sheet>

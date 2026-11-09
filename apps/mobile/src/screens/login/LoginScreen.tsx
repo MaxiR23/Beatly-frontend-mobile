@@ -1,5 +1,5 @@
 // INFO: the login screen: email and password, the mapped failure message, and a link to sign up.
-import { Button, Input, Text } from "@beatly/ui/native";
+import { Button, Input, ErrorText } from "@beatly/ui/native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 
@@ -65,11 +65,7 @@ export function LoginScreen() {
         autoCapitalize="none"
         autoComplete="password"
       />
-      {message !== null ? (
-        <Text variant="meta" tone="error">
-          {message}
-        </Text>
-      ) : null}
+      {message !== null ? <ErrorText message={message} attempt={signIn.submittedAt} /> : null}
       <Button
         label={t("submit")}
         shape="field"
