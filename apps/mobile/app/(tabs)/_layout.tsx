@@ -1,4 +1,4 @@
-// INFO: the tab navigator: native tabs with system icons on iOS 26+, the JS navigator with our floating bar elsewhere (ADR 017); the mini player sits above the bar in both, as the system bottom accessory (bare, inside the system's capsule) or as the floating bar's accessory.
+// INFO: the tab navigator: native tabs with system icons on iOS 26+, the JS navigator with our tab bar elsewhere: the pill on iOS below 26 (ADR 017), the docked bar on Android (ADR 035); the mini player sits above the tabs in all three, as the system bottom accessory (bare, inside the system's capsule) or as the bar's accessory.
 import { color } from "@beatly/ui";
 import { FloatingTabBar, isGlassAvailable } from "@beatly/ui/native";
 import { Tabs, type BottomTabBarProps } from "expo-router/js-tabs";
@@ -12,19 +12,22 @@ import { usePlayback } from "../../src/screens/player/usePlayback.ts";
 const tabs = [
   {
     name: "(home)",
+    fill: true,
     label: "home",
     icon: "house",
     sf: { default: "house", selected: "house.fill" },
   },
   {
     name: "(explore)",
+    fill: false,
     label: "explore",
     icon: "compass",
     sf: { default: "safari", selected: "safari.fill" },
   },
-  { name: "(search)", label: "search", icon: "search", sf: "magnifyingglass" },
+  { name: "(search)", fill: false, label: "search", icon: "search", sf: "magnifyingglass" },
   {
     name: "(library)",
+    fill: false,
     label: "library",
     icon: "library",
     sf: { default: "books.vertical", selected: "books.vertical.fill" },
@@ -46,6 +49,7 @@ function TabBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
         icon: tab.icon,
         label: t(tab.label),
         selected,
+        fillWhenSelected: tab.fill,
         onPress: () => {
           const event = emitter.emit({
             type: "tabPress",

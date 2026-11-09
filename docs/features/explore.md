@@ -18,11 +18,11 @@ from a row.
   its `fallback`; the name in `typography.display`, one line; a `chevronRight`
   icon in `icon.size.md` and `color.text.tertiary`.
 - Divider: `border.hairline` in `color.surface.border` under each row.
-- Bottom: the list clears the floating tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
+- Bottom: the list clears the tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
 ## Platform differences
 
-The tab bar differs between iOS 26+ (native tabs) and elsewhere (floating bar);
+The tab bar differs between iOS 26+ (native tabs) and elsewhere (a floating pill on iOS, a docked bar on Android);
 see `tabs.md`.
 
 ## States

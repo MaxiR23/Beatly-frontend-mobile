@@ -28,7 +28,7 @@ Show a genre's playlists in a two-column grid and filter them by category chip.
 - Cover rule: 4 `mosaic` entries draw a 2 x 2 mosaic; 1 to 3 draw the first; with
   none, `image` if there is one, else the placeholder; `medium` on a phone
   (`DESIGN.md`, "Image tiers").
-- Bottom: the grid clears the floating tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
+- Bottom: the grid clears the tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
 ## Platform differences
 
@@ -71,7 +71,7 @@ the stack, or replaces with `/explore` when there is nothing to go back to.
 
 ## Checked by hand
 
-The grid clearing the floating tab bar, the plural forms on Hermes, and the
+The grid clearing the tab bar, the plural forms on Hermes, and the
 swipe-back gesture. Screenshots with data, empty and the empty category, in es
 and en, on iOS and Android, are in the pull request.
 
