@@ -91,7 +91,7 @@ entry's `id` and `source`; a playlist with another source is not pressable.
 
 - VoiceOver on the iPhone: the error of a field or a form announced when it appears and again on a repeated failure, and focusing a field reading its label and then its error.
 - The row measures 64 with a 56 cover, the liked tile contrast, the last row
-  clearing the floating tab bar.
+  clearing the tab bar.
 - The keyboard not covering the sheet inputs on iOS and Android, the native
   switch colors on iOS, the native glass on iOS 26+.
 - Infinite scroll against the real API with more than 50 entries, and a created

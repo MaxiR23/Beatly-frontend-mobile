@@ -33,7 +33,7 @@ sheet with log out from the avatar.
 - Artist card (recommended artists, and the artists of a seed section): round photo, name and `Artist` (`home:kind.artist`), centered in the recommended list. No reason on any card.
 - Seed section header: the seed's round photo at `layout.seedAvatar`, then the prefix by position (`typography.meta`, secondary) over the seed's name (`typography.section`), `layout.gap` apart. The reason lives only here. Items come in the returned order with `Artist`, or the album's artists, below them; artists are round and not centered.
 - Account sheet: on iOS, on `GlassSurface` attached to the bottom and side edges, `radius.xl` top corners, `spacing.xl` padding.
-- Bottom: the content clears the floating tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
+- Bottom: the content clears the tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
 ## Platform differences
 

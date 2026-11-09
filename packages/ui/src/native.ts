@@ -25,7 +25,11 @@ export type { Tone } from "./components/tone.ts";
 export { GlassSurface, isGlassAvailable } from "./components/GlassSurface.tsx";
 export { isAndroidVariant } from "./components/platform.ts";
 export { mixWithWhite } from "./components/mixWithWhite.ts";
-export { FloatingTabBar, floatingTabBarClearance } from "./components/FloatingTabBar.tsx";
+export {
+  dockedTabBarHeight,
+  FloatingTabBar,
+  floatingTabBarClearance,
+} from "./components/FloatingTabBar.tsx";
 export { SwitchRow } from "./components/SwitchRow.tsx";
 export { Sheet } from "./components/Sheet.tsx";
 export { Avatar } from "./components/Avatar.tsx";

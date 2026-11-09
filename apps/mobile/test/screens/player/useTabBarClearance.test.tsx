@@ -7,16 +7,17 @@
 //
 // What is covered:
 // - inside a native tab, the clearance is built on the window's bottom inset (34), not the tab's (83), without and with a track loaded
+// - on Android, the clearance is the docked bar's height from dockedTabBarHeight
 //
 // Run with: pnpm --filter @beatly/mobile test -- useTabBarClearance
 //
 // SEE: apps/mobile/src/screens/player/useTabBarClearance.ts
 
 import type { PlayableTrack } from "@beatly/core";
-import { describe, expect, it } from "@jest/globals";
-import { floatingTabBarClearance } from "@beatly/ui/native";
+import { afterEach, describe, expect, it } from "@jest/globals";
+import { dockedTabBarHeight, floatingTabBarClearance } from "@beatly/ui/native";
 import { act, render, screen } from "@testing-library/react-native";
-import { Text } from "react-native";
+import { Platform, Text } from "react-native";
 
 import { useTabBarClearance } from "../../../src/screens/player/useTabBarClearance.ts";
 import { makeCore, Wrapper } from "../../helpers/core.tsx";
@@ -51,6 +52,10 @@ async function setup() {
 }
 
 describe("useTabBarClearance", () => {
+  afterEach(() => {
+    Platform.OS = "ios";
+  });
+
   it("builds the clearance on the window's bottom inset inside a native tab", async () => {
     await setup();
     expect(screen.getByTestId("clearance").props.children).toBe(
@@ -65,6 +70,20 @@ describe("useTabBarClearance", () => {
     });
     expect(screen.getByTestId("clearance").props.children).toBe(
       String(floatingTabBarClearance(windowMetrics.insets.bottom, true)),
+    );
+  });
+
+  it("takes the docked bar's height on Android, without and with a track", async () => {
+    Platform.OS = "android";
+    const ctx = await setup();
+    expect(screen.getByTestId("clearance").props.children).toBe(
+      String(dockedTabBarHeight(windowMetrics.insets.bottom, false)),
+    );
+    await act(async () => {
+      await ctx.playback.playList([track("1")], 0, source);
+    });
+    expect(screen.getByTestId("clearance").props.children).toBe(
+      String(dockedTabBarHeight(windowMetrics.insets.bottom, true)),
     );
   });
 });

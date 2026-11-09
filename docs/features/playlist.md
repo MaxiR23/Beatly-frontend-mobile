@@ -96,7 +96,7 @@ the info block:
   while paused and static under reduce motion.
 - Tracks: one `MediaRow` `regular` per track (`layout.rowCover` cover, the track's `image` at `small`), in API order.
   While the next page of an own or liked playlist loads, `DetailScreen` draws `layout.skeletonRows` skeleton rows (`DetailSkeleton`'s `SkeletonRow`) under the last track, announced as `common:loading`; they give way to the page's tracks when it arrives, and there is no footer when there is no next page. The list asks for the next page at `onEndReachedThreshold` 2 (two screens before the end). The same footer also shows while play or shuffle loads every remaining page, because the next-page loading flag is true between those pages; it is the true state and is drawn on purpose.
-  The bottom clears the floating tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
+  The bottom clears the tab bar with `useTabBarClearance` (the bar's clearance, plus the mini player's when a track is loaded).
 
 ## Platform differences
 

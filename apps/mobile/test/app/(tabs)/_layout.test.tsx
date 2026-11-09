@@ -3,18 +3,20 @@
 // Tests for the tab navigator.
 //
 // Tested:
-// - the tabs layout on the floating bar branch
+// - the tabs layout on the floating bar branch, on iOS below 26 and on Android
 //
 // What is covered:
 // - four icon-only tabs with accessible labels, home selected on "/", explore, search and library from their tabs
 // - no mini player while idle, the mini player above the tabs once a track is loaded and opening the player from it
+// - on Android: the docked bar instead of the pill with the four names visible and home selected, and the mini player inside it once a track is loaded
 //
 // Run with: pnpm --filter @beatly/mobile test -- _layout
 //
 // SEE: apps/mobile/app/(tabs)/_layout.tsx
 
-import { describe, expect, it, jest } from "@jest/globals";
-import { act, fireEvent, renderRouter, screen } from "expo-router/testing-library";
+import { afterEach, describe, expect, it, jest } from "@jest/globals";
+import { act, fireEvent, renderRouter, screen, within } from "expo-router/testing-library";
+import { Platform } from "react-native";
 
 import { resources } from "../../../src/i18n/resources.ts";
 import { installCore } from "../../helpers/routeCore.ts";
@@ -28,6 +30,10 @@ function isSelected(node: { props: unknown }): unknown {
   const props = node.props as { accessibilityState?: { selected?: unknown } };
   return props.accessibilityState?.selected;
 }
+
+afterEach(() => {
+  Platform.OS = "ios";
+});
 
 describe("the tabs layout", () => {
   it("draws four tabs with their accessible labels", async () => {
@@ -111,5 +117,48 @@ describe("the tabs layout", () => {
     expect(screen.getByText("Song")).toBeTruthy();
     await fireEvent.press(screen.getByRole("button", { name: en.player.open }));
     expect(await screen.findByTestId("player")).toBeTruthy();
+  });
+});
+
+describe("the tabs layout on Android", () => {
+  it("draws the docked bar with the four names visible", async () => {
+    Platform.OS = "android";
+    mockCore.set("signed_in");
+    await renderRouter("app", { initialUrl: "/" });
+    await screen.findByTestId("home");
+    expect(screen.getByTestId("tab-dock")).toBeTruthy();
+    expect(screen.queryByTestId("tab-pill")).toBeNull();
+    for (const label of [en.tabs.home, en.tabs.explore, en.tabs.search, en.tabs.library]) {
+      expect(screen.getByRole("tab", { name: label })).toBeTruthy();
+      expect(screen.getByText(label)).toBeTruthy();
+    }
+    expect(isSelected(screen.getByRole("tab", { name: en.tabs.home }))).toBe(true);
+  });
+
+  it("draws the mini player inside the docked bar once a track is loaded", async () => {
+    Platform.OS = "android";
+    mockCore.set("signed_in");
+    await renderRouter("app", { initialUrl: "/" });
+    await screen.findByTestId("home");
+    await act(async () => {
+      await mockCore.current.playback.playList(
+        [
+          {
+            trackId: "t1",
+            title: "Song",
+            artists: [{ id: "ar1", name: "Ann" }],
+            album: "Album",
+            albumId: "a1",
+            coverUrl: null,
+            image: null,
+            durationSeconds: 100,
+          },
+        ],
+        0,
+        { kind: "album", id: "a1", name: "Album" },
+      );
+    });
+    expect(await screen.findByTestId("mini-player")).toBeTruthy();
+    expect(within(screen.getByTestId("tab-accessory")).getByTestId("mini-player")).toBeTruthy();
   });
 });

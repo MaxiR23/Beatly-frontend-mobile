@@ -38,7 +38,8 @@ inside the current queue, keeping its order, shuffle and source; a tap on a sugg
 ## Platform differences
 
 - iOS 26+: the mini player is `NativeTabs.BottomAccessory`, the system sizes the frame, draws the glass capsule and sets the gap to the tab bar; the mini player draws bare inside it (no own surface, no tint), clipped to the frame.
-- Android and older iOS: the `accessory` of `FloatingTabBar`, at the pill's width (the window width minus `layout.gutter` on each side), `spacing.xs` above the pill.
+- Older iOS: the `accessory` of `FloatingTabBar`, at the pill's width (the window width minus `layout.gutter` on each side), `spacing.xs` above the pill.
+- Android: the `accessory` of `FloatingTabBar` inside the docked bar (ADR 035), the window width minus `spacing.sm` on each side, `spacing.xs` above the tabs.
 - iOS: no close button; the player closes by dragging down, or with the VoiceOver escape gesture.
 - The sheet handle: 48 x 5 in white at 45% on Android (`layout.handleWidthAndroid`, `layout.handleHeightAndroid`, `color.overlay.handleAndroid`); iOS keeps `layout.handleWidth` x `layout.handleHeight` in `color.overlay.muted`. Its position is the same row on both.
 - Android: the chevron-down close button stays, next to the drag; the system back closes too. The header's more button draws three vertical dots (ADR 027).

@@ -13,6 +13,8 @@ export const typography = {
   body: { fontSize: 14, fontWeight: "400", lineHeight: 20 },
   link: { fontSize: 14, fontWeight: "600", lineHeight: 20 },
   meta: { fontSize: 12, fontWeight: "400", lineHeight: 16 },
+  // The selected tab of the Android tab bar: meta's size and line height, heavier (the unselected tabs draw in meta).
+  tabLabelSelected: { fontSize: 12, fontWeight: "700", lineHeight: 16 },
   label: {
     fontSize: 11,
     fontWeight: "700",
