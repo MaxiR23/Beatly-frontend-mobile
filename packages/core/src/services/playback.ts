@@ -1,4 +1,4 @@
-// INFO: the playback controller: the queue, the play order (shuffle), repeat one, the current track, a jump to a position of the queue, a rename of the current source, the seed of the source with its suggestions, autoplay at the end of the queue and on next at the last track, whether the source's suggestions are wanted (its last track started or the up next tab asked) and the status over the player port; an immutable snapshot plus subscribe.
+// INFO: the playback controller: the queue, the play order (shuffle), repeat one, the current track, a jump to a position of the queue, a rename of the current source, the seed of the source with its suggestions, autoplay at the end of the queue and on next at the last track, whether the source's suggestions are wanted (its last track started or the up next tab asked) and the status over the player port; the effective duration of the current track (the stream's, else the backend's, else the engine's) and the end of a track at it, once, whichever of the position or the engine's ended comes first; an immutable snapshot plus subscribe.
 import type { ImageTiers } from "../domain/image.ts";
 import type { TrackArtistRef } from "../domain/search.ts";
 import type { LogPort } from "../ports/log.ts";
@@ -30,7 +30,12 @@ export interface PlaybackSource {
 export type StreamFailureCause = "unplayable" | "timeout" | "network" | "invalid_response";
 
 export type StreamResolution =
-  | { readonly kind: "resolved"; readonly url: string }
+  | {
+      readonly kind: "resolved";
+      readonly url: string;
+      // The chosen format's duration in seconds; absent when the answer does not carry it.
+      readonly durationSeconds?: number;
+    }
   | {
       readonly kind: "failure";
       readonly cause: StreamFailureCause;
@@ -101,6 +106,14 @@ export interface PlaybackController {
 
 export const PREVIOUS_RESTARTS_AFTER_SECONDS = 3;
 
+// One progress tick of the player adapter (100 ms): a track ends when its position is this close to its duration.
+export const END_TOLERANCE_SECONDS = 0.1;
+
+const positive = (seconds: number | null | undefined): number | null =>
+  seconds !== null && seconds !== undefined && Number.isFinite(seconds) && seconds > 0
+    ? seconds
+    : null;
+
 const IDLE: PlaybackState = Object.freeze({
   queue: [],
   index: -1,
@@ -139,6 +152,8 @@ export function createPlaybackController(deps: {
   // True once the engine holds the current track's source.
   let loaded = false;
   let endedGeneration = -1;
+  // The current track's duration from the stream, else the backend; the engine's is used only when this is null (iOS reports twice the real one for fragmented MP4).
+  let knownDuration: number | null = null;
   let listens = 0;
   const nextListen = (): number => (listens += 1);
   let suggestions: readonly PlayableTrack[] = [];
@@ -176,6 +191,7 @@ export function createPlaybackController(deps: {
     const mine = generation;
     if (loaded) player.unload();
     loaded = false;
+    knownDuration = positive(track.durationSeconds);
     update({
       queue: order.map((i) => original[i]).filter((t): t is PlayableTrack => t !== undefined),
       index: position,
@@ -184,7 +200,7 @@ export function createPlaybackController(deps: {
       failure: null,
       failureHttpStatus: null,
       positionSeconds: 0,
-      durationSeconds: track.durationSeconds,
+      durationSeconds: knownDuration,
       listen: nextListen(),
       suggestionsWanted: state.suggestionsWanted || position === order.length - 1,
     });
@@ -202,6 +218,8 @@ export function createPlaybackController(deps: {
       });
       return;
     }
+    knownDuration = positive(resolution.durationSeconds) ?? knownDuration;
+    if (state.durationSeconds !== knownDuration) update({ durationSeconds: knownDuration });
     player.load(resolution.url);
     loaded = true;
     player.play();
@@ -247,11 +265,12 @@ export function createPlaybackController(deps: {
   const onEnded = async (): Promise<void> => {
     if (endedGeneration === generation) return;
     endedGeneration = generation;
+    const mine = generation;
     if (state.repeatOne) {
-      // The replayed track can end again.
-      endedGeneration = -1;
       update({ listen: nextListen() });
       await seekTo(0);
+      // Re-armed once the engine is back at 0: a late end of the pass that just ended (Android's ended one tick after the position end) must not replay twice.
+      if (endedGeneration === mine) endedGeneration = -1;
       player.play();
       update({ status: "playing" });
       return;
@@ -269,11 +288,16 @@ export function createPlaybackController(deps: {
   const onEvent = (event: PlayerEvent): void => {
     if (!loaded || state.current === null) return;
     if (event.type === "progress") {
+      const duration = knownDuration ?? positive(event.durationSeconds) ?? state.durationSeconds;
       update({
         positionSeconds: event.positionSeconds,
-        durationSeconds: event.durationSeconds ?? state.durationSeconds,
+        durationSeconds: duration,
         status: event.buffering ? "loading" : event.playing ? "playing" : "paused",
       });
+      // The engine's own end can come at a wrong duration (iOS): the track ends at the effective one.
+      if (duration !== null && event.positionSeconds >= duration - END_TOLERANCE_SECONDS) {
+        void onEnded();
+      }
     } else if (event.type === "error") {
       log.warn("playback.player_error", { message: event.message });
       update({ status: "failed", failure: "playback", failureHttpStatus: null });
@@ -381,6 +405,7 @@ export function createPlaybackController(deps: {
     stop: () => {
       generation += 1;
       loaded = false;
+      knownDuration = null;
       original = [];
       order = [];
       suggestions = [];

@@ -4,6 +4,7 @@
 //
 // Tested:
 // - registers a play after 30 seconds of listening, with the track's fields
+// - sends the effective duration in whole seconds: the stream's, else the backend's, none when unknown
 // - registers nothing at 29 seconds, and once per listen however long the track keeps playing
 // - does not count a seek forward or back, a jump of the engine, nor a pause
 // - counts again when repeat one replays the track, and a next track as a new listen
@@ -60,9 +61,25 @@ function progress(player: ReturnType<typeof createFakePlayer>, position: number,
   });
 }
 
-function setup(answer: Awaited<ReturnType<ActivityService["logPlay"]>> = success) {
-  const player = createFakePlayer();
+function setup(
+  answer: Awaited<ReturnType<ActivityService["logPlay"]>> = success,
+  options: { engineDurationSeconds?: number | null; streamDurationSeconds?: number } = {},
+) {
+  const player = createFakePlayer(
+    options.engineDurationSeconds === undefined
+      ? {}
+      : { durationSeconds: options.engineDurationSeconds },
+  );
   const streams = createFakeStreams();
+  if (options.streamDurationSeconds !== undefined) {
+    for (const id of ["t1"]) {
+      streams.answer(id, {
+        kind: "resolved",
+        url: `test://audio/${id}`,
+        durationSeconds: options.streamDurationSeconds,
+      });
+    }
+  }
   const log = createFakeLog();
   const controller = createPlaybackController({
     player: player.port,
@@ -96,6 +113,32 @@ describe("createListeningCounter", () => {
       thumbnail_url: "test://img/1",
       duration_seconds: 200,
     });
+  });
+
+  it("sends the stream's duration, rounded, not the backend's nor the engine's", async () => {
+    const { controller, logPlay, listen } = setup(success, {
+      engineDurationSeconds: 336.39,
+      streamDurationSeconds: 168.199,
+    });
+    await controller.playList([track("t1", { durationSeconds: 169 })], 0, source);
+    listen(30);
+    expect(logPlay).toHaveBeenCalledTimes(1);
+    expect(logPlay.mock.calls[0]?.[0].duration_seconds).toBe(168);
+  });
+
+  it("sends the backend's duration when the stream carries none", async () => {
+    const { controller, logPlay, listen } = setup(success, { engineDurationSeconds: 338 });
+    await controller.playList([track("t1", { durationSeconds: 169 })], 0, source);
+    listen(30);
+    expect(logPlay.mock.calls[0]?.[0].duration_seconds).toBe(169);
+  });
+
+  it("sends no duration when none is known", async () => {
+    const { controller, logPlay, listen } = setup(success, { engineDurationSeconds: null });
+    await controller.playList([track("t1", { durationSeconds: null })], 0, source);
+    listen(30);
+    expect(logPlay).toHaveBeenCalledTimes(1);
+    expect(logPlay.mock.calls[0]?.[0]).not.toHaveProperty("duration_seconds");
   });
 
   it("registers nothing at 29 seconds", async () => {

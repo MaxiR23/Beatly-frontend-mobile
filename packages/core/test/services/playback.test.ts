@@ -12,6 +12,7 @@
 // - renaming the current source in place, ignoring another source or an idle controller
 // - the HTTP status of an unplayable answer in the state: kept on that failure, null on a player error and on a restart
 // - the seed of a source, the sourceStart counter, autoplay at the end of the queue (shuffle, repeat one, no suggestions, stale suggestions) and next at the last track sharing that rule (autoplay off, no suggestions, repeat one, after the list ended, idle) and whether the suggestions are wanted (last track started, the tab asked, sticky, reset by a new source)
+// - the effective duration of the current track (the stream's, else the backend's, else the engine's), the end of a track at it, once, with an iOS-style engine (doubled duration, ended only at it) and an Android-style one (real duration, ended on time), and the seek clamped to it
 // - Not applicable: ok:false reasons, because the controller does not call the API
 //
 // Run with: pnpm --filter @beatly/core test -- playback
@@ -44,8 +45,8 @@ const list = ["t1", "t2", "t3"].map(track);
 const source: PlaybackSource = { kind: "album", id: "a1", name: "Album" };
 const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-function setup(random?: () => number) {
-  const player = createFakePlayer();
+function setup(random?: () => number, playerOptions: Parameters<typeof createFakePlayer>[0] = {}) {
+  const player = createFakePlayer(playerOptions);
   const streams = createFakeStreams();
   const log = createFakeLog();
   const controller = createPlaybackController({
@@ -1016,5 +1017,205 @@ describe("suggestions wanted", () => {
     await controller.playList([track("t1")], 0, source);
     controller.stop();
     expect(wanted(controller)).toBe(false);
+  });
+});
+
+const REAL = 136.9;
+const BACKEND = 137;
+const ENGINE = 273.8;
+
+const timed = (id: string): PlayableTrack => ({ ...track(id), durationSeconds: BACKEND });
+const timedList = ["t1", "t2", "t3"].map(timed);
+
+function answerReal(streams: ReturnType<typeof createFakeStreams>, ids: readonly string[]) {
+  for (const id of ids) {
+    streams.answer(id, { kind: "resolved", url: `test://audio/${id}`, durationSeconds: REAL });
+  }
+}
+
+const listens = (c: ReturnType<typeof setup>["controller"]) => c.getState().listen;
+
+describe("effective duration", () => {
+  it("is the stream's duration, and an engine progress with another one does not change it", async () => {
+    const { controller, player, streams } = setup(undefined, { durationSeconds: ENGINE });
+    answerReal(streams, ["t1"]);
+    await controller.playList(timedList, 0, source);
+    player.advance(1);
+    expect(controller.getState().durationSeconds).toBe(REAL);
+  });
+
+  it("is the backend's when the stream carries none", async () => {
+    const { controller, player } = setup(undefined, { durationSeconds: ENGINE });
+    await controller.playList(timedList, 0, source);
+    player.advance(1);
+    expect(controller.getState().durationSeconds).toBe(BACKEND);
+  });
+
+  it("is the engine's when neither is known", async () => {
+    const { controller, player } = setup(undefined, { durationSeconds: ENGINE });
+    await controller.playList([{ ...track("t1"), durationSeconds: null }], 0, source);
+    expect(controller.getState().durationSeconds).toBeNull();
+    player.advance(1);
+    expect(controller.getState().durationSeconds).toBe(ENGINE);
+  });
+
+  it("is the backend's while the stream resolves", async () => {
+    const { controller, streams } = setup();
+    const settle = streams.hold("t1");
+    const pending = controller.playList(timedList, 0, source);
+    expect(controller.getState().durationSeconds).toBe(BACKEND);
+    settle({ kind: "resolved", url: "test://audio/t1", durationSeconds: REAL });
+    await pending;
+    expect(controller.getState().durationSeconds).toBe(REAL);
+  });
+
+  it("clamps a seek to the effective duration", async () => {
+    const { controller, player, streams } = setup(undefined, { durationSeconds: ENGINE });
+    answerReal(streams, ["t1"]);
+    await controller.playList(timedList, 0, source);
+    player.advance(1);
+    await controller.seek(999);
+    expect(controller.getState().positionSeconds).toBe(REAL);
+    expect(player.calls.at(-1)).toEqual({ type: "seek", seconds: REAL });
+  });
+});
+
+describe("iOS-style engine: doubled duration, ended only at it", () => {
+  const ios = () => {
+    const ctx = setup(undefined, { durationSeconds: ENGINE, endsAtSeconds: ENGINE });
+    answerReal(ctx.streams, ["t1", "t2", "t3", "s1"]);
+    return ctx;
+  };
+  const reachEnd = (player: ReturnType<typeof createFakePlayer>) => {
+    player.advance(136);
+    player.advance(0.9);
+  };
+
+  it("ends at the real duration, starts the next track and unloads the engine", async () => {
+    const { controller, player } = ios();
+    await controller.playList(timedList, 0, source);
+    const before = listens(controller);
+    reachEnd(player);
+    await flush();
+    expect(controller.getState().current?.trackId).toBe("t2");
+    expect(loads(player.calls)).toEqual(["test://audio/t1", "test://audio/t2"]);
+    const types = player.calls.map((c) => c.type);
+    expect(types.indexOf("unload")).toBeGreaterThan(types.indexOf("load"));
+    expect(types.indexOf("unload")).toBeLessThan(types.lastIndexOf("load"));
+    expect(listens(controller)).toBe(before + 1);
+  });
+
+  it("ignores the engine's late ended", async () => {
+    const { controller, player } = ios();
+    await controller.playList(timedList, 0, source);
+    reachEnd(player);
+    const calls = player.calls.length;
+    player.emit({ type: "ended" });
+    await flush();
+    expect(player.calls.slice(calls).map((c) => c.type)).toEqual(["load", "play"]);
+    expect(controller.getState().current?.trackId).toBe("t2");
+    expect(loads(player.calls)).toEqual(["test://audio/t1", "test://audio/t2"]);
+  });
+
+  it("replays at the real duration with repeat one, and can end again", async () => {
+    const { controller, player } = ios();
+    await controller.playList(timedList, 0, source);
+    controller.setRepeatOne(true);
+    const before = listens(controller);
+    reachEnd(player);
+    await flush();
+    expect(player.calls.slice(-2)).toEqual([{ type: "seek", seconds: 0 }, { type: "play" }]);
+    expect(controller.getState().current?.trackId).toBe("t1");
+    expect(listens(controller)).toBe(before + 1);
+    reachEnd(player);
+    await flush();
+    expect(player.calls.filter((c) => c.type === "seek")).toHaveLength(2);
+    expect(listens(controller)).toBe(before + 2);
+  });
+
+  it("starts the suggestions at the real duration with autoplay on at the last track", async () => {
+    const { controller, player } = ios();
+    await controller.playList(timedList, 2, source);
+    controller.setAutoplay(true);
+    controller.setSuggestions("t3", [timed("s1")]);
+    reachEnd(player);
+    await flush();
+    const state = controller.getState();
+    expect(state.current?.trackId).toBe("s1");
+    expect(state.source?.kind).toBe("track");
+    const types = player.calls.map((c) => c.type);
+    expect(types.indexOf("unload")).toBeLessThan(types.lastIndexOf("load"));
+    expect(loads(player.calls).at(-1)).toBe("test://audio/s1");
+  });
+
+  it("stops at the real duration with autoplay off at the last track", async () => {
+    const { controller, player } = ios();
+    await controller.playList(timedList, 2, source);
+    reachEnd(player);
+    await flush();
+    const state = controller.getState();
+    expect(state.status).toBe("paused");
+    expect(state.positionSeconds).toBe(0);
+    expect(player.calls.map((c) => c.type)).toEqual(expect.arrayContaining(["pause", "seek"]));
+    expect(player.calls.at(-1)).toEqual({ type: "seek", seconds: 0 });
+    player.emit({ type: "ended" });
+    await flush();
+    expect(controller.getState()).toBe(state);
+  });
+});
+
+describe("Android-style engine: real duration, ended on time", () => {
+  const android = () => {
+    const ctx = setup(undefined, { durationSeconds: REAL, endsAtSeconds: REAL });
+    answerReal(ctx.streams, ["t1", "t2", "t3"]);
+    return ctx;
+  };
+
+  it("ends exactly once when the position end and ended arrive together", async () => {
+    const { controller, player } = android();
+    await controller.playList(timedList, 0, source);
+    const before = listens(controller);
+    player.advance(136);
+    player.advance(0.9);
+    player.emit({ type: "ended" });
+    await flush();
+    expect(loads(player.calls)).toEqual(["test://audio/t1", "test://audio/t2"]);
+    expect(listens(controller)).toBe(before + 1);
+  });
+
+  it("ends exactly once when ended comes before the position reaches the duration", async () => {
+    const ctx = setup(undefined, { durationSeconds: BACKEND, endsAtSeconds: 136 });
+    const { controller, player } = ctx;
+    await controller.playList(timedList, 0, source);
+    const before = listens(controller);
+    player.advance(136);
+    await flush();
+    expect(loads(player.calls)).toEqual(["test://audio/t1", "test://audio/t2"]);
+    expect(listens(controller)).toBe(before + 1);
+  });
+
+  it("replays once with repeat one when ended follows the position end", async () => {
+    const { controller, player } = android();
+    await controller.playList(timedList, 0, source);
+    controller.setRepeatOne(true);
+    const before = listens(controller);
+    player.advance(136);
+    player.advance(0.9);
+    player.emit({ type: "ended" });
+    await flush();
+    expect(listens(controller)).toBe(before + 1);
+    expect(player.calls.filter((c) => c.type === "seek")).toHaveLength(1);
+  });
+
+  it("pauses once at the last track", async () => {
+    const { controller, player } = android();
+    await controller.playList(timedList, 2, source);
+    const before = listens(controller);
+    player.advance(136);
+    player.advance(0.9);
+    player.emit({ type: "ended" });
+    await flush();
+    expect(player.calls.filter((c) => c.type === "pause")).toHaveLength(1);
+    expect(listens(controller)).toBe(before + 1);
   });
 });

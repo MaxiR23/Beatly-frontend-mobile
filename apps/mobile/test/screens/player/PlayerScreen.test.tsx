@@ -7,7 +7,7 @@
 //
 // What is covered:
 // - the source, title, artists and the elapsed and remaining times, a search source and a track source drawn as their own label
-// - play or pause, next, previous, shuffle, repeat one and the seek bar reaching the controller
+// - play or pause, next, previous, shuffle, repeat one and the seek bar reaching the controller, bounded by the stream's duration
 // - the spec's layout: header, the cover (window width less the gutter on each side, radius.sm) at high priority, the titles, seek bar, controls and the error and empty states at layout.playerInset, gaps, controls row, the wash from the track's image.color at the color.gradient.detailHero stops on iOS and Android, over the base surface and the player's full height, transparent only at its bottom edge (the neutral base surface without a color, fading in when the next track brings one), the transport icon sizes, the source centered between a leading side and a more button both layout.controlHeight wide on iOS with the native menu, iOS without it and Android
 // - the empty state, the resolution failure with retry, loading, close and its fallback, es
 // - the platform split of the close button, the drag down closing, the scroll gate of the drag
@@ -490,6 +490,28 @@ describe("PlayerScreen", () => {
     const touch = screen.getByTestId("seek-touch");
     await fireEvent(touch, "layout", { nativeEvent: { layout: { width: 200, height: 48 } } });
     await fireEvent(touch, "responderRelease", { nativeEvent: { locationX: 100 } });
+    expect(ctx.player.port.seek).toHaveBeenCalledWith(124);
+  });
+
+  it("bounds the seek bar by the stream's duration, not the engine's", async () => {
+    const ctx = await setup({
+      resolve: (id) =>
+        Promise.resolve({ kind: "resolved", url: `test://audio/${id}`, durationSeconds: 124 }),
+    });
+    await start(ctx);
+    await act(() => {
+      ctx.player.emit({
+        type: "progress",
+        positionSeconds: 1,
+        durationSeconds: 248,
+        playing: true,
+        buffering: false,
+      });
+    });
+    expect(screen.getByText("-2:03")).toBeTruthy();
+    const touch = screen.getByTestId("seek-touch");
+    await fireEvent(touch, "layout", { nativeEvent: { layout: { width: 200, height: 48 } } });
+    await fireEvent(touch, "responderRelease", { nativeEvent: { locationX: 200 } });
     expect(ctx.player.port.seek).toHaveBeenCalledWith(124);
   });
 

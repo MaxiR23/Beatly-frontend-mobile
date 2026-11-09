@@ -653,7 +653,7 @@ const otherTrack = {
   albumId: null,
   coverUrl: null,
   image: null,
-  durationSeconds: 1,
+  durationSeconds: 100,
 };
 const playingEvent = (ctx: Awaited<ReturnType<typeof setup>>) =>
   act(() => {

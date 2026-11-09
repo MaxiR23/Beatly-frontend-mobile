@@ -1,4 +1,4 @@
-// INFO: in-memory player port with a manual clock: calls are recorded in order and a test emits events or advances the position.
+// INFO: in-memory player port with a manual clock: calls are recorded in order and a test emits events or advances the position; an engine duration and an engine end position can be set, to fake the iOS doubled duration or an on-time end.
 import type { PlayerEvent, PlayerPort } from "../../src/ports/player.ts";
 
 type PlayerCall =
@@ -16,10 +16,18 @@ interface FakePlayer {
   advance(seconds: number): void;
 }
 
-export function createFakePlayer(): FakePlayer {
+interface FakePlayerOptions {
+  // The duration every progress reports; 200 by default, null for an engine that reports none.
+  readonly durationSeconds?: number | null;
+  // When set, the fake emits ended right after the progress that reaches this position, once per load or seek.
+  readonly endsAtSeconds?: number;
+}
+
+export function createFakePlayer(options: FakePlayerOptions = {}): FakePlayer {
   const calls: PlayerCall[] = [];
   const listeners = new Set<(event: PlayerEvent) => void>();
   let position = 0;
+  let endEmitted = false;
   const emit = (event: PlayerEvent): void => {
     for (const listener of listeners) listener(event);
   };
@@ -31,14 +39,19 @@ export function createFakePlayer(): FakePlayer {
       emit({
         type: "progress",
         positionSeconds: position,
-        durationSeconds: 200,
+        durationSeconds: options.durationSeconds === undefined ? 200 : options.durationSeconds,
         playing: true,
         buffering: false,
       });
+      if (options.endsAtSeconds !== undefined && position >= options.endsAtSeconds && !endEmitted) {
+        endEmitted = true;
+        emit({ type: "ended" });
+      }
     },
     port: {
       load: (url) => {
         position = 0;
+        endEmitted = false;
         calls.push({ type: "load", url });
       },
       play: () => {
@@ -49,6 +62,7 @@ export function createFakePlayer(): FakePlayer {
       },
       seek: (seconds) => {
         position = seconds;
+        endEmitted = false;
         calls.push({ type: "seek", seconds });
         return Promise.resolve();
       },
