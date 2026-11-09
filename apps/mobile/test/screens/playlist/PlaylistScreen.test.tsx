@@ -29,6 +29,7 @@
 
 import type { HttpOutcome, PageResult, PlaylistTrack } from "@beatly/core";
 import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { onlineManager } from "@tanstack/react-query";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { Alert, Animated, processColor } from "react-native";
 
@@ -36,6 +37,7 @@ import { layout, motion } from "@beatly/ui";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
+import { getPlayStartFailure, retryPlayStart } from "../../../src/screens/connection/playStart.ts";
 import { PlaylistScreen } from "../../../src/screens/playlist/PlaylistScreen.tsx";
 import {
   createdPlaylistFixture,
@@ -91,6 +93,7 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
+  onlineManager.setOnline(true);
   jest.restoreAllMocks();
   mockBack.mockClear();
   mockReplace.mockClear();
@@ -540,7 +543,7 @@ describe("PlaylistScreen", () => {
 
   it("draws the generic error with retry for upstream_error and retry refetches only the failed query", async () => {
     const ctx = await setup({ getPlaylist: () => Promise.resolve(upstream) });
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.server.title)).toBeTruthy();
     expect(screen.queryByText(en.playlist.notFound)).toBeNull();
     await fireEvent.press(screen.getByRole("button", { name: en.common.retry }));
     expect(ctx.getPlaylist).toHaveBeenCalledTimes(2);
@@ -555,7 +558,7 @@ describe("PlaylistScreen", () => {
           cause: "network",
         }),
     });
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.offline.title)).toBeTruthy();
     expect(screen.getByRole("button", { name: en.common.retry })).toBeTruthy();
   });
 
@@ -679,6 +682,46 @@ describe("PlaylistScreen action row", () => {
     const state = ctx.playback.getState();
     expect(state.current?.trackId).toBe("t1");
     expect(state.source).toEqual({ kind: "playlist", id: "p1", name: "Road trip" });
+  });
+
+  it("fails play all at once while offline with pages left, and starts only when the failure is retried", async () => {
+    const ctx = await setup({
+      listPlaylistTracks: (_id, cursor) => twoPages(secondPageOk)(cursor),
+    });
+    await screen.findByText("First Song");
+    await act(() => {
+      onlineManager.setOnline(false);
+    });
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.play }));
+    expect(ctx.listPlaylistTracks).not.toHaveBeenCalledWith("p1", "c1");
+    expect(getPlayStartFailure()).not.toBeNull();
+    expect(ctx.playback.getState().status).toBe("idle");
+    await act(() => {
+      onlineManager.setOnline(true);
+    });
+    expect(ctx.listPlaylistTracks).not.toHaveBeenCalledWith("p1", "c1");
+    expect(ctx.playback.getState().status).toBe("idle");
+    await act(() => {
+      retryPlayStart();
+    });
+    await waitFor(() => {
+      expect(ids(ctx)).toEqual(["t1", "t2", "t3", "t4"]);
+    });
+    expect(ctx.listPlaylistTracks).toHaveBeenCalledWith("p1", "c1");
+  });
+
+  it("clears its play-start failure when it unmounts", async () => {
+    await setup({
+      listPlaylistTracks: (_id, cursor) => twoPages(secondPageOk)(cursor),
+    });
+    await screen.findByText("First Song");
+    await act(() => {
+      onlineManager.setOnline(false);
+    });
+    await fireEvent.press(screen.getByRole("button", { name: en.playlist.play }));
+    expect(getPlayStartFailure()).not.toBeNull();
+    await screen.unmount();
+    expect(getPlayStartFailure()).toBeNull();
   });
 
   it("plays the liked playlist whole after loading its remaining pages", async () => {
@@ -950,7 +993,7 @@ describe("PlaylistScreen action row", () => {
     });
     await screen.findByText("First Song");
     await fireEvent.press(screen.getByRole("button", { name: en.playlist.play }));
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.server.title)).toBeTruthy();
     expect(screen.getByRole("button", { name: en.common.retry })).toBeTruthy();
     expect(ctx.playback.getState().queue).toEqual([]);
   });

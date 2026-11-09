@@ -6,7 +6,6 @@ import {
   Badge,
   Button,
   Card,
-  ErrorState,
   IconButton,
   ProfileSkeleton,
   SkeletonBar,
@@ -17,9 +16,11 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { queryFailure } from "../../queries/failureCause.ts";
 import { useEmail } from "../../queries/useAuth.ts";
 import { useProfile } from "../../queries/useProfile.ts";
 import { reportDate } from "../bugReports/reportDate.ts";
+import { FailureState } from "../failure/FailureState.tsx";
 import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 import { useSheetPresence } from "../trackMenu/useSheetPresence.ts";
 import { EditProfileSheet } from "./EditProfileSheet.tsx";
@@ -46,14 +47,15 @@ export function ProfileScreen() {
   }
 
   const data = profile.data;
+  const profileFailure = queryFailure(profile);
+  const emailFailure = queryFailure(email);
   let body;
   // Data first: a cached profile is drawn at once and kept when a background refetch fails (the owner's decision for this screen); the skeleton and the error are only for when there is no profile yet.
-  if (data === undefined && profile.isError) {
+  if (data === undefined && profileFailure !== null) {
     body = (
       <View style={styles.state}>
-        <ErrorState
-          message={tc("error.generic")}
-          retryLabel={tc("retry")}
+        <FailureState
+          cause={profileFailure}
           onRetry={() => {
             void profile.refetch();
             if (email.isError) void email.refetch();
@@ -63,12 +65,11 @@ export function ProfileScreen() {
     );
   } else if (data === undefined) {
     body = <ProfileSkeleton label={tc("loading")} />;
-  } else if (email.isError) {
+  } else if (emailFailure !== null) {
     body = (
       <View style={styles.state}>
-        <ErrorState
-          message={tc("error.generic")}
-          retryLabel={tc("retry")}
+        <FailureState
+          cause={emailFailure}
           onRetry={() => {
             void email.refetch();
           }}

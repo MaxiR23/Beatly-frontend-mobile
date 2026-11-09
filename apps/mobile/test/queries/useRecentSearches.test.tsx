@@ -15,7 +15,8 @@
 
 import { RECENT_SEARCHES_KEY } from "@beatly/core";
 import type { StoragePort } from "@beatly/core";
-import { describe, expect, it, jest } from "@jest/globals";
+import { afterEach, describe, expect, it, jest } from "@jest/globals";
+import { onlineManager } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 import type { ReactNode } from "react";
 
@@ -42,7 +43,21 @@ function setup(storage: StoragePort) {
 
 const seeded = () => memoryStorage({ [RECENT_SEARCHES_KEY]: JSON.stringify(["b", "a"]) });
 
+afterEach(() => {
+  onlineManager.setOnline(true);
+});
+
 describe("useRecentSearches", () => {
+  it("reads the stored queries while offline", async () => {
+    onlineManager.setOnline(false);
+    const { wrapper } = setup(seeded());
+    const { result } = await renderHook(() => useRecentSearches(), { wrapper });
+    await waitFor(() => {
+      expect(result.current.data).toEqual(["b", "a"]);
+    });
+    expect(result.current.isPaused).toBe(false);
+  });
+
   it("returns the stored queries", async () => {
     const { wrapper } = setup(seeded());
     const { result } = await renderHook(() => useRecentSearches(), { wrapper });

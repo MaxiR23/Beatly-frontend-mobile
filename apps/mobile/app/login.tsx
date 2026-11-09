@@ -4,3 +4,5 @@ import { LoginScreen } from "../src/screens/login/LoginScreen.tsx";
 export default function Login() {
   return <LoginScreen />;
 }
+
+export { UnexpectedErrorScreen as ErrorBoundary } from "../src/screens/unexpectedError/UnexpectedErrorScreen.tsx";

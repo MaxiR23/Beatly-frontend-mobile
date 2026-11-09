@@ -45,7 +45,7 @@ The list:
 | Loading          | `LoadingState` under the title                                                     | `common:loading`                                                                                                                   |
 | With data        | the reports, newest first, each with its category, date, entity, excerpt and badge | `bugReports:list.title`, `bugReports:list.date`, `bugReports:list.entity.*`, `bugReports:list.status.*`, `bugReports:categories.*` |
 | Expected empty   | `EmptyState` with the `inbox` glyph                                                | `bugReports:list.empty`                                                                                                            |
-| Error with retry | `ErrorState`; retry refetches                                                      | `common:error.generic`, `common:retry`                                                                                             |
+| Error with retry | `FailureState` (cause from `queryFailure`); retry refetches                        | `common:error.{offline,slow,server}.{title,body}`, `common:retry`                                                                  |
 
 All reports:
 
@@ -54,7 +54,7 @@ All reports:
 | Loading          | `LoadingState` under the filters                                                         | `common:loading`                                                                                                                                 |
 | With data        | the reports as the API sends them, each with category, reporter, date, excerpt and badge | `bugReports:triage.title`, `bugReports:triage.filters.*`, `bugReports:triage.username`, `bugReports:triage.unknownReporter`, `bugReports:list.*` |
 | Expected empty   | `EmptyState` with the `inbox` glyph, one message per filter                              | `bugReports:triage.empty.all`, `bugReports:triage.empty.open`, `bugReports:triage.empty.closed`                                                  |
-| Error with retry | `ErrorState`; retry refetches                                                            | `common:error.generic`, `common:retry`                                                                                                           |
+| Error with retry | `FailureState` (cause from `queryFailure`); retry refetches                              | `common:error.{offline,slow,server}.{title,body}`, `common:retry`                                                                                |
 | Not allowed      | `EmptyState` with the `flag` glyph and no retry, on `forbidden`                          | `bugReports:triage.forbidden`                                                                                                                    |
 
 The report detail:

@@ -302,11 +302,11 @@ describe("AlbumScreen", () => {
     const ctx = await setup({
       getAlbum: () => Promise.resolve({ kind: "api_failure", reason: "upstream_error" }),
     });
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.server.title)).toBeTruthy();
     expect(screen.queryByText(en.album.notAvailable)).toBeNull();
     const before = ctx.getAlbum.mock.calls.length;
     await fireEvent.press(screen.getByRole("button", { name: en.common.retry }));
-    await screen.findByText(en.common.error.generic);
+    await screen.findByText(en.common.error.server.title);
     expect(ctx.getAlbum.mock.calls.length).toBeGreaterThan(before);
   });
 
@@ -442,7 +442,7 @@ describe("AlbumScreen", () => {
     await setup({
       getAlbum: () => Promise.resolve({ kind: "transport_failure", cause: "network" }),
     });
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.offline.title)).toBeTruthy();
     expect(screen.getByRole("button", { name: en.common.retry })).toBeTruthy();
   });
 

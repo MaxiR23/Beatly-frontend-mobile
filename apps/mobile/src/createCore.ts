@@ -61,6 +61,7 @@ import { createLogAdapter } from "./adapters/log.ts";
 import { createPlayerAdapter } from "./adapters/player.ts";
 import { createStorageAdapter } from "./adapters/storage.ts";
 import { readPublicEnv } from "./env.ts";
+import { resolveOnlyOnline } from "./queries/onlineManager.ts";
 
 export interface Core {
   readonly activity: ActivityService;
@@ -108,13 +109,15 @@ export function createCore(): Core {
   const recommendations = createRecommendationsService(client);
   const playback = createPlaybackController({
     player: createPlayerAdapter({ log }),
-    streams: createStreamResolver({
-      http,
-      config: createConfigAdapter(env),
-      storage,
-      log,
-      platform: Platform.OS === "ios" ? "ios" : "android",
-    }),
+    streams: resolveOnlyOnline(
+      createStreamResolver({
+        http,
+        config: createConfigAdapter(env),
+        storage,
+        log,
+        platform: Platform.OS === "ios" ? "ios" : "android",
+      }),
+    ),
     log,
   });
   // Lives as long as the app: counts listening and registers plays; the unsubscribe is not kept.

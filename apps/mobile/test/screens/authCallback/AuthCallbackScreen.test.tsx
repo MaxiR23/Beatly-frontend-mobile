@@ -6,7 +6,7 @@
 // - AuthCallbackScreen
 //
 // What is covered:
-// - invalid links, the verifying state, link_invalid, a generic failure with retry, the success redirect, en and es
+// - invalid links, the verifying state, link_invalid, an invalid link as an empty state with the way back to login and no Retry, an unknown failure with the server cause and retry, the offline cause retrying by itself when the connection returns, the success redirect, en and es
 //
 // Run with: pnpm --filter @beatly/mobile test -- AuthCallbackScreen
 //
@@ -14,7 +14,8 @@
 
 import type { AuthResult } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { onlineManager } from "@tanstack/react-query";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { Text as MockText } from "react-native";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
@@ -31,6 +32,7 @@ jest.mock("expo-router", () => ({
 }));
 
 afterEach(async () => {
+  onlineManager.setOnline(true);
   mockReplace.mockClear();
   mockParams = {};
   await i18n.changeLanguage("en");
@@ -85,9 +87,28 @@ describe("AuthCallbackScreen", () => {
     expect(mockReplace).toHaveBeenCalledWith("/login");
   });
 
-  it("draws the generic error with retry on an unknown failure", async () => {
+  it("draws no Retry for an invalid link, only the way back to login", async () => {
+    await setup({ type: "signup" });
+    expect(screen.queryByText(en.common.retry)).toBeNull();
+    expect(screen.getByRole("button", { name: en.authCallback.backToLogin })).toBeTruthy();
+  });
+
+  it("draws the offline cause offline and retries by itself when the connection returns", async () => {
+    onlineManager.setOnline(false);
     const auth = await setup(valid, { kind: "failure", reason: "unknown" });
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.offline.title)).toBeTruthy();
+    expect(auth.confirmEmail).toHaveBeenCalledTimes(1);
+    await act(() => {
+      onlineManager.setOnline(true);
+    });
+    await waitFor(() => {
+      expect(auth.confirmEmail).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it("draws the server cause with retry on an unknown failure online", async () => {
+    const auth = await setup(valid, { kind: "failure", reason: "unknown" });
+    expect(await screen.findByText(en.common.error.server.title)).toBeTruthy();
     await fireEvent.press(screen.getByText(en.common.retry));
     await waitFor(() => {
       expect(auth.confirmEmail).toHaveBeenCalledTimes(2);

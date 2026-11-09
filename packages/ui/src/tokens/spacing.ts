@@ -1,6 +1,6 @@
 // INFO: spacing tokens, a multiples-of-four scale (and an explicit zero), plus the layout
 // constants (gutter, gap, hitSlop, control height, text area height, and the carousel card,
-// avatar, creator mark and its gap, profile avatar, tab item, chip (and the Android chip), the Android tab indicator, the Android switch's track and thumb sizes, genre bar, row cover (and the Android track menu header cover), the Android action row height, detail hero cover, the detail hero wash's extension,
+// avatar, creator mark and its gap, profile avatar, tab item, chip (and the Android chip), the Android tab indicator, the status strip's height, the Android switch's track and thumb sizes, genre bar, row cover (and the Android track menu header cover), the Android action row height, detail hero cover, the detail hero wash's extension,
 // track-number column, now playing bar width, large and medium play button, the detail play pill's width, the side buttons' stacking value, seek bar and sheet handle sizes (iOS and Android) and the Android modal sheet handle zone and width, and the skeleton bar widths, row count and card count, the seed photo of a recommendation section, the logo's bar geometry and the side of a welcome photo, the narrow icon button's width and the player's side inset).
 export const spacing = {
   // An explicit zero gap where a native container would otherwise apply a system default.
@@ -42,6 +42,8 @@ export const layout = {
   chipHeightAndroid: 32,
   // Height of the active indicator under the selected tab on Android (Material 3 primary tabs).
   tabIndicatorHeightAndroid: 3,
+  // Height of the status strip above the mini player or the tab bar (offline, a failed track).
+  statusStripHeight: 32,
   // Width of the Android switch track (Material 3 switch).
   switchTrackWidthAndroid: 52,
   // Height of the Android switch track (Material 3 switch).

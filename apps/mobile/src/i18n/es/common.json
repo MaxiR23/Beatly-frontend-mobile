@@ -1,7 +1,19 @@
 {
   "loading": "Cargando…",
   "error": {
-    "generic": "Algo salió mal"
+    "generic": "Algo salió mal",
+    "offline": {
+      "title": "Sin conexión",
+      "body": "Revisá el wifi o los datos. Cuando vuelva la conexión, esto se carga solo."
+    },
+    "slow": {
+      "title": "Está tardando mucho",
+      "body": "La conexión está lenta o el servidor no responde. Probá de nuevo en un rato."
+    },
+    "server": {
+      "title": "Algo salió mal",
+      "body": "No es tu conexión: el problema es nuestro. Probá de nuevo en un rato."
+    }
   },
   "retry": "Reintentar",
   "brand": "Beatly",
@@ -20,5 +32,13 @@
     "viewProfile": "Ver perfil",
     "noName": "Sin nombre",
     "profileRow": "{{name}}, ver perfil"
+  },
+  "connection": {
+    "offline": "Sin conexión. Vas a ver lo que ya cargó."
+  },
+  "unexpected": {
+    "title": "Algo se rompió",
+    "body": "No es tu culpa. Volvé al inicio para seguir escuchando.",
+    "home": "Volver al inicio"
   }
 }

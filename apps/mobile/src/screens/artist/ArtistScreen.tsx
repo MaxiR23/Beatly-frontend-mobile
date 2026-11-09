@@ -24,11 +24,13 @@ import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { queryFailure } from "../../queries/failureCause.ts";
 import { OutcomeError } from "../../queries/outcomeError.ts";
 import { useArtist } from "../../queries/useArtist.ts";
 import { useLibrarySaved, useSetSaved } from "../../queries/useLibrary.ts";
 import { useRegisterRecent } from "../../queries/useRecents.ts";
 import { singleMeta } from "./singleMeta.ts";
+import { useFailureCopy } from "../failure/useFailureCopy.ts";
 import { toQueue } from "../player/queue.ts";
 import { useNowPlaying } from "../player/useNowPlaying.ts";
 import { usePlaybackActions } from "../player/usePlayback.ts";
@@ -58,6 +60,7 @@ function toPlayable(song: ArtistSong): PlayableTrack | null {
 export function ArtistScreen() {
   const t = useT("artist");
   const tc = useT("common");
+  const failureCopy = useFailureCopy();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const tabBarClearance = useTabBarClearance();
@@ -110,19 +113,21 @@ export function ArtistScreen() {
     artist.error.outcome.kind === "api_failure" &&
     artist.error.outcome.reason === "invalid_request";
 
+  const failure = queryFailure(artist);
+
   let body: DetailBody;
   let toggle: DetailToggle | undefined;
-  if (artist.isPending) {
-    body = { kind: "loading", label: tc("loading"), hero: "image" };
-  } else if (unavailable) {
+  if (unavailable) {
     body = { kind: "unavailable", message: t("notAvailable") };
-  } else if (artist.isError) {
+  } else if (failure !== null) {
     body = {
       kind: "error",
-      message: tc("error.generic"),
-      retryLabel: tc("retry"),
+      cause: failure,
+      ...failureCopy(failure),
       onRetry: () => void artist.refetch(),
     };
+  } else if (!artist.isSuccess) {
+    body = { kind: "loading", label: tc("loading"), hero: "image" };
   } else {
     const data = artist.data;
     const playSong = (tapped: number) => {

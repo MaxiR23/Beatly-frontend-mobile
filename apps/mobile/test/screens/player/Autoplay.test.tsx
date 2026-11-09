@@ -285,20 +285,32 @@ describe("the end of the queue", () => {
     expect(ctx.playback.getState().current?.trackId).toBe("t1");
   });
 
-  const failures: [string, HttpOutcome<UpNext>][] = [
-    ["a transport failure", failed],
-    ["track_not_found", { kind: "api_failure", reason: "track_not_found" }],
-    ["upstream_error", { kind: "api_failure", reason: "upstream_error" }],
-    ["upstream_timeout", { kind: "api_failure", reason: "upstream_timeout" }],
+  const failures: [string, HttpOutcome<UpNext>, string][] = [
+    ["a transport failure", failed, en.common.error.offline.title],
+    [
+      "track_not_found",
+      { kind: "api_failure", reason: "track_not_found" },
+      en.common.error.server.title,
+    ],
+    [
+      "upstream_error",
+      { kind: "api_failure", reason: "upstream_error" },
+      en.common.error.server.title,
+    ],
+    [
+      "upstream_timeout",
+      { kind: "api_failure", reason: "upstream_timeout" },
+      en.common.error.slow.title,
+    ],
   ];
 
   it.each(failures)(
     "pauses at the end when the suggestions failed with %s",
-    async (_name, outcome) => {
+    async (_name, outcome, title) => {
       const ctx = await setup({ getUpNext: () => Promise.resolve(outcome) });
       await play(ctx, ["t1", "t2"]);
       await openSheet();
-      expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+      expect(await screen.findByText(title)).toBeTruthy();
       expect(screen.getByRole("button", { name: en.common.retry })).toBeTruthy();
       await ended(ctx, 2);
       expect(ctx.playback.getState().status).toBe("paused");
@@ -350,7 +362,7 @@ describe("the autoplay switch", () => {
     const ctx = await setup({ storage });
     await play(ctx, ["t1", "t2"]);
     await openSheet();
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.server.title)).toBeTruthy();
     expect(screen.getByRole("button", { name: en.common.retry })).toBeTruthy();
     await ended(ctx, 2);
     expect(ctx.playback.getState().status).toBe("paused");

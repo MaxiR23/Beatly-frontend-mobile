@@ -1,24 +1,18 @@
 // INFO: the library tab: the fixed liked entry, then own playlists and saved albums, playlists and artists newest first, an all or artists filter (each its own list from the first page), and the create-playlist sheet.
 import { profileName, type LibraryEntry } from "@beatly/core";
 import { color, layout, spacing } from "@beatly/ui";
-import {
-  Chip,
-  EmptyState,
-  ErrorState,
-  IconButton,
-  LoadingState,
-  MediaRow,
-  Text,
-} from "@beatly/ui/native";
+import { Chip, EmptyState, IconButton, LoadingState, MediaRow, Text } from "@beatly/ui/native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { FlatList, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { queryFailure } from "../../queries/failureCause.ts";
 import { useLibrary, type LibraryFilter } from "../../queries/useLibrary.ts";
 import { useProfile } from "../../queries/useProfile.ts";
 import { AccountButton } from "../account/AccountButton.tsx";
+import { FailureState } from "../failure/FailureState.tsx";
 import { CreatePlaylistSheet } from "./CreatePlaylistSheet.tsx";
 import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 
@@ -73,21 +67,19 @@ export function LibraryScreen() {
     };
   };
 
+  const failure = queryFailure(library);
+
   let body;
-  if (library.isPending) {
+  if (failure !== null) {
+    body = (
+      <View style={[styles.state, clearance]}>
+        <FailureState cause={failure} onRetry={() => void library.refetch()} />
+      </View>
+    );
+  } else if (!library.isSuccess) {
     body = (
       <View style={[styles.state, clearance]}>
         <LoadingState label={tc("loading")} />
-      </View>
-    );
-  } else if (library.isError) {
-    body = (
-      <View style={[styles.state, clearance]}>
-        <ErrorState
-          message={tc("error.generic")}
-          retryLabel={tc("retry")}
-          onRetry={() => void library.refetch()}
-        />
       </View>
     );
   } else {

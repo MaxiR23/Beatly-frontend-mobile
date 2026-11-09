@@ -69,7 +69,7 @@ describe("the playlist picker", () => {
     const ctx = await openPicker({
       listPlaylists: () => Promise.resolve({ kind: "transport_failure", cause: "network" }),
     });
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.offline.title)).toBeTruthy();
     await fireEvent.press(screen.getByRole("button", { name: en.common.retry }));
     expect(ctx.listPlaylists).toHaveBeenCalledTimes(2);
   });

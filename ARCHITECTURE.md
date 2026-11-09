@@ -103,6 +103,8 @@ port because `core` never translates.
 `adapters/device.ts` wraps `expo-constants` and reads `Platform`. It has no
 port because `core` receives the device as a plain value.
 
+`adapters/network.ts` wraps `@react-native-community/netinfo`. It has no port because `core` never reads connectivity; `QueryProvider` connects it to TanStack Query's `onlineManager`, the one source of the app's connection state. Online means connected and the internet reachable (`null`, not yet known, counts as online). On Android the OS supplies reachability (the network's validated capability); on iOS the library probes it itself, to its default URL (a third-party host), which the adapter leaves unconfigured so that offline means only that the phone has no internet and a backend outage stays a server failure (ADR 036). `createCore` wraps the stream resolver with `resolveOnlyOnline`, so an offline start fails at once with `network`.
+
 The list grows by one row per adapter, in the same PR as the adapter,
 and the library's name is added to the adapter-only list in
 `eslint.config.js` in that same PR. The exception is a library that draws UI:

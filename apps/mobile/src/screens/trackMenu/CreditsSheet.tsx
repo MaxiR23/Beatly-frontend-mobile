@@ -1,12 +1,14 @@
 // INFO: the credits of a track as a sheet, from GET /tracks/{id}/credits: the performers, writers, producers, metadata provider and the other sections, each with its localized title and names; sections with no names are left out, none left draws the empty state, and loading and a failure with retry are drawn.
 import type { CreditSection, PlayableTrack } from "@beatly/core";
 import { spacing } from "@beatly/ui";
-import { EmptyState, ErrorState, LoadingState, Sheet, Text } from "@beatly/ui/native";
+import { EmptyState, LoadingState, Sheet, Text } from "@beatly/ui/native";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import { useT } from "../../adapters/i18n.ts";
 import { useWindowInsets } from "../../providers/WindowInsetsProvider.tsx";
+import { queryFailure } from "../../queries/failureCause.ts";
 import { useCredits } from "../../queries/useTracks.ts";
+import { FailureState } from "../failure/FailureState.tsx";
 import { useReduceMotion } from "../player/useReduceMotion.ts";
 
 interface CreditsSheetProps {
@@ -41,16 +43,11 @@ function CreditsBody({ trackId }: { trackId: string }) {
   const tp = useT("player");
   const credits = useCredits(trackId);
 
-  if (credits.isPending) return <LoadingState label={tc("loading")} />;
-  if (credits.isError) {
-    return (
-      <ErrorState
-        message={tc("error.generic")}
-        retryLabel={tc("retry")}
-        onRetry={() => void credits.refetch()}
-      />
-    );
+  const failure = queryFailure(credits);
+  if (failure !== null) {
+    return <FailureState cause={failure} onRetry={() => void credits.refetch()} />;
   }
+  if (!credits.isSuccess) return <LoadingState label={tc("loading")} />;
   const { performed_by, written_by, produced_by, music_metadata_provided_by, other_sections } =
     credits.data;
   const sections = [

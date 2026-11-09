@@ -652,7 +652,7 @@ describe("up next", () => {
   it("draws the error with retry, keeping the rest, and retry asks again", async () => {
     const ctx = await setup({ getUpNext: () => Promise.resolve(failed) });
     await openSheet();
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.offline.title)).toBeTruthy();
     expect(screen.getByText("Song t2")).toBeTruthy();
     await fireEvent.press(screen.getByRole("button", { name: en.common.retry }));
     expect(ctx.getUpNext).toHaveBeenCalledTimes(2);
@@ -738,7 +738,7 @@ describe("lyrics", () => {
     const ctx = await setup({ getLyrics: () => Promise.resolve(failed) });
     await openSheet();
     await selectTab(en.player.sheet.tabs.lyrics);
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.offline.title)).toBeTruthy();
     await fireEvent.press(screen.getByRole("button", { name: en.common.retry }));
     expect(ctx.getLyrics).toHaveBeenCalledTimes(2);
   });
@@ -846,7 +846,7 @@ describe("related", () => {
     const ctx = await setup({ getRelated: () => Promise.resolve(failed) });
     await openSheet();
     await selectTab(en.player.sheet.tabs.related);
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.offline.title)).toBeTruthy();
     await fireEvent.press(screen.getByRole("button", { name: en.common.retry }));
     expect(ctx.getRelated).toHaveBeenCalledTimes(2);
   });

@@ -25,11 +25,13 @@ import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { queryFailure } from "../../queries/failureCause.ts";
 import { useAlbum } from "../../queries/useAlbum.ts";
 import { useLibrarySaved, useSetSaved } from "../../queries/useLibrary.ts";
 import { useRegisterRecent } from "../../queries/useRecents.ts";
 import { OutcomeError } from "../../queries/outcomeError.ts";
 import { albumMeta } from "./albumMeta.ts";
+import { useFailureCopy } from "../failure/useFailureCopy.ts";
 import { toQueue, wholeQueue } from "../player/queue.ts";
 import { useListPlayback, useNowPlaying } from "../player/useNowPlaying.ts";
 import { usePlaybackActions } from "../player/usePlayback.ts";
@@ -58,6 +60,7 @@ function toPlayable(album: Album, track: AlbumTrack): PlayableTrack | null {
 export function AlbumScreen() {
   const t = useT("album");
   const tc = useT("common");
+  const failureCopy = useFailureCopy();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const tabBarClearance = useTabBarClearance();
@@ -96,18 +99,20 @@ export function AlbumScreen() {
     album.error.outcome.kind === "api_failure" &&
     album.error.outcome.reason === "invalid_request";
 
+  const failure = queryFailure(album);
+
   let body: DetailBody;
-  if (album.isPending) {
-    body = { kind: "loading", label: tc("loading") };
-  } else if (unavailable) {
+  if (unavailable) {
     body = { kind: "unavailable", message: t("notAvailable") };
-  } else if (album.isError) {
+  } else if (failure !== null) {
     body = {
       kind: "error",
-      message: tc("error.generic"),
-      retryLabel: tc("retry"),
+      cause: failure,
+      ...failureCopy(failure),
       onRetry: () => void album.refetch(),
     };
+  } else if (!album.isSuccess) {
+    body = { kind: "loading", label: tc("loading") };
   } else {
     const data = album.data;
     const playable = (track: AlbumTrack) => toPlayable(data, track);

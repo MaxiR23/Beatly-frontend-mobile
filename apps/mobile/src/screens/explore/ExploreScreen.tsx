@@ -1,13 +1,15 @@
 // INFO: the explore tab: the genres in the order the API sends them, each opening its genre screen.
 import { color, layout, spacing } from "@beatly/ui";
-import { EmptyState, ErrorState, GenreRow, LoadingState, Text, border } from "@beatly/ui/native";
+import { EmptyState, GenreRow, LoadingState, Text, border } from "@beatly/ui/native";
 import { useRouter } from "expo-router";
 import { FlatList, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { queryFailure } from "../../queries/failureCause.ts";
 import { useGenres } from "../../queries/useGenres.ts";
 import { AccountButton } from "../account/AccountButton.tsx";
+import { FailureState } from "../failure/FailureState.tsx";
 import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 
 export function ExploreScreen() {
@@ -19,21 +21,19 @@ export function ExploreScreen() {
 
   const clearance = { paddingBottom: tabBarClearance };
 
+  const failure = queryFailure(genres);
+
   let body;
-  if (genres.isPending) {
+  if (failure !== null) {
+    body = (
+      <View style={[styles.state, clearance]}>
+        <FailureState cause={failure} onRetry={() => void genres.refetch()} />
+      </View>
+    );
+  } else if (!genres.isSuccess) {
     body = (
       <View style={[styles.state, clearance]}>
         <LoadingState label={tc("loading")} />
-      </View>
-    );
-  } else if (genres.isError) {
-    body = (
-      <View style={[styles.state, clearance]}>
-        <ErrorState
-          message={tc("error.generic")}
-          retryLabel={tc("retry")}
-          onRetry={() => void genres.refetch()}
-        />
       </View>
     );
   } else if (genres.data.length === 0) {

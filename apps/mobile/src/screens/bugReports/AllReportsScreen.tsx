@@ -5,7 +5,6 @@ import {
   Badge,
   Chip,
   EmptyState,
-  ErrorState,
   IconButton,
   LoadingState,
   MediaRow,
@@ -17,8 +16,10 @@ import { FlatList, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { queryFailure } from "../../queries/failureCause.ts";
 import { OutcomeError } from "../../queries/outcomeError.ts";
 import { useAllBugReports, type BugReportFilter } from "../../queries/useBugReports.ts";
+import { FailureState } from "../failure/FailureState.tsx";
 import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 import { reportDate } from "./reportDate.ts";
 import { useSheetPresence } from "../trackMenu/useSheetPresence.ts";
@@ -60,19 +61,15 @@ export function AllReportsScreen() {
     return parts.join(t("list.metaSeparator"));
   };
 
+  const failure = queryFailure(reports);
+
   let body: ReactNode;
   if (isForbidden(reports.error)) {
     body = <EmptyState icon="flag" message={t("triage.forbidden")} />;
-  } else if (reports.isPending) {
+  } else if (failure !== null) {
+    body = <FailureState cause={failure} onRetry={() => void reports.refetch()} />;
+  } else if (!reports.isSuccess) {
     body = <LoadingState label={tc("loading")} />;
-  } else if (reports.isError) {
-    body = (
-      <ErrorState
-        message={tc("error.generic")}
-        retryLabel={tc("retry")}
-        onRetry={() => void reports.refetch()}
-      />
-    );
   } else if (reports.data.length === 0) {
     body = <EmptyState icon="inbox" message={t(`triage.empty.${filter}`)} />;
   } else {

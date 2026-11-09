@@ -6,7 +6,8 @@
 // - ExploreScreen
 //
 // What is covered:
-// - loading, the genres in API order, the push to a genre, the empty state, the generic error with retry
+// - loading, the genres in API order, the push to a genre, the empty state, the error with its cause and retry
+// - offline: a network failure draws the offline cause and loads by itself when the connection returns; a screen opened offline draws the offline cause without calling the route and loads when it returns
 // - the account sheet, en and es
 //
 // Run with: pnpm --filter @beatly/mobile test -- ExploreScreen
@@ -15,7 +16,8 @@
 
 import type { HttpOutcome, PageResult } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { onlineManager } from "@tanstack/react-query";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
@@ -29,6 +31,7 @@ jest.mock("expo-router", () => ({
 }));
 
 afterEach(async () => {
+  onlineManager.setOnline(true);
   mockPush.mockClear();
   await i18n.changeLanguage("en");
 });
@@ -86,9 +89,39 @@ describe("ExploreScreen", () => {
     expect(screen.queryByText(en.common.retry)).toBeNull();
   });
 
-  it("draws the generic error and retries", async () => {
+  it("draws the offline cause and loads by itself when the connection returns", async () => {
+    const listGenres = jest
+      .fn<ReturnType<typeof makeCore>["listGenres"]>()
+      .mockResolvedValueOnce({ kind: "transport_failure", cause: "network" })
+      .mockResolvedValue(pageOf(genres));
+    await setup({ listGenres });
+    expect(await screen.findByText(en.common.error.offline.title)).toBeTruthy();
+    await act(() => {
+      onlineManager.setOnline(false);
+    });
+    await act(() => {
+      onlineManager.setOnline(true);
+    });
+    expect(await screen.findByText("Pop")).toBeTruthy();
+    expect(screen.queryByText(en.common.error.offline.title)).toBeNull();
+    expect(listGenres).toHaveBeenCalledTimes(2);
+  });
+
+  it("draws the offline cause for a screen opened offline and loads when the connection returns", async () => {
+    onlineManager.setOnline(false);
+    const ctx = await setup({ listGenres: () => Promise.resolve(pageOf(genres)) });
+    expect(await screen.findByText(en.common.error.offline.title)).toBeTruthy();
+    expect(ctx.listGenres).not.toHaveBeenCalled();
+    await act(() => {
+      onlineManager.setOnline(true);
+    });
+    expect(await screen.findByText("Pop")).toBeTruthy();
+    expect(ctx.listGenres).toHaveBeenCalledTimes(1);
+  });
+
+  it("draws the server cause and retries", async () => {
     const ctx = await setup({ listGenres: () => Promise.resolve(failure) });
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.server.title)).toBeTruthy();
     await fireEvent.press(screen.getByText(en.common.retry));
     await waitFor(() => {
       expect(ctx.listGenres).toHaveBeenCalledTimes(2);

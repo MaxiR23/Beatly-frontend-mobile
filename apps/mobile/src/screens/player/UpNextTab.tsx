@@ -1,13 +1,15 @@
 // INFO: the up next tab of the player sheet: the rest of the queue (a press jumps inside it), then the suggestions of the source (the up next of the track it started on, with the source, requested once per source when this tab opens or the last track starts, and never refetched by the tab) without that first track, under the autoplay switch, with autoplay on a divider between the rest of the queue and the suggestions when both have rows, and with autoplay off only the rest, without the suggestions' loading or error (a press plays the suggestions from it under a track source of that track); the rest of the queue is local, so it is drawn while the suggestions load or fail; every row ends with the track menu button; a row of the current track (a later repeat in the rest of the queue) is marked.
 import type { PlayableTrack } from "@beatly/core";
 import { color, layout } from "@beatly/ui";
-import { EmptyState, ErrorState, LoadingState, MediaRow, border } from "@beatly/ui/native";
+import { EmptyState, LoadingState, MediaRow, border } from "@beatly/ui/native";
 import { useEffect, type ReactElement } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
 
 import { useT } from "../../adapters/i18n.ts";
+import { queryFailure } from "../../queries/failureCause.ts";
 import { useAutoplaySetting } from "../../queries/useAutoplay.ts";
 import { useUpNext } from "../../queries/useTracks.ts";
+import { FailureState } from "../failure/FailureState.tsx";
 import { TrackMenuButton } from "../trackMenu/TrackMenuButton.tsx";
 import { AutoplaySwitch } from "./AutoplaySwitch.tsx";
 import { suggestionsOf } from "./queue.ts";
@@ -77,16 +79,11 @@ export function UpNextTab({ seed, onAtTopChange }: UpNextTabProps) {
   }
 
   let footer: ReactElement | undefined;
-  if (autoplay && upNext.isPending) {
+  const failure = autoplay ? queryFailure(upNext) : null;
+  if (failure !== null) {
+    footer = <FailureState cause={failure} onRetry={() => void upNext.refetch()} />;
+  } else if (autoplay && upNext.isPending) {
     footer = <LoadingState label={tc("loading")} />;
-  } else if (autoplay && upNext.isError) {
-    footer = (
-      <ErrorState
-        message={tc("error.generic")}
-        retryLabel={tc("retry")}
-        onRetry={() => void upNext.refetch()}
-      />
-    );
   } else if (rows.length === 0) {
     footer = <EmptyState icon="music" message={t("sheet.upNextEmpty")} />;
   }

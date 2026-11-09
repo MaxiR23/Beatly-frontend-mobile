@@ -7,6 +7,7 @@
 //
 // What is covered:
 // - inside a native tab, the clearance is built on the window's bottom inset (34), not the tab's (83), without and with a track loaded
+// - the strip's room is added while offline, on iOS by the pill formula and on Android by dockedTabBarHeight
 // - on Android, the clearance is the docked bar's height from dockedTabBarHeight
 //
 // Run with: pnpm --filter @beatly/mobile test -- useTabBarClearance
@@ -15,6 +16,7 @@
 
 import type { PlayableTrack } from "@beatly/core";
 import { afterEach, describe, expect, it } from "@jest/globals";
+import { onlineManager } from "@tanstack/react-query";
 import { dockedTabBarHeight, floatingTabBarClearance } from "@beatly/ui/native";
 import { act, render, screen } from "@testing-library/react-native";
 import { Platform, Text } from "react-native";
@@ -54,6 +56,31 @@ async function setup() {
 describe("useTabBarClearance", () => {
   afterEach(() => {
     Platform.OS = "ios";
+    onlineManager.setOnline(true);
+  });
+
+  it("adds the strip while offline on iOS", async () => {
+    const ctx = await setup();
+    await act(async () => {
+      await ctx.playback.playList([track("1")], 0, source);
+    });
+    await act(() => {
+      onlineManager.setOnline(false);
+    });
+    expect(screen.getByTestId("clearance").props.children).toBe(
+      String(floatingTabBarClearance(windowMetrics.insets.bottom, true, true)),
+    );
+  });
+
+  it("adds the strip while offline on Android", async () => {
+    Platform.OS = "android";
+    await setup();
+    await act(() => {
+      onlineManager.setOnline(false);
+    });
+    expect(screen.getByTestId("clearance").props.children).toBe(
+      String(dockedTabBarHeight(windowMetrics.insets.bottom, false, true)),
+    );
   });
 
   it("builds the clearance on the window's bottom inset inside a native tab", async () => {

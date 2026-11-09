@@ -27,7 +27,7 @@ import { Cover } from "./Cover.tsx";
 import { collapsePhase, collapseRanges, type CollapsePhase } from "./detailCollapse.ts";
 import { DetailSkeleton, SkeletonRow } from "./DetailSkeleton.tsx";
 import { EmptyState } from "./EmptyState.tsx";
-import { ErrorState } from "./ErrorState.tsx";
+import { ErrorState, type ErrorCause } from "./ErrorState.tsx";
 import { GlassSurface } from "./GlassSurface.tsx";
 import { GradientFill } from "./GradientFill.tsx";
 import type { IconName } from "./Icon.tsx";
@@ -47,7 +47,14 @@ export interface DetailRow {
 
 export type DetailBody =
   | { kind: "loading"; label: string; hero?: "cover" | "image" | undefined }
-  | { kind: "error"; message: string; retryLabel: string; onRetry: () => void }
+  | {
+      kind: "error";
+      cause: ErrorCause;
+      title: string;
+      message: string;
+      retryLabel: string;
+      onRetry: () => void;
+    }
   | { kind: "unavailable"; message: string }
   | {
       kind: "ready";
@@ -298,7 +305,13 @@ export function DetailScreen({
       ) : null}
       {body.kind === "error" ? (
         <View style={[styles.fill, belowButtons]}>
-          <ErrorState message={body.message} retryLabel={body.retryLabel} onRetry={body.onRetry} />
+          <ErrorState
+            cause={body.cause}
+            title={body.title}
+            message={body.message}
+            retryLabel={body.retryLabel}
+            onRetry={body.onRetry}
+          />
         </View>
       ) : null}
       {body.kind === "unavailable" ? (

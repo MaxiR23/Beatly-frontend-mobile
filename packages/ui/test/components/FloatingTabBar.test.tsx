@@ -6,6 +6,7 @@
 // - FloatingTabBar
 // - floatingTabBarClearance
 // - dockedTabBarHeight
+// - floatingTabBarStackHeight
 //
 // What is covered:
 // - icon-only tabs with roles and labels, the selected one, the press, the clearance formula
@@ -14,6 +15,7 @@
 // - on Android: the docked full-width block instead of the pill, icon and visible name per tab, the selected tab's
 //   role and tone, Home filled only when selected, the fade only above the tab row and the opaque base under the row and the inset, the accessory's side inset and
 //   gap, the block's height and the clearance from dockedTabBarHeight
+// - the status strip above the accessory in both bars (the pill's accessory width, the block's sides inside the fade), the heights and clearances that include it
 //
 // Run with: pnpm --filter @beatly/ui test -- FloatingTabBar
 //
@@ -27,6 +29,7 @@ import {
   dockedTabBarHeight,
   FloatingTabBar,
   floatingTabBarClearance,
+  floatingTabBarStackHeight,
 } from "../../src/components/FloatingTabBar.tsx";
 import { color } from "../../src/tokens/color.ts";
 import { icon } from "../../src/tokens/icon.ts";
@@ -59,6 +62,19 @@ function glyphs(tree: unknown): JsonNode[] {
 afterEach(() => {
   Platform.OS = "ios";
 });
+
+// The testIDs of the rendered tree, in document order.
+function testIds(tree: unknown): string[] {
+  const found: string[] = [];
+  const visit = (node: unknown) => {
+    if (Array.isArray(node)) node.forEach(visit);
+    if (!isJsonNode(node)) return;
+    if (typeof node.props.testID === "string") found.push(node.props.testID);
+    visit(node.children);
+  };
+  visit(tree);
+  return found;
+}
 
 interface ReactNativeView {
   View: unknown;
@@ -313,4 +329,128 @@ describe("dockedTabBarHeight", () => {
     expect(floatingTabBarClearance(10)).toBe(dockedTabBarHeight(10));
     expect(floatingTabBarClearance(10, true)).toBe(dockedTabBarHeight(10, true));
   });
+});
+
+describe("status strip", () => {
+  it("draws the status above the accessory at its width on the pill", async () => {
+    await render(
+      <FloatingTabBar
+        tabs={makeTabs()}
+        bottomInset={0}
+        accessory={<Text>mini</Text>}
+        status={<Text>offline</Text>}
+      />,
+    );
+    const ids = testIds(screen.toJSON());
+    expect(ids.indexOf("tab-status")).toBeGreaterThanOrEqual(0);
+    expect(ids.indexOf("tab-status")).toBeLessThan(ids.indexOf("tab-accessory"));
+    expect(screen.getByTestId("tab-status")).toHaveStyle({
+      width: Dimensions.get("window").width - 2 * layout.gutter,
+      marginBottom: spacing.xs,
+    });
+  });
+
+  it("draws the status above the pill without an accessory", async () => {
+    await render(
+      <FloatingTabBar tabs={makeTabs()} bottomInset={0} status={<Text>offline</Text>} />,
+    );
+    const ids = testIds(screen.toJSON());
+    expect(ids.indexOf("tab-status")).toBeLessThan(ids.indexOf("tab-pill"));
+    expect(screen.queryByTestId("tab-accessory")).toBeNull();
+  });
+
+  it("draws no status view without one", async () => {
+    await render(<FloatingTabBar tabs={makeTabs()} bottomInset={0} />);
+    expect(screen.queryByTestId("tab-status")).toBeNull();
+  });
+
+  describe("on Android", () => {
+    beforeEach(() => {
+      Platform.OS = "android";
+    });
+
+    it("rests the status inside the block above the mini player, spacing.sm from the sides", async () => {
+      await render(
+        <FloatingTabBar
+          tabs={makeTabs()}
+          bottomInset={10}
+          accessory={<Text>mini</Text>}
+          status={<Text>offline</Text>}
+        />,
+      );
+      expect(screen.getByTestId("tab-status")).toHaveStyle({
+        marginHorizontal: spacing.sm,
+        marginBottom: spacing.xs,
+      });
+      const ids = testIds(screen.toJSON());
+      expect(ids.indexOf("tab-status")).toBeLessThan(ids.indexOf("tab-accessory"));
+      expect(ids.indexOf("tab-accessory")).toBeLessThan(ids.indexOf("tab-row"));
+    });
+
+    it("rests the status above the tab row without an accessory", async () => {
+      await render(
+        <FloatingTabBar tabs={makeTabs()} bottomInset={10} status={<Text>offline</Text>} />,
+      );
+      const ids = testIds(screen.toJSON());
+      expect(ids.indexOf("tab-status")).toBeLessThan(ids.indexOf("tab-row"));
+    });
+
+    it("sizes the block with the status from dockedTabBarHeight", async () => {
+      const { rerender } = await render(
+        <FloatingTabBar
+          tabs={makeTabs()}
+          bottomInset={10}
+          accessory={<Text>mini</Text>}
+          status={<Text>offline</Text>}
+        />,
+      );
+      expect(screen.getByTestId("tab-dock")).toHaveStyle({
+        height: dockedTabBarHeight(10, true, true),
+      });
+      await rerender(
+        <FloatingTabBar tabs={makeTabs()} bottomInset={10} status={<Text>offline</Text>} />,
+      );
+      expect(screen.getByTestId("tab-dock")).toHaveStyle({
+        height: dockedTabBarHeight(10, false, true),
+      });
+    });
+
+    it("keeps the fade ending where the tab row starts, spanning the strip", async () => {
+      await render(
+        <FloatingTabBar
+          tabs={makeTabs()}
+          bottomInset={10}
+          accessory={<Text>mini</Text>}
+          status={<Text>offline</Text>}
+        />,
+      );
+      const rowHeight = dockedTabBarHeight(0) - spacing.xl;
+      const fade = flatStyle(screen.getByTestId("tab-dock-fade").props.style);
+      expect(fade.bottom).toBe(rowHeight + 10);
+      expect(fade.top).toBe(0);
+    });
+
+    it.each([false, true])("makes the clearance the block's height (accessory %s)", (a) => {
+      expect(floatingTabBarClearance(10, a, true)).toBe(dockedTabBarHeight(10, a, true));
+    });
+  });
+
+  it.each([false, true])("adds the strip and its gap to the height (accessory %s)", (a) => {
+    expect(dockedTabBarHeight(10, a, true) - dockedTabBarHeight(10, a)).toBe(
+      layout.statusStripHeight + spacing.xs,
+    );
+  });
+
+  it.each([false, true])("adds the strip and its gap to the iOS clearance (accessory %s)", (a) => {
+    expect(floatingTabBarClearance(10, a, true) - floatingTabBarClearance(10, a)).toBe(
+      layout.statusStripHeight + spacing.xs,
+    );
+  });
+
+  it.each([false, true])(
+    "keeps the stack height plus one section gap as the clearance (accessory %s)",
+    (a) => {
+      expect(floatingTabBarStackHeight(10, a) + spacing.xl).toBe(floatingTabBarClearance(10, a));
+    },
+  );
 });

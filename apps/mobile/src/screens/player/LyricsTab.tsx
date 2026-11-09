@@ -1,12 +1,14 @@
 // INFO: the lyrics tab of the player sheet, from GET /tracks/{id}/lyrics: synced lyrics follow the song (the playing line in the primary tone, centered, a press seeks to its start), plain lyrics are drawn as they come, lyrics null or without lines draw the empty state.
 import { layout, spacing } from "@beatly/ui";
-import { EmptyState, ErrorState, LoadingState, Text } from "@beatly/ui/native";
+import { EmptyState, LoadingState, Text } from "@beatly/ui/native";
 import type { LyricsLine } from "@beatly/core";
 import { useEffect, useRef } from "react";
 import { FlatList, Pressable, ScrollView, StyleSheet } from "react-native";
 
 import { useT } from "../../adapters/i18n.ts";
+import { queryFailure } from "../../queries/failureCause.ts";
 import { useLyrics } from "../../queries/useTracks.ts";
+import { FailureState } from "../failure/FailureState.tsx";
 import { currentLineIndex } from "./lyricsLine.ts";
 import { usePlayback, usePlaybackActions } from "./usePlayback.ts";
 import { useReduceMotion } from "./useReduceMotion.ts";
@@ -43,16 +45,11 @@ export function LyricsTab({ trackId, onAtTopChange }: LyricsTabProps) {
     onAtTopChange(offset <= 0);
   };
 
-  if (lyrics.isPending) return <LoadingState label={tc("loading")} />;
-  if (lyrics.isError) {
-    return (
-      <ErrorState
-        message={tc("error.generic")}
-        retryLabel={tc("retry")}
-        onRetry={() => void lyrics.refetch()}
-      />
-    );
+  const failure = queryFailure(lyrics);
+  if (failure !== null) {
+    return <FailureState cause={failure} onRetry={() => void lyrics.refetch()} />;
   }
+  if (lyrics.isPending) return <LoadingState label={tc("loading")} />;
   if (data === null || lines.length === 0) {
     return <EmptyState icon="music" message={t("sheet.lyricsEmpty")} />;
   }

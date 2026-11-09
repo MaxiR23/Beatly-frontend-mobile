@@ -8,6 +8,7 @@ export default {
   setupFiles: [
     "<rootDir>/test/setup/glass.ts",
     "<rootDir>/test/setup/nativeMenu.ts",
+    "<rootDir>/test/setup/network.ts",
     "<rootDir>/test/setup/queryNotify.ts",
   ],
   transformIgnorePatterns: [

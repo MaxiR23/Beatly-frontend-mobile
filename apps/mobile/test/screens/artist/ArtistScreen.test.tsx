@@ -342,11 +342,17 @@ describe("ArtistScreen", () => {
       const ctx = await setup({
         getArtist: () => Promise.resolve({ kind: "api_failure", reason }),
       });
-      expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+      expect(
+        await screen.findByText(
+          reason === "upstream_timeout" ? en.common.error.slow.title : en.common.error.server.title,
+        ),
+      ).toBeTruthy();
       expect(screen.queryByText(en.artist.notAvailable)).toBeNull();
       const before = ctx.getArtist.mock.calls.length;
       await fireEvent.press(screen.getByRole("button", { name: en.common.retry }));
-      await screen.findByText(en.common.error.generic);
+      await screen.findByText(
+        reason === "upstream_timeout" ? en.common.error.slow.title : en.common.error.server.title,
+      );
       expect(ctx.getArtist.mock.calls.length).toBeGreaterThan(before);
     },
   );
@@ -355,7 +361,7 @@ describe("ArtistScreen", () => {
     await setup({
       getArtist: () => Promise.resolve({ kind: "transport_failure", cause: "network" }),
     });
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.offline.title)).toBeTruthy();
     expect(screen.getByRole("button", { name: en.common.retry })).toBeTruthy();
   });
 

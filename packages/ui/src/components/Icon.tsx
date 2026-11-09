@@ -33,7 +33,9 @@ import {
   SkipForward,
   Star,
   Trash,
+  TriangleAlert,
   User,
+  WifiOff,
   X,
 } from "lucide-react-native";
 
@@ -42,6 +44,7 @@ import { isAndroidVariant } from "./platform.ts";
 import { toneColor, type Tone } from "./tone.ts";
 
 const glyphs = {
+  alert: TriangleAlert,
   check: Check,
   chevronDown: ChevronDown,
   chevronRight: ChevronRight,
@@ -70,6 +73,7 @@ const glyphs = {
   star: Star,
   trash: Trash,
   user: User,
+  wifiOff: WifiOff,
   x: X,
 } as const;
 

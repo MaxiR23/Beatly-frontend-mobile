@@ -1,7 +1,19 @@
 {
   "loading": "Loading…",
   "error": {
-    "generic": "Something went wrong"
+    "generic": "Something went wrong",
+    "offline": {
+      "title": "No connection",
+      "body": "Check your wifi or mobile data. This will load on its own when you're back online."
+    },
+    "slow": {
+      "title": "This is taking too long",
+      "body": "The connection is slow or the server isn't responding. Try again in a while."
+    },
+    "server": {
+      "title": "Something went wrong",
+      "body": "It's not your connection: the problem is on our side. Try again in a while."
+    }
   },
   "retry": "Retry",
   "brand": "Beatly",
@@ -20,5 +32,13 @@
     "viewProfile": "View profile",
     "noName": "No name",
     "profileRow": "{{name}}, view profile"
+  },
+  "connection": {
+    "offline": "No connection. You'll see what's already loaded."
+  },
+  "unexpected": {
+    "title": "Something broke",
+    "body": "It's not your fault. Go back home to keep listening.",
+    "home": "Back to home"
   }
 }

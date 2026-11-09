@@ -44,13 +44,13 @@ lifts above the keyboard with padding on iOS; on Android the window resizes.
 
 ## States
 
-| State            | What is drawn                                                         | i18n keys                                         |
-| ---------------- | --------------------------------------------------------------------- | ------------------------------------------------- |
-| Loading          | `LoadingState`                                                        | `common:loading`                                  |
-| With data        | the rows in the API's order                                           | `library:liked`, `library:kind.*`, `library:meta` |
-| Expected empty   | the liked row plus an `EmptyState` (the library is never `items: []`) | `library:empty`                                   |
-| Error with retry | `ErrorState`, retry refetches                                         | `common:error.generic`, `common:retry`            |
-| Artists empty    | `EmptyState`, no retry (`items: []`)                                  | `library:emptyArtists`                            |
+| State            | What is drawn                                                         | i18n keys                                                         |
+| ---------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Loading          | `LoadingState`                                                        | `common:loading`                                                  |
+| With data        | the rows in the API's order                                           | `library:liked`, `library:kind.*`, `library:meta`                 |
+| Expected empty   | the liked row plus an `EmptyState` (the library is never `items: []`) | `library:empty`                                                   |
+| Error with retry | `FailureState` (cause from `queryFailure`), retry refetches           | `common:error.{offline,slow,server}.{title,body}`, `common:retry` |
+| Artists empty    | `EmptyState`, no retry (`items: []`)                                  | `library:emptyArtists`                                            |
 
 The sheet also draws: idle, name too long (inline error, Create disabled),
 submitting (Create loading) and failed (inline `common:error.generic`, the sheet

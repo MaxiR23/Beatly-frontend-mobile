@@ -194,7 +194,6 @@ const sites: readonly Site[] = [
       <MiniPlayer
         title="Song"
         subtitle="Artist"
-        failed={false}
         image={null}
         tint={null}
         surface="bare"
@@ -217,7 +216,6 @@ const sites: readonly Site[] = [
       <MiniPlayer
         title="Song"
         subtitle="Artist"
-        failed={false}
         image={null}
         tint={null}
         surface="bare"
@@ -241,7 +239,6 @@ const sites: readonly Site[] = [
       <MiniPlayer
         title="Song"
         subtitle="Artist"
-        failed={false}
         image={null}
         tint={null}
         surface="bare"

@@ -17,7 +17,7 @@
 
 import type { PlayableTrack } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import { act, fireEvent, render, screen } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
@@ -122,13 +122,16 @@ describe("MiniPlayerBar", () => {
     expect(screen.getByText("Ann, Bob")).toBeTruthy();
   });
 
-  it("draws the error line instead of the artists on a resolution failure", async () => {
+  it("keeps the artists on a resolution failure", async () => {
     const ctx = await setup({
       resolve: () => Promise.resolve({ kind: "failure", cause: "unplayable" }),
     });
     await start(ctx);
-    expect(screen.getByText(en.player.error.unplayable)).toBeTruthy();
-    expect(screen.queryByText("Ann, Bob")).toBeNull();
+    const bar = within(screen.getByTestId("mini-player"));
+    expect(bar.getByText("Ann, Bob")).toBeTruthy();
+    for (const text of Object.values(en.player.strip)) {
+      expect(bar.queryByText(text)).toBeNull();
+    }
   });
 
   it("draws bare when asked, and not by default", async () => {

@@ -5,7 +5,6 @@ import { color, layout, spacing } from "@beatly/ui";
 import {
   Carousel,
   EmptyState,
-  ErrorState,
   Link,
   LoadingState,
   MediaRow,
@@ -21,6 +20,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { queryFailure } from "../../queries/failureCause.ts";
 import {
   useAddRecentSearch,
   useClearRecentSearches,
@@ -28,6 +28,7 @@ import {
   useRemoveRecentSearch,
 } from "../../queries/useRecentSearches.ts";
 import { useSearch } from "../../queries/useSearch.ts";
+import { FailureState } from "../failure/FailureState.tsx";
 import { AccountButton } from "../account/AccountButton.tsx";
 import { formatDuration } from "./formatDuration.ts";
 import { useDebouncedValue } from "./useDebouncedValue.ts";
@@ -92,22 +93,15 @@ export function SearchScreen() {
     },
   });
 
+  const recentsFailure = queryFailure(recents);
+  const resultsFailure = queryFailure(results);
+
   let body;
   if (trimmed === "") {
-    if (recents.isPending) {
+    if (recentsFailure !== null) {
       body = (
         <View style={[styles.state, clearance]}>
-          <LoadingState label={tc("loading")} />
-        </View>
-      );
-    } else if (recents.isError) {
-      body = (
-        <View style={[styles.state, clearance]}>
-          <ErrorState
-            message={tc("error.generic")}
-            retryLabel={tc("retry")}
-            onRetry={() => void recents.refetch()}
-          />
+          <FailureState cause={recentsFailure} onRetry={() => void recents.refetch()} />
           <View style={styles.recoverAction}>
             <Link
               label={t("recent.clearAll")}
@@ -116,6 +110,12 @@ export function SearchScreen() {
               }}
             />
           </View>
+        </View>
+      );
+    } else if (!recents.isSuccess) {
+      body = (
+        <View style={[styles.state, clearance]}>
+          <LoadingState label={tc("loading")} />
         </View>
       );
     } else if (recents.data.length === 0) {
@@ -161,20 +161,16 @@ export function SearchScreen() {
         </ScrollView>
       );
     }
-  } else if (active === "" || results.isPending) {
+  } else if (active !== "" && resultsFailure !== null) {
+    body = (
+      <View style={[styles.state, clearance]}>
+        <FailureState cause={resultsFailure} onRetry={() => void results.refetch()} />
+      </View>
+    );
+  } else if (active === "" || !results.isSuccess) {
     body = (
       <View style={[styles.state, clearance]}>
         <LoadingState label={tc("loading")} />
-      </View>
-    );
-  } else if (results.isError) {
-    body = (
-      <View style={[styles.state, clearance]}>
-        <ErrorState
-          message={tc("error.generic")}
-          retryLabel={tc("retry")}
-          onRetry={() => void results.refetch()}
-        />
       </View>
     );
   } else if (

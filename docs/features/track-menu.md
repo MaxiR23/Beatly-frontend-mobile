@@ -44,23 +44,23 @@ Token names only.
 
 The picker:
 
-| State            | What is drawn                                                                                                                                          | i18n keys                                                                                                         |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| Loading          | `LoadingState` under the title and the New playlist row                                                                                                | `common:loading`                                                                                                  |
-| With data        | the playlists, the ones holding the track checked; a tap adds, then a confirmation replaces the body and the sheet closes                              | `trackMenu:picker.title`, `trackMenu:picker.newPlaylist`, `trackMenu:picker.inPlaylist`, `trackMenu:picker.added` |
-| Expected empty   | `EmptyState` under the New playlist row                                                                                                                | `trackMenu:picker.empty`                                                                                          |
-| Error with retry | `ErrorState`; retry refetches the query that failed. A failed add is an inline `typography.meta` line in `color.status.error` and the sheet stays open | `common:error.generic`, `common:retry`                                                                            |
+| State            | What is drawn                                                                                                                                                                        | i18n keys                                                                                                         |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Loading          | `LoadingState` under the title and the New playlist row                                                                                                                              | `common:loading`                                                                                                  |
+| With data        | the playlists, the ones holding the track checked; a tap adds, then a confirmation replaces the body and the sheet closes                                                            | `trackMenu:picker.title`, `trackMenu:picker.newPlaylist`, `trackMenu:picker.inPlaylist`, `trackMenu:picker.added` |
+| Expected empty   | `EmptyState` under the New playlist row                                                                                                                                              | `trackMenu:picker.empty`                                                                                          |
+| Error with retry | `FailureState` (cause from `queryFailure`); retry refetches the query that failed. A failed add is an inline `typography.meta` line in `color.status.error` and the sheet stays open | `common:error.{offline,slow,server}.{title,body}`, `common:retry`                                                 |
 
 New playlist: `trackMenu:picker.name`, `trackMenu:picker.nameTooLong`, `trackMenu:picker.create`, `trackMenu:picker.cancel`.
 
 The credits:
 
-| State            | What is drawn                                                                    | i18n keys                                           |
-| ---------------- | -------------------------------------------------------------------------------- | --------------------------------------------------- |
-| Loading          | `LoadingState`                                                                   | `common:loading`                                    |
-| With data        | each section with a non-empty `names`, the four typed ones then `other_sections` | `trackMenu:credits.title`, `player:artistSeparator` |
-| Expected empty   | `EmptyState` when no section has names                                           | `trackMenu:credits.empty`                           |
-| Error with retry | `ErrorState`; retry refetches                                                    | `common:error.generic`, `common:retry`              |
+| State            | What is drawn                                                                    | i18n keys                                                         |
+| ---------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Loading          | `LoadingState`                                                                   | `common:loading`                                                  |
+| With data        | each section with a non-empty `names`, the four typed ones then `other_sections` | `trackMenu:credits.title`, `player:artistSeparator`               |
+| Expected empty   | `EmptyState` when no section has names                                           | `trackMenu:credits.empty`                                         |
+| Error with retry | `FailureState` (cause from `queryFailure`); retry refetches                      | `common:error.{offline,slow,server}.{title,body}`, `common:retry` |
 
 A failed like or a failed remove draws the floating notice with `common:error.generic`. The button's label is `trackMenu:more` and the sheets' close label `trackMenu:close`.
 

@@ -183,7 +183,7 @@ describe("HomeScreen", () => {
 
   it("draws the generic error when recents fail and retry refetches only them", async () => {
     const ctx = await setup({ listRecents: () => Promise.resolve(failure) });
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.server.title)).toBeTruthy();
     await fireEvent.press(screen.getByText(en.common.retry));
     await waitFor(() => {
       expect(ctx.listRecents).toHaveBeenCalledTimes(2);
@@ -537,21 +537,33 @@ describe("HomeScreen", () => {
       expect(screen.queryByText(en.home.empty)).toBeNull();
     });
 
-    const failures: [string, HttpOutcome<Recommendations>][] = [
-      ["unauthorized", { kind: "api_failure", reason: "unauthorized" }],
-      ["upstream_error", { kind: "api_failure", reason: "upstream_error" }],
-      ["upstream_timeout", { kind: "api_failure", reason: "upstream_timeout" }],
-      ["a timeout", { kind: "transport_failure", cause: "timeout" }],
+    const failures: [string, HttpOutcome<Recommendations>, string][] = [
+      [
+        "unauthorized",
+        { kind: "api_failure", reason: "unauthorized" },
+        en.common.error.server.title,
+      ],
+      [
+        "upstream_error",
+        { kind: "api_failure", reason: "upstream_error" },
+        en.common.error.server.title,
+      ],
+      [
+        "upstream_timeout",
+        { kind: "api_failure", reason: "upstream_timeout" },
+        en.common.error.slow.title,
+      ],
+      ["a timeout", { kind: "transport_failure", cause: "timeout" }, en.common.error.slow.title],
     ];
     it.each(failures)(
       "hides the recommendation sections on %s and draws the error with retry, keeping recents and playlists",
-      async (_name, outcome) => {
+      async (_name, outcome, title) => {
         const ctx = await setup({
           ...full,
           generateRecommendations: () => Promise.resolve(outcome),
         });
         const error = within(await screen.findByTestId("recommendations-error"));
-        expect(error.getByText(en.common.error.generic)).toBeTruthy();
+        expect(error.getByText(title)).toBeTruthy();
         expect(screen.queryByTestId("carousel-skeleton")).toBeNull();
         for (const id of ids.filter((id) => id.startsWith("rec-"))) {
           expect(screen.queryByTestId(id)).toBeNull();

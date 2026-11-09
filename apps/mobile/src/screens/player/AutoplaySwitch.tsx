@@ -1,10 +1,12 @@
 // INFO: the autoplay switch at the top of up next: the stored setting in a SwitchRow; a failed read draws the error with retry, a failed write the generic error line; nothing while the first read is pending (the root Autoplay has read it already).
 import { layout, spacing } from "@beatly/ui";
-import { ErrorState, SwitchRow, ErrorText } from "@beatly/ui/native";
+import { SwitchRow, ErrorText } from "@beatly/ui/native";
 import { StyleSheet, View } from "react-native";
 
 import { useT } from "../../adapters/i18n.ts";
+import { queryFailure } from "../../queries/failureCause.ts";
 import { useAutoplaySetting, useSetAutoplay } from "../../queries/useAutoplay.ts";
+import { FailureState } from "../failure/FailureState.tsx";
 
 interface AutoplaySwitchProps {
   reduceMotion: boolean;
@@ -16,14 +18,11 @@ export function AutoplaySwitch({ reduceMotion }: AutoplaySwitchProps) {
   const setting = useAutoplaySetting();
   const set = useSetAutoplay();
 
-  if (setting.isError) {
+  const failure = queryFailure(setting);
+  if (failure !== null) {
     return (
       <View style={styles.row}>
-        <ErrorState
-          message={tc("error.generic")}
-          retryLabel={tc("retry")}
-          onRetry={() => void setting.refetch()}
-        />
+        <FailureState cause={failure} onRetry={() => void setting.refetch()} />
       </View>
     );
   }

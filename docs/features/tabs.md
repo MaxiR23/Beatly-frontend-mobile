@@ -25,6 +25,10 @@ The mini player sits above the bar when a track is loaded: on iOS 26+ as
 `NativeTabs.BottomAccessory`, bare inside the system's capsule, on iOS before 26 as the `accessory` of `FloatingTabBar`, drawn `spacing.xs` above the
 pill at the same width, the window width minus `layout.gutter` on each side; on Android inside the docked block (a rectangle with `radius.sm` corners), `spacing.sm` from the sides and `spacing.xs` above the tabs. Screens clear all of them with `useTabBarClearance`, built on the window's bottom inset: on iOS 26+ a native tab's own inset already holds the tab bar, and the clearance adds the bar itself (issue 144). With a track loaded, `floatingTabBarClearance` adds `ACCESSORY_GAP` (`spacing.xs`) on every platform, one source for the gap, so on iOS 26+ the content's bottom padding is 8 smaller than before while the native accessory stays where it was; checked on a device. On Android the clearance is `dockedTabBarHeight`, the block's own height, so the last item rests at the fade's top. See `player.md`.
 
+### Status strip
+
+A single `StatusStrip` (`layout.statusStripHeight`) shows `common:connection.offline` while the device is offline, or the reason a track failed (`player:strip.*`, see `player.md`); a failed track wins over plain offline, so there is never more than one. It is `FloatingTabBar`'s `status` slot: on iOS before 26 above the mini player (or the pill) at the same width and `spacing.xs` gap; on Android inside the docked block, above the mini player or the tab row, `spacing.sm` from the sides and `spacing.xs` apart, inside the fade, which still ends where the tab row starts. `dockedTabBarHeight` and `floatingTabBarClearance` take a `status` flag that adds `layout.statusStripHeight` and the gap, so `useTabBarClearance` keeps the last item above it while it shows. On iOS 26+ the system owns the bottom accessory and has no slot for it, so the strip is an overlay over the native tabs (`BottomStatusOverlay`), placed at the floating bar's stack height plus the mini player's; that offset is an estimate from the floating geometry, like the clearance (issue 144). Offline, queries pause and loaded content stays; they refetch by themselves when the connection returns. See DESIGN.md, Status strip.
+
 ## Platform differences
 
 Three branches: iOS 26+ draws the native tab bar, iOS before 26 the
@@ -33,7 +37,7 @@ Three branches: iOS 26+ draws the native tab bar, iOS before 26 the
 
 ## States
 
-The navigator reads no data, so none of the states apply.
+The navigator reads no data from the API, so none of the states apply; the status strip reads the device's connection and the playback state.
 
 | State            | What is drawn | i18n keys |
 | ---------------- | ------------- | --------- |
@@ -66,7 +70,7 @@ screen. Back returns to the base screen.
 
 ## i18n namespace
 
-`tabs`: `home`, `explore`, `search`, `library`.
+`tabs`: `home`, `explore`, `search`, `library`; `common:connection.offline` and `player:strip.*` for the status strip.
 
 ## Checked by hand
 
@@ -74,3 +78,5 @@ The native tab bar with Liquid Glass, its SF Symbols and VoiceOver labels on
 iOS 26+, the floating pill above the safe area on older iOS, and on Android
 the docked bar, its fade, the mini player inside it and a TalkBack pass on the
 tabs.
+
+Issue 163, on a device: the iOS 26+ overlay above the native accessory and tab bar (regular and inline placement, and when the bar minimizes); the strip inside the Android docked bar's fade, above the mini player, with the fade still ending at the tab row; the strip appearing and leaving with airplane mode and with Wi-Fi without internet; VoiceOver and TalkBack announcing it. Visual, judged by the owner on the phone.

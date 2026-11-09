@@ -6,6 +6,7 @@
 // - useAutoplaySetting, useSetAutoplay
 //
 // What is covered:
+// - reading while the device is offline (it is device data, so it does not pause)
 // - on from an empty store and the stored value otherwise, the mutation writing its value into the cache, OutcomeError on a storage failure
 // - Not applicable: the cache time from Cache-Control, because the hook reads the device store and has no header
 //
@@ -15,7 +16,8 @@
 
 import { AUTOPLAY_KEY } from "@beatly/core";
 import type { StoragePort } from "@beatly/core";
-import { describe, expect, it, jest } from "@jest/globals";
+import { afterEach, describe, expect, it, jest } from "@jest/globals";
+import { onlineManager } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 import type { ReactNode } from "react";
 
@@ -35,7 +37,21 @@ function setup(storage: StoragePort) {
   return { wrapper };
 }
 
+afterEach(() => {
+  onlineManager.setOnline(true);
+});
+
 describe("useAutoplaySetting", () => {
+  it("reads the stored value while offline", async () => {
+    onlineManager.setOnline(false);
+    const { wrapper } = setup(memoryStorage({ [AUTOPLAY_KEY]: "off" }));
+    const { result } = await renderHook(() => useAutoplaySetting(), { wrapper });
+    await waitFor(() => {
+      expect(result.current.data).toBe(false);
+    });
+    expect(result.current.isPaused).toBe(false);
+  });
+
   it("reads on from an empty store and the stored value otherwise", async () => {
     const empty = setup(memoryStorage());
     const fresh = await renderHook(() => useAutoplaySetting(), { wrapper: empty.wrapper });

@@ -40,6 +40,7 @@ itself. That covers both sources of obsolescence: a later record
 that replaced the decision, and the code moving on from what the
 record described.
 
+- `016-queries-do-not-retry-automatically.md` says a short network drop shows the error state instead of recovering silently. Since issue 163, queries pause while the device is offline and refetch on reconnect through `onlineManager` (stale and errored ones); `retry: false` is unchanged and the error state's retry is still the only retry of an online failure.
 - `029-images-through-expo-image-behind-a-single-ui-importer.md` says "The dominant color still downloads the `small` tier separately, outside this cache". Since 030, no color is computed on the device and nothing is downloaded for it.
 - `027-android-variants-follow-material-3.md` lists, as item 11, "A Material 3 navigation bar with the mini player resting on it". Since `035-android-docked-tab-bar-instead-of-material-3-navigation-bar.md` (issue #162) Android draws a docked bar in the style of the player sheet's tabs instead: no pill indicator, no surface of its own, a fade into the base surface, icon and name per tab, the mini player inside the same block.
 - `011-no-secrets-in-code-and-provider-never-named.md` says that
@@ -239,3 +240,4 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
 - `033-spanish-strings-use-voseo.md` — why every Spanish string addresses the user with voseo ("Buscá", "tenés", "para vos"), keeping the forms shared with tú ("tu", "tus", "te").
 - `034-agent-gate-runs-alone-and-is-limited-by-progress.md` — why the gate of `implement-issue` is denied unless it runs alone with a long timeout, why its attempts are limited by progress (stage, step, failures) with a cap of 6 instead of a fixed three, and why a denial stays in force until the agent stops.
 - `035-android-docked-tab-bar-instead-of-material-3-navigation-bar.md` — why Android draws a docked tab bar in the player sheet's tab style instead of the Material 3 navigation bar, which departures from M3 are deliberate, and why one function gives the bar's height and the screens' clearance.
+- `036-connectivity-source-and-reachability-probe.md` — why the connectivity library's own reachability probe, left at its default URL, is the one HTTP request outside the core client (so offline means only no internet and a backend outage stays a server cause), and the connectivity design around it: one source, local queries always on, offline play failing at once, a play-start store, an error boundary per root route.

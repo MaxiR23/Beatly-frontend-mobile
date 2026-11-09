@@ -14,8 +14,10 @@ function unwrap(outcome: AutoplayOutcome): AutoplayOutcome {
 
 export function useAutoplaySetting() {
   const { autoplay } = useCore();
+  // Device data: runs offline.
   return useQuery({
     queryKey: autoplayQueryKey,
+    networkMode: "always",
     queryFn: async () => unwrap(await autoplay.get()),
     select: (outcome) => (outcome.kind === "success" ? outcome.data : true),
   });

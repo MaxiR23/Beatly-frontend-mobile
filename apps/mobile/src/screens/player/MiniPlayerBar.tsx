@@ -1,4 +1,4 @@
-// INFO: the mini player over the playback state: nothing while no track is loaded, otherwise the pill with the track (its title scrolls unless reduce motion is on), its error line on a failure, play or pause, next, and a tap that opens the player; it draws bare when the system provides the surface (the iOS 26+ accessory); it holds no state of its own.
+// INFO: the mini player over the playback state: nothing while no track is loaded, otherwise the pill with the track (its title scrolls unless reduce motion is on), play or pause, next, and a tap that opens the player; it draws bare when the system provides the surface (the iOS 26+ accessory); it holds no state of its own.
 import { MiniPlayer } from "@beatly/ui/native";
 import { useRouter } from "expo-router";
 
@@ -16,17 +16,11 @@ export function MiniPlayerBar({ surface = "glass" }: { surface?: "glass" | "bare
   const reduceMotion = useReduceMotion();
 
   if (current === null) return null;
-  const failed = status === "failed";
 
   return (
     <MiniPlayer
       title={current.title}
-      subtitle={
-        failed
-          ? t("error.unplayable")
-          : current.artists.map((artist) => artist.name).join(t("artistSeparator"))
-      }
-      failed={failed}
+      subtitle={current.artists.map((artist) => artist.name).join(t("artistSeparator"))}
       image={current.image}
       tint={tint}
       surface={surface}

@@ -8,6 +8,7 @@
 // What is covered:
 // - gateOf: unknown, signed out, the mark pending, the mark true (home with no profile, a null profile, a failed profile), the profile deciding, failed, onboarding and home, a failed refetch with data cached
 // - the hook, path "stored as done": the mark stored for this account opens home and GET /profile/me is never read
+// - the hook offline: a profile read paused offline fails the gate with the offline cause, and loads by itself when the connection returns
 // - the hook, path "not stored": another account's mark waits for the profile; a profile with a timestamp stores the mark; a pending onboarding does not
 //
 // Run with: pnpm --filter @beatly/mobile test -- useOnboardingGate
@@ -16,7 +17,8 @@
 
 import { ONBOARDING_MARK_KEY } from "@beatly/core";
 import type { Profile } from "@beatly/core";
-import { describe, expect, it, jest } from "@jest/globals";
+import { afterEach, describe, expect, it, jest } from "@jest/globals";
+import { onlineManager } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 import type { ReactNode } from "react";
 
@@ -202,5 +204,28 @@ describe("useOnboardingGate with the mark not stored", () => {
       expect(result.current.gate).toBe("signed_out");
     });
     expect(ctx.getMyProfile).not.toHaveBeenCalled();
+  });
+});
+
+describe("useOnboardingGate offline", () => {
+  afterEach(() => {
+    onlineManager.setOnline(true);
+  });
+
+  it("fails the gate with the offline cause when the profile read is paused, then loads by itself", async () => {
+    onlineManager.setOnline(false);
+    const { ctx, wrapper } = setup({ getMyProfile: () => Promise.resolve(successOf(notDone)) });
+    const { result } = await renderHook(() => useOnboardingGate(), { wrapper });
+    await waitFor(() => {
+      expect(result.current.gate).toBe("failed");
+    });
+    expect(result.current.failure).toBe("offline");
+    expect(ctx.getMyProfile).not.toHaveBeenCalled();
+    await act(() => {
+      onlineManager.setOnline(true);
+    });
+    await waitFor(() => {
+      expect(result.current.gate).toBe("onboarding");
+    });
   });
 });

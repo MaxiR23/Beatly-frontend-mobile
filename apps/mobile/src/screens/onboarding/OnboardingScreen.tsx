@@ -5,9 +5,11 @@ import { useState } from "react";
 import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { failureCauseOf } from "../../queries/failureCause.ts";
 import { useFinishOnboarding, useMarkOnboarded } from "../../queries/useOnboarding.ts";
 import { OutcomeError } from "../../queries/outcomeError.ts";
 import { useProfile } from "../../queries/useProfile.ts";
+import { useRetryOnReconnect } from "../failure/useRetryOnReconnect.ts";
 import { useReduceMotion } from "../player/useReduceMotion.ts";
 import { BuildingHomeStep } from "./BuildingHomeStep.tsx";
 import {
@@ -84,6 +86,11 @@ export function OnboardingScreen() {
     send();
   };
 
+  const failure =
+    finish.isError && !isTooFewArtists(finish.error) ? failureCauseOf(finish.error) : null;
+  // A failure on the offline cause promises to load by itself: send again when the connection returns.
+  useRetryOnReconnect(failure, send);
+
   const start = () => {
     if (completedAt !== null) markOnboarded(completedAt);
   };
@@ -104,7 +111,7 @@ export function OnboardingScreen() {
       ) : step === "building" ? (
         <BuildingHomeStep
           artistName={picked[0]?.name ?? ""}
-          failed={finish.isError && !isTooFewArtists(finish.error)}
+          failure={failure}
           onRetry={send}
           reduceMotion={reduceMotion}
         />

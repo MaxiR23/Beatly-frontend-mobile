@@ -7,6 +7,7 @@
 // - staleTimeFor
 // - a failed query is not retried
 // - the smallest max-age across the pages of an infinite query
+// - queries pause offline and run or refetch when the connection returns, loaded data stays, mutations run offline
 //
 // What is covered:
 // - fresh within max-age, stale without Cache-Control, stale for data that is not an outcome
@@ -18,8 +19,14 @@
 import { createHttpClient, pageBlockSchema } from "@beatly/core";
 import type { AuthPort, HttpPort, LogPort } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import type { QueryClient } from "@tanstack/react-query";
+import {
+  MutationObserver,
+  onlineManager,
+  QueryObserver,
+  type QueryClient,
+} from "@tanstack/react-query";
 
+import { OutcomeError } from "../../src/queries/outcomeError.ts";
 import { createQueryClient, staleTimeFor } from "../../src/queries/queryClient.ts";
 
 const auth: AuthPort = {
@@ -64,8 +71,10 @@ function setup(headers: Record<string, string>) {
 let current: QueryClient | undefined;
 
 afterEach(() => {
+  current?.unmount();
   current?.clear();
   jest.useRealTimers();
+  onlineManager.setOnline(true);
 });
 
 describe("createQueryClient", () => {
@@ -97,6 +106,75 @@ describe("failed queries", () => {
     const queryFn = jest.fn(() => Promise.reject(new Error("boom")));
     await expect(queryClient.query({ queryKey: ["fail"], queryFn })).rejects.toThrow("boom");
     expect(queryFn).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("connection", () => {
+  const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+  it("pauses a query while offline and runs it when the connection returns", async () => {
+    const queryClient = createQueryClient();
+    current = queryClient;
+    queryClient.mount();
+    const queryFn = jest.fn(() => Promise.resolve("loaded"));
+    onlineManager.setOnline(false);
+    const observer = new QueryObserver(queryClient, { queryKey: ["paused"], queryFn });
+    const stop = observer.subscribe(() => undefined);
+    await settle();
+    expect(queryFn).not.toHaveBeenCalled();
+    expect(observer.getCurrentResult().fetchStatus).toBe("paused");
+    onlineManager.setOnline(true);
+    await settle();
+    expect(queryFn).toHaveBeenCalledTimes(1);
+    expect(observer.getCurrentResult().data).toBe("loaded");
+    stop();
+  });
+
+  it("refetches a query that failed with a network error when the connection returns", async () => {
+    const queryClient = createQueryClient();
+    current = queryClient;
+    queryClient.mount();
+    const queryFn = jest
+      .fn<() => Promise<string>>()
+      .mockRejectedValueOnce(new OutcomeError({ kind: "transport_failure", cause: "network" }))
+      .mockResolvedValue("loaded");
+    const observer = new QueryObserver(queryClient, { queryKey: ["failed"], queryFn });
+    const stop = observer.subscribe(() => undefined);
+    await settle();
+    expect(observer.getCurrentResult().isError).toBe(true);
+    onlineManager.setOnline(false);
+    onlineManager.setOnline(true);
+    await settle();
+    expect(queryFn).toHaveBeenCalledTimes(2);
+    expect(observer.getCurrentResult().data).toBe("loaded");
+    stop();
+  });
+
+  it("keeps loaded data while offline", async () => {
+    const queryClient = createQueryClient();
+    current = queryClient;
+    const queryFn = jest.fn(() => Promise.resolve("loaded"));
+    const observer = new QueryObserver(queryClient, { queryKey: ["kept"], queryFn });
+    const stop = observer.subscribe(() => undefined);
+    await settle();
+    onlineManager.setOnline(false);
+    void observer.refetch();
+    await settle();
+    const result = observer.getCurrentResult();
+    expect(result.data).toBe("loaded");
+    expect(result.status).toBe("success");
+    expect(queryFn).toHaveBeenCalledTimes(1);
+    stop();
+  });
+
+  it("runs a mutation while offline", async () => {
+    const queryClient = createQueryClient();
+    current = queryClient;
+    const mutationFn = jest.fn(() => Promise.resolve("done"));
+    onlineManager.setOnline(false);
+    const observer = new MutationObserver(queryClient, { mutationFn });
+    await observer.mutate();
+    expect(mutationFn).toHaveBeenCalledTimes(1);
   });
 });
 

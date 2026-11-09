@@ -25,7 +25,7 @@ import {
 } from "@beatly/core";
 import type { HttpPort, Profile, Success } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
-import type { QueryClient } from "@tanstack/react-query";
+import { onlineManager, type QueryClient } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 import type { ReactNode } from "react";
 
@@ -263,6 +263,20 @@ describe("useOnboardingMark", () => {
     );
     return { ctx, queryClient, wrapper };
   }
+
+  it("reads the mark while offline, so a cold start does not hold the splash", async () => {
+    onlineManager.setOnline(false);
+    try {
+      const { wrapper } = markSetup({ [ONBOARDING_MARK_KEY]: "user-1" });
+      const { result } = await renderHook(() => useOnboardingMark(true), { wrapper });
+      await waitFor(() => {
+        expect(result.current.data).toBe(true);
+      });
+      expect(result.current.isPaused).toBe(false);
+    } finally {
+      onlineManager.setOnline(true);
+    }
+  });
 
   it("reads the mark of the signed-in account from the device", async () => {
     const { wrapper } = markSetup({ [ONBOARDING_MARK_KEY]: "user-1" });

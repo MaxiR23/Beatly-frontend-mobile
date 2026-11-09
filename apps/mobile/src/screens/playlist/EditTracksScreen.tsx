@@ -4,7 +4,6 @@ import { color, layout, motion, spacing } from "@beatly/ui";
 import {
   Button,
   EmptyState,
-  ErrorState,
   IconButton,
   LoadingState,
   NativeEditList,
@@ -20,9 +19,11 @@ import { StyleSheet, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useT } from "../../adapters/i18n.ts";
+import { queryFailure } from "../../queries/failureCause.ts";
 import { OutcomeError } from "../../queries/outcomeError.ts";
 import { usePlaylistTracks } from "../../queries/usePlaylist.ts";
 import { usePlaylistTrackEditor } from "../../queries/usePlaylists.ts";
+import { FailureState } from "../failure/FailureState.tsx";
 import { useReduceMotion } from "../player/useReduceMotion.ts";
 import { useTabBarClearance } from "../player/useTabBarClearance.ts";
 import { movedItems, withoutIndex } from "./editTracks.ts";
@@ -121,14 +122,15 @@ export function EditTracksScreen() {
     if (!failure.current) goBack();
   };
 
+  const loadFailure = queryFailure(tracks);
+
   let body;
   if (isNotFound(tracks.error)) {
     body = <EmptyState icon="music" message={t("notFound")} />;
-  } else if (tracks.isError) {
+  } else if (loadFailure !== null) {
     body = (
-      <ErrorState
-        message={tc("error.generic")}
-        retryLabel={tc("retry")}
+      <FailureState
+        cause={loadFailure}
         onRetry={() => {
           void tracks.refetch();
         }}

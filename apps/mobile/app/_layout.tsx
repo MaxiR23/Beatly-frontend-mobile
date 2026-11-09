@@ -122,6 +122,7 @@ function RootNavigator() {
   );
 }
 
+// The ErrorBoundary export lives in each route of the root stack, not here: from this file it would replace the providers (no core, no log port) and its retry would remount this component, building a second player while the first may still be playing.
 export default function RootLayout() {
   const [core] = useState(createCore);
   return (

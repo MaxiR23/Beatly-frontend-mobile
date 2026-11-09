@@ -9,6 +9,7 @@
 // What is covered:
 // - the solid fallback when glass is unavailable, the glass view when it is, the availability test
 // - the barRect variant: small corners and the bar's padding, while the bar keeps the pill
+// - the strip and stripRect variants: the strip height, the capsule on iOS and small corners on Android, a centered row padded spacing.md
 // - the tint on the fallback as a layer over the raised surface and on the glass view
 //
 // Run with: pnpm --filter @beatly/ui test -- GlassSurface
@@ -82,6 +83,25 @@ describe("GlassSurface", () => {
       flexDirection: "row",
     });
     expect(screen.getByTestId("surface")).not.toHaveStyle({ borderRadius: radius.full });
+  });
+
+  it.each([
+    ["strip", radius.full],
+    ["stripRect", radius.sm],
+  ] as const)("draws the %s variant at the strip height", async (variant, corner) => {
+    await render(
+      <GlassSurface variant={variant} testID="surface">
+        <Text>inside</Text>
+      </GlassSurface>,
+    );
+    expect(screen.getByTestId("surface")).toHaveStyle({
+      height: layout.statusStripHeight,
+      borderRadius: corner,
+      paddingHorizontal: spacing.md,
+      gap: spacing.sm,
+      flexDirection: "row",
+      alignItems: "center",
+    });
   });
 
   it("keeps the bar variant as a pill", async () => {

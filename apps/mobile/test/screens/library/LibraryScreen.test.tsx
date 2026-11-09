@@ -202,12 +202,20 @@ describe("LibraryScreen", () => {
     expect(screen.queryByText(en.common.error.generic)).toBeNull();
   });
 
-  it.each<[string, HttpOutcome<PageResult<never>>]>([
-    ["an api failure", { kind: "api_failure", reason: "upstream_error" }],
-    ["a transport failure", { kind: "transport_failure", cause: "timeout" }],
-  ])("draws the generic error with retry on %s", async (_name, outcome) => {
+  it.each<[string, HttpOutcome<PageResult<never>>, string]>([
+    [
+      "an api failure",
+      { kind: "api_failure", reason: "upstream_error" },
+      en.common.error.server.title,
+    ],
+    [
+      "a transport failure",
+      { kind: "transport_failure", cause: "timeout" },
+      en.common.error.slow.title,
+    ],
+  ])("draws the error with its cause and retry on %s", async (_name, outcome, title) => {
     const ctx = await setup({ listLibrary: () => Promise.resolve(outcome) });
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(title)).toBeTruthy();
     await fireEvent.press(screen.getByText(en.common.retry));
     await waitFor(() => {
       expect(ctx.listLibrary).toHaveBeenCalledTimes(2);
@@ -424,7 +432,7 @@ describe("LibraryScreen", () => {
     });
     await screen.findByText(en.library.liked);
     await fireEvent.press(screen.getByText(en.library.filters.artists));
-    expect(await screen.findByText(en.common.error.generic)).toBeTruthy();
+    expect(await screen.findByText(en.common.error.slow.title)).toBeTruthy();
     await fireEvent.press(screen.getByText(en.common.retry));
     await waitFor(() => {
       expect(
