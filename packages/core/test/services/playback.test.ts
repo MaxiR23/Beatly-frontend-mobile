@@ -13,6 +13,7 @@
 // - the HTTP status of an unplayable answer in the state: kept on that failure, null on a player error and on a restart
 // - the seed of a source, the sourceStart counter, autoplay at the end of the queue (shuffle, repeat one, no suggestions, stale suggestions) and next at the last track sharing that rule (autoplay off, no suggestions, repeat one, after the list ended, idle) and whether the suggestions are wanted (last track started, the tab asked, sticky, reset by a new source)
 // - the effective duration of the current track (the stream's, else the backend's, else the engine's), the end of a track at it, once, with an iOS-style engine (doubled duration, ended only at it) and an Android-style one (real duration, ended on time), and the seek clamped to it
+// - the lock screen info after each load with the effective duration (stream, backend, none), kept between tracks, cleared on stop, failure, player error, list end and a cancelled start; remote next and previous behaving as the buttons (autoplay, repeat one, the restart rule, while resolving, idle); the engine paused, not unloaded, between tracks
 // - Not applicable: ok:false reasons, because the controller does not call the API
 //
 // Run with: pnpm --filter @beatly/core test -- playback
@@ -144,13 +145,13 @@ describe("playList", () => {
 });
 
 describe("starting while another track is loaded", () => {
-  it("unloads the previous track before the next one resolves, so pause leaves nothing playing", async () => {
+  it("pauses the previous track before the next one resolves, so pause leaves nothing playing", async () => {
     const { controller, player, streams } = setup();
     await controller.playList(list, 0, source);
     player.advance(1);
     const settle = streams.hold("t2");
     const pending = controller.next();
-    expect(player.calls.at(-1)).toEqual({ type: "unload" });
+    expect(player.calls.at(-1)).toEqual({ type: "pause" });
     await controller.toggle();
     expect(controller.getState().status).toBe("paused");
     settle({ kind: "resolved", url: "test://audio/t2" });
@@ -159,13 +160,28 @@ describe("starting while another track is loaded", () => {
     expect(player.calls.filter((c) => c.type === "play")).toHaveLength(1);
   });
 
-  it("has unloaded the previous track when the next resolution fails", async () => {
+  it("has paused the previous track and cleared the lock screen when the next resolution fails", async () => {
     const { controller, player, streams } = setup();
     await controller.playList(list, 0, source);
     streams.answer("t2", { kind: "failure", cause: "unplayable" });
     await controller.next();
     expect(controller.getState().status).toBe("failed");
-    expect(player.calls.at(-1)).toEqual({ type: "unload" });
+    expect(player.calls.at(-1)).toEqual({ type: "pause" });
+    expect(player.calls.filter((c) => c.type === "pause")).toHaveLength(2);
+    expect(player.nowPlaying.at(-1)).toBeNull();
+  });
+
+  it("pauses the engine again when toggle cancels the resolution", async () => {
+    const { controller, player, streams } = setup();
+    await controller.playList(list, 0, source);
+    player.advance(1);
+    streams.hold("t2");
+    const pending = controller.next();
+    expect(player.calls.filter((c) => c.type === "pause")).toHaveLength(1);
+    await controller.toggle();
+    expect(player.calls.filter((c) => c.type === "pause")).toHaveLength(2);
+    expect(player.nowPlaying.at(-1)).toBeNull();
+    void pending;
   });
 });
 
@@ -492,6 +508,7 @@ describe("state", () => {
     expect(state.index).toBe(-1);
     expect(state.shuffle).toBe(true);
     expect(player.calls.at(-1)).toEqual({ type: "unload" });
+    expect(player.nowPlaying.at(-1)).toBeNull();
   });
 });
 
@@ -1091,7 +1108,7 @@ describe("iOS-style engine: doubled duration, ended only at it", () => {
     player.advance(0.9);
   };
 
-  it("ends at the real duration, starts the next track and unloads the engine", async () => {
+  it("ends at the real duration, starts the next track and keeps the engine", async () => {
     const { controller, player } = ios();
     await controller.playList(timedList, 0, source);
     const before = listens(controller);
@@ -1100,8 +1117,9 @@ describe("iOS-style engine: doubled duration, ended only at it", () => {
     expect(controller.getState().current?.trackId).toBe("t2");
     expect(loads(player.calls)).toEqual(["test://audio/t1", "test://audio/t2"]);
     const types = player.calls.map((c) => c.type);
-    expect(types.indexOf("unload")).toBeGreaterThan(types.indexOf("load"));
-    expect(types.indexOf("unload")).toBeLessThan(types.lastIndexOf("load"));
+    expect(types.indexOf("pause")).toBeGreaterThan(types.indexOf("load"));
+    expect(types.indexOf("pause")).toBeLessThan(types.lastIndexOf("load"));
+    expect(types).not.toContain("unload");
     expect(listens(controller)).toBe(before + 1);
   });
 
@@ -1144,7 +1162,7 @@ describe("iOS-style engine: doubled duration, ended only at it", () => {
     expect(state.current?.trackId).toBe("s1");
     expect(state.source?.kind).toBe("track");
     const types = player.calls.map((c) => c.type);
-    expect(types.indexOf("unload")).toBeLessThan(types.lastIndexOf("load"));
+    expect(types.indexOf("pause")).toBeLessThan(types.lastIndexOf("load"));
     expect(loads(player.calls).at(-1)).toBe("test://audio/s1");
   });
 
@@ -1217,5 +1235,171 @@ describe("Android-style engine: real duration, ended on time", () => {
     await flush();
     expect(player.calls.filter((c) => c.type === "pause")).toHaveLength(1);
     expect(listens(controller)).toBe(before + 1);
+  });
+});
+
+const lockTrack = (id: string, durationSeconds: number | null): PlayableTrack => ({
+  ...track(id),
+  artists: [
+    { id: "ar1", name: "First" },
+    { id: "ar2", name: "Second" },
+  ],
+  image: { small: "s", medium: "m", large: "l", color: "#000000" },
+  durationSeconds,
+});
+
+describe("lock screen", () => {
+  const lockList = [lockTrack("t1", 200), lockTrack("t2", 200)];
+  const info = (id: string, durationSeconds: number | null) => ({
+    title: `Song ${id}`,
+    artists: ["First", "Second"],
+    album: "Album",
+    artworkUrl: "l",
+    durationSeconds,
+  });
+
+  it("shows the track after it loads, with the stream's duration", async () => {
+    const { controller, player, streams } = setup();
+    streams.answer("t1", { kind: "resolved", url: "test://audio/t1", durationSeconds: 137 });
+    const settle = streams.hold("t1");
+    const pending = controller.playList(lockList, 0, source);
+    expect(player.nowPlaying).toHaveLength(0);
+    settle({ kind: "resolved", url: "test://audio/t1", durationSeconds: 137 });
+    await pending;
+    expect(player.nowPlaying).toEqual([info("t1", 137)]);
+  });
+
+  it("falls back to the backend's duration, and to null without either", async () => {
+    const { controller, player } = setup();
+    await controller.playList(lockList, 0, source);
+    expect(player.nowPlaying.at(-1)).toEqual(info("t1", 200));
+    await controller.playList([lockTrack("t9", null)], 0, source);
+    expect(player.nowPlaying.at(-1)).toEqual(info("t9", null));
+  });
+
+  it("leaves the artwork and album out when the track has none", async () => {
+    const { controller, player } = setup();
+    await controller.playList([{ ...lockTrack("t1", 200), image: null, album: null }], 0, source);
+    expect(player.nowPlaying.at(-1)).toMatchObject({ album: null, artworkUrl: null });
+  });
+
+  it("updates it on the next track without clearing it in between", async () => {
+    const { controller, player } = setup();
+    await controller.playList(lockList, 0, source);
+    await controller.next();
+    expect(player.nowPlaying).toEqual([info("t1", 200), info("t2", 200)]);
+  });
+
+  it("clears it at the end of the list", async () => {
+    const { controller, player } = setup();
+    await controller.playList(lockList, 1, source);
+    player.emit({ type: "ended" });
+    await flush();
+    expect(player.nowPlaying.at(-1)).toBeNull();
+  });
+
+  it("clears it on a player error", async () => {
+    const { controller, player } = setup();
+    await controller.playList(lockList, 0, source);
+    player.emit({ type: "error", message: "boom" });
+    expect(player.nowPlaying.at(-1)).toBeNull();
+  });
+
+  it("clears it when a start is cancelled while resolving", async () => {
+    const { controller, player, streams } = setup();
+    await controller.playList(lockList, 0, source);
+    const settle = streams.hold("t2");
+    const pending = controller.next();
+    await controller.toggle();
+    expect(player.nowPlaying.at(-1)).toBeNull();
+    settle({ kind: "resolved", url: "test://audio/t2" });
+    await pending;
+    expect(player.nowPlaying.at(-1)).toBeNull();
+  });
+
+  it("shows it again on retry after a failure", async () => {
+    const { controller, player, streams } = setup();
+    streams.answer("t1", { kind: "failure", cause: "network" });
+    await controller.playList(lockList, 0, source);
+    expect(player.nowPlaying).toEqual([null]);
+    streams.answer("t1", { kind: "resolved", url: "test://audio/t1" });
+    await controller.retry();
+    expect(player.nowPlaying.at(-1)).toEqual(info("t1", 200));
+  });
+});
+
+describe("remote next and previous", () => {
+  const remote = async (
+    player: ReturnType<typeof setup>["player"],
+    type: "remoteNext" | "remotePrevious",
+  ) => {
+    player.emit({ type });
+    await flush();
+  };
+
+  it("remote next starts the next track like next", async () => {
+    const { controller, player } = setup();
+    await controller.playList(list, 0, source);
+    await remote(player, "remoteNext");
+    expect(controller.getState().current?.trackId).toBe("t2");
+    expect(loads(player.calls)).toEqual(["test://audio/t1", "test://audio/t2"]);
+  });
+
+  it("remote next at the last track starts the suggestions with autoplay on, and does nothing with it off", async () => {
+    const on = setup();
+    on.controller.setAutoplay(true);
+    await on.controller.playList(list, 2, source);
+    on.controller.setSuggestions("t3", suggested);
+    await remote(on.player, "remoteNext");
+    expect(on.controller.getState().current?.trackId).toBe("s1");
+    const off = setup();
+    await off.controller.playList(list, 2, source);
+    off.controller.setSuggestions("t3", suggested);
+    await remote(off.player, "remoteNext");
+    expect(off.controller.getState().current?.trackId).toBe("t3");
+    expect(loads(off.player.calls)).toEqual(["test://audio/t3"]);
+  });
+
+  it("remote next with repeat one moves on, like the button", async () => {
+    const { controller, player } = setup();
+    await controller.playList(list, 0, source);
+    controller.setRepeatOne(true);
+    await remote(player, "remoteNext");
+    expect(controller.getState().current?.trackId).toBe("t2");
+  });
+
+  it("remote previous restarts after the threshold and goes back before it", async () => {
+    const { controller, player } = setup();
+    await controller.playList(list, 1, source);
+    player.advance(PREVIOUS_RESTARTS_AFTER_SECONDS + 1);
+    await remote(player, "remotePrevious");
+    expect(player.calls.at(-1)).toEqual({ type: "seek", seconds: 0 });
+    expect(controller.getState().current?.trackId).toBe("t2");
+    const early = setup();
+    await early.controller.playList(list, 1, source);
+    early.player.advance(1);
+    await remote(early.player, "remotePrevious");
+    expect(early.controller.getState().current?.trackId).toBe("t1");
+    expect(loads(early.player.calls)).toEqual(["test://audio/t2", "test://audio/t1"]);
+  });
+
+  it("remote next while the next track resolves moves on from it", async () => {
+    const { controller, player, streams } = setup();
+    await controller.playList(list, 0, source);
+    const settle = streams.hold("t2");
+    const pending = controller.next();
+    await remote(player, "remoteNext");
+    expect(controller.getState().current?.trackId).toBe("t3");
+    settle({ kind: "resolved", url: "test://audio/t2" });
+    await pending;
+    expect(loads(player.calls)).toEqual(["test://audio/t1", "test://audio/t3"]);
+  });
+
+  it("remote events are ignored when idle", async () => {
+    const { controller, player } = setup();
+    await remote(player, "remoteNext");
+    await remote(player, "remotePrevious");
+    expect(player.calls).toEqual([]);
+    expect(controller.getState().status).toBe("idle");
   });
 });

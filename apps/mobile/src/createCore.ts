@@ -58,6 +58,7 @@ import { createDbAdapter } from "./adapters/db.ts";
 import { readDevice } from "./adapters/device.ts";
 import { createHttpAdapter } from "./adapters/http.ts";
 import { createLogAdapter } from "./adapters/log.ts";
+import { i18n } from "./adapters/i18n.ts";
 import { createPlayerAdapter } from "./adapters/player.ts";
 import { createStorageAdapter } from "./adapters/storage.ts";
 import { readPublicEnv } from "./env.ts";
@@ -108,7 +109,7 @@ export function createCore(): Core {
   const activity = createActivityService(client);
   const recommendations = createRecommendationsService(client);
   const playback = createPlaybackController({
-    player: createPlayerAdapter({ log }),
+    player: createPlayerAdapter({ log, artistSeparator: () => i18n.t("player:artistSeparator") }),
     streams: resolveOnlyOnline(
       createStreamResolver({
         http,

@@ -6,11 +6,13 @@
 // - createPlayerAdapter over a mocked expo-audio
 //
 // What is covered:
-// - one engine created on the first load, with the audio mode set for the foreground and the silent switch
+// - one engine created on the first load and kept across loads, with the audio mode set for the background, the silent switch and doNotMix, and the audio session kept active
 // - play, pause and seek reaching the engine
 // - unload pausing and releasing the engine through remove(), never replace(null); the next load recreating it; a throwing unload as an error event and a log entry
 // - a status update as a progress event (a zero duration as null), didJustFinish as ended, an engine error as an error event
 // - replace receiving a { uri } AudioSource; a throwing or rejected replace as an error event and a log entry
+// - the lock screen: activated on the first track with next and previous and the metadata (artist names joined with the injected separator, missing fields left out), updated on the next, cleared with null, cleared before the engine is released, a failing call logged and not emitted, nothing without an engine
+// - the patched remote next and previous events as remoteNext and remotePrevious
 // - a rejected seek as an error event and a log entry, a rejected audio mode as a log entry
 //
 // Run with: pnpm --filter @beatly/mobile test -- adapters/player
@@ -33,6 +35,9 @@ const engine = {
   remove: jest.fn<() => void>(),
   seekTo: jest.fn<(seconds: number) => Promise<void>>(),
   addListener: jest.fn<(name: string, listener: StatusListener) => void>(),
+  setActiveForLockScreen: jest.fn<(active: boolean, metadata: object, options: object) => void>(),
+  updateLockScreenMetadata: jest.fn<(metadata: object) => void>(),
+  clearLockScreenControls: jest.fn<() => void>(),
 };
 const createAudioPlayer = jest.fn<(source: unknown, options: object) => typeof engine>();
 const setAudioModeAsync = jest.fn<(mode: object) => Promise<void>>();
@@ -62,28 +67,48 @@ beforeEach(() => {
   setAudioModeAsync.mockResolvedValue(undefined);
 });
 
+const listenerOf = (name: string): StatusListener => {
+  const listener = engine.addListener.mock.calls.find(([event]) => event === name)?.[1];
+  if (listener === undefined) throw new Error(`no listener for ${name}`);
+  return listener;
+};
+
+const nowPlaying = {
+  title: "Song",
+  artists: ["A", "B"],
+  album: "Album",
+  artworkUrl: "test://art/large",
+  durationSeconds: 137,
+};
+
 function setup() {
   const log = makeLog();
-  const port = load().createPlayerAdapter({ log });
+  const port = load().createPlayerAdapter({ log, artistSeparator: () => " & " });
   const events: PlayerEvent[] = [];
   port.onEvent((event) => events.push(event));
   const push = (over: Record<string, unknown> = {}) => {
-    const listener = engine.addListener.mock.calls[0]?.[1];
-    if (listener === undefined) throw new Error("no listener");
-    listener(status(over));
+    listenerOf("playbackStatusUpdate")(status(over));
   };
-  return { port, log, events, push };
+  const fire = (name: string) => {
+    listenerOf(name)({});
+  };
+  return { port, log, events, push, fire };
 }
 
 describe("load", () => {
-  it("creates one engine on the first load and sets the foreground audio mode", () => {
+  it("creates one engine on the first load and sets the background audio mode", () => {
     const { port } = setup();
     port.load("test://audio/1");
     port.load("test://audio/2");
     expect(createAudioPlayer).toHaveBeenCalledTimes(1);
+    expect(createAudioPlayer).toHaveBeenCalledWith(null, {
+      updateInterval: 100,
+      keepAudioSessionActive: true,
+    });
     expect(setAudioModeAsync).toHaveBeenCalledWith({
       playsInSilentMode: true,
-      shouldPlayInBackground: false,
+      shouldPlayInBackground: true,
+      interruptionMode: "doNotMix",
     });
     expect(engine.replace).toHaveBeenNthCalledWith(1, { uri: "test://audio/1" });
     expect(engine.replace).toHaveBeenNthCalledWith(2, { uri: "test://audio/2" });
@@ -221,5 +246,106 @@ describe("status updates", () => {
     push({ error: "bad stream" });
     expect(events.map((e) => e.type)).toEqual(["progress", "ended", "error"]);
     expect(events[2]).toEqual({ type: "error", message: "bad stream" });
+  });
+});
+
+describe("lock screen", () => {
+  it("activates the lock screen on the first track with the next and previous buttons", () => {
+    const { port } = setup();
+    port.load("test://audio/1");
+    port.setNowPlaying(nowPlaying);
+    expect(engine.setActiveForLockScreen).toHaveBeenCalledWith(
+      true,
+      {
+        title: "Song",
+        artist: "A & B",
+        albumTitle: "Album",
+        artworkUrl: "test://art/large",
+        duration: 137,
+      },
+      { showNextTrack: true, showPreviousTrack: true },
+    );
+  });
+
+  it("updates the lock screen on the next track instead of activating it again", () => {
+    const { port } = setup();
+    port.load("test://audio/1");
+    port.setNowPlaying(nowPlaying);
+    port.setNowPlaying({ ...nowPlaying, title: "Other" });
+    expect(engine.setActiveForLockScreen).toHaveBeenCalledTimes(1);
+    expect(engine.updateLockScreenMetadata).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Other" }),
+    );
+  });
+
+  it("leaves out the missing fields", () => {
+    const { port } = setup();
+    port.load("test://audio/1");
+    port.setNowPlaying({
+      title: "Song",
+      artists: [],
+      album: null,
+      artworkUrl: null,
+      durationSeconds: null,
+    });
+    expect(engine.setActiveForLockScreen.mock.calls[0]?.[1]).toStrictEqual({ title: "Song" });
+  });
+
+  it("clears the lock screen with null, and does nothing when it is not active", () => {
+    const { port } = setup();
+    port.load("test://audio/1");
+    port.setNowPlaying(null);
+    expect(engine.clearLockScreenControls).not.toHaveBeenCalled();
+    port.setNowPlaying(nowPlaying);
+    port.setNowPlaying(null);
+    port.setNowPlaying(null);
+    expect(engine.clearLockScreenControls).toHaveBeenCalledTimes(1);
+    port.setNowPlaying(nowPlaying);
+    expect(engine.setActiveForLockScreen).toHaveBeenCalledTimes(2);
+  });
+
+  it("does nothing without an engine", () => {
+    const { port, events } = setup();
+    port.setNowPlaying(nowPlaying);
+    port.setNowPlaying(null);
+    expect(engine.setActiveForLockScreen).not.toHaveBeenCalled();
+    expect(engine.clearLockScreenControls).not.toHaveBeenCalled();
+    expect(events).toEqual([]);
+  });
+
+  it("logs a failing lock screen call and emits no error", () => {
+    engine.setActiveForLockScreen.mockImplementationOnce(() => {
+      throw new Error("no service");
+    });
+    const { port, log, events } = setup();
+    port.load("test://audio/1");
+    port.setNowPlaying(nowPlaying);
+    expect(events).toEqual([]);
+    expect(log.warn).toHaveBeenCalledWith("player.lock_screen_failed", {
+      message: "no service",
+    });
+  });
+
+  it("clears an active lock screen on unload, before releasing the engine", () => {
+    const order: string[] = [];
+    engine.clearLockScreenControls.mockImplementation(() => {
+      order.push("clear");
+    });
+    engine.remove.mockImplementation(() => {
+      order.push("remove");
+    });
+    const { port } = setup();
+    port.load("test://audio/1");
+    port.setNowPlaying(nowPlaying);
+    port.unload();
+    expect(order).toEqual(["clear", "remove"]);
+  });
+
+  it("turns the patched remote events into remoteNext and remotePrevious", () => {
+    const { port, events, fire } = setup();
+    port.load("test://audio/1");
+    fire("onRemoteNextTrack");
+    fire("onRemotePreviousTrack");
+    expect(events).toEqual([{ type: "remoteNext" }, { type: "remotePrevious" }]);
   });
 });

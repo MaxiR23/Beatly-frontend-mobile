@@ -15,7 +15,7 @@ export type { HttpMethod, HttpPort, HttpRequest, HttpResponse } from "./ports/ht
 export type { ConfigPort } from "./ports/config.ts";
 export type { DbExecutor, DbPort, SqlValue } from "./ports/db.ts";
 export type { LogFields, LogPort } from "./ports/log.ts";
-export type { PlayerEvent, PlayerPort } from "./ports/player.ts";
+export type { NowPlaying, PlayerEvent, PlayerPort } from "./ports/player.ts";
 export {
   apiReasonSchema,
   envelopeSchema,

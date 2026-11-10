@@ -1,5 +1,5 @@
-// INFO: in-memory player port with a manual clock: calls are recorded in order and a test emits events or advances the position; an engine duration and an engine end position can be set, to fake the iOS doubled duration or an on-time end.
-import type { PlayerEvent, PlayerPort } from "../../src/ports/player.ts";
+// INFO: in-memory player port with a manual clock: calls are recorded in order and a test emits events or advances the position; an engine duration and an engine end position can be set, to fake the iOS doubled duration or an on-time end; the lock screen info is recorded apart from the calls.
+import type { NowPlaying, PlayerEvent, PlayerPort } from "../../src/ports/player.ts";
 
 type PlayerCall =
   | { readonly type: "load"; readonly url: string }
@@ -11,6 +11,8 @@ type PlayerCall =
 interface FakePlayer {
   readonly port: PlayerPort;
   readonly calls: PlayerCall[];
+  // Every setNowPlaying argument in order; not part of calls.
+  readonly nowPlaying: (NowPlaying | null)[];
   emit(event: PlayerEvent): void;
   // The manual clock: moves the position and emits a playing progress event.
   advance(seconds: number): void;
@@ -25,6 +27,7 @@ interface FakePlayerOptions {
 
 export function createFakePlayer(options: FakePlayerOptions = {}): FakePlayer {
   const calls: PlayerCall[] = [];
+  const nowPlaying: (NowPlaying | null)[] = [];
   const listeners = new Set<(event: PlayerEvent) => void>();
   let position = 0;
   let endEmitted = false;
@@ -33,6 +36,7 @@ export function createFakePlayer(options: FakePlayerOptions = {}): FakePlayer {
   };
   return {
     calls,
+    nowPlaying,
     emit,
     advance: (seconds) => {
       position += seconds;
@@ -68,6 +72,9 @@ export function createFakePlayer(options: FakePlayerOptions = {}): FakePlayer {
       },
       unload: () => {
         calls.push({ type: "unload" });
+      },
+      setNowPlaying: (info) => {
+        nowPlaying.push(info);
       },
       onEvent: (listener) => {
         listeners.add(listener);
