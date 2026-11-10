@@ -1,0 +1,171 @@
+diff --git a/android/src/main/java/expo/modules/audio/AudioPlayer.kt b/android/src/main/java/expo/modules/audio/AudioPlayer.kt
+index fb2d0b57fb8718df04e5c073b70837b2658f2c16..e02359524e8a17f42b7f3cc668cb405a24af678b 100644
+--- a/android/src/main/java/expo/modules/audio/AudioPlayer.kt
++++ b/android/src/main/java/expo/modules/audio/AudioPlayer.kt
+@@ -72,6 +72,19 @@ class AudioPlayer(
+   override val isLive: Boolean
+     get() = ref.isCurrentMediaItemLive
+ 
++  override val supportsNextTrack: Boolean
++    get() = true
++  override val supportsPreviousTrack: Boolean
++    get() = true
++
++  override fun nextTrack() {
++    emit("onRemoteNextTrack")
++  }
++
++  override fun previousTrack() {
++    emit("onRemotePreviousTrack")
++  }
++
+   val currentOffsetFromLive: Double?
+     get() {
+       val offset = ref.currentLiveOffset
+diff --git a/android/src/main/java/expo/modules/audio/AudioRecords.kt b/android/src/main/java/expo/modules/audio/AudioRecords.kt
+index b6b3b73c3d1422a8023e2d943c54d7714c6354b6..a6a82fed42f964c71d40bbb83ee59f264dc59bc2 100644
+--- a/android/src/main/java/expo/modules/audio/AudioRecords.kt
++++ b/android/src/main/java/expo/modules/audio/AudioRecords.kt
+@@ -57,7 +57,8 @@ class Metadata(
+   @Field val title: String?,
+   @Field val artist: String?,
+   @Field val albumTitle: String?,
+-  @Field val artworkUrl: URL?
++  @Field val artworkUrl: URL?,
++  @Field val duration: Double? = null
+ ) : Record
+ 
+ enum class AndroidOutputFormat(val value: String) : Enumerable {
+diff --git a/android/src/main/java/expo/modules/audio/service/AudioControlsService.kt b/android/src/main/java/expo/modules/audio/service/AudioControlsService.kt
+index 53c36f7e3c0a0bcb8b4de1f5e6d2d3e214d3fbf2..cbc609be5ab2932fe43ff30131f3a137fa09b06c 100644
+--- a/android/src/main/java/expo/modules/audio/service/AudioControlsService.kt
++++ b/android/src/main/java/expo/modules/audio/service/AudioControlsService.kt
+@@ -424,8 +424,32 @@ class AudioControlsService : MediaSessionService() {
+         if (isLive) {
+           commands.remove(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
+         }
++        if (playable.supportsPreviousTrack) {
++          commands.addAll(Player.COMMAND_SEEK_TO_PREVIOUS, Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
++        }
++        if (playable.supportsNextTrack) {
++          commands.addAll(Player.COMMAND_SEEK_TO_NEXT, Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
++        }
+         return commands.build()
+       }
++
++      override fun isCommandAvailable(command: Int): Boolean = availableCommands.contains(command)
++
++      override fun seekToNext() {
++        if (playable.supportsNextTrack) playable.nextTrack() else super.seekToNext()
++      }
++
++      override fun seekToNextMediaItem() {
++        if (playable.supportsNextTrack) playable.nextTrack() else super.seekToNextMediaItem()
++      }
++
++      override fun seekToPrevious() {
++        if (playable.supportsPreviousTrack) playable.previousTrack() else super.seekToPrevious()
++      }
++
++      override fun seekToPreviousMediaItem() {
++        if (playable.supportsPreviousTrack) playable.previousTrack() else super.seekToPreviousMediaItem()
++      }
+     }
+   }
+ 
+diff --git a/android/src/main/java/expo/modules/audio/service/MetadataInjectingPlayer.kt b/android/src/main/java/expo/modules/audio/service/MetadataInjectingPlayer.kt
+index 18203a364d17dcf3de95d22a20175308e3363889..17b14f9ca93ebf1e8cb9b73e22dbfe1ce2b8e1d5 100644
+--- a/android/src/main/java/expo/modules/audio/service/MetadataInjectingPlayer.kt
++++ b/android/src/main/java/expo/modules/audio/service/MetadataInjectingPlayer.kt
+@@ -48,6 +48,11 @@ internal class MetadataInjectingPlayer(
+       .build()
+   }
+ 
++  override fun getDuration(): Long {
++    val seconds = injectedMetadata?.duration
++    return if (seconds != null && seconds > 0) (seconds * 1000).toLong() else super.getDuration()
++  }
++
+   fun updateMetadata(metadata: Metadata?) {
+     if (Looper.myLooper() != applicationLooper) {
+       handler.post { updateMetadata(metadata) }
+diff --git a/build/Audio.types.d.ts b/build/Audio.types.d.ts
+index 332b0c2f38310616c6bff64cb86fc8d5688d1280..e5473add5d90f0250453dfcb75588270e93b955b 100644
+--- a/build/Audio.types.d.ts
++++ b/build/Audio.types.d.ts
+@@ -670,6 +670,8 @@ export type AudioMetadata = {
+     artist?: string;
+     albumTitle?: string;
+     artworkUrl?: string;
++    /** Patched, ADR 037: the duration in seconds the lock screen shows instead of the engine's. */
++    duration?: number;
+ };
+ /**
+  * Loop mode for audio playlist playback.
+diff --git a/build/AudioModule.types.d.ts b/build/AudioModule.types.d.ts
+index 0d63c9b949cfae7a101902fc3bb70fcf46094f68..5b3500d78b2687284e2dd1d40ea0f57ba6e85b20 100644
+--- a/build/AudioModule.types.d.ts
++++ b/build/AudioModule.types.d.ts
+@@ -222,6 +222,10 @@ export type AudioEvents = {
+     playbackStatusUpdate(status: AudioStatus): void;
+     /** Fired when audio sampling is enabled and new sample data is available. */
+     audioSampleUpdate(data: AudioSample): void;
++    /** Patched, ADR 037: the lock screen's next track command. */
++    onRemoteNextTrack(): void;
++    /** Patched, ADR 037: the lock screen's previous track command. */
++    onRemotePreviousTrack(): void;
+ };
+ export declare class AudioRecorder extends SharedObject<RecordingEvents> {
+     /**
+diff --git a/ios/AudioPlayer.swift b/ios/AudioPlayer.swift
+index 0f68a52003416eb0e7be03d44dba1be76cd38116..ced4eba2e67b928809b1cefcaef830f518afc0a8 100644
+--- a/ios/AudioPlayer.swift
++++ b/ios/AudioPlayer.swift
+@@ -82,6 +82,22 @@ public class AudioPlayer: SharedRef<AVPlayer>, Playable, LockScreenPlayable {
+     ref
+   }
+ 
++  var supportsNextTrack: Bool {
++    true
++  }
++
++  var supportsPreviousTrack: Bool {
++    true
++  }
++
++  func nextTrack() {
++    emit(event: "onRemoteNextTrack")
++  }
++
++  func previousTrack() {
++    emit(event: "onRemotePreviousTrack")
++  }
++
+   var currentOffsetFromLive: Double? {
+     // currentDate() blocks until the item has loaded, and a still-loading item looks live too.
+     guard let item = ref.currentItem, item.status == .readyToPlay, item.duration.isIndefinite,
+diff --git a/ios/AudioRecords.swift b/ios/AudioRecords.swift
+index 7b8b42175d2dceb0be8d178d91b69465c5a84c09..1f2d1e81d9ef1fb69cb0fa10870283ac4f34bbfb 100644
+--- a/ios/AudioRecords.swift
++++ b/ios/AudioRecords.swift
+@@ -74,6 +74,7 @@ struct Metadata: Record {
+   @Field var artist: String?
+   @Field var albumTitle: String?
+   @Field var artworkUrl: URL?
++  @Field var duration: Double?
+ }
+ 
+ struct LockScreenOptions: Record {
+diff --git a/ios/MediaController.swift b/ios/MediaController.swift
+index 9b66e45411fab8e869144994c35c54c947626cf2..a3ab3f63a8ddf261fe24e6426e7002a826b416f1 100644
+--- a/ios/MediaController.swift
++++ b/ios/MediaController.swift
+@@ -126,7 +126,7 @@ class MediaController {
+       info.removeValue(forKey: MPMediaItemPropertyPlaybackDuration)
+       info.removeValue(forKey: MPNowPlayingInfoPropertyElapsedPlaybackTime)
+     } else {
+-      info[MPMediaItemPropertyPlaybackDuration] = playable.duration
++      info[MPMediaItemPropertyPlaybackDuration] = playable.metadata?.duration ?? playable.duration
+       info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = playable.currentTime
+     }
+     info[MPNowPlayingInfoPropertyPlaybackRate] = playable.isPlaying ? playable.lockScreenPlayer.rate : 0.0

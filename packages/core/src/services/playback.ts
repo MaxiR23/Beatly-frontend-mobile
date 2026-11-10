@@ -1,8 +1,8 @@
-// INFO: the playback controller: the queue, the play order (shuffle), repeat one, the current track, a jump to a position of the queue, a rename of the current source, the seed of the source with its suggestions, autoplay at the end of the queue and on next at the last track, whether the source's suggestions are wanted (its last track started or the up next tab asked) and the status over the player port; the effective duration of the current track (the stream's, else the backend's, else the engine's) and the end of a track at it, once, whichever of the position or the engine's ended comes first; an immutable snapshot plus subscribe.
+// INFO: the playback controller: the queue, the play order (shuffle), repeat one, the current track, a jump to a position of the queue, a rename of the current source, the seed of the source with its suggestions, autoplay at the end of the queue and on next at the last track, whether the source's suggestions are wanted (its last track started or the up next tab asked) and the status over the player port; the effective duration of the current track (the stream's, else the backend's, else the engine's) and the end of a track at it, once, whichever of the position or the engine's ended comes first; the lock screen info after each load with the effective duration, cleared when nothing plays; the lock screen's next and previous as the buttons'; the engine paused, not unloaded, between tracks; an immutable snapshot plus subscribe.
 import type { ImageTiers } from "../domain/image.ts";
 import type { TrackArtistRef } from "../domain/search.ts";
 import type { LogPort } from "../ports/log.ts";
-import type { PlayerEvent, PlayerPort } from "../ports/player.ts";
+import type { NowPlaying, PlayerEvent, PlayerPort } from "../ports/player.ts";
 
 export interface PlayableTrack {
   readonly trackId: string;
@@ -114,6 +114,14 @@ const positive = (seconds: number | null | undefined): number | null =>
     ? seconds
     : null;
 
+const nowPlaying = (track: PlayableTrack, durationSeconds: number | null): NowPlaying => ({
+  title: track.title,
+  artists: track.artists.map((artist) => artist.name),
+  album: track.album,
+  artworkUrl: track.image?.large ?? null,
+  durationSeconds,
+});
+
 const IDLE: PlaybackState = Object.freeze({
   queue: [],
   index: -1,
@@ -189,7 +197,8 @@ export function createPlaybackController(deps: {
     if (track === null) return;
     generation += 1;
     const mine = generation;
-    if (loaded) player.unload();
+    // The engine is kept across tracks, so its audio session and lock screen survive a switch in the background; the next load replaces its source. It is paused again whenever the lock screen is cleared without a load, so the previous track cannot be resumed unseen.
+    if (loaded) player.pause();
     loaded = false;
     knownDuration = positive(track.durationSeconds);
     update({
@@ -211,6 +220,8 @@ export function createPlaybackController(deps: {
     }
     if (resolution.kind === "failure") {
       log.warn("playback.unplayable", { cause: resolution.cause, trackId: track.trackId });
+      player.pause();
+      player.setNowPlaying(null);
       update({
         status: "failed",
         failure: resolution.cause,
@@ -222,6 +233,7 @@ export function createPlaybackController(deps: {
     if (state.durationSeconds !== knownDuration) update({ durationSeconds: knownDuration });
     player.load(resolution.url);
     loaded = true;
+    player.setNowPlaying(nowPlaying(track, knownDuration));
     player.play();
   };
 
@@ -281,11 +293,39 @@ export function createPlaybackController(deps: {
     }
     if (await autoplayFromLast()) return;
     player.pause();
+    player.setNowPlaying(null);
     update({ status: "paused", positionSeconds: 0, listen: nextListen() });
     await player.seek(0);
   };
 
+  const next = async (): Promise<void> => {
+    if (state.current === null) return;
+    if (state.index < state.queue.length - 1) {
+      await startAt(state.index + 1);
+      return;
+    }
+    await autoplayFromLast();
+  };
+
+  const previous = async (): Promise<void> => {
+    if (state.current === null) return;
+    if (state.positionSeconds > PREVIOUS_RESTARTS_AFTER_SECONDS || state.index === 0) {
+      await seekTo(0);
+      return;
+    }
+    await startAt(state.index - 1);
+  };
+
   const onEvent = (event: PlayerEvent): void => {
+    // The lock screen's commands work while a track resolves, like the buttons.
+    if (event.type === "remoteNext") {
+      void next();
+      return;
+    }
+    if (event.type === "remotePrevious") {
+      void previous();
+      return;
+    }
     if (!loaded || state.current === null) return;
     if (event.type === "progress") {
       const duration = knownDuration ?? positive(event.durationSeconds) ?? state.durationSeconds;
@@ -300,6 +340,7 @@ export function createPlaybackController(deps: {
       }
     } else if (event.type === "error") {
       log.warn("playback.player_error", { message: event.message });
+      player.setNowPlaying(null);
       update({ status: "failed", failure: "playback", failureHttpStatus: null });
     } else {
       void onEnded();
@@ -326,6 +367,8 @@ export function createPlaybackController(deps: {
         if (!loaded) {
           // Still resolving: cancel that start; playing again restarts the track.
           generation += 1;
+          player.pause();
+          player.setNowPlaying(null);
         } else {
           player.pause();
         }
@@ -344,22 +387,8 @@ export function createPlaybackController(deps: {
         await restart();
       }
     },
-    next: async () => {
-      if (state.current === null) return;
-      if (state.index < state.queue.length - 1) {
-        await startAt(state.index + 1);
-        return;
-      }
-      await autoplayFromLast();
-    },
-    previous: async () => {
-      if (state.current === null) return;
-      if (state.positionSeconds > PREVIOUS_RESTARTS_AFTER_SECONDS || state.index === 0) {
-        await seekTo(0);
-        return;
-      }
-      await startAt(state.index - 1);
-    },
+    next,
+    previous,
     skipTo: async (position) => {
       if (
         state.current === null ||
@@ -409,6 +438,7 @@ export function createPlaybackController(deps: {
       original = [];
       order = [];
       suggestions = [];
+      player.setNowPlaying(null);
       player.unload();
       update({ ...IDLE, shuffle: state.shuffle, repeatOne: state.repeatOne });
     },

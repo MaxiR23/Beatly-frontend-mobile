@@ -666,6 +666,7 @@ export function makePlayer() {
     pause: jest.fn<PlayerPort["pause"]>(),
     seek: jest.fn<PlayerPort["seek"]>(() => Promise.resolve()),
     unload: jest.fn<PlayerPort["unload"]>(),
+    setNowPlaying: jest.fn<PlayerPort["setNowPlaying"]>(),
     onEvent: jest.fn<PlayerPort["onEvent"]>((next) => {
       listener = next;
       return () => undefined;

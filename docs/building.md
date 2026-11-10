@@ -93,3 +93,14 @@ Source for the setup:
 6. Run `npx expo run:android --device`. The environment guide shows
    `npx expo run:android`; `--device` comes from
    [local app development](https://docs.expo.dev/guides/local-app-development/).
+
+## When to rebuild
+
+`pnpm dev` (Metro) reloads JavaScript only and never applies a native change.
+The native binary must be built again after `pnpm install` brings a change to
+`patches/expo-audio@58.0.10.patch`, after an expo-audio upgrade, or after a
+change to the `plugins` of `app.config.ts`. Run `npx expo prebuild --clean`
+(regenerates `ios/` and `android/`, needed for a plugin change; see
+[Expo prebuild](https://docs.expo.dev/workflow/prebuild/)) and then
+`npx expo run:ios --device` or `npx expo run:android --device`. After `--clean`,
+repeat the signing team step on iOS.

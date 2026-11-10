@@ -91,8 +91,10 @@ check_path_allowed() {
       die "refusing to stage $1"
       ;;
   esac
-  if [ "$1" = "pnpm-lock.yaml" ] && [ -z "$(git status --porcelain -- '*package.json')" ]; then
-    die "pnpm-lock.yaml changed without any package.json"
+  # pnpm patches register in pnpm-workspace.yaml, so it counts like a package.json.
+  if [ "$1" = "pnpm-lock.yaml" ] &&
+    [ -z "$(git status --porcelain -- '*package.json' pnpm-workspace.yaml)" ]; then
+    die "pnpm-lock.yaml changed without any package.json or pnpm-workspace.yaml"
   fi
 }
 

@@ -2,6 +2,8 @@
 // INFO: expo-system-ui acts only through its config plugin (applied because the
 // package is installed). expo-splash-screen is configured by its plugin and
 // imported by the root layout to hold the splash until the session is known.
+// expo-audio is not applied by default, so its plugin is listed with background playback on
+// and the microphone off.
 // typedRoutes stays off: it generates .expo/types/, which CI never has.
 import { color } from "@beatly/ui";
 import type { ExpoConfig } from "expo/config";
@@ -27,6 +29,11 @@ const config: ExpoConfig = {
   plugins: [
     "expo-router",
     "expo-sqlite",
+    // Background playback and the lock screen service; the app never records, so no microphone permission.
+    [
+      "expo-audio",
+      { enableBackgroundPlayback: true, microphonePermission: false, recordAudioAndroid: false },
+    ],
     [
       "expo-splash-screen",
       {
