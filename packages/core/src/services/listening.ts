@@ -1,4 +1,4 @@
-// INFO: the listening counter: counts real listening of the current track from the playback controller (seeks and pauses do not count) and, at 30 seconds of one listen, posts the play once, detached; a track without album, cover or a first artist with an id is not registered; every artist is sent, a later one with id null included, and a failure is only logged.
+// INFO: the listening counter: counts real listening of the current track from the playback controller (seeks and pauses do not count) and, at 30 seconds of one listen, posts the play once, detached; a track without album, cover or a first artist with an id is not registered; every artist is sent, a later one with id null included, and every play carries the effective duration in whole seconds; a failure is only logged.
 import type { LogPort } from "../ports/log.ts";
 import type { ActivityService } from "./activity.ts";
 import type { PlayableTrack, PlaybackController } from "./playback.ts";
@@ -19,7 +19,7 @@ export function createListeningCounter(deps: {
   let last = playback.getState().positionSeconds;
   let done = false;
 
-  const register = (track: PlayableTrack): void => {
+  const register = (track: PlayableTrack, durationSeconds: number | null): void => {
     // Every artist in order; the backend refuses a first artist without an id (conventions.md, Track artists).
     const artists = track.artists.map((artist) => ({ id: artist.id, name: artist.name }));
     const primaryId = artists[0]?.id;
@@ -47,7 +47,8 @@ export function createListeningCounter(deps: {
         album: track.album,
         album_id: track.albumId,
         thumbnail_url: track.coverUrl,
-        ...(track.durationSeconds !== null ? { duration_seconds: track.durationSeconds } : {}),
+        // The playback state's effective duration; the route takes whole seconds.
+        ...(durationSeconds !== null ? { duration_seconds: Math.round(durationSeconds) } : {}),
       })
       .then((outcome) => {
         if (outcome.kind === "success") return;
@@ -78,6 +79,6 @@ export function createListeningCounter(deps: {
     listened += step;
     if (listened < PLAY_AFTER_SECONDS) return;
     done = true;
-    register(state.current);
+    register(state.current, state.durationSeconds);
   });
 }

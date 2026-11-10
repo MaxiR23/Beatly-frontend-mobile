@@ -1,4 +1,4 @@
-// INFO: the stream resolver: asks the external provider's endpoint for a track's formats and picks one per platform by bitrate; every failure is a typed value, never a throw, sending the identifier the endpoint issued and retrying once with a fresh one when it asks for a login (ADR 021).
+// INFO: the stream resolver: asks the external provider's endpoint for a track's formats and picks one per platform by bitrate and returns the chosen format's duration when the answer carries it; every failure is a typed value, never a throw, sending the identifier the endpoint issued and retrying once with a fresh one when it asks for a login (ADR 021).
 import { z } from "zod";
 
 import { DEFAULT_TIMEOUT_MS } from "../http/client.ts";
@@ -12,6 +12,8 @@ const streamFormatSchema = z.object({
   mimeType: z.string(),
   bitrate: z.number(),
   url: z.string().optional(),
+  // The format's duration in milliseconds, a string of digits; a malformed one is dropped, not a failed answer.
+  approxDurationMs: z.string().regex(/^\d+$/).optional().catch(undefined),
 });
 const streamAnswerSchema = z.object({
   responseContext: z.object({ visitorData: z.string().optional() }).optional(),
@@ -46,6 +48,12 @@ const TIMED_OUT = Symbol("timed_out");
 
 function containerOf(mimeType: string): string {
   return (mimeType.split(";")[0] ?? "").trim().toLowerCase();
+}
+
+function durationOf(format: ChosenStreamFormat): number | null {
+  if (format.approxDurationMs === undefined) return null;
+  const ms = Number(format.approxDurationMs);
+  return Number.isFinite(ms) && ms > 0 ? ms / 1000 : null;
 }
 
 function errorMessage(error: unknown): string {
@@ -193,12 +201,18 @@ export function createStreamResolver(deps: {
       log.warn("stream.no_format", { platform, formats: streamingData.adaptiveFormats.length });
       return { kind: "failure", cause: "unplayable" };
     }
+    const seconds = durationOf(chosen);
     log.debug("stream.resolved", {
       platform,
       mimeType: chosen.mimeType,
       bitrate: chosen.bitrate,
+      durationSeconds: seconds,
     });
-    return { kind: "resolved", url: chosen.url };
+    return {
+      kind: "resolved",
+      url: chosen.url,
+      ...(seconds !== null ? { durationSeconds: seconds } : {}),
+    };
   }
 
   async function resolve(trackId: string): Promise<StreamResolution> {

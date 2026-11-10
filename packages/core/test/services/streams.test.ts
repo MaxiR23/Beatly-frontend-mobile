@@ -8,6 +8,7 @@
 //
 // What is covered:
 // - with data, the typed unplayable failure where the contract has an empty (no stream data, no format for the platform), an error status (carrying that status), timeout, network, a body that is not JSON and a body that fails the schema
+// - the chosen format's duration in seconds, absent when the answer has none or a malformed one
 // - the locale fields; the stored identifier sent on every request and the one the endpoint returns kept; one login-required retry with a fresh identifier or none, never a second; a store that cannot be read or written
 // - the per-platform container table, the bitrate choice and fallback, never by response order or format number
 // - Not applicable: ok:false reasons and the cursor case, because the endpoint is not the Beatly API and is not paginated
@@ -130,6 +131,38 @@ describe("createStreamResolver", () => {
       url: "test://audio/mp4-high",
     });
   });
+
+  it("returns the chosen format's duration in seconds", async () => {
+    const { resolver } = setup(() =>
+      answer([
+        { ...mp4High, approxDurationMs: "136906" },
+        { ...mp4Low, approxDurationMs: "999000" },
+      ]),
+    );
+    expect(await resolver.resolve("t1")).toEqual({
+      kind: "resolved",
+      url: "test://audio/mp4-high",
+      durationSeconds: 136.906,
+    });
+  });
+
+  it("resolves without a duration when the chosen format carries none", async () => {
+    const { resolver } = setup(() => answer([mp4Low, mp4High]));
+    const result = await resolver.resolve("t1");
+    expect(result).toEqual({ kind: "resolved", url: "test://audio/mp4-high" });
+    expect("durationSeconds" in result).toBe(false);
+  });
+
+  it.each(["abc", "0"])(
+    "resolves without a duration when approxDurationMs is malformed or zero (%s)",
+    async (approxDurationMs) => {
+      const { resolver } = setup(() => answer([{ ...mp4High, approxDurationMs }]));
+      const result = await resolver.resolve("t1");
+      expect(result.kind).toBe("resolved");
+      if (result.kind === "resolved") expect(result.url).toBe("test://audio/mp4-high");
+      expect("durationSeconds" in result).toBe(false);
+    },
+  );
 
   it("posts the track id and the configured client to the configured endpoint without the session token", async () => {
     const { http, resolver } = setup(() => answer([mp4High]));
