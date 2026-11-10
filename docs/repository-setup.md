@@ -74,9 +74,9 @@ staged files, commit-msg runs commitlint, pre-push runs
 
 Copy the env file and fill in the public values:
 
-    cp .env.example .env
+    cp .env.example apps/mobile/.env
 
-It holds only the API base URL, the Supabase URL and anon key, and the stream endpoint, client name and version (ADR 021).
+The file lives at `apps/mobile/.env`, where Expo loads it. It holds only the API base URL, the Supabase URL and anon key, and the stream endpoint, client name and version (ADR 021), plus `APPLE_TEAM_ID`, the public Apple Team ID read by `app.config.ts` at build time for local iOS signing (no `EXPO_PUBLIC_` prefix; it lands in the embedded app config, is not a secret and is never versioned).
 There are no secrets in a client; if a value looks like one, it does
 not belong here.
 

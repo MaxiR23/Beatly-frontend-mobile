@@ -12,6 +12,13 @@ import type { ExpoConfig } from "expo/config";
 // so a native build needs it here.
 const appId = "com.maxirebolo.beatly";
 
+// INFO: the signing team comes from the environment so the repo never versions it.
+// Unset or empty omits the key and the config stays as without it. The name has no
+// EXPO_PUBLIC_ prefix, so it is not inlined into the bundle, but the value still lands
+// in the app config embedded in the native build. It is public, not a secret; the
+// prefix is not the reason it is safe.
+const appleTeamId = process.env.APPLE_TEAM_ID;
+
 const config: ExpoConfig = {
   name: "Beatly",
   slug: "beatly",
@@ -21,6 +28,7 @@ const config: ExpoConfig = {
   backgroundColor: color.surface.base,
   ios: {
     bundleIdentifier: appId,
+    ...(appleTeamId ? { appleTeamId } : {}),
   },
   android: {
     package: appId,
