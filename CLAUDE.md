@@ -137,8 +137,11 @@ that needs it opens a backend issue instead of computing it here.
   commits. It is "the external provider".
 - Zero secrets in the code. The only env values are the API base URL,
   the Supabase URL and anon key, and the three stream config values
-  (endpoint, client name and version; ADR 021), all public by design.
-  Anything else has no place in a client bundle.
+  (endpoint, client name and version; ADR 021), all public by design,
+  plus `APPLE_TEAM_ID`, the one build-time value without the
+  `EXPO_PUBLIC_` prefix: the public Apple Team ID for local iOS signing,
+  embedded in the native build's app config, not secret and not
+  versioned. Anything else has no place in a client bundle.
 - No direct `console.*`. Use the `log` port. No `any`, explicit or via
   a cast; a response without a type gets a zod schema.
 - No `catch` that swallows an error and returns an empty value or a

@@ -137,6 +137,7 @@ commitlint`, read-only git (`fetch`, `diff`, `status`, `log`,
   issue #130 (SDK 58) it comes from `expo-router/native-tabs`, which SDK 58
   made stable; the rest of 017, as corrected above by 027, stands.
 - `017-native-tabs-and-glass-surfaces.md` draws "every floating surface (the bar, the sheet)" with `GlassSurface`, and `027-android-variants-follow-material-3.md` says iOS keeps what it draws. Since `031-window-insets-from-a-root-context.md` (issue #144) the iOS `Sheet` is no longer floating: it is attached to the bottom and side edges like the system sheet, still drawn with `GlassSurface`.
+- `011-no-secrets-in-code-and-provider-never-named.md` says the environment holds exactly three values and that all of them end up in the bundle. Since issue #172 the env also holds `APPLE_TEAM_ID`, the one build-time value without the `EXPO_PUBLIC_` prefix: the public Apple Team ID that `app.config.ts` copies to `ios.appleTeamId` for local iOS signing. It is not inlined into the JS bundle but lands in the app config embedded in the native build; it is public, not a secret, and not versioned. `.env.example` lists it. The rest of 011 stands. (011 lists three values; the stream config of 021 already made it six.)
 
 ## Files
 
