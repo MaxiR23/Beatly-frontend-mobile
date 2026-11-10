@@ -174,7 +174,7 @@ that needs it opens a backend issue instead of computing it here.
                             icon, border, shadow, palette, blur
       src/components/
       test/                 mirrors src/
-    docs/                   workflow, testing, repository setup
+    docs/                   workflow, testing, building, repository setup
     docs/adr/               architecture decision records
     docs/features/          one file per screen: endpoints it uses, states it draws
     scripts/                ship.sh: the mechanical half of shipping an issue
