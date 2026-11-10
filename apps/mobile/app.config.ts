@@ -6,6 +6,10 @@
 import { color } from "@beatly/ui";
 import type { ExpoConfig } from "expo/config";
 
+// INFO: one identifier for both stores; a dynamic config cannot be written by Expo,
+// so a native build needs it here.
+const appId = "com.maxirebolo.beatly";
+
 const config: ExpoConfig = {
   name: "Beatly",
   slug: "beatly",
@@ -13,7 +17,11 @@ const config: ExpoConfig = {
   scheme: "beatly",
   userInterfaceStyle: "dark",
   backgroundColor: color.surface.base,
+  ios: {
+    bundleIdentifier: appId,
+  },
   android: {
+    package: appId,
     predictiveBackGestureEnabled: false,
   },
   plugins: [

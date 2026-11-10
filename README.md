@@ -92,4 +92,5 @@ The full list, with severities, is in [`CLAUDE.md`](CLAUDE.md).
 - [`docs/adr/`](docs/adr/): the decisions, one record each
 - [`docs/workflow.md`](docs/workflow.md): issue to pull request
 - [`docs/testing.md`](docs/testing.md): runners, fakes, coverage rules
+- [`docs/building.md`](docs/building.md): local native build on a real device
 - [`docs/repository-setup.md`](docs/repository-setup.md): GitHub and local configuration
