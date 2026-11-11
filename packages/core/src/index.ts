@@ -151,6 +151,10 @@ export { genreCategorySchema, genrePlaylistListItemSchema, genreSchema } from ".
 export type { Genre, GenrePlaylistListItem } from "./domain/genre.ts";
 export { createGenresService } from "./services/genres.ts";
 export type { GenresService } from "./services/genres.ts";
+export { newReleaseSchema } from "./domain/release.ts";
+export type { NewRelease } from "./domain/release.ts";
+export { createReleasesService } from "./services/releases.ts";
+export type { ReleasesService } from "./services/releases.ts";
 export type { StoragePort } from "./ports/storage.ts";
 export {
   searchAlbumSchema,

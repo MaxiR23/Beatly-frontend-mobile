@@ -7,7 +7,7 @@
 //
 // What is covered:
 // apps/mobile/test/screens, apps/mobile/test/queries, apps/mobile/test/providers, apps/mobile/test/app
-// (the stateful likes mirror, credits, membership, add, create-with-track, remove and move fakes, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile and its update, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, library artist entry, library item, the saved read, add and remove, created playlist, genres, search album and artist fixtures and fakes, the in-memory storage, the autoplay setting, the onboarding mark over the in-memory storage, the onboarding artists, similar artists (empty by default), completion and finish fakes with the recommendations generate and the full recommendations fixture,  the bug reports fixtures and fakes (including the triage fixtures with a reporter, the list and the status update), and the page builder)
+// (the stateful likes mirror, credits, membership, add, create-with-track, remove and move fakes, the activity writes, a play and a recent, the playback controller over an inline player, the up next, lyrics and related fixtures and fakes, the profile and its update, recents, playlists, playlist detail, liked, genre header with its tracks, playlist track, library, library artist entry, library item, the saved read, add and remove, created playlist, genres, new releases, search album and artist fixtures and fakes, the in-memory storage, the autoplay setting, the onboarding mark over the in-memory storage, the onboarding artists, similar artists (empty by default), completion and finish fakes with the recommendations generate and the full recommendations fixture,  the bug reports fixtures and fakes (including the triage fixtures with a reporter, the list and the status update), and the page builder)
 //
 import type {
   ActivityService,
@@ -23,6 +23,8 @@ import type {
   Genre,
   GenrePlaylistListItem,
   GenresService,
+  NewRelease,
+  ReleasesService,
   HttpOutcome,
   LibraryEntry,
   LibraryItem,
@@ -106,6 +108,22 @@ export const completionFixture: OnboardingCompletion = {
   onboarding_completed_at: "2026-10-30T12:00:00+00:00",
   saved: 5,
   skipped: [],
+};
+
+export const newReleaseFixture: NewRelease = {
+  album_id: "MPREr1",
+  title: "Fresh Single",
+  type: "single",
+  artists: [
+    { id: "UCa", name: "Artista A" },
+    { id: "UCb", name: "Artista B" },
+  ],
+  thumbnail_url: "test://img/release",
+  image: {
+    small: "test://img/release/s",
+    medium: "test://img/release/m",
+    large: "test://img/release/l",
+  },
 };
 
 export const noRecommendationsFixture: Recommendations = {
@@ -701,6 +719,7 @@ export function makeCore(
     sync?: LikesService["sync"];
     clear?: LikesService["clear"];
     listGenres?: GenresService["listGenres"];
+    listReleases?: ReleasesService["listReleases"];
     listGenrePlaylists?: GenresService["listGenrePlaylists"];
     listGenreCategories?: GenresService["listGenreCategories"];
     search?: SearchService["search"];
@@ -814,6 +833,9 @@ export function makeCore(
   const removeItem = jest.fn<LibraryService["removeItem"]>(
     options.removeItem ??
       (() => Promise.resolve({ kind: "success", data: null, maxAgeSeconds: 0 })),
+  );
+  const listReleases = jest.fn<ReleasesService["listReleases"]>(
+    options.listReleases ?? (() => Promise.resolve(pageOf<NewRelease>([]))),
   );
   const listGenres = jest.fn<GenresService["listGenres"]>(
     options.listGenres ?? (() => Promise.resolve(pageOf<Genre>([]))),
@@ -968,6 +990,7 @@ export function makeCore(
       listBugReports,
       updateBugReportStatus,
     },
+    releases: { listReleases },
     genres: { listGenres, listGenrePlaylists, listGenreCategories },
     library: { listLibrary, getSavedState, saveItem, removeItem },
     likes,
@@ -1031,6 +1054,7 @@ export function makeCore(
     likes,
     emitLikeConfirmed,
     listGenres,
+    listReleases,
     listGenrePlaylists,
     listGenreCategories,
     search,
