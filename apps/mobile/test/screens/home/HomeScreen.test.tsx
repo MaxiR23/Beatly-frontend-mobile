@@ -11,6 +11,7 @@
 // - the next page of playlists at the end of the carousel
 // - an album recent opens the album, a playlist recent opens with its kind, an artist recent opens the artist, a kind-less playlist recent does not, a card of your playlists opens the playlist
 // - the recommendation sections: their order, hidden empty lists, album artist and artist kind subtitles (no reason on cards), seed sections, navigation, skeletons while loading, and the inline error with retry that keeps recents and playlists (en and es)
+// - the new releases shelf: its place after recents, the type and artists subtitle (en and es), navigation, the next page, the unlabelled skeleton, and nothing on a failure or an empty list
 // - the avatar initials, the account sheet and logout in every state, en and es
 //
 // Run with: pnpm --filter @beatly/mobile test -- HomeScreen
@@ -19,6 +20,7 @@
 
 import type {
   HttpOutcome,
+  NewRelease,
   PageResult,
   PlaylistListItem,
   RecentEntity,
@@ -33,6 +35,7 @@ import { resources } from "../../../src/i18n/resources.ts";
 import { HomeScreen } from "../../../src/screens/home/HomeScreen.tsx";
 import {
   makeCore,
+  newReleaseFixture,
   pageOf,
   playlistFixture,
   profileFixture,
@@ -586,6 +589,142 @@ describe("HomeScreen", () => {
       });
       expect(await screen.findByTestId("recommendations-error")).toBeTruthy();
       expect(screen.queryByText(en.home.empty)).toBeNull();
+    });
+  });
+
+  describe("new releases", () => {
+    const full = {
+      listRecents: recents([recentFixture]),
+      listPlaylists: playlistsOf([playlistFixture]),
+      generateRecommendations: () =>
+        Promise.resolve(recommendationsOutcome(recommendationsFixture)),
+    };
+    const sectionIds =
+      /^(recents|new-releases|playlists|rec-(albums-for-you|seed-\d|recommended-albums|recommended-artists))$/;
+    const idsOf = () => screen.getAllByTestId(sectionIds).map((node): unknown => node.props.testID);
+    const withoutReleases = [
+      "recents",
+      "rec-albums-for-you",
+      "rec-seed-0",
+      "rec-recommended-albums",
+      "rec-seed-1",
+      "playlists",
+      "rec-seed-2",
+      "rec-recommended-artists",
+    ];
+    const releasesOf = (items: NewRelease[]) => () => Promise.resolve(pageOf(items));
+
+    it("draws the shelf right after recents and before the recommendations", async () => {
+      await setup({ ...full, listReleases: releasesOf([newReleaseFixture]) });
+      await screen.findByTestId("new-releases");
+      await screen.findByTestId("rec-recommended-artists");
+      expect(idsOf()).toEqual([
+        "recents",
+        "new-releases",
+        "rec-albums-for-you",
+        "rec-seed-0",
+        "rec-recommended-albums",
+        "rec-seed-1",
+        "playlists",
+        "rec-seed-2",
+        "rec-recommended-artists",
+      ]);
+    });
+
+    it("draws a card under its type and its artists in es", async () => {
+      await i18n.changeLanguage("es");
+      await setup({ ...full, listReleases: releasesOf([newReleaseFixture]) });
+      const list = within(await screen.findByTestId("new-releases"));
+      expect(screen.getByText(resources.es.home.newReleases)).toBeTruthy();
+      expect(list.getByText("Fresh Single")).toBeTruthy();
+      expect(list.getByText("Single · Artista A, Artista B")).toBeTruthy();
+    });
+
+    it("draws the three types in en", async () => {
+      const one = (album_id: string, type: NewRelease["type"]): NewRelease => ({
+        ...newReleaseFixture,
+        album_id,
+        title: `Title ${album_id}`,
+        type,
+        artists: [{ id: "UCa", name: "Artista A" }],
+      });
+      await setup({
+        ...full,
+        listReleases: releasesOf([one("r1", "album"), one("r2", "single"), one("r3", "ep")]),
+      });
+      const list = within(await screen.findByTestId("new-releases"));
+      expect(list.getByText("Album · Artista A")).toBeTruthy();
+      expect(list.getByText("Single · Artista A")).toBeTruthy();
+      expect(list.getByText("EP · Artista A")).toBeTruthy();
+    });
+
+    it("opens the album of a card", async () => {
+      await setup({ ...full, listReleases: releasesOf([newReleaseFixture]) });
+      await fireEvent.press(await screen.findByRole("button", { name: "Fresh Single" }));
+      expect(mockPush).toHaveBeenCalledWith({
+        pathname: "/album/[id]",
+        params: { id: "MPREr1" },
+      });
+    });
+
+    it("loads the next page at the end of the shelf when there is one", async () => {
+      const ctx = await setup({
+        ...full,
+        listReleases: (cursor) =>
+          Promise.resolve(
+            cursor === null
+              ? pageOf([newReleaseFixture], { has_more: true, next_cursor: "r1" })
+              : pageOf([{ ...newReleaseFixture, album_id: "MPREr2", title: "Second release" }]),
+          ),
+      });
+      await screen.findByText("Fresh Single");
+      await fireEvent(screen.getByTestId("new-releases"), "onEndReached");
+      expect(await screen.findByText("Second release")).toBeTruthy();
+      expect(ctx.listReleases).toHaveBeenLastCalledWith("r1");
+    });
+
+    it("does not request another page when there is none", async () => {
+      const ctx = await setup({ ...full, listReleases: releasesOf([newReleaseFixture]) });
+      await screen.findByText("Fresh Single");
+      await fireEvent(screen.getByTestId("new-releases"), "onEndReached");
+      expect(ctx.listReleases).toHaveBeenCalledTimes(1);
+    });
+
+    it("draws an unlabelled skeleton while it loads", async () => {
+      await setup({ ...full, listReleases: () => new Promise(() => undefined) });
+      const skeleton = await screen.findByTestId("new-releases-skeleton");
+      expect(skeleton.props.accessibilityLabel).toBeUndefined();
+      expect(screen.queryByTestId("new-releases")).toBeNull();
+    });
+
+    const nothing: [string, HttpOutcome<PageResult<NewRelease>>][] = [
+      ["an api failure", { kind: "api_failure", reason: "upstream_error" }],
+      ["a transport failure", { kind: "transport_failure", cause: "timeout" }],
+      ["an empty list", pageOf<NewRelease>([])],
+    ];
+
+    it.each(nothing)(
+      "draws nothing, and the rest of Home as before, on %s",
+      async (_name, outcome) => {
+        const ctx = await setup({ ...full, listReleases: () => Promise.resolve(outcome) });
+        await screen.findByTestId("rec-recommended-artists");
+        await waitFor(() => {
+          expect(ctx.listReleases).toHaveBeenCalled();
+        });
+        await waitFor(() => {
+          expect(screen.queryByTestId("new-releases-skeleton")).toBeNull();
+        });
+        expect(screen.queryByTestId("new-releases")).toBeNull();
+        expect(screen.queryByText(en.home.newReleases)).toBeNull();
+        expect(screen.queryByText(en.common.retry)).toBeNull();
+        expect(idsOf()).toEqual(withoutReleases);
+      },
+    );
+
+    it("keeps the empty state when only the new releases have items", async () => {
+      await setup({ listReleases: releasesOf([newReleaseFixture]) });
+      expect(await screen.findByText(en.home.empty)).toBeTruthy();
+      expect(screen.queryByTestId("new-releases")).toBeNull();
     });
   });
 });

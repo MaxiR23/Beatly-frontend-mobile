@@ -20,6 +20,7 @@ import {
   createPublicService,
   createRecommendationsService,
   createRecentSearchesService,
+  createReleasesService,
   createSearchService,
   createSheetNudgeService,
   createStreamResolver,
@@ -45,6 +46,7 @@ import type {
   PublicService,
   RecommendationsService,
   RecentSearchesService,
+  ReleasesService,
   SearchService,
   SheetNudgeService,
   TracksService,
@@ -84,6 +86,7 @@ export interface Core {
   readonly publicShare: PublicService;
   readonly recentSearches: RecentSearchesService;
   readonly recommendations: RecommendationsService;
+  readonly releases: ReleasesService;
   readonly search: SearchService;
   readonly sheetNudge: SheetNudgeService;
   readonly tracks: TracksService;
@@ -150,6 +153,7 @@ export function createCore(): Core {
     publicShare: createPublicService(client),
     recentSearches: createRecentSearchesService({ storage, log }),
     recommendations,
+    releases: createReleasesService(client),
     search: createSearchService(client),
     sheetNudge: createSheetNudgeService(),
     tracks: createTracksService(client),

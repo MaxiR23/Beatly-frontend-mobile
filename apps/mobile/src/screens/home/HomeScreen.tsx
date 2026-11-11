@@ -1,4 +1,4 @@
-// INFO: the home tab: the account avatar and sheet, the recently played and own playlists shelves, and the recommendation sections between them with their skeletons and their inline error with retry.
+// INFO: the home tab: the account avatar and sheet, the recently played, new releases and own playlists shelves, and the recommendation sections between them with their skeletons and their inline error with retry.
 import { profileName, type PlaylistListItem, type RecentEntity } from "@beatly/core";
 import { color, layout, spacing } from "@beatly/ui";
 import {
@@ -21,6 +21,7 @@ import { useRecommendations } from "../../queries/useRecommendations.ts";
 import { AccountButton } from "../account/AccountButton.tsx";
 import { FailureState } from "../failure/FailureState.tsx";
 import { useTabBarClearance } from "../player/useTabBarClearance.ts";
+import { NewReleasesSection } from "./NewReleasesSection.tsx";
 import { RecommendationSection, type RecommendationSlot } from "./RecommendationSection.tsx";
 
 export function HomeScreen() {
@@ -149,6 +150,7 @@ export function HomeScreen() {
         {recents.data.length > 0 ? (
           <Carousel testID="recents" title={t("recents")} items={recents.data.map(toRecentItem)} />
         ) : null}
+        <NewReleasesSection />
         {recommendationSlot({ kind: "albumsForYou" }, true)}
         {recommendationSlot({ kind: "seed", index: 0 }, false)}
         {recommendationSlot({ kind: "recommendedAlbums" }, false)}

@@ -9,6 +9,7 @@ import { Carousel, type CarouselItem } from "@beatly/ui/native";
 import { useRouter } from "expo-router";
 
 import { useT } from "../../adapters/i18n.ts";
+import { albumArtists } from "../album/albumArtists.ts";
 
 export type RecommendationSlot =
   | { kind: "albumsForYou" }
@@ -36,13 +37,10 @@ export function RecommendationSection({
     router.push({ pathname: "/artist/[id]", params: { id } });
   };
 
-  const albumArtists = (album: { artists: readonly { name: string }[] }) =>
-    album.artists.map((artist) => artist.name).join(ta("artistSeparator"));
-
   const toAlbumItem = (album: RecommendedAlbum): CarouselItem => ({
     key: `album:${album.id}`,
     title: album.title,
-    subtitle: albumArtists(album),
+    subtitle: albumArtists(album, ta),
     images: album.image ? [album.image] : [],
     shape: "square",
     onPress: () => {
@@ -77,7 +75,7 @@ export function RecommendationSection({
       : {
           key: `album:${item.id}`,
           title: item.title,
-          subtitle: albumArtists(item),
+          subtitle: albumArtists(item, ta),
           images: item.image ? [item.image] : [],
           shape: "square",
           onPress: () => {
