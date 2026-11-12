@@ -1,4 +1,4 @@
-// INFO: the new releases shelf of the home, self-contained so it can move to Explore: an unlabelled skeleton while it loads, nothing on a failure or an empty list, else a carousel of square album cards, each under its type and its artists, that opens the album and loads the next page at the end.
+// INFO: the new releases shelf of the home, self-contained so it can move to Explore: an unlabelled skeleton while it loads, nothing on a failed first load or an empty list, else a carousel of square album cards, each under its type and its artists, that opens the album and loads the next page at the end; cards already loaded stay when a next page or a refetch fails, with no error message, and the end of the shelf asks for the failed page again.
 import type { NewRelease } from "@beatly/core";
 import { Carousel, CarouselSkeleton, type CarouselItem } from "@beatly/ui/native";
 import { useRouter } from "expo-router";
@@ -32,7 +32,7 @@ export function NewReleasesSection() {
   });
 
   if (releases.isPending) return <CarouselSkeleton testID="new-releases-skeleton" />;
-  if (!releases.isSuccess || releases.data.length === 0) return null;
+  if (releases.data === undefined || releases.data.length === 0) return null;
   return (
     <Carousel
       testID="new-releases"

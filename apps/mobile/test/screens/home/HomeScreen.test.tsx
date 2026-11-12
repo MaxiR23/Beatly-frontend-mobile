@@ -11,7 +11,7 @@
 // - the next page of playlists at the end of the carousel
 // - an album recent opens the album, a playlist recent opens with its kind, an artist recent opens the artist, a kind-less playlist recent does not, a card of your playlists opens the playlist
 // - the recommendation sections: their order, hidden empty lists, album artist and artist kind subtitles (no reason on cards), seed sections, navigation, skeletons while loading, and the inline error with retry that keeps recents and playlists (en and es)
-// - the new releases shelf: its place after recents, the type and artists subtitle (en and es), navigation, the next page, the unlabelled skeleton, and nothing on a failure or an empty list
+// - the new releases shelf: its place after recents, the type and artists subtitle (en and es), navigation, the next page, the unlabelled skeleton, nothing on a failure or an empty list, the cards kept when a next page fails and the failed page asked again at the end
 // - the avatar initials, the account sheet and logout in every state, en and es
 //
 // Run with: pnpm --filter @beatly/mobile test -- HomeScreen
@@ -28,7 +28,7 @@ import type {
 } from "@beatly/core";
 import { afterEach, describe, expect, it, jest } from "@jest/globals";
 import { radius } from "@beatly/ui";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 
 import { i18n } from "../../../src/adapters/i18n.ts";
 import { resources } from "../../../src/i18n/resources.ts";
@@ -688,6 +688,66 @@ describe("HomeScreen", () => {
       await screen.findByText("Fresh Single");
       await fireEvent(screen.getByTestId("new-releases"), "onEndReached");
       expect(ctx.listReleases).toHaveBeenCalledTimes(1);
+    });
+
+    const failingNextPage = () => {
+      let release: (outcome: HttpOutcome<PageResult<NewRelease>>) => void = () => undefined;
+      const held = new Promise<HttpOutcome<PageResult<NewRelease>>>((resolve) => {
+        release = resolve;
+      });
+      let calls = 0;
+      const listReleases = (cursor: string | null) => {
+        if (cursor === null)
+          return Promise.resolve(
+            pageOf([newReleaseFixture], { has_more: true, next_cursor: "r1" }),
+          );
+        calls += 1;
+        return calls === 1 ? held : Promise.resolve(failure);
+      };
+      return {
+        listReleases,
+        fail: () => {
+          release(failure);
+        },
+        held,
+      };
+    };
+
+    it("keeps the cards when the next page fails", async () => {
+      const next = failingNextPage();
+      const ctx = await setup({ ...full, listReleases: next.listReleases });
+      await screen.findByText("Fresh Single");
+      await fireEvent(screen.getByTestId("new-releases"), "onEndReached");
+      await waitFor(() => {
+        expect(ctx.listReleases).toHaveBeenLastCalledWith("r1");
+      });
+      await act(async () => {
+        next.fail();
+        await next.held;
+      });
+      expect(screen.getByTestId("new-releases")).toBeTruthy();
+      expect(screen.getByText("Fresh Single")).toBeTruthy();
+      expect(screen.queryByText(en.common.retry)).toBeNull();
+    });
+
+    it("asks for the failed page again at the end of the shelf", async () => {
+      const next = failingNextPage();
+      const ctx = await setup({ ...full, listReleases: next.listReleases });
+      await screen.findByText("Fresh Single");
+      await fireEvent(screen.getByTestId("new-releases"), "onEndReached");
+      await waitFor(() => {
+        expect(ctx.listReleases).toHaveBeenLastCalledWith("r1");
+      });
+      await act(async () => {
+        next.fail();
+        await next.held;
+      });
+      await fireEvent(screen.getByTestId("new-releases"), "onEndReached");
+      await waitFor(() => {
+        expect(ctx.listReleases).toHaveBeenCalledTimes(3);
+      });
+      expect(ctx.listReleases).toHaveBeenNthCalledWith(2, "r1");
+      expect(ctx.listReleases).toHaveBeenLastCalledWith("r1");
     });
 
     it("draws an unlabelled skeleton while it loads", async () => {
